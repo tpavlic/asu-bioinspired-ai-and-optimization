@@ -265,6 +265,39 @@ input[type="range"].t-slider::-webkit-slider-thumb:active { cursor: grabbing; }
   100% { r: 8;  opacity: 0.22; }
 }
 #stateRing { animation: rpulse 2s ease-in-out infinite; }
+
+/* ── Responsive: narrow screens (≤ 540 px) ──────────── */
+@media (max-width: 540px) {
+  body { padding: 0.7rem 0.7rem 1.2rem; }
+
+  /* Concept buttons: 2×2 grid instead of single row */
+  .concept-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Controls: stack vertically, full width */
+  .ctrl-grid {
+    grid-template-columns: 1fr;
+  }
+  .ctrl-pane {
+    border-right: none;
+    border-bottom: 1px solid #d4e4d4;
+  }
+  .ctrl-pane:last-child { border-bottom: none; }
+
+  /* Stats: 2×2 grid */
+  .stats-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .stat-cell:nth-child(2) { border-right: none; }
+  .stat-cell:nth-child(3) { border-right: 1px solid #d4e4d4; }
+  .stat-cell:nth-child(1),
+  .stat-cell:nth-child(2) { border-bottom: 1px solid #d4e4d4; }
+
+  /* Move-status fixed height can relax slightly on small screens */
+  .move-status { height: auto; min-height: 2.8rem; }
+}
 </style>
 </head>
 <body>
