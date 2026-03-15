@@ -36,10 +36,10 @@
 <div class="wrap">
 <div class="instr">Click a phase to step through the theory:</div>
 <div class="controls">
-  <div class="phtab" id="tab0">0 ¬∑ selection only</div>
-  <div class="phtab" id="tab1">I ¬∑ drift</div>
-  <div class="phtab" id="tab2">II ¬∑ selection</div>
-  <div class="phtab" id="tab3">III ¬∑ post-migration</div>
+  <div class="phtab" id="tab0">0 · selection only</div>
+  <div class="phtab" id="tab1">I · drift</div>
+  <div class="phtab" id="tab2">II · selection</div>
+  <div class="phtab" id="tab3">III · post-migration</div>
 </div>
 <canvas id="cv" style="width:640px;height:320px;max-width:100%;border-radius:8px;border:0.5px solid var(--color-border-tertiary);display:block"></canvas>
 <div class="cap" id="cap"></div>
@@ -94,10 +94,10 @@ const PHASES=[
 ];
 
 const CAPS=[
-  'Phase 0 ‚Äî selection only (no drift). In the hypothetical absence of drift, selection pins each deme tightly to the nearest local fitness peak. The two low peaks are stable equilibria; no force can push a deme across the adaptive valley. This is the case that motivates the problem: selection alone is insufficient to explore the landscape.',
-  'Phase I ‚Äî genetic drift. Small effective population sizes produce a balance of mutation, drift, and selection. Each within-deme distribution widens across allele-frequency space. The bracket shows this spread across all four demes: two individuals per deme have stochastically crossed the unstable equilibrium at the valley floor ‚Äî a move selection would actively oppose.',
-  'Phase II ‚Äî within-deme selection. Individuals that drifted past the unstable equilibrium at the valley floor are pulled uphill toward their nearest high peak (A & B toward high peak 1; C & D toward high peak 2). Individuals that did not cross are pulled back to their original low peaks. The "shift" arrows mark the direction of selection for those lucky crossers.',
-  'Phase III ‚Äî post-migration balance. High-fitness pioneer individuals export migrants, dragging the remaining low-peak demes up to the high peaks. Once there, a new balance of mutation, drift, and selection establishes around the high peaks ‚Äî shown by the bracket. The new drift spread is narrow enough that it does not reach the valley between the two high peaks, so the metapopulation stays on its new peaks.',
+  'Phase 0 — selection only (no drift). In the hypothetical absence of drift, selection pins each deme tightly to the nearest local fitness peak. The two low peaks are stable equilibria; no force can push a deme across the adaptive valley. This is the case that motivates the problem: selection alone is insufficient to explore the landscape.',
+  'Phase I — genetic drift. Small effective population sizes produce a balance of mutation, drift, and selection. Each within-deme distribution widens across allele-frequency space. The bracket shows this spread across all four demes: two individuals per deme have stochastically crossed the unstable equilibrium at the valley floor — a move selection would actively oppose.',
+  'Phase II — within-deme selection. Individuals that drifted past the unstable equilibrium at the valley floor are pulled uphill toward their nearest high peak (A & B toward high peak 1; C & D toward high peak 2). Individuals that did not cross are pulled back to their original low peaks. The "shift" arrows mark the direction of selection for those lucky crossers.',
+  'Phase III — post-migration balance. High-fitness pioneer individuals export migrants, dragging the remaining low-peak demes up to the high peaks. Once there, a new balance of mutation, drift, and selection establishes around the high peaks — shown by the bracket. The new drift spread is narrow enough that it does not reach the valley between the two high peaks, so the metapopulation stays on its new peaks.',
 ];
 
 let cur=0,from=0,prog=1,raf;
