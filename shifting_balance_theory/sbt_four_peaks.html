@@ -25,6 +25,7 @@
 <body>
 <style>
 .wrap{padding:1rem 0;font-family:sans-serif}
+.inner{width:640px;max-width:100%}
 .instr{font-size:12px;color:#888;margin-bottom:.5rem}
 .controls{display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap}
 .phtab{flex:1;min-width:80px;padding:8px 10px;border-radius:6px;border:1.5px solid #aaa;text-align:center;font-size:13px;font-weight:500;color:#444;background:#fff;cursor:pointer;user-select:none;transition:background .12s,color .12s,border-color .12s}
@@ -34,15 +35,17 @@
 </style>
 
 <div class="wrap">
-<div class="instr">Click a phase to step through the theory:</div>
-<div class="controls">
-  <div class="phtab" id="tab0">0 · selection only</div>
-  <div class="phtab" id="tab1">I · drift</div>
-  <div class="phtab" id="tab2">II · selection</div>
-  <div class="phtab" id="tab3">III · post-migration</div>
+<div class="inner">
+  <div class="instr">Click a phase to step through the theory:</div>
+  <div class="controls">
+    <div class="phtab" id="tab0">0 · selection only</div>
+    <div class="phtab" id="tab1">I · drift</div>
+    <div class="phtab" id="tab2">II · selection</div>
+    <div class="phtab" id="tab3">III · post-migration</div>
+  </div>
+  <canvas id="cv" style="width:100%;height:auto;display:block;border-radius:8px;border:1px solid #ddd"></canvas>
+  <div class="cap" id="cap"></div>
 </div>
-<canvas id="cv" style="width:640px;height:320px;max-width:100%;border-radius:8px;border:1px solid #ddd;display:block"></canvas>
-<div class="cap" id="cap"></div>
 </div>
 
 <script>
