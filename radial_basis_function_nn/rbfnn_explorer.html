@@ -195,7 +195,6 @@ input[type=checkbox]{accent-color:#ffd700;width:14px;height:14px;vertical-align:
       <li><span class="mn2">f(z) = z</span> &nbsp;(identity) for regression</li>
     </ul></div>
   </div>
-
   <div class="dc">
     <div class="dt">Radial Basis Function Network</div>
     <div class="ds">Gaussian hidden layer lifts data to separable space</div>
@@ -251,7 +250,6 @@ const BLUE=[79,172,254],RED=[247,112,98];
 const FF='-apple-system,BlinkMacSystemFont,Arial,sans-serif';
 
 function getCSSVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
-
 function xorshift(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296};}
 
 const DATA=(()=>{const r=xorshift(0x9A4C2F1E);
@@ -278,27 +276,67 @@ function ridgeSolve(Phi,y,lam=0.08){
   return aug.map(row=>row[K]);
 }
 
-/* Clip a line (p0→p1 in data coords) to the plot bounding box [xmn,xmx]×[ymn,ymx].
-   Returns [u0,v0,u1,v1] in canvas px, or null if entirely outside. */
 function clipAndDraw(ctx,w,xmn,xmx,ymn,ymx,toCanvasX,toCanvasY){
-  // w = [b, w1, w2]: b + w1*u + w2*v = 0  →  parameterise along whichever axis has larger coefficient
   const[b,w1,w2]=w;
-  let pts=[];
-  if(Math.abs(w2)>1e-10){
-    // solve v for u=xmn, xmx
-    for(const u of[xmn,xmx]){const v=-(b+w1*u)/w2;if(v>=ymn&&v<=ymx)pts.push([u,v]);}
-  }
-  if(Math.abs(w1)>1e-10){
-    // solve u for v=ymn, ymx
-    for(const v of[ymn,ymx]){const u=-(b+w2*v)/w1;if(u>=xmn&&u<=xmx)pts.push([u,v]);}
-  }
-  // deduplicate near-identical pts
+  const pts=[];
+  if(Math.abs(w2)>1e-10){for(const u of[xmn,xmx]){const v=-(b+w1*u)/w2;if(v>=ymn&&v<=ymx)pts.push([u,v]);}}
+  if(Math.abs(w1)>1e-10){for(const v of[ymn,ymx]){const u=-(b+w2*v)/w1;if(u>=xmn&&u<=xmx)pts.push([u,v]);}}
   const uniq=[];
   for(const p of pts){if(!uniq.some(q=>Math.hypot(p[0]-q[0],p[1]-q[1])<1e-9))uniq.push(p);}
   if(uniq.length<2)return;
   ctx.beginPath();
   ctx.moveTo(toCanvasX(uniq[0][0]),toCanvasY(uniq[0][1]));
   ctx.lineTo(toCanvasX(uniq[1][0]),toCanvasY(uniq[1][1]));
+  ctx.stroke();
+}
+
+/* Marching-squares contour of evalFn=0.
+   Segments are chained into polylines so a single stroke carries
+   the dash pattern continuously across the whole curve. */
+function marchingContour(ctx,evalFn,xlo,xhi,ylo,yhi,toCanvasX,toCanvasY,N=90){
+  const dx=(xhi-xlo)/N,dy=(yhi-ylo)/N;
+  const g=[];
+  for(let j=0;j<=N;j++){g[j]=[];for(let i=0;i<=N;i++)g[j][i]=evalFn(xlo+i*dx,ylo+j*dy);}
+  // Collect raw crossing segments
+  const segs=[];
+  for(let j=0;j<N;j++){
+    for(let i=0;i<N;i++){
+      const f00=g[j][i],f10=g[j][i+1],f01=g[j+1][i],f11=g[j+1][i+1];
+      const pts=[];
+      if(f00*f10<0){const t=f00/(f00-f10);pts.push([xlo+(i+t)*dx,ylo+j*dy]);}
+      if(f01*f11<0){const t=f01/(f01-f11);pts.push([xlo+(i+t)*dx,ylo+(j+1)*dy]);}
+      if(f00*f01<0){const t=f00/(f00-f01);pts.push([xlo+i*dx,ylo+(j+t)*dy]);}
+      if(f10*f11<0){const t=f10/(f10-f11);pts.push([xlo+(i+1)*dx,ylo+(j+t)*dy]);}
+      if(pts.length>=2)segs.push([pts[0],pts[1]]);
+    }
+  }
+  // Chain segments into connected polylines
+  const used=new Uint8Array(segs.length);
+  const EPS=dx*1.5;
+  function near(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1])<EPS;}
+  const chains=[];
+  for(let s=0;s<segs.length;s++){
+    if(used[s])continue;
+    used[s]=1;
+    const chain=[segs[s][0],segs[s][1]];
+    let grew=true;
+    while(grew){
+      grew=false;
+      const tail=chain[chain.length-1];
+      for(let t=0;t<segs.length;t++){
+        if(used[t])continue;
+        if(near(tail,segs[t][0])){used[t]=1;chain.push(segs[t][1]);grew=true;break;}
+        if(near(tail,segs[t][1])){used[t]=1;chain.push(segs[t][0]);grew=true;break;}
+      }
+    }
+    chains.push(chain);
+  }
+  // Draw all chains in ONE beginPath/stroke so dash is continuous
+  ctx.beginPath();
+  for(const chain of chains){
+    ctx.moveTo(toCanvasX(chain[0][0]),toCanvasY(chain[0][1]));
+    for(let i=1;i<chain.length;i++)ctx.lineTo(toCanvasX(chain[i][0]),toCanvasY(chain[i][1]));
+  }
   ctx.stroke();
 }
 
@@ -333,16 +371,13 @@ function renderPCA(){
   const ctx=cv.getContext('2d');
   ctx.setTransform(dpr,0,0,dpr,0,0);
   const W=LW,H=LH;
-
   const bgCol=getCSSVar('--pca-bg')||'#f0f0ee';
   const gridCol=getCSSVar('--pca-grid')||'#d8d8d4';
   const txtCol=getCSSVar('--pca-txt')||'#555552';
   ctx.fillStyle=bgCol;ctx.fillRect(0,0,W,H);
-
   const lbl=DATA.map(p=>p.c===0?1:-1);
   let coords,xl,yl,tagTxt,tagAccent,tagBorder;
   const isLin=(mode==='linear');
-
   if(isLin){
     coords=DATA.map(p=>[p.x,p.y]);
     xl='x₁ (input)';yl='x₂ (input)';
@@ -361,28 +396,20 @@ function renderPCA(){
     tagTxt='RBF latent space — classes are linearly separable here';
     tagAccent='#0f6e56';tagBorder='rgba(15,110,86,.28)';
   }
-
   const xs=coords.map(c=>c[0]),ys=coords.map(c=>c[1]);
   let xmn=Math.min(...xs),xmx=Math.max(...xs);
   let ymn=Math.min(...ys),ymx=Math.max(...ys);
   const xp=(xmx-xmn)*.12||.1,yp=(ymx-ymn)*.14||.1;
   xmn-=xp;xmx+=xp;ymn-=yp;ymx+=yp;
-
   const tagFontPx=Math.max(11,Math.min(14,W*0.018));
   const axisFontPx=Math.max(11,Math.min(13,W*0.016));
-
   const PL=38,PR=14,PT=46;
-  const cpyH=14,axH=axisFontPx+6;
-  const PB=cpyH+axH;
+  const cpyH=14,axH=axisFontPx+6,PB=cpyH+axH;
   const PW=W-PL-PR,PH=H-PT-PB;
   const txC=u=>PL+(u-xmn)/(xmx-xmn)*PW;
   const tyC=v=>H-PB-(v-ymn)/(ymx-ymn)*PH;
-
-  // ── Solve linear classifier on projected coords FIRST (fix for v12) ──
   const P2=coords.map(([u,v])=>[1,u,v]);
   const w2=ridgeSolve(P2,lbl,.015);
-
-  // Decision region background
   const RW=300,RH=Math.round(300*PH/PW);
   const tmp=document.createElement('canvas');tmp.width=RW;tmp.height=RH;
   const tc=tmp.getContext('2d'),img=tc.createImageData(RW,RH);
@@ -399,8 +426,6 @@ function renderPCA(){
   }
   tc.putImageData(img,0,0);
   ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,PL,PT,PW,PH);
-
-  // Grid
   ctx.strokeStyle=gridCol;ctx.lineWidth=0.5;
   for(let i=1;i<=3;i++){
     const gx=PL+i*PW/4,gy=PT+i*PH/4;
@@ -408,37 +433,24 @@ function renderPCA(){
     ctx.beginPath();ctx.moveTo(PL,gy);ctx.lineTo(W-PR,gy);ctx.stroke();
   }
   ctx.strokeStyle=gridCol;ctx.lineWidth=0.75;ctx.strokeRect(PL,PT,PW,PH);
-
-  // ── Decision boundary line on PCA plot ──
   ctx.save();
-  ctx.strokeStyle='rgba(255,215,0,.90)';
-  ctx.lineWidth=1.8;
-  ctx.setLineDash([6,4]);
+  ctx.strokeStyle='rgba(255,215,0,.90)';ctx.lineWidth=1.8;ctx.setLineDash([6,4]);
   clipAndDraw(ctx,w2,xmn,xmx,ymn,ymx,txC,tyC);
-  ctx.setLineDash([]);
-  ctx.restore();
-
-  // Data points (drawn after boundary so they sit on top)
+  ctx.setLineDash([]);ctx.restore();
   DATA.forEach((p,i)=>{
     const[R,G,B]=p.c===0?BLUE:RED;
     ctx.beginPath();ctx.arc(txC(coords[i][0]),tyC(coords[i][1]),5,0,Math.PI*2);
     ctx.fillStyle=`rgb(${R},${G},${B})`;ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.4;ctx.stroke();
   });
-
-  // Axis labels
   const axLabelY=H-cpyH-Math.round(axH/2)+Math.round(axisFontPx/2);
   ctx.fillStyle=txtCol;ctx.font=`${axisFontPx}px ${FF}`;
   ctx.textAlign='center';ctx.fillText(xl,PL+PW/2,axLabelY);
-  ctx.save();ctx.translate(12,PT+PH/2);ctx.rotate(-Math.PI/2);
-  ctx.textAlign='center';ctx.fillText(yl,0,0);ctx.restore();
-
-  // Floating centred title pill
+  ctx.save();ctx.translate(12,PT+PH/2);ctx.rotate(-Math.PI/2);ctx.textAlign='center';ctx.fillText(yl,0,0);ctx.restore();
   ctx.font=`500 ${tagFontPx}px ${FF}`;
   const tw=ctx.measureText(tagTxt).width;
   const padH=10,padV=5,rx=5;
-  const bx=PL+(PW-tw)/2-padH;
-  const by=Math.round((PT-tagFontPx)/2)-padV+1;
+  const bx=PL+(PW-tw)/2-padH,by=Math.round((PT-tagFontPx)/2)-padV+1;
   const bw=tw+padH*2,bh=tagFontPx+padV*2;
   const isDark=bgCol.startsWith('#1')||bgCol.startsWith('#2');
   ctx.fillStyle=isDark?'rgba(40,40,40,.92)':'rgba(255,255,255,.92)';
@@ -447,10 +459,7 @@ function renderPCA(){
   ctx.beginPath();if(ctx.roundRect){ctx.roundRect(bx,by,bw,bh,rx);}else{ctx.rect(bx,by,bw,bh);}ctx.stroke();
   ctx.fillStyle=tagAccent;ctx.textAlign='center';
   ctx.fillText(tagTxt,PL+PW/2,by+padV+tagFontPx-1);
-
-  // Copyright
-  ctx.save();
-  ctx.font=`9px ${FF}`;
+  ctx.save();ctx.font=`9px ${FF}`;
   ctx.fillStyle=isDark?'rgba(160,160,155,.28)':'rgba(80,80,76,.22)';
   ctx.textAlign='right';ctx.textBaseline='bottom';
   ctx.fillText('© 2026 Theodore P. Pavlic · MIT License',W-PR-4,H-3);
@@ -480,8 +489,6 @@ function render(){
   const cv=document.getElementById('cv');
   const ctx=cv.getContext('2d');
   ctx.fillStyle='#161b22';ctx.fillRect(0,0,CS,CS);
-
-  // Decision region
   const RES=200,tmp=document.createElement('canvas');
   tmp.width=RES;tmp.height=RES;
   const tc=tmp.getContext('2d'),img=tc.createImageData(RES,RES);
@@ -500,8 +507,6 @@ function render(){
   }
   tc.putImageData(img,0,0);
   ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,0,0,CS,CS);
-
-  // Grid lines
   ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;
   for(let g=-2;g<=2;g++){
     ctx.beginPath();ctx.moveTo(toPX(g),0);ctx.lineTo(toPX(g),CS);ctx.stroke();
@@ -510,29 +515,25 @@ function render(){
   ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1.5;
   ctx.beginPath();ctx.moveTo(toPX(0),0);ctx.lineTo(toPX(0),CS);ctx.stroke();
   ctx.beginPath();ctx.moveTo(0,toPY(0));ctx.lineTo(CS,toPY(0));ctx.stroke();
-
-  // Axis labels
   ctx.fillStyle='rgba(255,255,255,.22)';ctx.font=`11px ${FF}`;
   ctx.textAlign='center';ctx.fillText('x₁',CS-12,toPY(0)+14);
   ctx.textAlign='left';ctx.fillText('x₂',toPX(0)+6,14);
 
-  // ── Decision boundary line on main canvas ──
-  // weights[0] + weights[1]*x1 + weights[2]*x2 = 0
+  // Decision boundary
   ctx.save();
+  ctx.strokeStyle='rgba(255,215,0,.88)';
+  ctx.lineWidth=2;
+  ctx.setLineDash([10,6]);
   if(mode==='linear'){
-    ctx.strokeStyle='rgba(255,215,0,.92)';
-    ctx.lineWidth=2;
-    ctx.setLineDash([10,6]);
+    clipAndDraw(ctx,weights,VLO,VHI,VLO,VHI,toPX,toPY);
   } else {
-    ctx.strokeStyle='rgba(255,255,255,.35)';
-    ctx.lineWidth=1.2;
-    ctx.setLineDash([5,5]);
+    const evalFn=(x,y)=>weights[0]+centers.reduce((s,[cx,cy],k)=>s+weights[k+1]*rbf(x,y,cx,cy,sig),0);
+    marchingContour(ctx,evalFn,VLO,VHI,VLO,VHI,toPX,toPY,90);
   }
-  clipAndDraw(ctx,weights,VLO,VHI,VLO,VHI,toPX,toPY);
   ctx.setLineDash([]);
   ctx.restore();
 
-  // RBF footprints
+  // RBF footprints — dotted to distinguish from dashed boundary
   if(mode==='rbf'&&rings){
     const sp=(sig/VR)*CS;
     centers.forEach(([cx,cy],k)=>{
@@ -544,7 +545,7 @@ function render(){
       grd.addColorStop(1,`rgba(${R},${G},${B},0)`);
       ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cpx,cpy,2.7*sp,0,Math.PI*2);ctx.fill();
       ctx.strokeStyle=`rgba(255,210,50,${(a*.85).toFixed(2)})`;
-      ctx.lineWidth=1.5;ctx.setLineDash([5,5]);
+      ctx.lineWidth=1.5;ctx.setLineDash([2,5]);
       ctx.beginPath();ctx.arc(cpx,cpy,sp,0,Math.PI*2);ctx.stroke();
       ctx.setLineDash([]);
     });
@@ -576,7 +577,6 @@ function render(){
     const el=document.getElementById('lgnd').querySelector('.ctr-l');if(el)el.remove();
   }
 
-  // Copyright
   ctx.save();
   ctx.font=`9px ${FF}`;ctx.fillStyle='rgba(255,255,255,.15)';
   ctx.textAlign='right';ctx.textBaseline='bottom';
@@ -603,12 +603,12 @@ const INFO={
   how:`<h4>⚙ How RBFNN works</h4>
 <p>An RBFNN transforms inputs through three layers — exactly as shown in the network diagram below:</p>
 <div class="pill" style="color:#d29922"><b>Input layer</b>Raw features x = (x₁, x₂) — the 2D point coordinates.</div>
-<div class="pill" style="color:#4facfe"><b>Hidden layer — RBF neurons</b>Each neuron k computes <span class="mn">φₖ(x) = exp(−‖x−cₖ‖² / 2σ²)</span>, a Gaussian bump peaked at center cₖ with width σ. Output ≈1 near cₖ, decaying to ≈0 far away. The dashed rings on the canvas mark the σ radius of each center.</div>
-<div class="pill" style="color:#56d364"><b>Output layer</b><span class="mn">ŷ = f(w₀ + Σₖ wₖ φₖ(x))</span> with weights learned by ridge-regularized least squares. The hidden layer lifts the data into a space where the classes are linearly separable — the latent space view shows this directly.</div>
+<div class="pill" style="color:#4facfe"><b>Hidden layer — RBF neurons</b>Each neuron k computes <span class="mn">φₖ(x) = exp(−‖x−cₖ‖² / 2σ²)</span>, a Gaussian bump peaked at center cₖ with width σ. Output ≈1 near cₖ, decaying to ≈0 far away. The dotted rings mark the σ radius of each center.</div>
+<div class="pill" style="color:#56d364"><b>Output layer</b><span class="mn">ŷ = f(w₀ + Σₖ wₖ φₖ(x))</span> with weights learned by ridge-regularized least squares. The hidden layer lifts the data into a space where the classes are linearly separable — the latent space view shows this directly. The dashed gold curve in the main plot is the nonlinear pre-image of that linear boundary back in input space.</div>
 <p style="color:var(--txt3);font-style:italic">Toggle "Linear only" to remove the hidden layer. Watch both the main scatter and the latent space view degrade simultaneously.</p>`,
   svm:`<h4>⇌ RBFNN ↔ SVM / kernel trick</h4>
 <p>An RBF-kernel SVM classifies via <span class="mn">f(x) = Σᵢ αᵢyᵢ exp(−‖x−xᵢ‖²/2σ²) + b</span>, where xᵢ are the support vectors. This is structurally identical to an RBFNN with centers placed at the support vectors and weights αᵢyᵢ.</p>
-<p>The "kernel trick" computes inner products in the infinite-dimensional lifted space implicitly — RBFNNs make the lift explicit and finite. The latent space panel shows what that lifted space looks like: after the RBF transformation, the classes that were tangled in input space become a cleanly linearly separable point cloud.</p>
+<p>The "kernel trick" computes inner products in the infinite-dimensional lifted space implicitly — RBFNNs make the lift explicit and finite. The dashed gold line in the latent view is the linear separator; the dashed gold curve in the main plot is its nonlinear pre-image in input space.</p>
 <table class="itbl"><thead><tr><th></th><th style="color:#4facfe">RBFNN</th><th style="color:#f77062">RBF-SVM</th></tr></thead><tbody>
 <tr><td>Basis function</td><td>Gaussian φₖ(x)</td><td>Gaussian K(xᵢ,x)</td></tr>
 <tr><td>Centers</td><td>k-means / random</td><td>Support vectors (optimal)</td></tr>
