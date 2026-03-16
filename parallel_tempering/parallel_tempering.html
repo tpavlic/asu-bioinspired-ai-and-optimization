@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallel Tempering — interactive explainer</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: #fff;
+  color: #1a1a1a;
+  padding: 1rem 1.1rem 1.5rem;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── Figure ──────────────────────────────────────────── */
+.fig-wrap {
+  border: 1.5px solid #c4d8c4;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f2f9f2;
+}
+.fig-wrap svg { display: block; width: 100%; height: auto; }
+
+/* ── Concept section ─────────────────────────────────── */
+.concept-section { margin-top: 0.7rem; }
+.concept-hint { font-size: 0.78rem; color: #666; margin-bottom: 0.4rem; }
+
+.concept-bar { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
+.cpt-btn {
+  flex: 1;
+  padding: 0.42rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.80rem;
+  border: 1.5px solid #bfd0bf;
+  border-radius: 5px;
+  background: #fff;
+  color: #2a2a2a;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  text-align: center;
+  white-space: nowrap;
+}
+.cpt-btn:hover  { border-color: #2e7d3a; background: #f0f8f0; }
+.cpt-btn.active { background: #1b5e2e; border-color: #1b5e2e; color: #fff; font-weight: 600; }
+
+.concept-desc {
+  border: 1.5px solid #bfd0bf;
+  border-radius: 5px;
+  background: #f5fbf5;
+  padding: 0.65rem 0.9rem;
+  min-height: 5.6rem;
+  font-size: 0.855rem;
+  line-height: 1.65;
+  color: #222;
+  overflow: hidden;
+}
+.concept-desc em      { font-style: normal; color: #1b5e2e; font-weight: 700; }
+.concept-desc strong  { font-weight: 700; }
+.concept-desc code {
+  font-family: "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 0.82em;
+  background: #dff0df;
+  padding: 0.06em 0.3em;
+  border-radius: 3px;
+  color: #1b5e2e;
+}
+.concept-desc sub, .concept-desc sup { font-size: 0.75em; }
+
+/* ── Controls 3-column grid ──────────────────────────── */
+.ctrl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border: 1.5px solid #bfd0bf;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.65rem;
+}
+.ctrl-pane {
+  padding: 0.75rem 0.9rem;
+  border-right: 1px solid #d4e4d4;
+}
+.ctrl-pane:last-child { border-right: none; }
+.pane-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #6a8c6a;
+  margin-bottom: 0.6rem;
+}
+
+/* Ladder SVG pane */
+#ladderSvg { width: 100%; height: auto; display: block; }
+
+/* Swap frequency pane */
+.freq-btns { display: flex; gap: 0.3rem; margin-bottom: 0.55rem; }
+.freq-btn {
+  flex: 1;
+  padding: 0.36rem 0.2rem;
+  font-family: inherit;
+  font-size: 0.76rem;
+  border: 1px solid #bfd0bf;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.12s;
+  color: #333;
+}
+.freq-btn:hover   { border-color: #2e7d3a; background: #f0f8f0; color: #1b5e2e; }
+.freq-btn.f-active { border-color: #1b5e2e; background: #f0f8f0; color: #1b5e2e; font-weight: 700; }
+
+.swap-info-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: #6a8c6a;
+  margin-bottom: 0.2rem;
+}
+.swap-info {
+  font-size: 0.74rem;
+  color: #444;
+  line-height: 1.55;
+  min-height: 2.8rem;
+}
+.swap-info .s-pair { font-weight: 700; }
+.swap-info .s-acc  { color: #1a7f37; font-weight: 700; }
+.swap-info .s-rej  { color: #cf222e; font-weight: 700; }
+.swap-info .s-prob { color: #555; }
+
+/* Controls pane */
+.act-btns { display: flex; gap: 0.35rem; margin-bottom: 0.6rem; }
+.act-btn {
+  padding: 0.38rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  border: 1px solid #bfd0bf;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.12s;
+  color: #333;
+}
+.act-btn:hover { border-color: #2e7d3a; background: #f0f8f0; }
+.act-btn.primary { border-color: #1b5e2e; color: #1b5e2e; font-weight: 700; }
+.act-btn.primary:hover { background: #1b5e2e; color: #fff; }
+
+.cold-label {
+  font-size: 0.62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.10em;
+  color: #6a8c6a; margin-bottom: 0.2rem;
+}
+.cold-status {
+  font-size: 0.74rem;
+  color: #444;
+  line-height: 1.55;
+  min-height: 2.8rem;
+}
+.cold-status code {
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.82em;
+}
+
+/* ── Stats row ───────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  border: 1.5px solid #bfd0bf;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+  background: #f5fbf5;
+}
+.stat-cell { padding: 0.5rem 0.8rem; border-right: 1px solid #d4e4d4; }
+.stat-cell:last-child { border-right: none; }
+.stat-k {
+  font-size: 0.60rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.10em;
+  color: #6a8c6a; margin-bottom: 0.1rem;
+}
+.stat-v {
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.88rem; font-weight: 700; color: #111;
+}
+.stat-v.purple { color: #6e40c9; }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 540px) {
+  body { padding: 0.7rem 0.7rem 1.2rem; }
+  .concept-bar { display: grid; grid-template-columns: 1fr 1fr; }
+  .ctrl-grid   { grid-template-columns: 1fr; }
+  .ctrl-pane   { border-right: none; border-bottom: 1px solid #d4e4d4; }
+  .ctrl-pane:last-child { border-bottom: none; }
+  .stats-row   { grid-template-columns: 1fr 1fr; }
+  .stat-cell:nth-child(2) { border-right: none; }
+  .stat-cell:nth-child(3) { border-right: 1px solid #d4e4d4; }
+  .stat-cell:nth-child(1),
+  .stat-cell:nth-child(2) { border-bottom: 1px solid #d4e4d4; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Energy landscape figure ────────────────────────────────── -->
+<div class="fig-wrap">
+  <svg id="mainSvg" viewBox="0 0 800 278" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="fillGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#1a7f37" stop-opacity="0.22"/>
+        <stop offset="100%" stop-color="#1a7f37" stop-opacity="0.04"/>
+      </linearGradient>
+      <filter id="glow0" x="-130%" y="-130%" width="360%" height="360%">
+        <feGaussianBlur stdDeviation="3.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow1" x="-130%" y="-130%" width="360%" height="360%">
+        <feGaussianBlur stdDeviation="3" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="mglow" x="-130%" y="-130%" width="360%" height="360%">
+        <feGaussianBlur stdDeviation="5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <clipPath id="plotClip">
+        <rect x="60" y="16" width="724" height="205"/>
+      </clipPath>
+    </defs>
+
+    <g id="gridLines"></g>
+
+    <!-- Curve fill and stroke -->
+    <g clip-path="url(#plotClip)">
+      <path id="fillPath" fill="url(#fillGrad)"/>
+    </g>
+    <path id="curvePath" fill="none" stroke="#1a7f37" stroke-width="2.2" clip-path="url(#plotClip)"/>
+
+    <!-- Per-chain trails (clipped) -->
+    <g id="trail_0" clip-path="url(#plotClip)"></g>
+    <g id="trail_1" clip-path="url(#plotClip)"></g>
+    <g id="trail_2" clip-path="url(#plotClip)"></g>
+    <g id="trail_3" clip-path="url(#plotClip)"></g>
+
+    <!-- Global minimum marker -->
+    <line   id="minLine" stroke="#6e40c9" stroke-width="1.2" stroke-dasharray="5 3" opacity="0.55"/>
+    <circle id="minDot"  r="4.5" fill="#6e40c9" filter="url(#mglow)" opacity="0.65"/>
+    <text   id="minLabel" fill="#6e40c9" font-size="9.5"
+            font-family="-apple-system,system-ui,sans-serif"
+            text-anchor="middle" opacity="0.65">global min</text>
+
+    <!-- Swap arc flash -->
+    <path id="swapArc" fill="none" stroke-width="2.5" stroke-linecap="round" opacity="0"/>
+
+    <!-- Chain dots (drawn last so on top) -->
+    <circle id="dot_0" r="6.5" filter="url(#glow0)"/>
+    <circle id="dot_1" r="6"   filter="url(#glow0)"/>
+    <circle id="dot_2" r="5.5" filter="url(#glow1)"/>
+    <circle id="dot_3" r="5"   filter="url(#glow1)"/>
+
+    <!-- Swap flash rings (shown during swap) -->
+    <circle id="swapRing_a" r="11" fill="none" stroke-width="2.5" opacity="0"/>
+    <circle id="swapRing_b" r="11" fill="none" stroke-width="2.5" opacity="0"/>
+
+    <!-- Axes -->
+    <line x1="60" y1="221" x2="784" y2="221" stroke="#99b899" stroke-width="1.3"/>
+    <line x1="60" y1="16"  x2="60"  y2="221" stroke="#99b899" stroke-width="1.3"/>
+
+    <g id="ticks"></g>
+
+    <!-- Plot title -->
+    <text x="422" y="34" text-anchor="middle"
+          font-family="-apple-system,system-ui,sans-serif"
+          font-size="13" font-weight="600" fill="#2d5a2d" opacity="0.80">Goal: Find the Lowest Energy State</text>
+
+    <!-- Legend: top-right vertical stack, populated by JS -->
+    <g id="legend"></g>
+
+    <!-- Axis labels -->
+    <text x="422" y="263" text-anchor="middle"
+          font-family="-apple-system,system-ui,sans-serif" font-size="12" fill="#557055">state  x</text>
+    <text x="13" y="119" text-anchor="middle"
+          font-family="-apple-system,system-ui,sans-serif" font-size="12" fill="#557055"
+          transform="rotate(-90 13 119)">energy  E(x)</text>
+
+    <!-- Copyright -->
+    <text x="782" y="274" text-anchor="end"
+          font-family="-apple-system,system-ui,sans-serif" font-size="8.5" fill="#aaa">© 2026 Theodore P. Pavlic · MIT License</text>
+  </svg>
+</div>
+
+<!-- ── Concept navigation ──────────────────────────────────────── -->
+<div class="concept-section">
+  <div class="concept-hint">Click a concept to read about it:</div>
+  <div class="concept-bar">
+    <button class="cpt-btn active" id="cb0" onclick="selectConcept(0)">temperature ladder</button>
+    <button class="cpt-btn"        id="cb1" onclick="selectConcept(1)">swap mechanics</button>
+    <button class="cpt-btn"        id="cb2" onclick="selectConcept(2)">cold chain benefit</button>
+    <button class="cpt-btn"        id="cb3" onclick="selectConcept(3)">vs. SA and MCMC</button>
+  </div>
+  <div class="concept-desc" id="conceptDesc"></div>
+</div>
+
+<!-- ── Three-column controls ──────────────────────────────────── -->
+<div class="ctrl-grid">
+
+  <!-- Temperature Ladder -->
+  <div class="ctrl-pane">
+    <div class="pane-label">Temperature Ladder</div>
+    <svg id="ladderSvg" viewBox="0 0 200 148" xmlns="http://www.w3.org/2000/svg">
+      <!-- Connecting lines (drawn first, behind dots) -->
+      <line id="lline_23" x1="26" y1="14"  x2="26" y2="52"  stroke="#e5e7eb" stroke-width="2.5"/>
+      <line id="lline_12" x1="26" y1="52"  x2="26" y2="90"  stroke="#e5e7eb" stroke-width="2.5"/>
+      <line id="lline_01" x1="26" y1="90"  x2="26" y2="128" stroke="#e5e7eb" stroke-width="2.5"/>
+      <!-- Dots (positions match TEMPS ladder) -->
+      <!-- T=8.0 red   y=14  -->
+      <!-- T=2.0 orange y=52 -->
+      <!-- T=0.5 teal  y=90  -->
+      <!-- T=0.1 blue  y=128 -->
+      <circle id="ldot_3" cx="26" cy="14"  r="7" fill="#dc2626"/>
+      <circle id="ldot_2" cx="26" cy="52"  r="7" fill="#d97706"/>
+      <circle id="ldot_1" cx="26" cy="90"  r="7" fill="#0d9488"/>
+      <circle id="ldot_0" cx="26" cy="128" r="7" fill="#4f46e5"/>
+      <!-- Temperature labels -->
+      <text x="39" y="18"  font-family="-apple-system,system-ui,sans-serif" font-size="10" fill="#444">T = 8.0</text>
+      <text x="39" y="56"  font-family="-apple-system,system-ui,sans-serif" font-size="10" fill="#444">T = 2.0</text>
+      <text x="39" y="94"  font-family="-apple-system,system-ui,sans-serif" font-size="10" fill="#444">T = 0.5</text>
+      <text x="39" y="132" font-family="-apple-system,system-ui,sans-serif" font-size="10" fill="#444">T = 0.1</text>
+      <!-- E value labels (right side, updated by JS) -->
+      <text id="lE_3" x="196" y="18"  text-anchor="end" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="9.5" fill="#888">—</text>
+      <text id="lE_2" x="196" y="56"  text-anchor="end" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="9.5" fill="#888">—</text>
+      <text id="lE_1" x="196" y="94"  text-anchor="end" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="9.5" fill="#888">—</text>
+      <text id="lE_0" x="196" y="132" text-anchor="end" font-family="SFMono-Regular,Menlo,Consolas,monospace" font-size="9.5" fill="#6e40c9" font-weight="700">—</text>
+      <!-- "hot"/"cold" axis labels -->
+      <text x="4" y="18"  text-anchor="middle" font-family="-apple-system,system-ui,sans-serif"
+            font-size="7.5" fill="#aaa" transform="rotate(-90 4 14)">hot</text>
+      <text x="4" y="132" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif"
+            font-size="7.5" fill="#aaa" transform="rotate(-90 4 128)">cold</text>
+    </svg>
+  </div>
+
+  <!-- Swap Frequency -->
+  <div class="ctrl-pane">
+    <div class="pane-label">Swap Frequency</div>
+    <div class="freq-btns">
+      <button class="freq-btn" id="fb-10"  onclick="setSwapInterval(10)">frequent</button>
+      <button class="freq-btn f-active" id="fb-25" onclick="setSwapInterval(25)">normal</button>
+      <button class="freq-btn" id="fb-60"  onclick="setSwapInterval(60)">rare</button>
+    </div>
+    <div class="swap-info-label">Last swap attempt</div>
+    <div class="swap-info" id="swapInfo">—</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="ctrl-pane">
+    <div class="pane-label">Controls</div>
+    <div class="act-btns">
+      <button class="act-btn primary" onclick="doStep()">step</button>
+      <button class="act-btn primary" id="runBtn" onclick="toggleRun()">run</button>
+      <button class="act-btn" onclick="doReset()">reset</button>
+    </div>
+    <div class="cold-label">Cold chain (T = 0.1)</div>
+    <div class="cold-status" id="coldStatus">Current E: —<br>Best E: —</div>
+  </div>
+
+</div>
+
+<!-- ── Statistics ─────────────────────────────────────────────── -->
+<div class="stats-row">
+  <div class="stat-cell"><div class="stat-k">Ticks</div>           <div class="stat-v" id="sTicks">0</div></div>
+  <div class="stat-cell"><div class="stat-k">Swap attempts</div>   <div class="stat-v" id="sAttempts">0</div></div>
+  <div class="stat-cell"><div class="stat-k">Swap accept rate</div><div class="stat-v" id="sSwapRate">—</div></div>
+  <div class="stat-cell"><div class="stat-k">Best E (cold chain)</div><div class="stat-v purple" id="sBestCold">—</div></div>
+</div>
+
+<script>
+// ── Constants ─────────────────────────────────────────────────────────────────
+const TEMPS  = [0.1,    0.5,    2.0,    8.0   ];
+const COLORS = ['#4f46e5','#0d9488','#d97706','#dc2626'];
+const TNAMES = ['T\u2009=\u20090.1','T\u2009=\u20090.5','T\u2009=\u20092.0','T\u2009=\u20098.0'];
+const SIGMA  = 0.28;
+const TRAIL_LEN = 50;
+const STEPMS    = 28;
+
+// ── Layout ────────────────────────────────────────────────────────────────────
+const PL=60, PR=784, PT=16, PB=221, PW=724, PH=205;
+const XMIN=0, XMAX=10;
+
+// ── Energy landscape (same as SA widget) ──────────────────────────────────────
+function E(x) {
+  return (
+    1.40 * Math.sin(x * 1.10) +
+    0.85 * Math.sin(x * 2.90 + 0.80) +
+    0.55 * Math.sin(x * 5.80 + 1.50) +
+    0.30 * Math.sin(x * 11.70 + 2.70) +
+    0.18 * Math.sin(x * 23.20 + 0.40) -
+    3.10 * Math.exp(-0.70 * Math.pow(x - 7.85, 2))
+  );
+}
+
+const NS = 1000;
+const Xs = Array.from({length: NS+1}, (_,i) => XMIN + i*(XMAX-XMIN)/NS);
+const Ys = Xs.map(E);
+const E_RAW_MIN = Math.min(...Ys), E_RAW_MAX = Math.max(...Ys);
+const ESPAN = E_RAW_MAX - E_RAW_MIN;
+const ELO = E_RAW_MIN - ESPAN*0.10;
+const EHI = E_RAW_MAX + ESPAN*0.10;
+
+let gIdx = 0;
+for (let i=1;i<Ys.length;i++) if (Ys[i]<Ys[gIdx]) gIdx=i;
+const GMIN_X = Xs[gIdx], GMIN_E = Ys[gIdx];
+
+function px(x) { return PL + (x-XMIN)/(XMAX-XMIN)*PW; }
+function py(e) { return PT + (1-(e-ELO)/(EHI-ELO))*PH; }
+
+// ── Build static SVG elements ─────────────────────────────────────────────────
+(function buildStatic() {
+  // Grid + y-labels
+  let gh='';
+  for (let i=0;i<=5;i++) {
+    const e = ELO + i*(EHI-ELO)/5;
+    const y = py(e);
+    gh += `<line x1="${PL}" y1="${y.toFixed(1)}" x2="${PR}" y2="${y.toFixed(1)}" stroke="#d8ead8" stroke-width="1"/>`;
+    gh += `<text x="${PL-5}" y="${(y+3.8).toFixed(1)}" text-anchor="end" fill="#6a9a6a" font-size="10.5"
+                 font-family="-apple-system,system-ui,sans-serif">${e.toFixed(1)}</text>`;
+  }
+  document.getElementById('gridLines').innerHTML = gh;
+
+  // X-ticks
+  let th='';
+  for (let x=0;x<=10;x+=2) {
+    const sx=px(x);
+    th += `<line x1="${sx.toFixed(1)}" y1="${PB}" x2="${sx.toFixed(1)}" y2="${PB+4}" stroke="#99b899" stroke-width="1"/>`;
+    th += `<text x="${sx.toFixed(1)}" y="${PB+17}" text-anchor="middle" fill="#6a9a6a" font-size="10.5"
+                 font-family="-apple-system,system-ui,sans-serif">${x}</text>`;
+  }
+  document.getElementById('ticks').innerHTML = th;
+
+  // Curve
+  const pts = Xs.map((x,i)=>`${px(x).toFixed(1)},${py(Ys[i]).toFixed(1)}`).join(' L');
+  document.getElementById('curvePath').setAttribute('d',`M${pts}`);
+  const bot = py(ELO).toFixed(1);
+  document.getElementById('fillPath').setAttribute('d',
+    `M${px(XMIN).toFixed(1)},${bot} L${pts} L${px(XMAX).toFixed(1)},${bot} Z`);
+
+  // Global min marker
+  const mx=px(GMIN_X).toFixed(1), my=py(GMIN_E).toFixed(1);
+  const ml=document.getElementById('minLine');
+  ml.setAttribute('x1',mx); ml.setAttribute('y1',my);
+  ml.setAttribute('x2',mx); ml.setAttribute('y2',PB);
+  document.getElementById('minDot').setAttribute('cx',mx);
+  document.getElementById('minDot').setAttribute('cy',my);
+  document.getElementById('minLabel').setAttribute('x',mx);
+  document.getElementById('minLabel').setAttribute('y',(parseFloat(my)-10).toFixed(1));
+
+  // Legend
+  // Legend: vertical stack, top-right. Right edge at x=784 (px(10)), top at y=34.
+  // Order matches ladder: hot (index 3) → cold (index 0), stepping down 18px each.
+  const LEG_X_TEXT = 771;   // text right-aligned here
+  const LEG_X_DOT  = 778;   // circle cx
+  const LEG_Y0     = 34;    // top row baseline (matches "Goal:" title)
+  const LEG_DY     = 18;    // row spacing
+  let lh = '';
+  for (let row = 0; row < 4; row++) {
+    const k  = 3 - row;    // 3=red, 2=amber, 1=teal, 0=indigo
+    const y  = LEG_Y0 + row * LEG_DY;
+    lh += `<circle cx="${LEG_X_DOT}" cy="${(y - 3.5).toFixed(1)}" r="5" fill="${COLORS[k]}"/>`;
+    lh += `<text x="${LEG_X_TEXT}" y="${y}" text-anchor="end"
+                 font-family="-apple-system,system-ui,sans-serif"
+                 font-size="10.5" fill="#333">${TNAMES[k]}</text>`;
+  }
+  document.getElementById('legend').innerHTML = lh;
+})();
+
+// ── Gaussian random ───────────────────────────────────────────────────────────
+function randn() {
+  let u=0,v=0;
+  while(!u) u=Math.random();
+  while(!v) v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+// ── Simulation state ──────────────────────────────────────────────────────────
+let sim;
+const INIT_XS = [1.5, 3.5, 5.5, 7.5];  // spread starting positions
+
+function initSim() {
+  sim = {
+    chains: TEMPS.map((T,i) => ({
+      T,
+      x:     INIT_XS[i] + (Math.random()*0.5 - 0.25),
+      trail: [],
+      bestE: Infinity,
+      bestX: null,
+    })),
+    ticks:        0,
+    swapInterval: 25,
+    swapAttempts: 0,
+    swapAccepts:  0,
+    lastSwap:     null,   // {i,j,accepted,pSwap}
+    swapFlash:    null,   // {sx1,sy1,sx2,sy2,i,j,accepted,until}
+    running:      false,
+    animId:       null,
+    lastTs:       0,
+  };
+}
+initSim();
+
+// ── MH step for one chain ─────────────────────────────────────────────────────
+function doMHStep(chain) {
+  const curE = E(chain.x);
+  let nx = chain.x + randn()*SIGMA;
+  if (nx<XMIN) nx = 2*XMIN-nx;
+  if (nx>XMAX) nx = 2*XMAX-nx;
+  nx = Math.max(XMIN+1e-4, Math.min(XMAX-1e-4, nx));
+  const nE = E(nx);
+  const dE = nE - curE;
+  const accepted = dE<=0 || Math.random()<Math.exp(-dE/chain.T);
+  if (accepted) {
+    chain.trail.push({x:chain.x, e:curE});
+    if (chain.trail.length>TRAIL_LEN) chain.trail.shift();
+    chain.x = nx;
+    if (nE<chain.bestE) { chain.bestE=nE; chain.bestX=nx; }
+  }
+}
+
+// ── Swap attempt between one random adjacent pair ─────────────────────────────
+function trySwap() {
+  const i = Math.floor(Math.random()*3);  // 0, 1, or 2
+  const j = i+1;
+  const ci = sim.chains[i];   // colder (lower T, higher β)
+  const cj = sim.chains[j];   // hotter
+  const Ei = E(ci.x), Ej = E(cj.x);
+
+  // P_swap = min(1, exp((E_i - E_j)(1/T_i - 1/T_j)))
+  // where i is the colder chain: 1/T_i > 1/T_j
+  const dBeta = 1/ci.T - 1/cj.T;   // positive
+  const dE    = Ei - Ej;
+  const pSwap = Math.min(1, Math.exp(dE * dBeta));
+  const accepted = Math.random() < pSwap;
+
+  sim.swapAttempts++;
+  sim.lastSwap = {i, j, accepted, pSwap};
+
+  // Record pixel positions for flash arc (before any swap)
+  sim.swapFlash = {
+    sx1: px(ci.x), sy1: py(Ei),
+    sx2: px(cj.x), sy2: py(Ej),
+    i, j, accepted,
+    until: performance.now() + 800,
+  };
+
+  if (accepted) {
+    sim.swapAccepts++;
+    // Exchange states (x only; trails stay with the temperature level)
+    const tmpX = ci.x;
+    ci.x = cj.x;
+    cj.x = tmpX;
+    // Update bests with new positions
+    const newEi = E(ci.x), newEj = E(cj.x);
+    if (newEi < ci.bestE) { ci.bestE = newEi; ci.bestX = ci.x; }
+    if (newEj < cj.bestE) { cj.bestE = newEj; cj.bestX = cj.x; }
+    // Add trail breakpoint at old positions
+    ci.trail.push({x: cj.x, e: Ei});  // show where it came from
+    cj.trail.push({x: ci.x, e: Ej});
+    if (ci.trail.length>TRAIL_LEN) ci.trail.shift();
+    if (cj.trail.length>TRAIL_LEN) cj.trail.shift();
+  }
+}
+
+// ── One simulation tick (one MH step per chain + optional swap) ───────────────
+function doTick() {
+  sim.chains.forEach(c => doMHStep(c));
+  sim.ticks++;
+  if (sim.ticks % sim.swapInterval === 0) trySwap();
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const now = performance.now();
+
+  // Chain dots + trails
+  for (let k=0; k<4; k++) {
+    const chain = sim.chains[k];
+    const col   = COLORS[k];
+    const cx    = px(chain.x).toFixed(1);
+    const cy    = py(E(chain.x)).toFixed(1);
+
+    // Dot
+    document.getElementById(`dot_${k}`).setAttribute('cx', cx);
+    document.getElementById(`dot_${k}`).setAttribute('cy', cy);
+    document.getElementById(`dot_${k}`).setAttribute('fill', col);
+
+    // Trail (fading dots, same color)
+    const tlen = chain.trail.length;
+    document.getElementById(`trail_${k}`).innerHTML = chain.trail.map(({x,e},idx) => {
+      const a = ((idx+1)/tlen * 0.35).toFixed(2);
+      return `<circle cx="${px(x).toFixed(1)}" cy="${py(e).toFixed(1)}" r="2.2" fill="${col}" opacity="${a}"/>`;
+    }).join('');
+  }
+
+  // Swap arc flash
+  const sf = sim.swapFlash;
+  const arc = document.getElementById('swapArc');
+  const ra  = document.getElementById('swapRing_a');
+  const rb  = document.getElementById('swapRing_b');
+  if (sf && now < sf.until) {
+    const col   = sf.accepted ? '#1a7f37' : '#cf222e';
+    const mx    = ((sf.sx1+sf.sx2)/2).toFixed(1);
+    const topY  = (Math.min(sf.sy1, sf.sy2) - 45).toFixed(1);
+    arc.setAttribute('d', `M${sf.sx1.toFixed(1)},${sf.sy1.toFixed(1)} Q${mx},${topY} ${sf.sx2.toFixed(1)},${sf.sy2.toFixed(1)}`);
+    arc.setAttribute('stroke', col);
+    arc.setAttribute('opacity', '0.75');
+    // Rings around swapping dots
+    ra.setAttribute('cx', sf.sx1.toFixed(1)); ra.setAttribute('cy', sf.sy1.toFixed(1));
+    rb.setAttribute('cx', sf.sx2.toFixed(1)); rb.setAttribute('cy', sf.sy2.toFixed(1));
+    ra.setAttribute('stroke', col); rb.setAttribute('stroke', col);
+    ra.setAttribute('opacity', '0.65'); rb.setAttribute('opacity', '0.65');
+    // Flash the ladder line
+    const lineId = `lline_${sf.i}${sf.j}`;
+    document.getElementById(lineId).setAttribute('stroke', col);
+    document.getElementById(lineId).setAttribute('stroke-width', '3.5');
+  } else {
+    arc.setAttribute('opacity', '0');
+    ra.setAttribute('opacity', '0'); rb.setAttribute('opacity', '0');
+    // Reset ladder lines
+    ['lline_01','lline_12','lline_23'].forEach(id => {
+      document.getElementById(id).setAttribute('stroke','#e5e7eb');
+      document.getElementById(id).setAttribute('stroke-width','2.5');
+    });
+  }
+
+  // Ladder E-value labels
+  for (let k=0; k<4; k++) {
+    document.getElementById(`lE_${k}`).textContent = E(sim.chains[k].x).toFixed(3);
+  }
+
+  // Swap info pane
+  const ls = sim.lastSwap;
+  if (ls !== null) {
+    const ci = ls.i, cj = ls.j;
+    const col0 = COLORS[ci], col1 = COLORS[cj];
+    const pairSpan = `<span class="s-pair" style="color:${col0}">T=${TEMPS[ci]}</span>` +
+                     ` ↔ ` +
+                     `<span class="s-pair" style="color:${col1}">T=${TEMPS[cj]}</span>`;
+    const decSpan  = ls.accepted
+      ? `<span class="s-acc">accepted</span>`
+      : `<span class="s-rej">rejected</span>`;
+    const probTxt  = ls.pSwap >= 1
+      ? `<span class="s-prob">P = 1.000 (always)</span>`
+      : `<span class="s-prob">P = ${ls.pSwap.toFixed(3)}</span>`;
+    document.getElementById('swapInfo').innerHTML = `${pairSpan} — ${decSpan}<br>${probTxt}`;
+  }
+
+  // Cold chain status
+  const c0 = sim.chains[0];
+  document.getElementById('coldStatus').innerHTML =
+    `Current E: <code>${E(c0.x).toFixed(4)}</code><br>` +
+    `Best E: <code style="color:#6e40c9">${c0.bestE < Infinity ? c0.bestE.toFixed(4) : '—'}</code>`;
+
+  // Stats row
+  document.getElementById('sTicks').textContent    = sim.ticks;
+  document.getElementById('sAttempts').textContent = sim.swapAttempts;
+  document.getElementById('sSwapRate').textContent =
+    sim.swapAttempts > 0 ? (sim.swapAccepts/sim.swapAttempts*100).toFixed(0)+'%' : '—';
+  document.getElementById('sBestCold').textContent =
+    c0.bestE < Infinity ? c0.bestE.toFixed(4) : '—';
+}
+
+// ── Animation loop ────────────────────────────────────────────────────────────
+function animLoop(ts) {
+  if (!sim.running) return;
+  if (ts - sim.lastTs >= STEPMS) {
+    doTick();
+    render();
+    sim.lastTs = ts;
+  }
+  sim.animId = requestAnimationFrame(animLoop);
+}
+
+function startLoop() {
+  sim.running = true;
+  sim.lastTs  = 0;
+  document.getElementById('runBtn').textContent = 'pause';
+  sim.animId = requestAnimationFrame(animLoop);
+}
+
+function stopLoop() {
+  sim.running = false;
+  document.getElementById('runBtn').textContent = 'run';
+  if (sim.animId) { cancelAnimationFrame(sim.animId); sim.animId = null; }
+}
+
+function toggleRun() {
+  if (sim.running) stopLoop(); else startLoop();
+}
+
+function doStep() {
+  if (sim.running) return;
+  doTick();
+  render();
+}
+
+function doReset() {
+  stopLoop();
+  initSim();
+  for (let k=0;k<4;k++) document.getElementById(`trail_${k}`).innerHTML = '';
+  document.getElementById('swapArc').setAttribute('opacity','0');
+  document.getElementById('swapRing_a').setAttribute('opacity','0');
+  document.getElementById('swapRing_b').setAttribute('opacity','0');
+  document.getElementById('swapInfo').textContent = '—';
+  document.getElementById('coldStatus').innerHTML = 'Current E: —<br>Best E: —';
+  ['lline_01','lline_12','lline_23'].forEach(id => {
+    document.getElementById(id).setAttribute('stroke','#e5e7eb');
+    document.getElementById(id).setAttribute('stroke-width','2.5');
+  });
+  for (let k=0;k<4;k++) document.getElementById(`lE_${k}`).textContent='—';
+  render();
+}
+
+// ── Swap frequency selector ───────────────────────────────────────────────────
+const FREQ_IDS = {10:'fb-10', 25:'fb-25', 60:'fb-60'};
+
+function setSwapInterval(n) {
+  sim.swapInterval = n;
+  Object.entries(FREQ_IDS).forEach(([val, id]) => {
+    document.getElementById(id).classList.toggle('f-active', parseInt(val) === n);
+  });
+}
+
+// ── Concept annotations ───────────────────────────────────────────────────────
+const CONCEPTS = [
+  // 0 – temperature ladder
+  'Parallel Tempering (also known as <em>Replica Exchange Monte Carlo</em>, or REMC) runs 4 replicas <em>simultaneously</em>, each at a fixed temperature. The <strong style="color:#4f46e5">blue dot</strong> (T = 0.1) moves nearly deterministically downhill — it exploits well but gets trapped. The <strong style="color:#dc2626">red dot</strong> (T = 8.0) explores freely but never commits to any minimum. Middle temperatures bridge the two behaviors. Without swaps, each chain is independent and limited; the key is what happens between them.',
+
+  // 1 – swap mechanics
+  'Every few steps, one randomly chosen adjacent pair of replicas attempts a <em>state swap</em>. Acceptance probability: <code>min(1, exp((E<sub>cold</sub> − E<sub>hot</sub>)(1/T<sub>cold</sub> − 1/T<sub>hot</sub>)))</code>. Since 1/T<sub>cold</sub> &gt; 1/T<sub>hot</sub>, a swap is <strong>certain</strong> when the cold replica is stuck above the hot replica\'s energy — and probabilistic otherwise. Watch for the flash arc connecting swapping replicas, and the connecting line on the ladder highlighting which pair just attempted.',
+
+  // 2 – cold chain benefit
+  'Without swaps, the cold replica (blue, T = 0.1) would be trapped in whatever local minimum it first descends into — escape over energy barriers is nearly impossible at low temperature. With swaps, the cold chain periodically <em>receives favorable configurations</em> from hotter replicas that have explored other basins, effectively teleporting past barriers it could never cross on its own. Watch the cold chain\'s best E (purple, bottom-right) improve over time in ways a single cold chain rarely achieves.',
+
+  // 3 – vs. SA and MCMC
+  'Unlike Simulated Annealing, Parallel Tempering requires <em>no cooling schedule</em> — all replicas run at fixed temperatures indefinitely. The cold chain benefits continuously from hot-chain exploration rather than relying on an early high-temperature phase that must eventually end. PT is also naturally <strong>parallelizable</strong>: replicas run independently between swap events. The tradeoff: PT requires K times more energy evaluations per step. For expensive objective functions this matters; for cheap ones like this demo, PT is often strictly better than SA. In <strong>Bayesian/MCMC</strong> applications, the cold chain is conventionally fixed at T = 1 rather than T &lt; 1, because at T = 1 the Metropolis–Hastings ratio recovers exact sampling from the target posterior — the hotter chains exist only to improve mixing, and only the cold chain\'s samples are kept.',
+];
+
+function selectConcept(idx) {
+  for (let i=0;i<4;i++) {
+    document.getElementById('cb'+i).classList.toggle('active', i===idx);
+  }
+  document.getElementById('conceptDesc').innerHTML = CONCEPTS[idx];
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+render();
+selectConcept(0);
+</script>
+</body>
+</html>
