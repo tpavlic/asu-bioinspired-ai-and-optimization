@@ -1,0 +1,377 @@
+
+<style>
+*,*::before,*::after{box-sizing:border-box}
+.wrap{display:flex;flex-direction:column;gap:10px;padding:2px 0}
+.top-row{display:flex;gap:8px;align-items:stretch}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 12px}
+.fside{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-width:126px}
+.fbtn{border:1.5px solid;border-radius:var(--border-radius-md);padding:7px 9px;cursor:pointer;text-align:left;font-family:var(--font-sans);transition:opacity .15s,background .15s;width:100%}
+.fbtn.off{opacity:0.38}
+.fn{font-size:12px;font-weight:500}
+.fs2{font-size:11px;margin-top:1px;opacity:.8}
+.fa{font-size:11px;font-weight:500;margin-top:3px}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.slb{font-size:13px;color:var(--color-text-secondary);white-space:nowrap}
+.nv{font-size:15px;font-weight:500;min-width:24px;text-align:right}
+.lam{font-size:11px;color:var(--color-text-secondary);margin-bottom:6px;padding:4px 7px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);line-height:1.6}
+.leg{display:flex;flex-wrap:wrap;gap:8px;margin-top:5px}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--color-text-secondary)}
+.ls{width:14px;height:2px;border-radius:1px;flex-shrink:0}
+.pond-hint{font-size:11px;color:var(--color-text-tertiary);text-align:center;padding:4px 0 5px}
+</style>
+
+<div class="wrap">
+  <div class="top-row">
+    <div class="fside" id="fleft"></div>
+    <div class="card" style="padding:5px;flex:0 0 auto">
+      <div class="pond-hint">Click on each feeder to toggle it on or off</div>
+      <svg id="pond" width="296" height="248" viewBox="0 0 296 248">
+        <defs><clipPath id="pcl"><ellipse cx="148" cy="124" rx="110" ry="80"/></clipPath></defs>
+        <ellipse cx="148" cy="124" rx="110" ry="80" fill="#4388BE"/>
+        <ellipse cx="139" cy="116" rx="62" ry="45" fill="#6AAAD8" opacity="0.26"/>
+        <ellipse cx="148" cy="124" rx="110" ry="80" fill="none" stroke="#2D6C9B" stroke-width="1.5"/>
+        <g id="ducks" clip-path="url(#pcl)"></g>
+        <g id="feeders"></g>
+      </svg>
+    </div>
+    <div class="fside" id="fright"></div>
+  </div>
+  <div class="card">
+    <div class="srow">
+      <span class="slb">N =</span>
+      <input type="range" min="1" max="25" value="11" id="nsl" step="1" style="flex:1">
+      <span class="nv" id="nv">11</span>
+      <span style="font-size:11px;color:var(--color-text-tertiary)">ducks</span>
+    </div>
+    <div class="lam" id="lam"></div>
+    <svg id="chart" width="100%" viewBox="0 0 460 196" style="display:block;overflow:visible">
+      <defs><clipPath id="cc2"><rect x="46" y="10" width="328" height="152"/></clipPath></defs>
+      <g id="cgr"></g>
+      <g id="cax"></g>
+      <g id="ccv" clip-path="url(#cc2)"></g>
+      <g id="cll" clip-path="url(#cc2)"></g>
+      <g id="cdt"></g>
+      <g id="clb"></g>
+    </svg>
+    <div class="leg" id="leg"></div>
+  </div>
+</div>
+
+<script>
+const FD=[
+  {name:"Feeder 1",desc:"Best",      F:5,col:"#185FA5",dk:"#042C53",bg:"#E6F1FB",ang:135},
+  {name:"Feeder 2",desc:"Very good", F:4,col:"#3B6D11",dk:"#173404",bg:"#EAF3DE",ang:45},
+  {name:"Feeder 3",desc:"OK",        F:2,col:"#0F6E56",dk:"#04342C",bg:"#E1F5EE",ang:225},
+  {name:"Feeder 4",desc:"Poor",      F:1,col:"#993C1D",dk:"#4A1B0C",bg:"#FAECE7",ang:315},
+];
+const CX=148,CY=124,RX=110,RY=80;
+const toR=a=>a*Math.PI/180;
+const FP=FD.map(f=>{
+  const r=toR(f.ang);
+  return{
+    fx:CX+RX*Math.cos(r),      fy:CY-RY*Math.sin(r),
+    cx:CX+0.60*RX*Math.cos(r), cy:CY-0.60*RY*Math.sin(r),
+    bx:CX+0.76*RX*Math.cos(r), by:CY-0.76*RY*Math.sin(r)
+  };
+});
+let N=11, act=[true,true,true,true];
+
+function ringPos(n){
+  const p=[];
+  if(!n)return p;
+  p.push([0,0]);
+  for(let ring=1;p.length<n;ring++){
+    const rad=ring*11.5;
+    const cap=Math.max(6,Math.round(2*Math.PI*rad/12.5));
+    for(let k=0;k<cap&&p.length<n;k++){
+      const a=k/cap*2*Math.PI-Math.PI/2;
+      p.push([rad*Math.cos(a),rad*Math.sin(a)]);
+    }
+  }
+  return p;
+}
+
+function computeIFD(){
+  const ai=[];
+  act.forEach((v,i)=>{if(v)ai.push(i);});
+  const res=FD.map(()=>0);
+  if(!ai.length||!N)return res;
+  for(let d=0;d<N;d++){
+    let bi=-1,bs=-Infinity;
+    ai.forEach(i=>{
+      const s=FD[i].F/(res[i]+1);
+      if(bi===-1||s>bs||(s===bs&&FD[i].F>FD[bi].F)){bs=s;bi=i;}
+    });
+    res[bi]++;
+  }
+  return res;
+}
+
+function computeLam(al){
+  let sum=0,any=false;
+  FD.forEach((f,i)=>{if(act[i]&&al[i]>0){sum+=f.F;any=true;}});
+  return (any&&N)?sum/N:null;
+}
+
+const NS='http://www.w3.org/2000/svg';
+const mk=t=>document.createElementNS(NS,t);
+const sa=(e,o)=>{Object.entries(o).forEach(([k,v])=>e.setAttribute(k,v));return e;};
+const clr=e=>{while(e.firstChild)e.removeChild(e.firstChild);};
+const gel=id=>document.getElementById(id);
+const p1=n=>n.toFixed(1);
+function mkt(attrs,content){const el=sa(mk('text'),attrs);el.textContent=String(content);return el;}
+
+function makeDuck(ox,oy){
+  const gr=mk('g');
+  sa(gr,{transform:'translate('+p1(ox)+','+p1(oy)+')',
+    stroke:'rgba(0,0,0,0.15)','stroke-width':'0.3','stroke-linejoin':'round'});
+  const c='#F5F1E8';
+  [
+    [mk('ellipse'),{cx:0,cy:2,rx:6.5,ry:3.8,fill:c,transform:'rotate(-10,0,2)'}],
+    [mk('ellipse'),{cx:-4.8,cy:-1.4,rx:3.7,ry:3.2,fill:c}],
+    [mk('polygon'),{points:'-8.2,-1 -11.5,-0.4 -8.2,0.7',fill:'#D08820',stroke:'none'}],
+    [mk('circle'), {cx:-5.7,cy:-2.8,r:1,fill:'rgba(0,0,0,0.55)',stroke:'none'}],
+    [mk('ellipse'),{cx:6,cy:0,rx:2.5,ry:1.5,fill:c,transform:'rotate(15,6,0)'}]
+  ].forEach(([el,a])=>{sa(el,a);gr.appendChild(el);});
+  return gr;
+}
+
+function drawPond(al){
+  const dEl=gel('ducks'),fEl=gel('feeders');
+  clr(dEl);clr(fEl);
+  FD.forEach((f,i)=>{
+    if(!act[i])return;
+    const{cx,cy}=FP[i];
+    ringPos(al[i]).forEach(([px,py])=>dEl.appendChild(makeDuck(cx+px,cy+py)));
+  });
+  FD.forEach((f,i)=>{
+    const{fx,fy,bx,by}=FP[i];
+    const on=act[i];
+    const gr=mk('g');
+    gr.style.cursor='pointer';
+    gr.addEventListener('click',()=>{act[i]=!act[i];update();});
+    if(on){
+      const nc=Math.min(7,Math.max(1,Math.round(f.F)));
+      [[0,0],[-3.5,2.5],[3.5,-2.5],[0,-4.5],[-3.5,-2.5],[3.5,2.5],[0,4.5]].slice(0,nc).forEach(([ox,oy])=>{
+        gr.appendChild(sa(mk('circle'),{
+          cx:p1(bx+ox),cy:p1(by+oy),r:2.3,
+          fill:'#EDBB15',stroke:'#A07808','stroke-width':'0.6',opacity:0.95
+        }));
+      });
+    }
+    const fr=9+f.F*1.3;
+    gr.appendChild(sa(mk('circle'),{cx:p1(fx),cy:p1(fy),r:p1(fr),
+      fill:on?f.col:'#888780',stroke:'#fff','stroke-width':2}));
+    const lbl=sa(mk('text'),{x:p1(fx),y:p1(fy+0.5),
+      'text-anchor':'middle','dominant-baseline':'central',
+      fill:'#fff','font-size':11,'font-weight':500,'font-family':'var(--font-sans)'});
+    lbl.textContent=i+1; gr.appendChild(lbl);
+    const cnt=sa(mk('text'),{x:p1(fx),y:p1(fy-fr-7),
+      'text-anchor':'middle','dominant-baseline':'central',
+      fill:on?f.col:'#9A9890','font-size':11,'font-weight':500,'font-family':'var(--font-sans)'});
+    cnt.textContent=on?('\xd7'+al[i]):'off'; gr.appendChild(cnt);
+    fEl.appendChild(gr);
+  });
+}
+
+const PAD={t:14,r:86,b:36,l:46};
+const CW=460,CH=196,xMx=15,yMx=6;
+const iW=CW-PAD.l-PAD.r, iH=CH-PAD.t-PAD.b;
+const tX=x=>PAD.l+x/xMx*iW;
+const tY=y=>CH-PAD.b-y/yMx*iH;
+
+function drawChart(al,lam){
+  // grid
+  const gc=gel('cgr'); clr(gc);
+  for(let y=1;y<=5;y++){
+    const ty=tY(y);
+    gc.appendChild(sa(mk('line'),{x1:PAD.l,x2:CW-PAD.r,y1:ty,y2:ty,
+      stroke:'var(--color-border-tertiary)','stroke-width':'0.5'}));
+  }
+  for(let x=3;x<=xMx;x+=3){
+    const tx=tX(x);
+    gc.appendChild(sa(mk('line'),{x1:tx,x2:tx,y1:PAD.t,y2:CH-PAD.b,
+      stroke:'var(--color-border-tertiary)','stroke-width':'0.5'}));
+  }
+
+  // axes + labels
+  const ax=gel('cax'); clr(ax);
+  ax.appendChild(sa(mk('line'),{x1:PAD.l,x2:CW-PAD.r,y1:CH-PAD.b,y2:CH-PAD.b,
+    stroke:'var(--color-border-secondary)','stroke-width':1}));
+  ax.appendChild(sa(mk('line'),{x1:PAD.l,x2:PAD.l,y1:PAD.t,y2:CH-PAD.b,
+    stroke:'var(--color-border-secondary)','stroke-width':1}));
+  for(let x=0;x<=xMx;x+=3){
+    const tx=tX(x);
+    ax.appendChild(sa(mk('line'),{x1:tx,x2:tx,y1:CH-PAD.b,y2:CH-PAD.b+4,
+      stroke:'var(--color-border-secondary)','stroke-width':'0.5'}));
+    ax.appendChild(mkt({x:tx,y:CH-PAD.b+13,'text-anchor':'middle',
+      'font-size':10,fill:'var(--color-text-tertiary)','font-family':'var(--font-sans)'},x));
+  }
+  for(let y=1;y<=5;y++){
+    const ty=tY(y);
+    ax.appendChild(sa(mk('line'),{x1:PAD.l-4,x2:PAD.l,y1:ty,y2:ty,
+      stroke:'var(--color-border-secondary)','stroke-width':'0.5'}));
+    ax.appendChild(mkt({x:PAD.l-6,y:ty,'text-anchor':'end','dominant-baseline':'central',
+      'font-size':10,fill:'var(--color-text-tertiary)','font-family':'var(--font-sans)'},y));
+  }
+  // colored F_i ticks: same length as regular ticks (4px), flush against axis
+  FD.forEach((f,i)=>{
+    if(!act[i])return;
+    const ty=tY(f.F);
+    if(ty<PAD.t||ty>CH-PAD.b)return;
+    ax.appendChild(sa(mk('line'),{x1:PAD.l-4,x2:PAD.l,y1:ty,y2:ty,
+      stroke:f.col,'stroke-width':3}));
+  });
+  ax.appendChild(mkt({x:PAD.l+iW/2,y:CH-1,'text-anchor':'middle',
+    'font-size':11,fill:'var(--color-text-secondary)','font-family':'var(--font-sans)'},
+    'occupancy  x'));
+  const yl=sa(mk('text'),{x:8,y:PAD.t+iH/2,'text-anchor':'middle',
+    'dominant-baseline':'central','font-size':11,
+    fill:'var(--color-text-secondary)','font-family':'var(--font-sans)',
+    transform:'rotate(-90,8,'+(PAD.t+iH/2)+')'});
+  yl.textContent='S(x)'; ax.appendChild(yl);
+
+  // curves — clipped so nothing crosses the y-axis
+  const cv=gel('ccv'); clr(cv);
+  FD.forEach((f,i)=>{
+    if(!act[i])return;
+    // flat segment [x=0, x=1]
+    cv.appendChild(sa(mk('line'),{
+      x1:p1(tX(0)), y1:p1(tY(f.F)),
+      x2:p1(tX(1)), y2:p1(tY(f.F)),
+      stroke:f.col,'stroke-width':2}));
+    // hyperbola [x=1, x=xMx]
+    const pts=[];
+    for(let k=0;k<240;k++){
+      const x=1+k*(xMx-1)/239;
+      pts.push(p1(tX(x))+','+p1(tY(f.F/x)));
+    }
+    cv.appendChild(sa(mk('polyline'),{
+      points:pts.join(' '),fill:'none',stroke:f.col,'stroke-width':2}));
+  });
+
+  // lambda dashed line — clipped
+  const cll=gel('cll'); clr(cll);
+  if(lam!==null){
+    const ly=tY(lam);
+    cll.appendChild(sa(mk('line'),{
+      x1:PAD.l,x2:CW-PAD.r,y1:ly,y2:ly,
+      stroke:'var(--color-text-secondary)','stroke-width':1.5,
+      'stroke-dasharray':'5 3',opacity:0.5}));
+  }
+
+  // lambda label — outside clip so always readable
+  const clb=gel('clb'); clr(clb);
+  if(lam!==null){
+    const ly=tY(lam);
+    const ly2=Math.max(PAD.t+9,Math.min(CH-PAD.b-9,ly));
+    clb.appendChild(sa(mk('line'),{x1:CW-PAD.r,x2:CW-PAD.r+4,y1:ly,y2:ly,
+      stroke:'var(--color-text-secondary)','stroke-width':1.5}));
+    clb.appendChild(mkt({x:CW-PAD.r+6,y:ly2,'dominant-baseline':'central',
+      'font-size':10,'font-weight':500,
+      fill:'var(--color-text-secondary)','font-family':'var(--font-sans)'},
+      '\u03bb\u2009=\u2009'+lam.toFixed(2)));
+  }
+
+  // dots — NOT clipped, so they show fully at x=0 for truncated patches
+  const cd=gel('cdt'); clr(cd);
+  FD.forEach((f,i)=>{
+    const xi=al[i],on=act[i];
+    if(!on||xi===0){
+      // open dot at (0, F_i) — fully visible, sits on the y-axis
+      const dy=tY(f.F);
+      cd.appendChild(sa(mk('circle'),{
+        cx:p1(tX(0)),cy:p1(dy),r:4.5,
+        fill:'var(--color-background-primary)',stroke:f.col,
+        'stroke-width':1.5,opacity:on?0.75:0.3}));
+      return;
+    }
+    if(xi>xMx)return;
+    const sy=f.F/xi;
+    const dy=tY(sy);
+    cd.appendChild(sa(mk('circle'),{
+      cx:p1(tX(xi)),cy:p1(dy),r:5.5,
+      fill:f.col,stroke:'var(--color-background-primary)','stroke-width':2}));
+  });
+}
+
+function updateLam(al,lam){
+  const el=gel('lam');
+  if(!lam){el.textContent='No active feeders.';return;}
+  const occ=FD.filter((f,i)=>act[i]&&al[i]>0);
+  const sumF=occ.reduce((s,f)=>s+f.F,0);
+  el.innerHTML=
+    '&#955; = &#x03A3;{F<sub>i</sub>\u2009:\u2009x<sub>i</sub>\u2009&gt;\u20090} / N'
+    +'\u2009=\u2009'+sumF+'\u2009/\u2009'+N
+    +'\u2009\u2248\u2009<strong>'+lam.toFixed(3)+'</strong>'
+    +'\u2003\u2014\u2003equilibrium suitability'
+    +'\u2003('+occ.length+'\u2009patch'+(occ.length!==1?'es':'')+' occupied)';
+}
+
+function makeBtn(f,i){
+  const btn=document.createElement('button');
+  btn.id='fb'+i;
+  btn.className='fbtn'+(act[i]?'':' off');
+  btn.style.borderColor=f.col;
+  btn.style.background=act[i]?f.bg:'var(--color-background-secondary)';
+  btn.style.color=act[i]?f.dk:'var(--color-text-secondary)';
+  btn.innerHTML='<div class="fn">'+f.name+'</div>'
+    +'<div class="fs2">'+f.desc+' \xb7 F<sub>'+(i+1)+'</sub>\u2009=\u2009'+f.F+'</div>'
+    +'<div class="fa" id="ba'+i+'"></div>';
+  btn.addEventListener('click',()=>{act[i]=!act[i];update();});
+  return btn;
+}
+
+function buildButtons(){
+  const fl=gel('fleft'),fr=gel('fright');
+  clr(fl); clr(fr);
+  fl.appendChild(makeBtn(FD[0],0));
+  fl.appendChild(makeBtn(FD[2],2));
+  fr.appendChild(makeBtn(FD[1],1));
+  fr.appendChild(makeBtn(FD[3],3));
+}
+
+function updateButtons(al){
+  FD.forEach((f,i)=>{
+    const btn=gel('fb'+i);
+    if(btn){
+      btn.className='fbtn'+(act[i]?'':' off');
+      btn.style.background=act[i]?f.bg:'var(--color-background-secondary)';
+      btn.style.color=act[i]?f.dk:'var(--color-text-secondary)';
+    }
+    const ba=gel('ba'+i);
+    if(!ba)return;
+    if(!act[i])ba.textContent='\u2014 off \u2014';
+    else if(al[i]===0)ba.textContent='x\u2009=\u20090 (truncated)';
+    else ba.textContent='x\u2009=\u2009'+al[i]+' duck'+(al[i]!==1?'s':'');
+  });
+}
+
+function buildLegend(){
+  const leg=gel('leg'); clr(leg);
+  FD.forEach((f,i)=>{
+    const d=document.createElement('div');
+    d.className='li'; d.style.opacity=act[i]?'1':'.35';
+    const sw=document.createElement('div');
+    sw.className='ls'; sw.style.background=f.col;
+    const tx=document.createElement('span');
+    tx.innerHTML=f.name+': F<sub>'+(i+1)+'</sub>\u2009=\u2009'+f.F;
+    d.appendChild(sw); d.appendChild(tx); leg.appendChild(d);
+  });
+}
+
+function update(){
+  const al=computeIFD();
+  const lam=computeLam(al);
+  gel('nv').textContent=N;
+  drawPond(al);
+  drawChart(al,lam);
+  updateLam(al,lam);
+  updateButtons(al);
+  buildLegend();
+}
+
+gel('nsl').addEventListener('input',function(){N=+this.value;update();});
+buildButtons();
+update();
+</script>
