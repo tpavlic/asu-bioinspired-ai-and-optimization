@@ -1,0 +1,531 @@
+
+<style>
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#ebebea;
+  --txt:#1c1c1c;--txt2:#686868;--txt3:#a0a0a0;
+  --bdr:#e0e0dc;--bdr2:#b0b0ac;
+  --r:8px;--rl:12px;
+  --ff:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;
+  --fm:'SF Mono','Fira Code',Consolas,monospace;
+  --pca-bg:#f0f0ee;--pca-grid:#d8d8d4;--pca-txt:#555552;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1e1e1e;--bg2:#282828;--bg3:#333333;
+  --txt:#dedede;--txt2:#a0a0a0;--txt3:#686864;
+  --bdr:#3a3a3a;--bdr2:#545450;
+  --pca-bg:#242424;--pca-grid:#353533;--pca-txt:#888884;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ff);color:var(--txt);background:transparent}
+.top{display:flex;align-items:flex-start;flex-wrap:wrap}
+.cv-col{padding:16px;flex-shrink:0;max-width:100%}
+#cv{display:block;width:min(460px,100%);height:auto;border-radius:12px;box-shadow:0 2px 18px rgba(0,0,0,.22)}
+.ctl{padding:14px 16px;border-left:0.5px solid var(--bdr);display:flex;flex-direction:column;gap:12px;flex:1;min-width:260px}
+@media(max-width:600px){.ctl{border-left:none;border-top:0.5px solid var(--bdr);width:100%}}
+.card{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:var(--rl);padding:12px 14px}
+.slbl{font-size:10.5px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+.mb{flex:1;padding:8px 5px;border-radius:var(--r);border:0.5px solid var(--bdr2);cursor:pointer;font-size:12.5px;font-family:var(--ff);transition:all .18s;background:transparent;color:var(--txt2)}
+.mb.ab{background:rgba(79,172,254,.09);border-color:#4facfe;color:#4facfe;font-weight:500}
+.mb.ar{background:rgba(247,112,98,.09);border-color:#f77062;color:#f77062;font-weight:500}
+.abg{flex:1;background:var(--bg3);border-radius:20px;height:6px;overflow:hidden}
+.abr{height:100%;border-radius:20px;transition:width .5s,background .5s}
+.slr{margin-bottom:10px}
+.slr label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--txt2);margin-bottom:4px}
+.slr label span{color:var(--txt);font-weight:500}
+input[type=range]{width:100%;accent-color:#4facfe}
+input[type=checkbox]{accent-color:#ffd700;width:14px;height:14px;vertical-align:middle}
+.lgnd{display:flex;gap:14px;font-size:11.5px;color:var(--txt3);margin-top:7px;justify-content:center;flex-wrap:wrap}
+.ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.sep{border:none;border-top:0.5px solid var(--bdr);margin:0}
+.pca-wrap{padding:12px 16px 14px}
+.pca-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;flex-wrap:wrap;gap:4px}
+.pca-ttl{font-size:13px;font-weight:500;color:var(--txt)}
+.pca-sub{font-size:11.5px;color:var(--txt3);margin-bottom:9px;line-height:1.55}
+.pca-info{font-size:11px;color:var(--txt3)}
+#pca-cv{width:100%;border-radius:10px;display:block;border:0.5px solid var(--bdr)}
+.cw{padding:14px 16px 0}
+.chr{font-size:14px;font-weight:500;margin-bottom:10px}
+.cbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.cb{padding:7px 12px;border-radius:var(--r);border:0.5px solid var(--bdr);background:transparent;cursor:pointer;font-size:12.5px;font-family:var(--ff);color:var(--txt2);transition:all .18s;line-height:1.4}
+.cb:hover{border-color:var(--bdr2);color:var(--txt)}
+.cb.open{border-color:rgba(79,172,254,.55);background:rgba(79,172,254,.06);color:#4facfe}
+.cc{height:260px;overflow-y:auto;border:0.5px solid var(--bdr);border-radius:var(--rl);padding:14px 16px;font-size:12.5px;line-height:1.7;color:var(--txt2)}
+.cc h4{margin:0 0 10px;color:var(--txt);font-size:13.5px;font-weight:500}
+.cc p{margin:0 0 8px}
+.pill{padding-left:9px;border-left:2.5px solid currentColor;margin-bottom:9px}
+.pill b{display:block;margin-bottom:2px;font-size:13px}
+.mn{font-family:var(--fm);font-size:11.5px;background:var(--bg3);padding:2px 6px;border-radius:4px}
+.itbl{width:100%;border-collapse:collapse;font-size:11.5px;margin:6px 0 8px}
+.itbl th{text-align:left;padding:4px 5px;color:var(--txt3);font-weight:500;border-bottom:0.5px solid var(--bdr)}
+.itbl td{padding:3px 5px;border-bottom:0.5px solid var(--bdr)}
+.drow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;padding:14px 16px 16px}
+@media(max-width:520px){.drow{grid-template-columns:1fr}}
+.dc{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:var(--rl);padding:14px}
+.dc svg{display:block;width:100%;aspect-ratio:285/218}
+.dt{font-size:13px;font-weight:500;margin-bottom:2px;text-align:center}
+.ds{font-size:11px;color:var(--txt3);text-align:center;margin-bottom:8px}
+.actnote{font-size:10.5px;color:var(--txt3);margin-top:7px;border-top:0.5px solid var(--bdr);padding-top:7px;line-height:1.6}
+.actnote ul{list-style:none;padding:0;margin:0}
+.actnote li{display:flex;align-items:baseline;gap:5px;margin-bottom:2px}
+.actnote li::before{content:"·";font-size:14px;color:var(--bdr2);flex-shrink:0}
+.mn2{font-family:var(--fm);font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px}
+</style>
+
+<div class="top">
+  <div class="cv-col">
+    <canvas id="cv" width="460" height="460"></canvas>
+    <div class="lgnd" id="lgnd">
+      <span><span class="ldot" style="background:#4facfe"></span>Class A — inner</span>
+      <span><span class="ldot" style="background:#f77062"></span>Class B — outer</span>
+    </div>
+  </div>
+  <div class="ctl">
+    <div>
+      <div style="font-size:15px;font-weight:500">RBFNN Explorer</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:2px">© 2026 Theodore P. Pavlic · MIT License</div>
+    </div>
+    <div class="card">
+      <div class="slbl">Classifier mode</div>
+      <div style="display:flex;gap:8px;margin-bottom:11px">
+        <button class="mb" id="btn-lin" onclick="setMode('linear')">Linear only</button>
+        <button class="mb ab" id="btn-rbf" onclick="setMode('rbf')">RBFNN</button>
+      </div>
+      <div style="font-size:10.5px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px">Classifier accuracy</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="abg"><div class="abr" id="acc-bar"></div></div>
+        <span style="font-size:13px;font-weight:500;min-width:40px" id="acc-txt">—</span>
+      </div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:5px" id="acc-note"></div>
+    </div>
+    <div class="card" id="rbf-card">
+      <div class="slbl">RBF parameters</div>
+      <div class="slr">
+        <label>Centers (K) <span id="k-val">9</span></label>
+        <input type="range" min="1" max="20" value="9" id="sl-k" oninput="onK(this.value)">
+      </div>
+      <div class="slr">
+        <label>Width (σ) <span id="sig-val">0.44</span></label>
+        <input type="range" min="0.10" max="1.50" step="0.02" value="0.44" id="sl-sig" oninput="onSig(this.value)">
+      </div>
+      <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;cursor:pointer;color:var(--txt2)">
+        <input type="checkbox" id="ck-rings" checked onchange="onRings(this.checked)">
+        Show Gaussian footprints
+      </label>
+    </div>
+  </div>
+</div>
+
+<hr class="sep">
+
+<div class="pca-wrap">
+  <div class="pca-hdr">
+    <div class="pca-ttl">Latent space view</div>
+    <div class="pca-info" id="pca-rinfo"></div>
+  </div>
+  <div class="pca-sub">Background shading shows a linear classifier fit on this 2D projection. In RBFNN mode the classes become linearly separable after the RBF transformation — a direct illustration of what the kernel trick exploits. In linear mode the raw input space is shown: same interlocked structure, same failure.</div>
+  <canvas id="pca-cv" width="760" height="220"></canvas>
+</div>
+
+<hr class="sep">
+
+<div class="cw">
+  <div class="chr">Concepts</div>
+  <div class="cbtns">
+    <button class="cb" id="ibtn-how"     onclick="toggleInfo('how')">⚙ How RBFNN works</button>
+    <button class="cb" id="ibtn-svm"     onclick="toggleInfo('svm')">⇌ Equivalence to SVM / kernel trick</button>
+    <button class="cb" id="ibtn-centers" onclick="toggleInfo('centers')">◎ Center selection strategies</button>
+  </div>
+  <div id="cpt-content" class="cc"></div>
+</div>
+
+<hr class="sep" style="margin-top:14px">
+
+<div class="drow">
+  <div class="dc">
+    <div class="dt">Single Neuron Perceptron</div>
+    <div class="ds">No hidden layer — direct weighted sum</div>
+    <svg viewBox="0 0 285 218" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="ah" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#888"/></marker></defs>
+      <line stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#ah)" x1="80"  y1="65"  x2="193" y2="82"/>
+      <line stroke="#888" stroke-width="1.2" fill="none" marker-end="url(#ah)" x1="80"  y1="113" x2="193" y2="94"/>
+      <line stroke="#888" stroke-width="1.2" fill="none" stroke-dasharray="4,3" marker-end="url(#ah)" x1="68" y1="150" x2="193" y2="104"/>
+      <text fill="#888" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="134" y="69"  text-anchor="middle" font-size="10">w₁</text>
+      <text fill="#888" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="134" y="100" text-anchor="middle" font-size="10">w₂</text>
+      <text fill="#888" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="126" y="124" text-anchor="middle" font-size="10">b</text>
+      <circle fill="#e6f1fb" stroke="#4facfe" stroke-width="1.5" cx="58" cy="65"  r="22"/>
+      <text fill="#185fa5" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="58" y="70"  text-anchor="middle" font-size="13">x₁</text>
+      <circle fill="#e6f1fb" stroke="#4facfe" stroke-width="1.5" cx="58" cy="113" r="22"/>
+      <text fill="#185fa5" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="58" y="118" text-anchor="middle" font-size="13">x₂</text>
+      <circle fill="#f1efe8" stroke="#888780" stroke-width="1" cx="58" cy="150" r="15"/>
+      <text fill="#5f5e5a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="58" y="155" text-anchor="middle" font-size="10">+1</text>
+      <circle fill="#eaf3de" stroke="#639922" stroke-width="1.5" cx="222" cy="90" r="28"/>
+      <text fill="#27500a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="222" y="86"  text-anchor="middle" font-size="14">∑</text>
+      <text fill="#27500a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="222" y="99"  text-anchor="middle" font-size="10">f(·)</text>
+      <text fill="#27500a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="258" y="95" font-size="14">ŷ</text>
+      <text fill="#a0a0a0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="58"  y="183" text-anchor="middle" font-size="10">Input</text>
+      <text fill="#a0a0a0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="222" y="133" text-anchor="middle" font-size="10">Output</text>
+      <!-- formula raised to y=197 — clear gap above copyright at y=216 -->
+      <text fill="#5f5e5a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="142" y="197" text-anchor="middle" font-size="10">ŷ = f(w₁x₁ + w₂x₂ + b)</text>
+      <text fill="#c8c8c0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="283" y="216" text-anchor="end" font-size="6.5">© 2026 Theodore P. Pavlic · MIT License</text>
+    </svg>
+    <div class="actnote"><ul>
+      <li><span class="mn2">f(z) = sign(z)</span> &nbsp;for classification</li>
+      <li><span class="mn2">f(z) = z</span> &nbsp;(identity) for regression</li>
+    </ul></div>
+  </div>
+
+  <div class="dc">
+    <div class="dt">Radial Basis Function Network</div>
+    <div class="ds">Gaussian hidden layer lifts data to separable space</div>
+    <svg viewBox="0 0 310 237" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="ah2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0, 7 3.5, 0 7" fill="#888"/></marker></defs>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="67"  y1="72"  x2="133" y2="44"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="67"  y1="72"  x2="133" y2="104"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="67"  y1="72"  x2="133" y2="164"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="67"  y1="130" x2="133" y2="44"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="67"  y1="130" x2="133" y2="104"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="67"  y1="130" x2="133" y2="164"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="177" y1="44"  x2="243" y2="103"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="177" y1="104" x2="243" y2="105"/>
+      <line stroke="#888" stroke-width="1.1" fill="none" marker-end="url(#ah2)" x1="177" y1="164" x2="243" y2="109"/>
+      <text fill="#888" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="214" y="68"  text-anchor="middle" font-size="10">w₁</text>
+      <text fill="#888" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="209" y="103" text-anchor="end"    font-size="10">w₂</text>
+      <text fill="#888" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="214" y="148" text-anchor="middle" font-size="10">w₃</text>
+      <circle fill="#e6f1fb" stroke="#4facfe" stroke-width="1.5" cx="45" cy="72"  r="22"/>
+      <text fill="#185fa5" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="45" y="77"  text-anchor="middle" font-size="13">x₁</text>
+      <circle fill="#e6f1fb" stroke="#4facfe" stroke-width="1.5" cx="45" cy="130" r="22"/>
+      <text fill="#185fa5" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="45" y="135" text-anchor="middle" font-size="13">x₂</text>
+      <circle fill="#faeeda" stroke="#d29922" stroke-width="1.5" cx="155" cy="44"  r="22"/>
+      <text fill="#854f0b" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="41"  text-anchor="middle" font-size="11">φ₁</text>
+      <text fill="#854f0b" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="53"  text-anchor="middle" font-size="8">Gaussian</text>
+      <circle fill="#faeeda" stroke="#d29922" stroke-width="1.5" cx="155" cy="104" r="22"/>
+      <text fill="#854f0b" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="101" text-anchor="middle" font-size="11">φ₂</text>
+      <text fill="#854f0b" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="113" text-anchor="middle" font-size="8">Gaussian</text>
+      <circle fill="#faeeda" stroke="#d29922" stroke-width="1.5" cx="155" cy="164" r="22"/>
+      <text fill="#854f0b" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="161" text-anchor="middle" font-size="11">φ₃</text>
+      <text fill="#854f0b" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="173" text-anchor="middle" font-size="8">Gaussian</text>
+      <circle fill="#eaf3de" stroke="#639922" stroke-width="1.5" cx="268" cy="106" r="25"/>
+      <text fill="#27500a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="268" y="102" text-anchor="middle" font-size="14">∑</text>
+      <text fill="#27500a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="268" y="114" text-anchor="middle" font-size="10">f(·)</text>
+      <text fill="#27500a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="297" y="111" font-size="14">ŷ</text>
+      <text fill="#a0a0a0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="45"  y="204" text-anchor="middle" font-size="10">Input</text>
+      <text fill="#a0a0a0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="204" text-anchor="middle" font-size="10">RBF hidden</text>
+      <text fill="#a0a0a0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="268" y="144" text-anchor="middle" font-size="10">Output</text>
+      <text fill="#5f5e5a" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="155" y="220" text-anchor="middle" font-size="10">φₖ(x) = exp(−‖x − cₖ‖² / 2σ²)</text>
+      <text fill="#c8c8c0" font-family="-apple-system,BlinkMacSystemFont,Arial,sans-serif" x="308" y="235" text-anchor="end" font-size="6.5">© 2026 Theodore P. Pavlic · MIT License</text>
+    </svg>
+    <div class="actnote"><ul>
+      <li><span class="mn2">f(z) = sign(z)</span> &nbsp;for classification</li>
+      <li><span class="mn2">f(z) = z</span> &nbsp;(identity) for regression</li>
+    </ul></div>
+  </div>
+</div>
+
+<script>
+const CS=460,VLO=-2,VHI=2,VR=4;
+const toPX=v=>(v-VLO)/VR*CS;
+const toPY=v=>(VHI-v)/VR*CS;
+const BLUE=[79,172,254],RED=[247,112,98];
+const FF='-apple-system,BlinkMacSystemFont,Arial,sans-serif';
+function getCSSVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function xorshift(seed){let s=(seed>>>0)||1;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;return(s>>>0)/4294967296};}
+const DATA=(()=>{const r=xorshift(0x9A4C2F1E);
+  return[...Array(45)].map(()=>{const rd=r()*.50+.06,th=r()*Math.PI*2;return{x:rd*Math.cos(th),y:rd*Math.sin(th),c:0}})
+  .concat([...Array(45)].map(()=>{const rd=r()*.42+1.1,th=r()*Math.PI*2;return{x:rd*Math.cos(th),y:rd*Math.sin(th),c:1}}));
+})();
+function rbf(x,y,cx,cy,sig){return Math.exp(-((x-cx)**2+(y-cy)**2)/(2*sig*sig));}
+function ridgeSolve(Phi,y,lam=0.08){
+  const N=Phi.length,K=Phi[0].length;
+  const A=Array.from({length:K},()=>new Array(K).fill(0));
+  const b=new Array(K).fill(0);
+  for(let i=0;i<N;i++)for(let a=0;a<K;a++){b[a]+=Phi[i][a]*y[i];for(let c=0;c<K;c++)A[a][c]+=Phi[i][a]*Phi[i][c];}
+  for(let a=1;a<K;a++)A[a][a]+=lam;
+  const aug=A.map((row,i)=>[...row,b[i]]);
+  for(let c=0;c<K;c++){
+    let mx=c;for(let r=c+1;r<K;r++)if(Math.abs(aug[r][c])>Math.abs(aug[mx][c]))mx=r;
+    [aug[c],aug[mx]]=[aug[mx],aug[c]];
+    const pv=aug[c][c];if(Math.abs(pv)<1e-15)continue;
+    for(let r=0;r<K;r++){if(r===c)continue;const f=aug[r][c]/pv;for(let j=c;j<=K;j++)aug[r][j]-=f*aug[c][j];}
+    for(let j=c;j<=K;j++)aug[c][j]/=pv;
+  }
+  return aug.map(row=>row[K]);
+}
+function pca2(X){
+  const N=X.length,K=X[0].length;
+  if(K<1)return null;
+  const mn=Array(K).fill(0);
+  X.forEach(r=>r.forEach((v,j)=>mn[j]+=v/N));
+  const Xc=X.map(r=>r.map((v,j)=>v-mn[j]));
+  const tv=Xc.reduce((s,r)=>s+r.reduce((ss,v)=>ss+v*v,0),0)/N;
+  if(tv<1e-12)return{coords:X.map(()=>[0,0]),p1:0,p2:0,is1D:true};
+  if(K===1){const sc=Xc.map(r=>r[0]),mx=Math.max(...sc.map(Math.abs))||1;const jr=xorshift(0xDEADBEEF);return{coords:sc.map(s=>[s,(jr()-.5)*mx*.55]),p1:100,p2:0,is1D:true};}
+  function cmv(v){const p=Xc.map(r=>r.reduce((s,x,j)=>s+x*v[j],0));const res=Array(K).fill(0);Xc.forEach((r,i)=>r.forEach((x,j)=>res[j]+=x*p[i]));return res.map(x=>x/N);}
+  function nm(v){return Math.sqrt(v.reduce((s,x)=>s+x*x,0));}
+  function nrm(v){const n=nm(v);return n<1e-12?v:v.map(x=>x/n);}
+  let v1=Array(K).fill(0);v1[0]=1;let e1=0;
+  for(let i=0;i<80;i++){const mv=cmv(v1);e1=nm(mv);v1=nrm(mv);}
+  function dfl(v){const d=v.reduce((s,x,j)=>s+x*v1[j],0);return v.map((x,j)=>x-d*v1[j]);}
+  let v2=Array(K).fill(0);v2[Math.min(1,K-1)]=1;v2=nrm(dfl(v2));let e2=0;
+  for(let i=0;i<80;i++){const mv=dfl(cmv(v2));e2=nm(mv);v2=nrm(mv);}
+  const coords=Xc.map(r=>[r.reduce((s,x,j)=>s+x*v1[j],0),r.reduce((s,x,j)=>s+x*v2[j],0)]);
+  return{coords,p1:Math.round(e1/tv*100),p2:Math.round(e2/tv*100),is1D:false};
+}
+
+function renderPCA(){
+  const cv=document.getElementById('pca-cv');if(!cv)return;
+  const rect=cv.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  const LW=Math.round(rect.width)||760;
+  const LH=Math.round(rect.height)||220;
+  if(cv.width!==LW*dpr||cv.height!==LH*dpr){cv.width=LW*dpr;cv.height=LH*dpr;}
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W=LW,H=LH;
+
+  const bgCol=getCSSVar('--pca-bg')||'#f0f0ee';
+  const gridCol=getCSSVar('--pca-grid')||'#d8d8d4';
+  const txtCol=getCSSVar('--pca-txt')||'#555552';
+  ctx.fillStyle=bgCol;ctx.fillRect(0,0,W,H);
+
+  const lbl=DATA.map(p=>p.c===0?1:-1);
+  let coords,xl,yl,tagTxt,tagAccent,tagBorder;
+  const isLin=(mode==='linear');
+  if(isLin){
+    coords=DATA.map(p=>[p.x,p.y]);
+    xl='x₁ (input)';yl='x₂ (input)';
+    tagTxt='Input space — no transformation applied';
+    tagAccent='#b03020';tagBorder='rgba(176,48,32,.28)';
+    document.getElementById('pca-rinfo').textContent='showing raw input space';
+  } else {
+    const lat=DATA.map(p=>centers.map(([cx,cy])=>rbf(p.x,p.y,cx,cy,sig)));
+    const pr=pca2(lat);if(!pr)return;
+    coords=pr.coords;
+    xl=pr.is1D?'φ₁(x) activation':`PC1 (${pr.p1}% var)`;
+    yl=pr.is1D?'(spread)':`PC2 (${pr.p2}% var)`;
+    const tot=pr.is1D?100:pr.p1+pr.p2;
+    document.getElementById('pca-rinfo').textContent=
+      pr.is1D?'1D activation space (K=1)':`${K}D RBF activation space → PCA 2D · ${tot}% variance captured`;
+    tagTxt='RBF latent space — classes are linearly separable here';
+    tagAccent='#0f6e56';tagBorder='rgba(15,110,86,.28)';
+  }
+
+  const xs=coords.map(c=>c[0]),ys=coords.map(c=>c[1]);
+  let xmn=Math.min(...xs),xmx=Math.max(...xs);
+  let ymn=Math.min(...ys),ymx=Math.max(...ys);
+  const xp=(xmx-xmn)*.12||.1,yp=(ymx-ymn)*.14||.1;
+  xmn-=xp;xmx+=xp;ymn-=yp;ymx+=yp;
+
+  // ── font sizes — scale generously so narrow screens stay readable ──
+  const tagFontPx = Math.max(11, Math.min(14, W * 0.018));
+  const axisFontPx = Math.max(11, Math.min(13, W * 0.016));
+
+  const PL=38,PR=14,PT=46,PB=28;
+  const PW=W-PL-PR,PH=H-PT-PB;
+  const tx=v=>PL+(v-xmn)/(xmx-xmn)*PW;
+  const ty=v=>H-PB-(v-ymn)/(ymx-ymn)*PH;
+
+  const P2=coords.map(([u,v])=>[1,u,v]);
+  const w2=ridgeSolve(P2,lbl,.015);
+
+  const RW=300,RH=Math.round(300*PH/PW);
+  const tmp=document.createElement('canvas');tmp.width=RW;tmp.height=RH;
+  const tc=tmp.getContext('2d'),img=tc.createImageData(RW,RH);
+  for(let iy=0;iy<RH;iy++){
+    const fy=ymx-(iy/RH)*(ymx-ymn);
+    for(let ix=0;ix<RW;ix++){
+      const fx=xmn+(ix/RW)*(xmx-xmn);
+      const out=w2[0]+w2[1]*fx+w2[2]*fy;
+      const i4=(iy*RW+ix)*4;
+      const[R,G,B]=out>0?BLUE:RED;
+      img.data[i4]=R;img.data[i4+1]=G;img.data[i4+2]=B;
+      img.data[i4+3]=Math.min(68,Math.round(Math.abs(out)*52+12));
+    }
+  }
+  tc.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,PL,PT,PW,PH);
+
+  ctx.strokeStyle=gridCol;ctx.lineWidth=0.5;
+  for(let i=1;i<=3;i++){
+    const gx=PL+i*PW/4,gy=PT+i*PH/4;
+    ctx.beginPath();ctx.moveTo(gx,PT);ctx.lineTo(gx,H-PB);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(PL,gy);ctx.lineTo(W-PR,gy);ctx.stroke();
+  }
+  ctx.strokeStyle=gridCol;ctx.lineWidth=0.75;ctx.strokeRect(PL,PT,PW,PH);
+
+  DATA.forEach((p,i)=>{
+    const[R,G,B]=p.c===0?BLUE:RED;
+    ctx.beginPath();ctx.arc(tx(coords[i][0]),ty(coords[i][1]),5,0,Math.PI*2);
+    ctx.fillStyle=`rgb(${R},${G},${B})`;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=1.4;ctx.stroke();
+  });
+
+  // Axis labels
+  ctx.fillStyle=txtCol;ctx.font=`${axisFontPx}px ${FF}`;
+  ctx.textAlign='center';ctx.fillText(xl,PL+PW/2,H-6);
+  ctx.save();ctx.translate(12,PT+PH/2);ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';ctx.fillText(yl,0,0);ctx.restore();
+
+  // Centered floating title pill
+  ctx.font=`500 ${tagFontPx}px ${FF}`;
+  const tw=ctx.measureText(tagTxt).width;
+  const padH=10,padV=5,rx=5;
+  const bx=PL+(PW-tw)/2-padH;
+  const by=Math.round((PT-tagFontPx)/2)-padV+1;
+  const bw=tw+padH*2,bh=tagFontPx+padV*2;
+  const isDark=bgCol.startsWith('#1')||bgCol.startsWith('#2');
+  ctx.fillStyle=isDark?'rgba(40,40,40,.92)':'rgba(255,255,255,.92)';
+  ctx.beginPath();if(ctx.roundRect){ctx.roundRect(bx,by,bw,bh,rx);}else{ctx.rect(bx,by,bw,bh);}ctx.fill();
+  ctx.strokeStyle=tagBorder;ctx.lineWidth=1;
+  ctx.beginPath();if(ctx.roundRect){ctx.roundRect(bx,by,bw,bh,rx);}else{ctx.rect(bx,by,bw,bh);}ctx.stroke();
+  ctx.fillStyle=tagAccent;ctx.textAlign='center';
+  ctx.fillText(tagTxt,PL+PW/2,by+padV+tagFontPx-1);
+
+  // Copyright
+  ctx.save();
+  ctx.font=`9px ${FF}`;
+  ctx.fillStyle=isDark?'rgba(160,160,155,.28)':'rgba(80,80,76,.22)';
+  ctx.textAlign='right';ctx.textBaseline='bottom';
+  ctx.fillText('© 2026 Theodore P. Pavlic · MIT License',W-PR-4,H-4);
+  ctx.restore();
+}
+
+let mode='rbf',K=9,sig=0.44,rings=true,openInfo=null;
+let centers=[],weights=[];
+function getCenters(k){const r=xorshift(0xC0FFEE42);return[...DATA].sort(()=>r()-.5).slice(0,k).map(p=>[p.x,p.y]);}
+function solve(){
+  const lbl=DATA.map(p=>p.c===0?1:-1);
+  const Phi=mode==='linear'?DATA.map(p=>[1,p.x,p.y]):DATA.map(p=>[1,...centers.map(([cx,cy])=>rbf(p.x,p.y,cx,cy,sig))]);
+  weights=ridgeSolve(Phi,lbl);
+  let ok=0;
+  Phi.forEach((row,i)=>{if((row.reduce((s,v,j)=>s+v*weights[j],0)>0)===(lbl[i]>0))ok++;});
+  const acc=Math.round(ok/DATA.length*100);
+  document.getElementById('acc-bar').style.width=acc+'%';
+  document.getElementById('acc-bar').style.background=acc>=90?'#56d364':acc>=65?'#d29922':'#f85149';
+  document.getElementById('acc-txt').style.color=acc>=90?'#56d364':acc>=65?'#d29922':'#f85149';
+  document.getElementById('acc-txt').textContent=acc+'%';
+  document.getElementById('acc-note').textContent=acc>=90?'✓ Classes separable in RBF feature space':acc>=65?'⚠ Partial separation':'✗ Linear boundary cannot separate these classes';
+}
+function render(){
+  const cv=document.getElementById('cv');
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,CS,CS);
+  const RES=200,tmp=document.createElement('canvas');
+  tmp.width=RES;tmp.height=RES;
+  const tc=tmp.getContext('2d'),img=tc.createImageData(RES,RES);
+  for(let iy=0;iy<RES;iy++){
+    const fy=VHI-(iy/RES)*VR;
+    for(let ix=0;ix<RES;ix++){
+      const fx=VLO+(ix/RES)*VR;
+      let out=weights[0]||0;
+      if(mode==='linear'){out+=weights[1]*fx+weights[2]*fy;}
+      else{for(let k=0;k<centers.length;k++)out+=weights[k+1]*rbf(fx,fy,centers[k][0],centers[k][1],sig);}
+      const i4=(iy*RES+ix)*4;
+      const[R,G,B]=out>0?BLUE:RED;
+      img.data[i4]=R;img.data[i4+1]=G;img.data[i4+2]=B;
+      img.data[i4+3]=Math.min(215,Math.round(Math.abs(out)*80+32));
+    }
+  }
+  tc.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(tmp,0,0,CS,CS);
+  ctx.strokeStyle='rgba(255,255,255,.05)';ctx.lineWidth=1;
+  for(let g=-2;g<=2;g++){
+    ctx.beginPath();ctx.moveTo(toPX(g),0);ctx.lineTo(toPX(g),CS);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,toPY(g));ctx.lineTo(CS,toPY(g));ctx.stroke();
+  }
+  ctx.strokeStyle='rgba(255,255,255,.2)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(toPX(0),0);ctx.lineTo(toPX(0),CS);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(0,toPY(0));ctx.lineTo(CS,toPY(0));ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.22)';ctx.font=`11px ${FF}`;
+  ctx.textAlign='center';ctx.fillText('x₁',CS-12,toPY(0)+14);
+  ctx.textAlign='left';ctx.fillText('x₂',toPX(0)+6,14);
+  if(mode==='rbf'&&rings){
+    const sp=(sig/VR)*CS;
+    centers.forEach(([cx,cy],k)=>{
+      const cpx=toPX(cx),cpy=toPY(cy),wk=weights[k+1]||0;
+      const a=Math.min(.88,Math.abs(wk)*.55+.2);
+      const[R,G,B]=wk>0?BLUE:RED;
+      const grd=ctx.createRadialGradient(cpx,cpy,0,cpx,cpy,2.7*sp);
+      grd.addColorStop(0,`rgba(${R},${G},${B},${(a*.5).toFixed(2)})`);
+      grd.addColorStop(1,`rgba(${R},${G},${B},0)`);
+      ctx.fillStyle=grd;ctx.beginPath();ctx.arc(cpx,cpy,2.7*sp,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=`rgba(255,210,50,${(a*.85).toFixed(2)})`;
+      ctx.lineWidth=1.5;ctx.setLineDash([5,5]);
+      ctx.beginPath();ctx.arc(cpx,cpy,sp,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+    });
+  }
+  DATA.forEach(p=>{
+    const[R,G,B]=p.c===0?BLUE:RED;
+    ctx.beginPath();ctx.arc(toPX(p.x),toPY(p.y),6,0,Math.PI*2);
+    ctx.fillStyle=`rgb(${R},${G},${B})`;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.stroke();
+  });
+  if(mode==='rbf'){
+    centers.forEach(([cx,cy])=>{
+      const cpx=toPX(cx),cpy=toPY(cy),s=7;
+      ctx.strokeStyle='#ffd700';ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(cpx-s,cpy-s);ctx.lineTo(cpx+s,cpy+s);
+      ctx.moveTo(cpx+s,cpy-s);ctx.lineTo(cpx-s,cpy+s);ctx.stroke();
+    });
+    const leg=document.getElementById('lgnd');
+    if(!leg.querySelector('.ctr-l')){
+      const sp=document.createElement('span');sp.className='ctr-l';
+      sp.innerHTML='<svg width="12" height="12" style="vertical-align:middle;margin-right:4px" viewBox="0 0 12 12"><line x1="2" y1="2" x2="10" y2="10" stroke="#ffd700" stroke-width="2.2"/><line x1="10" y1="2" x2="2" y2="10" stroke="#ffd700" stroke-width="2.2"/></svg>RBF center';
+      leg.appendChild(sp);
+    }
+  } else {
+    const el=document.getElementById('lgnd').querySelector('.ctr-l');if(el)el.remove();
+  }
+  ctx.save();
+  ctx.font=`9px ${FF}`;ctx.fillStyle='rgba(255,255,255,.15)';
+  ctx.textAlign='right';ctx.textBaseline='bottom';
+  ctx.fillText('© 2026 Theodore P. Pavlic · MIT License',CS-7,CS-7);
+  ctx.restore();
+}
+function update(){centers=getCenters(K);solve();render();renderPCA();}
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-lin').className='mb'+(m==='linear'?' ar':'');
+  document.getElementById('btn-rbf').className='mb'+(m==='rbf'?' ab':'');
+  document.getElementById('rbf-card').style.opacity=m==='rbf'?'1':'.38';
+  document.getElementById('rbf-card').style.pointerEvents=m==='rbf'?'auto':'none';
+  update();
+}
+function onK(v){K=+v;document.getElementById('k-val').textContent=v;update();}
+function onSig(v){sig=+v;document.getElementById('sig-val').textContent=(+v).toFixed(2);update();}
+function onRings(v){rings=v;render();}
+const INFO={
+  how:`<h4>⚙ How RBFNN works</h4>
+<p>An RBFNN transforms inputs through three layers — exactly as shown in the network diagram below:</p>
+<div class="pill" style="color:#d29922"><b>Input layer</b>Raw features x = (x₁, x₂) — the 2D point coordinates.</div>
+<div class="pill" style="color:#4facfe"><b>Hidden layer — RBF neurons</b>Each neuron k computes <span class="mn">φₖ(x) = exp(−‖x−cₖ‖² / 2σ²)</span>, a Gaussian bump peaked at center cₖ with width σ. Output ≈1 near cₖ, decaying to ≈0 far away. The dashed rings on the canvas mark the σ radius of each center.</div>
+<div class="pill" style="color:#56d364"><b>Output layer</b><span class="mn">ŷ = f(w₀ + Σₖ wₖ φₖ(x))</span> with weights learned by ridge-regularized least squares. The hidden layer lifts the data into a space where the classes are linearly separable — the latent space view shows this directly.</div>
+<p style="color:var(--txt3);font-style:italic">Toggle "Linear only" to remove the hidden layer. Watch both the main scatter and the latent space view degrade simultaneously.</p>`,
+  svm:`<h4>⇌ RBFNN ↔ SVM / kernel trick</h4>
+<p>An RBF-kernel SVM classifies via <span class="mn">f(x) = Σᵢ αᵢyᵢ exp(−‖x−xᵢ‖²/2σ²) + b</span>, where xᵢ are the support vectors. This is structurally identical to an RBFNN with centers placed at the support vectors and weights αᵢyᵢ.</p>
+<p>The "kernel trick" computes inner products in the infinite-dimensional lifted space implicitly — RBFNNs make the lift explicit and finite. The latent space panel shows what that lifted space looks like: after the RBF transformation, the classes that were tangled in input space become a cleanly linearly separable point cloud.</p>
+<table class="itbl"><thead><tr><th></th><th style="color:#4facfe">RBFNN</th><th style="color:#f77062">RBF-SVM</th></tr></thead><tbody>
+<tr><td>Basis function</td><td>Gaussian φₖ(x)</td><td>Gaussian K(xᵢ,x)</td></tr>
+<tr><td>Centers</td><td>k-means / random</td><td>Support vectors (optimal)</td></tr>
+<tr><td>Weight learning</td><td>Least squares (closed form)</td><td>Max-margin QP</td></tr>
+<tr><td>Feature map</td><td>Made explicit — finite K</td><td>Implicit — infinite dim</td></tr>
+<tr><td>Objective</td><td>Minimise squared loss</td><td>Maximise margin (hinge loss)</td></tr>
+</tbody></table>
+<p style="color:var(--txt3);font-style:italic">With one center per training point and ridge weights, an RBFNN is mathematically equivalent to an RBF-SVM — the only differences are squared vs. hinge loss and whether centers are pruned to the support vectors.</p>`,
+  centers:`<h4>◎ Center selection strategies</h4>
+<div class="pill" style="color:#ffd700"><b>Random subsampling (used here)</b>Select K random training points as centers. Simple, fast, and surprisingly effective when data is well-distributed.</div>
+<div class="pill" style="color:#4facfe"><b>K-means clustering</b>Use cluster centroids. More principled — covers the input space efficiently without redundant or poorly-placed centers.</div>
+<div class="pill" style="color:#56d364"><b>All N training points</b>Maximum expressiveness. This is exactly what SVMs do before pruning to only the support vectors via the margin criterion.</div>
+<div class="pill" style="color:#f77062"><b>Learned via backprop</b>Optimize center positions jointly with weights by gradient descent. Expensive but optimal; this is where RBFNNs blur into general MLPs with Gaussian activations.</div>
+<p style="color:var(--txt3);font-style:italic">Unlike SVMs — where center selection is baked into the convex optimization — RBFNN center selection is decoupled from weight learning: faster but potentially suboptimal placement.</p>`
+};
+function toggleInfo(key){
+  openInfo=openInfo===key?null:key;
+  ['how','svm','centers'].forEach(k=>{document.getElementById('ibtn-'+k).className='cb'+(openInfo===k?' open':'');});
+  const box=document.getElementById('cpt-content');
+  if(openInfo){box.innerHTML='<div>'+INFO[openInfo]+'</div>';}
+  else{box.innerHTML='<span style="font-size:13px;color:var(--txt3);display:flex;height:100%;align-items:center;justify-content:center">Select a concept above to learn more</span>';}
+}
+update();
+setTimeout(()=>toggleInfo('how'),0);
+</script>
