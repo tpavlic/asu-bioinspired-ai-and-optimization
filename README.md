@@ -53,10 +53,10 @@ my_demo/
 
 For a new `my_demo.html`, the checklist is:
 
-1. **`<head>` metadata** — include `<title>`, `<meta name="description">`, and the full Open
-   Graph + Twitter card block (see any existing demo for the template). Use the preview image
-   as `og:image` and `twitter:image`; set width/height accurately. For Twitter/X, the image
-   should be close to **2:1 aspect ratio** and under **5 MB**.
+1. **`<head>` metadata:**
+
+   * include `<title>`, `<meta name="description">`, and the full Open Graph + Twitter card block (see any existing demo for the template)
+   * Use the preview image as `og:image` and `twitter:image`; set width/height accurately. For Twitter/X, the image should be close to **2:1 aspect ratio** and under **5 MB**.
 
 2. **Back-link footer** — add at the bottom of `<body>`:
 
