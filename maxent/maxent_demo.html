@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maximum Entropy (MaxEnt) — interactive explainer</title>
+<meta name="description" content="An interactive explainer for the Maximum Entropy principle: explore how MaxEnt selects the least-assumptive probability distribution consistent with known constraints, and how it connects to the Gibbs/softmax distribution and Simulated Annealing.">
+
+<!-- Open Graph (Facebook, LinkedIn, Slack, iMessage, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Maximum Entropy (MaxEnt) — interactive explainer">
+<meta property="og:description" content="An interactive explainer for the Maximum Entropy principle: explore how MaxEnt selects the least-assumptive probability distribution consistent with known constraints, and how it connects to the Gibbs/softmax distribution and Simulated Annealing.">
+<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/maxent/maxent_demo-preview.png">
+<meta property="og:image:width" content="2274">
+<meta property="og:image:height" content="1062">
+<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/maxent/maxent_demo.html">
+<meta property="fb:app_id" content="2385695445236853">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Maximum Entropy (MaxEnt) — interactive explainer">
+<meta name="twitter:description" content="An interactive explainer for the Maximum Entropy principle: explore how MaxEnt selects the least-assumptive probability distribution consistent with known constraints, and how it connects to the Gibbs/softmax distribution and Simulated Annealing.">
+<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/maxent/maxent_demo-preview.png">
+</head>
+<body>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+:root{
+  --font-sans:'Inter',system-ui,-apple-system,sans-serif;
+  --color-text-primary:#1a1a18;
+  --color-text-secondary:#555550;
+  --color-text-tertiary:#99998f;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f0;
+  --color-border-tertiary:rgba(0,0,0,0.13);
+  --color-border-secondary:rgba(0,0,0,0.25);
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:var(--font-sans)}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;max-width:420px}
+.cell{aspect-ratio:1;border-radius:3px;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden;transition:border-color 0.1s}
+.cell.occ{border-color:var(--color-text-primary)}
+.cell.occ::after{content:'';position:absolute;top:25%;left:25%;width:50%;height:50%;border-radius:50%;background:var(--color-text-primary)}
+.cell .fstrip{position:absolute;bottom:0;left:0;right:0;height:22%;display:flex}
+.cell .fstrip span{flex:1}
+.bar-track{flex:1;background:var(--color-background-secondary);border-radius:2px;height:16px;overflow:hidden;border:0.5px solid var(--color-border-tertiary)}
+.bar-fill{height:100%;border-radius:2px;transition:width 0.35s}
+.sl{font-size:11px;color:var(--color-text-tertiary);letter-spacing:0.07em;text-transform:uppercase;margin-bottom:8px;font-weight:500}
+.panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px;margin-bottom:10px}
+.wbtn{padding:6px 10px;font-size:12px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);border:1.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-family:var(--font-sans);display:inline-flex;align-items:center;gap:5px;user-select:none}
+.wbtn.inCorpus{border-color:#3B6D11;background:#EAF3DE;color:#3B6D11}
+.wbtn.shared{box-shadow:0 0 0 2px #185FA5}
+.fbadge{font-size:9px;padding:1px 4px;border-radius:3px;font-weight:500;line-height:1.4;pointer-events:none;font-family:var(--font-sans)}
+.chk-row{font-size:13px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:6px}
+.clrbtn{padding:5px 12px;font-size:12px;cursor:pointer;background:none;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);color:var(--color-text-secondary);font-family:var(--font-sans);margin-top:10px}
+.match-row{margin-bottom:10px}
+.match-label{font-size:11px;color:var(--color-text-tertiary);margin-bottom:4px}
+.match-pair{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.match-tag{font-size:10px;width:52px;flex-shrink:0;text-align:right}
+.cswatch{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;padding:2px 4px;border-radius:4px}
+.bar-row.selfhov{box-shadow:0 0 0 2px var(--color-text-primary)}
+.bar-row.sharedhov{box-shadow:0 0 0 2px #185FA5}
+.bar-wrap{flex:1;position:relative;height:16px}
+.badge-col{width:68px;flex-shrink:0;display:flex;gap:2px;flex-wrap:nowrap;align-items:center}
+.unif-line{position:absolute;top:0;bottom:0;width:1px;background:var(--color-text-tertiary);opacity:0.35;pointer-events:none}
+.legend-row{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--color-text-tertiary)}
+.legend-grad{height:8px;flex:1;border-radius:2px}
+p,span,div,label,button{font-family:var(--font-sans)}
+</style>
+
+<div style="padding:1rem 0">
+<div style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary)">
+  <button id="btn-sdm" onclick="switchTab('sdm')" style="padding:8px 18px;font-size:13px;background:none;border:none;border-bottom:2px solid var(--color-text-primary);cursor:pointer;color:var(--color-text-primary);font-weight:500;font-family:var(--font-sans)">Species distribution</button>
+  <button id="btn-nlp" onclick="switchTab('nlp')" style="padding:8px 18px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);font-weight:400">Language model</button>
+</div>
+
+<div id="tab-sdm" style="display:flex;gap:1.5rem;flex-wrap:wrap">
+  <div style="flex:1;min-width:280px">
+    <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:0.75rem;line-height:1.6">Click cells to record species observations. In all views, <strong style="font-weight:500">darker = higher value</strong>: darker green = higher probability; darker amber/red/blue in the strip = higher elevation/temperature/moisture. The strip colors match the single-layer views exactly. Cells whose feature strip best matches the averages observed in your clicks receive the highest (darkest green) probability.</p>
+    <div class="grid" id="sdm-grid"></div>
+    <div class="legend-row">
+      <span>low prob</span>
+      <div class="legend-grad" style="background:linear-gradient(to right,rgb(234,243,222),rgb(23,52,4))"></div>
+      <span>high prob</span>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--color-text-secondary)">Entropy: <strong id="entropy-val" style="color:var(--color-text-primary)">4.605</strong> <span id="entropy-pct" style="color:var(--color-text-tertiary)">(100.0% of max)</span></div>
+    <button class="clrbtn" onclick="clearOcc()">Clear observations</button>
+  </div>
+  <div style="flex:0 0 220px">
+    <div class="panel">
+      <div class="sl">View</div>
+      <label class="chk-row"><input type="radio" name="view" value="prob" checked onchange="setView('prob')"> <span class="cswatch" style="background:#3B6D11"></span> Probability (MaxEnt)</label>
+      <label class="chk-row"><input type="radio" name="view" value="elev" onchange="setView('elev')"> <span class="cswatch" style="background:#BA7517"></span> Elevation only</label>
+      <label class="chk-row"><input type="radio" name="view" value="temp" onchange="setView('temp')"> <span class="cswatch" style="background:#A32D2D"></span> Temperature only</label>
+      <label class="chk-row" style="margin:0"><input type="radio" name="view" value="moist" onchange="setView('moist')"> <span class="cswatch" style="background:#185FA5"></span> Moisture only</label>
+      <p style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;line-height:1.5">In all views, darker = higher value.</p>
+    </div>
+    <div class="panel">
+      <div class="sl">Active features &amp; constraints</div>
+      <label class="chk-row"><input type="checkbox" checked onchange="toggleSDMFeature(0)"> <span class="cswatch" style="background:#BA7517"></span> Elevation</label>
+      <label class="chk-row"><input type="checkbox" checked onchange="toggleSDMFeature(1)"> <span class="cswatch" style="background:#A32D2D"></span> Temperature</label>
+      <label class="chk-row" style="margin:0"><input type="checkbox" checked onchange="toggleSDMFeature(2)"> <span class="cswatch" style="background:#185FA5"></span> Moisture</label>
+      <p style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;line-height:1.5">Each checked feature becomes a constraint: the model must match its average value across your observations.</p>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <div class="sl">Constraint match</div>
+      <p style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;line-height:1.5">For each active constraint, <span style="color:#BA7517;font-weight:500">amber</span> = average feature value across your observed clicks; <span style="font-weight:500">colored</span> = what the current model predicts. At convergence the two bars match — that is what satisfying the constraint means.</p>
+      <div id="sdm-expectations"><div style="font-size:12px;color:var(--color-text-tertiary)">Add observations to see constraints.</div></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab-nlp" style="display:none">
+  <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:0.75rem;line-height:1.6">Click words to add them to the corpus. Each word shows feature badges: <span style="background:#EAF3DE;color:#3B6D11;padding:1px 4px;border-radius:3px;font-size:11px;font-weight:500">N</span> nature word, <span style="background:#FAEEDA;color:#633806;padding:1px 4px;border-radius:3px;font-size:11px;font-weight:500">noun</span>, <span style="background:#E6F1FB;color:#0C447C;padding:1px 4px;border-radius:3px;font-size:11px;font-weight:500">long</span>. Hover a word to see which others share its features — those are outlined in blue and receive a probability boost from the same constraints.</p>
+  <div id="word-btns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;padding:4px"></div>
+  <div id="hover-note" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:1rem;height:2.8rem;overflow:hidden;line-height:1.6"></div>
+  <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+    <div style="flex:1;min-width:240px">
+      <div class="sl" style="margin-bottom:12px">Word probability</div>
+      <div id="nlp-bars" style="padding:4px"></div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;line-height:1.5">Vertical line = uniform (12.5%, no data). <span style="color:#3B6D11">Green</span> = above uniform; <span style="color:#A32D2D">red</span> = below.</div>
+      <button class="clrbtn" onclick="clearCorpus()">Clear corpus</button>
+    </div>
+    <div style="flex:0 0 220px">
+      <div class="panel">
+        <div class="sl">Active features &amp; constraints</div>
+        <label class="chk-row"><input type="checkbox" checked onchange="toggleNLPFeature(0)"> <span class="cswatch" style="background:#3B6D11"></span> Nature word</label>
+        <label class="chk-row"><input type="checkbox" checked onchange="toggleNLPFeature(1)"> <span class="cswatch" style="background:#633806"></span> Noun</label>
+        <label class="chk-row" style="margin:0"><input type="checkbox" checked onchange="toggleNLPFeature(2)"> <span class="cswatch" style="background:#0C447C"></span> Long word (&ge;6 chars)</label>
+        <p style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;line-height:1.5">Each checked feature becomes a constraint: the model must match how often that feature appeared in your corpus.</p>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <div class="sl">Constraint match</div>
+        <p style="font-size:11px;color:var(--color-text-tertiary);margin-bottom:10px;line-height:1.5">For each active constraint, <span style="color:#BA7517;font-weight:500">amber</span> = fraction of corpus words that have this feature; <span style="font-weight:500">colored</span> = fraction the model currently predicts. At convergence the two bars are equal.</p>
+        <div id="nlp-expectations"><div style="font-size:12px;color:var(--color-text-tertiary)">Add corpus words to see constraints.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const GRID=10,N=GRID*GRID;
+const FC_SDM=['#BA7517','#A32D2D','#185FA5'];
+const FC_NLP=['#3B6D11','#633806','#0C447C'];
+const FC_NLP_BG=['#EAF3DE','#FAEEDA','#E6F1FB'];
+const NLP_V=[
+  {word:'river',f_n:1,f_noun:1,f_l:0},{word:'forest',f_n:1,f_noun:1,f_l:1},
+  {word:'sun',f_n:1,f_noun:1,f_l:0},{word:'runs',f_n:0,f_noun:0,f_l:0},
+  {word:'quietly',f_n:0,f_noun:0,f_l:1},{word:'vast',f_n:0,f_noun:0,f_l:0},
+  {word:'the',f_n:0,f_noun:0,f_l:0},{word:'stone',f_n:1,f_noun:1,f_l:0},
+];
+const NLP_FK=['f_n','f_noun','f_l'];
+const NLP_FN=['Nature','Noun','Long'];
+const NLP_FSH=['N','noun','long'];
+const RAMPS={
+  elev:[[250,238,218],[186,117,23]],
+  temp:[[252,235,235],[163,45,45]],
+  moist:[[230,241,251],[24,95,165]]
+};
+function buildFeatures(){
+  const e=[],t=[],m=[];
+  for(let r=0;r<GRID;r++) for(let c=0;c<GRID;c++){
+    e.push(c/(GRID-1)*0.55+(GRID-1-r)/(GRID-1)*0.35+0.1*Math.sin(r*0.9+c*0.6));
+    t.push(r/(GRID-1)*0.65+(1-c/(GRID-1))*0.35);
+    const s=Math.exp(-0.5*((r-GRID/2)/(GRID/3))**2);
+    m.push((1-c/(GRID-1))*0.55+s*0.45);
+  }
+  const nr=a=>{const mn=Math.min(...a),mx=Math.max(...a);return a.map(v=>(v-mn)/(mx-mn+1e-9));};
+  return[{name:'Elevation',values:nr(e),ramp:'elev'},{name:'Temperature',values:nr(t),ramp:'temp'},{name:'Moisture',values:nr(m),ramp:'moist'}];
+}
+const FEATS=buildFeatures();
+let occs=[],sdmAF=[true,true,true],view='prob';
+let sdmR={probs:new Array(N).fill(1/N),empirical:[],model:[],names:[]};
+function fToColor(v,ramp){
+  const R=RAMPS[ramp];
+  return`rgb(${Math.round(R[0][0]+(R[1][0]-R[0][0])*v)},${Math.round(R[0][1]+(R[1][1]-R[0][1])*v)},${Math.round(R[0][2]+(R[1][2]-R[0][2])*v)})`;
+}
+function solveMaxEntSDM(ai,os){
+  const af=ai.map(i=>FEATS[i]),nF=af.length;
+  if(!os.length||!nF)return{probs:new Array(N).fill(1/N),empirical:[],model:[],names:[]};
+  const mu=af.map(f=>os.reduce((s,i)=>s+f.values[i],0)/os.length);
+  let lam=new Array(nF).fill(0);
+  for(let it=0;it<300;it++){
+    const ls=[];
+    for(let x=0;x<N;x++){let v=0;for(let i=0;i<nF;i++)v+=lam[i]*af[i].values[x];ls.push(v);}
+    const mx=Math.max(...ls),sc=ls.map(v=>Math.exp(v-mx)),Z=sc.reduce((a,b)=>a+b,0),p=sc.map(s=>s/Z);
+    const eM=af.map(f=>p.reduce((s,pr,x)=>s+pr*f.values[x],0));
+    const lrT=1.0/(1+it*0.008);
+    for(let i=0;i<nF;i++)lam[i]+=lrT*(mu[i]-eM[i]);
+  }
+  const ls2=[];
+  for(let x=0;x<N;x++){let v=0;for(let i=0;i<nF;i++)v+=lam[i]*af[i].values[x];ls2.push(v);}
+  const mx2=Math.max(...ls2),sc2=ls2.map(v=>Math.exp(v-mx2)),Z2=sc2.reduce((a,b)=>a+b,0);
+  const probs=sc2.map(s=>s/Z2);
+  const model=af.map(f=>probs.reduce((s,pr,x)=>s+pr*f.values[x],0));
+  return{probs,empirical:mu,model,names:af.map(f=>f.name)};
+}
+function entropy(p){return-p.reduce((s,v)=>s+(v>1e-10?v*Math.log(v):0),0);}
+function pToGreen(p,mx){
+  const t=Math.min(p/(mx+1e-10),1);
+  const r=t<0.5?Math.round(234+(99-234)*(t*2)):Math.round(99+(23-99)*((t-0.5)*2));
+  const g=t<0.5?Math.round(243+(153-243)*(t*2)):Math.round(153+(52-153)*((t-0.5)*2));
+  const b=t<0.5?Math.round(222+(34-222)*(t*2)):Math.round(34+(4-34)*((t-0.5)*2));
+  return`rgb(${r},${g},${b})`;
+}
+function updateSDM(){
+  const ai=sdmAF.map((a,i)=>a?i:-1).filter(i=>i>=0);
+  sdmR=solveMaxEntSDM(ai,occs);
+  renderGrid();renderSDMExp();
+  const H=entropy(sdmR.probs),Hm=Math.log(N);
+  document.getElementById('entropy-val').textContent=H.toFixed(3);
+  document.getElementById('entropy-pct').textContent=`(${(H/Hm*100).toFixed(1)}% of max ${Hm.toFixed(3)})`;
+}
+function renderGrid(){
+  const cells=document.querySelectorAll('.cell'),mx=Math.max(...sdmR.probs);
+  cells.forEach((c,i)=>{
+    if(view==='prob'){
+      c.style.background=pToGreen(sdmR.probs[i],mx);
+      const s=c.querySelector('.fstrip');s.style.display='flex';
+      s.children[0].style.background=fToColor(FEATS[0].values[i],FEATS[0].ramp);
+      s.children[1].style.background=fToColor(FEATS[1].values[i],FEATS[1].ramp);
+      s.children[2].style.background=fToColor(FEATS[2].values[i],FEATS[2].ramp);
+    } else {
+      const fi=view==='elev'?0:view==='temp'?1:2;
+      c.style.background=fToColor(FEATS[fi].values[i],FEATS[fi].ramp);
+      c.querySelector('.fstrip').style.display='none';
+    }
+    c.classList.toggle('occ',occs.includes(i));
+  });
+}
+function renderSDMExp(){
+  const el=document.getElementById('sdm-expectations');
+  if(!sdmR.names||!sdmR.names.length){el.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary)">Add observations to see constraints.</div>';return;}
+  el.innerHTML=sdmR.names.map((nm,i)=>{
+    const ai=FEATS.findIndex(f=>f.name===nm),col=FC_SDM[ai],emp=sdmR.empirical[i]||0,mod=sdmR.model[i]||0;
+    const converged=Math.abs(emp-mod)<0.015;
+    return`<div class="match-row"><div class="match-label">${nm} <span style="font-size:10px;color:${converged?'#3B6D11':'#A32D2D'}">${converged?'&#10003; matched':'&#9679; converging'}</span></div>
+    <div class="match-pair"><span class="match-tag" style="color:#BA7517">observed</span><div class="bar-track"><div class="bar-fill" style="width:${(emp*100).toFixed(1)}%;background:#BA7517"></div></div><span style="font-size:10px;color:#BA7517;width:26px;text-align:right">${emp.toFixed(2)}</span></div>
+    <div class="match-pair"><span class="match-tag" style="color:${col}">model</span><div class="bar-track"><div class="bar-fill" style="width:${(mod*100).toFixed(1)}%;background:${col}"></div></div><span style="font-size:10px;color:${col};width:26px;text-align:right">${mod.toFixed(2)}</span></div></div>`;
+  }).join('');
+}
+function toggleOccurrence(i){occs=occs.includes(i)?occs.filter(j=>j!==i):[...occs,i];updateSDM();}
+function clearOcc(){occs=[];updateSDM();}
+function setView(v){view=v;renderGrid();}
+function toggleSDMFeature(i){sdmAF[i]=!sdmAF[i];updateSDM();}
+function buildGrid(){
+  const g=document.getElementById('sdm-grid');
+  for(let i=0;i<N;i++){
+    const c=document.createElement('div');c.className='cell';
+    c.addEventListener('click',()=>toggleOccurrence(i));
+    const s=document.createElement('div');s.className='fstrip';
+    s.appendChild(document.createElement('span'));s.appendChild(document.createElement('span'));s.appendChild(document.createElement('span'));
+    c.appendChild(s);g.appendChild(c);
+  }
+}
+let corpus=[],nlpAF=[true,true,true],hoveredWord=-1;
+let nlpR={probs:new Array(NLP_V.length).fill(1/NLP_V.length),empirical:[],model:[],names:[]};
+function solveMaxEntNLP(){
+  const nW=NLP_V.length,ak=NLP_FK.filter((_,i)=>nlpAF[i]),afn=NLP_FN.filter((_,i)=>nlpAF[i]),nF=ak.length;
+  if(!corpus.length||!nF)return{probs:new Array(nW).fill(1/nW),empirical:[],model:[],names:[]};
+  const mu=ak.map(k=>corpus.reduce((s,wi)=>s+NLP_V[wi][k],0)/corpus.length);
+  let lam=new Array(nF).fill(0);
+  for(let it=0;it<600;it++){
+    const sc=NLP_V.map((_,x)=>{let v=0;for(let i=0;i<nF;i++)v+=lam[i]*NLP_V[x][ak[i]];return Math.exp(Math.min(v,50));});
+    const Z=sc.reduce((a,b)=>a+b,0),p=sc.map(s=>s/Z);
+    const eM=ak.map(k=>p.reduce((s,pr,x)=>s+pr*NLP_V[x][k],0));
+    for(let i=0;i<nF;i++)lam[i]+=0.4*(mu[i]-eM[i]);
+  }
+  const sc2=NLP_V.map((_,x)=>{let v=0;for(let i=0;i<nF;i++)v+=lam[i]*NLP_V[x][ak[i]];return Math.exp(Math.min(v,50));});
+  const Z2=sc2.reduce((a,b)=>a+b,0),probs=sc2.map(s=>s/Z2);
+  const model=ak.map(k=>probs.reduce((s,pr,x)=>s+pr*NLP_V[x][k],0));
+  return{probs,empirical:mu,model,names:afn};
+}
+function getSharedFeatures(wi,wj){
+  return NLP_FK.filter((k,fi)=>nlpAF[fi]&&NLP_V[wi][k]===1&&NLP_V[wj][k]===1);
+}
+function updateNLP(){
+  nlpR=solveMaxEntNLP();
+  renderWordBtns();renderNLPBars();renderNLPExp();
+}
+function renderWordBtns(){
+  const counts=NLP_V.map((_,i)=>corpus.filter(j=>j===i).length);
+  const sharedSet=new Set(hoveredWord>=0?NLP_V.map((_,wj)=>wj!==hoveredWord&&getSharedFeatures(hoveredWord,wj).length>0?wj:-1).filter(j=>j>=0):[]);
+  const container=document.getElementById('word-btns');
+  const existing=container.querySelectorAll('.wbtn');
+  NLP_V.forEach((w,i)=>{
+    let btn=existing[i];
+    if(!btn){
+      btn=document.createElement('button');btn.className='wbtn';
+      btn.addEventListener('click',()=>{corpus.push(i);updateNLP();});
+      btn.addEventListener('mouseenter',()=>{hoveredWord=i;updateHover();});
+      container.appendChild(btn);
+    }
+    btn.className='wbtn'+(counts[i]>0?' inCorpus':'')+(sharedSet.has(i)?' shared':'');
+    const badges=NLP_FK.map((k,fi)=>nlpAF[fi]&&w[k]===1?`<span class="fbadge" style="background:${FC_NLP_BG[fi]};color:${FC_NLP[fi]}">${NLP_FSH[fi]}</span>`:''). join('');
+    const countBadge=counts[i]>0?`<span style="font-size:10px;padding:1px 5px;background:rgba(59,109,17,0.15);color:#3B6D11;border-radius:8px;pointer-events:none">${counts[i]}</span>`:'';
+    btn.innerHTML=`<span style="font-weight:${counts[i]>0?'500':'400'};pointer-events:none">${w.word}</span>${badges}${countBadge}`;
+  });
+}
+function updateHover(){
+  renderWordBtns();renderNLPBars();
+  const note=document.getElementById('hover-note');
+  if(hoveredWord<0){note.innerHTML='&nbsp;';return;}
+  const wi=hoveredWord,w=NLP_V[wi];
+  const activeFeats=NLP_FK.map((k,fi)=>nlpAF[fi]&&w[k]===1?fi:-1).filter(f=>f>=0);
+  const sharedWords=NLP_V.map((_,wj)=>wj!==wi&&getSharedFeatures(wi,wj).length>0?wj:-1).filter(j=>j>=0);
+  if(!activeFeats.length){note.innerHTML=`"${w.word}" has none of the currently active features — no other words are outlined.`;return;}
+  const fbadges=activeFeats.map(fi=>`<span style="background:${FC_NLP_BG[fi]};color:${FC_NLP[fi]};padding:1px 4px;border-radius:3px;font-size:11px;font-weight:500">${NLP_FN[fi]}</span>`).join(' ');
+  if(!sharedWords.length){note.innerHTML=`"${w.word}" has features ${fbadges} but no other word in the vocabulary shares any of them.`;return;}
+  const wnames=sharedWords.map(wj=>`<strong>${NLP_V[wj].word}</strong>`).join(', ');
+  note.innerHTML=`"${w.word}" has features ${fbadges} — so the model boosts ${wnames} (outlined in blue), since they share at least one of those features and help satisfy the same constraints.`;
+}
+function renderNLPBars(){
+  const pU=1/NLP_V.length,mxP=Math.max(...nlpR.probs);
+  const unifPct=(pU/mxP*100).toFixed(2);
+  const sharedSet=new Set(hoveredWord>=0?NLP_V.map((_,wj)=>wj!==hoveredWord&&getSharedFeatures(hoveredWord,wj).length>0?wj:-1).filter(j=>j>=0):[]);
+  document.getElementById('nlp-bars').innerHTML=NLP_V.map((w,i)=>{
+    const p=nlpR.probs[i],bw=(p/mxP*100).toFixed(2),col=p>pU?'#3B6D11':'#A32D2D';
+    const hi=sharedSet.has(i),selfH=i===hoveredWord;
+    const rowCls='bar-row'+(selfH?' selfhov':hi?' sharedhov':'');
+    const badges=NLP_FK.map((k,fi)=>nlpAF[fi]&&w[k]===1?`<span class="fbadge" style="background:${FC_NLP_BG[fi]};color:${FC_NLP[fi]}">${NLP_FSH[fi]}</span>`:''). join('');
+    const badgesOrDash=badges||'<span style="font-size:10px;color:var(--color-text-tertiary)">—</span>';
+    return`<div class="${rowCls}">
+      <span style="width:54px;font-size:12px;color:var(--color-text-secondary);text-align:right;flex-shrink:0">${w.word}</span>
+      <div class="badge-col">${badgesOrDash}</div>
+      <div class="bar-wrap">
+        <div class="bar-track"><div class="bar-fill" style="width:${bw}%;background:${col}"></div></div>
+        <div class="unif-line" style="left:${unifPct}%"></div>
+      </div>
+      <span style="width:34px;font-size:11px;color:var(--color-text-tertiary);text-align:right;flex-shrink:0">${(p*100).toFixed(1)}%</span>
+    </div>`;
+  }).join('');
+}
+function renderNLPExp(){
+  const el=document.getElementById('nlp-expectations');
+  if(!nlpR.names||!nlpR.names.length){el.innerHTML='<div style="font-size:12px;color:var(--color-text-tertiary)">Add corpus words to see constraints.</div>';return;}
+  el.innerHTML=nlpR.names.map((nm,i)=>{
+    const ai=NLP_FN.indexOf(nm),col=FC_NLP[ai],emp=nlpR.empirical[i]||0,mod=nlpR.model[i]||0;
+    const converged=Math.abs(emp-mod)<0.015;
+    return`<div class="match-row"><div class="match-label">${nm} <span style="font-size:10px;color:${converged?'#3B6D11':'#A32D2D'}">${converged?'&#10003; matched':'&#9679; converging'}</span></div>
+    <div class="match-pair"><span class="match-tag" style="color:#BA7517">corpus</span><div class="bar-track"><div class="bar-fill" style="width:${(emp*100).toFixed(1)}%;background:#BA7517"></div></div><span style="font-size:10px;color:#BA7517;width:26px;text-align:right">${emp.toFixed(2)}</span></div>
+    <div class="match-pair"><span class="match-tag" style="color:${col}">model</span><div class="bar-track"><div class="bar-fill" style="width:${(mod*100).toFixed(1)}%;background:${col}"></div></div><span style="font-size:10px;color:${col};width:26px;text-align:right">${mod.toFixed(2)}</span></div></div>`;
+  }).join('');
+}
+function clearCorpus(){corpus=[];hoveredWord=-1;updateNLP();}
+function toggleNLPFeature(i){nlpAF[i]=!nlpAF[i];updateNLP();}
+document.getElementById('word-btns').addEventListener('mouseleave',()=>{hoveredWord=-1;updateHover();});
+function switchTab(tab){
+  document.getElementById('tab-sdm').style.display=tab==='sdm'?'flex':'none';
+  document.getElementById('tab-nlp').style.display=tab==='nlp'?'block':'none';
+  ['sdm','nlp'].forEach(t=>{
+    const b=document.getElementById('btn-'+t),active=t===tab;
+    b.style.borderBottom=`2px solid ${active?'var(--color-text-primary)':'transparent'}`;
+    b.style.color=active?'var(--color-text-primary)':'var(--color-text-secondary)';
+    b.style.fontWeight=active?'500':'400';
+  });
+}
+buildGrid();updateSDM();updateNLP();
+</script>
+<footer style="margin-top:1.5rem;padding-top:0.75rem;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;">
+  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+</footer>
+<script>if (window.self !== window.top) { var f = document.querySelector('footer'); if (f) f.style.display = 'none'; }</script>
+</body>
+</html>
