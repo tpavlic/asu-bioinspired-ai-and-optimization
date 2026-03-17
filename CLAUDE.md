@@ -2,7 +2,7 @@
 
 This repository hosts supplemental course visualizations for **CSE/IEE 598: Bio-Inspired AI &
 Optimization** at Arizona State University, taught by Theodore P. Pavlic. The live site is at
-https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/.
+<https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/>.
 
 ---
 
@@ -10,7 +10,7 @@ https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/.
 
 Each visualization lives in its own subdirectory:
 
-```
+```bash
 my_demo/
   my_demo.html          # self-contained page (no build step)
   my_demo-preview.png   # preview image for OG/Twitter cards
@@ -51,6 +51,7 @@ Inside `<head>`, include all of the following, filling in the actual values:
 ```
 
 **Twitter/X image requirements** (stricter than other platforms):
+
 - Aspect ratio must be close to **2:1** (e.g. 1200×600, 2400×1200). Twitter silently drops
   images that deviate significantly, even if Facebook/Mastodon/Bluesky render them fine.
 - File size must be **under 5 MB**.
@@ -97,7 +98,7 @@ are delimited by HTML comments; each has a placeholder comment marking where to 
 Current sections and their placeholder comments:
 
 | Section heading | Placeholder comment |
-|---|---|
+| --- | --- |
 | Intuition Pumps for Genetic Algorithms | `<!-- Add more GA intuition demos here -->` |
 | Physics-Inspired Metaheuristics | `<!-- Add more physics-inspired demos here -->` |
 | Neural Networks | `<!-- Add more neural network demos here -->` |
@@ -126,17 +127,20 @@ Add a row to the appropriate table under `## Contents`:
 ## Current sections and demos
 
 ### Intuition Pumps for Genetic Algorithms
+
 - `shifting_balance_theory/sbt_four_peaks.html`
 - `ideal_free_distribution/ifd_on_pond.html`
 - `evolution_as_movement_in_drift_field/evolution_as_movement_in_drift_field.html` *(static figure)*
 
 ### Physics-Inspired Metaheuristics
+
 - `simulated_annealing/simulated_annealing_demo.html`
 - `parallel_tempering/parallel_tempering.html`
 - `softmax/softmax_temperature_explorer.html`
 - `maxent/maxent_demo.html`
 
 ### Neural Networks
+
 - `radial_basis_function_nn/rbfnn_explorer.html`
 
 ## Shared conventions
@@ -145,4 +149,4 @@ Add a row to the appropriate table under `## Contents`:
 - **Copyright:** © Theodore P. Pavlic, MIT License (`LICENSE` file at repo root)
 - **fb:app_id:** `2385695445236853` — include in all OG blocks
 - **GitHub Pages base URL:** `https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/`
-- **YouTube channel:** https://www.youtube.com/@TedPavlic — linked from the index header
+- **YouTube channel:** <https://www.youtube.com/@TedPavlic> — linked from the index header
