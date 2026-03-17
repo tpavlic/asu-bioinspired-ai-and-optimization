@@ -38,7 +38,7 @@
   --border-radius-lg:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:var(--font-sans)}
-.outer{max-width:860px}
+.outer{max-width:860px;margin:0 auto;padding:1rem 1.5rem}
 .grid{display:grid;grid-template-columns:repeat(10,1fr);gap:2px;width:100%}
 .grid-wrap{max-width:420px}
 .cell{aspect-ratio:1;border-radius:3px;cursor:pointer;border:2px solid transparent;position:relative;overflow:hidden;transition:border-color 0.1s}
@@ -72,7 +72,7 @@
 p,span,div,label,button{font-family:var(--font-sans)}
 </style>
 
-<div class="outer" style="padding:1rem 0">
+<div class="outer">
 <div style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:0.5px solid var(--color-border-tertiary)">
   <button id="btn-sdm" onclick="switchTab('sdm')" style="padding:8px 18px;font-size:13px;background:none;border:none;border-bottom:2px solid var(--color-text-primary);cursor:pointer;color:var(--color-text-primary);font-weight:500;font-family:var(--font-sans)">Species distribution</button>
   <button id="btn-nlp" onclick="switchTab('nlp')" style="padding:8px 18px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;color:var(--color-text-secondary);font-family:var(--font-sans);font-weight:400">Language model</button>
