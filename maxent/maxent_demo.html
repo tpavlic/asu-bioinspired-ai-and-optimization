@@ -121,13 +121,13 @@ p,span,div,label,button{font-family:var(--font-sans)}
   <div id="word-btns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem;padding:4px"></div>
   <div id="hover-note" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:1rem;height:2.8rem;overflow:hidden;line-height:1.6"></div>
   <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
-    <div style="flex:1;min-width:240px;max-width:460px">
+    <div style="flex:1;min-width:340px;max-width:460px">
       <div class="sl" style="margin-bottom:12px">Word probability</div>
       <div id="nlp-bars" style="padding:4px"></div>
       <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:8px;line-height:1.5">Vertical line = uniform (12.5%, no data). <span style="color:#3B6D11">Green</span> = above uniform; <span style="color:#A32D2D">red</span> = below.</div>
       <button class="clrbtn" onclick="clearCorpus()">Clear corpus</button>
     </div>
-    <div style="flex:0 0 220px">
+    <div style="flex:0 0 220px;min-width:220px">
       <div class="panel">
         <div class="sl">Active features &amp; constraints</div>
         <label class="chk-row"><input type="checkbox" checked onchange="toggleNLPFeature(0)"> <span class="cswatch" style="background:#3B6D11"></span> Nature word</label>
