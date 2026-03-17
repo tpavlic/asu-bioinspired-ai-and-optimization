@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Softmax Temperature Explorer</title>
+<style>
+:root {
+  --bg-primary:    #ffffff;
+  --bg-secondary:  #f5f4f0;
+  --bg-tertiary:   #eceae4;
+  --bd-faint:      rgba(0,0,0,0.10);
+  --bd-light:      rgba(0,0,0,0.18);
+  --bd-mid:        rgba(0,0,0,0.28);
+  --tx-primary:    #1c1c1a;
+  --tx-secondary:  #55534e;
+  --tx-tertiary:   #8a8880;
+  --tx-mono:       #3a3835;
+  --accent:        #185FA5;
+  --accent-bg:     #e6f1fb;
+  --font-serif:    Georgia, 'Times New Roman', serif;
+  --font-mono:     'Courier New', Courier, monospace;
+  --radius-md:     8px;
+  --radius-lg:     12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary:    #1e1e1c;
+    --bg-secondary:  #282825;
+    --bg-tertiary:   #323230;
+    --bd-faint:      rgba(255,255,255,0.08);
+    --bd-light:      rgba(255,255,255,0.14);
+    --bd-mid:        rgba(255,255,255,0.24);
+    --tx-primary:    #f0efe9;
+    --tx-secondary:  #a8a7a1;
+    --tx-tertiary:   #706f6a;
+    --tx-mono:       #d8d7d1;
+    --accent:        #85B7EB;
+    --accent-bg:     #0c1e30;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--tx-primary);
+  background: var(--bg-primary);
+  padding: 1.25rem 1.5rem 2rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ── formula banner ─────────────────────────────────── */
+.formula-banner {
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 10px 16px;
+  margin-bottom: 14px;
+}
+.formula-eq {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  text-align: center;
+  color: var(--tx-primary);
+  margin-bottom: 3px;
+}
+.formula-note {
+  font-size: 12px;
+  text-align: center;
+  color: var(--tx-secondary);
+}
+
+/* ── main two-column grid ───────────────────────────── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 210px minmax(0,1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 560px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+/* ── cards ──────────────────────────────────────────── */
+.card {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--bd-faint);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+
+.card-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--tx-tertiary);
+  margin-bottom: 10px;
+}
+
+/* ── score sliders ──────────────────────────────────── */
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+.score-lbl {
+  font-size: 13px;
+  font-family: var(--font-serif);
+  color: var(--tx-secondary);
+  width: 28px;
+  flex-shrink: 0;
+}
+.score-val {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--tx-tertiary);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── preset buttons ─────────────────────────────────── */
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--bd-faint);
+}
+.preset-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--bd-light);
+  border-radius: 6px;
+  color: var(--tx-secondary);
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.preset-btn:hover { background: var(--bg-tertiary); }
+
+/* ── chart area ─────────────────────────────────────── */
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+}
+
+/* ── temperature strip ──────────────────────────────── */
+.temp-card {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--bd-faint);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px 10px;
+  margin-bottom: 12px;
+}
+.temp-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.temp-value {
+  font-size: 22px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--tx-primary);
+  transition: color 0.08s;
+}
+.temp-regime {
+  font-size: 13px;
+  color: var(--tx-tertiary);
+  font-style: italic;
+  margin-left: 8px;
+}
+.temp-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--tx-tertiary);
+  margin-top: 4px;
+}
+
+/* ── range input reset & track ──────────────────────── */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(to right,
+    #378ADD 0%, #7F77DD 40%, #D85A30 70%, #E24B4A 100%);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 2px solid var(--bd-mid);
+  cursor: pointer;
+  margin-top: -5px;
+}
+input[type=range]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  border: 2px solid var(--bd-mid);
+  cursor: pointer;
+}
+input[type=range].score-slider {
+  height: 4px;
+  background: var(--bg-tertiary);
+}
+input[type=range].score-slider::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+}
+input[type=range].score-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── stat cards ─────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 10px;
+}
+@media (max-width: 420px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
+.stat-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  text-align: center;
+}
+.stat-label {
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tx-tertiary);
+  margin-bottom: 3px;
+}
+.stat-value {
+  font-size: 20px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: var(--tx-primary);
+  transition: color 0.08s;
+}
+.stat-sub {
+  font-size: 10px;
+  color: var(--tx-tertiary);
+  margin-top: 2px;
+}
+.entropy-bar-track {
+  height: 3px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.entropy-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.04s, background 0.08s;
+  background: #378ADD;
+}
+</style>
+</head>
+<body>
+
+<div class="formula-banner">
+  <div class="formula-eq">
+    P(i) = exp(s<sub>i</sub> / T) &nbsp;/&nbsp; &sum;<sub>j</sub> exp(s<sub>j</sub> / T)
+  </div>
+  <div class="formula-note">
+    Boltzmann&ndash;Gibbs form &mdash; score s<sub>i</sub> &equiv; &minus;&epsilon;<sub>i</sub>/k<sub>B</sub> &nbsp;&mdash;&nbsp;
+    As T&rarr;0: mass concentrates on argmax s<sub>i</sub>. &nbsp;
+    As T&rarr;&infin;: P &rarr; Uniform(1/n).
+  </div>
+</div>
+
+<div class="main-grid">
+
+  <div class="card">
+    <div class="card-label">Scores / logits s<sub>i</sub></div>
+    <div id="scoreSliders"></div>
+    <div class="presets">
+      <button class="preset-btn" onclick="setPreset('one')">One winner</button>
+      <button class="preset-btn" onclick="setPreset('two')">Two rivals</button>
+      <button class="preset-btn" onclick="setPreset('grad')">Gradient</button>
+      <button class="preset-btn" onclick="setPreset('flat')">All equal</button>
+      <button class="preset-btn" onclick="setPreset('def')">Reset</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Probability distribution P(i)</div>
+    <div class="chart-wrap">
+      <canvas id="smxChart"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<div class="temp-card">
+  <div class="temp-header">
+    <span class="card-label" style="margin:0">Temperature T &mdash; log scale</span>
+    <div>
+      <span class="temp-value" id="tempVal">1.00</span>
+      <span class="temp-regime" id="tempRegime">standard softmax</span>
+    </div>
+  </div>
+  <input type="range" id="smxTemp" min="0" max="400" value="200" step="1">
+  <div class="temp-ticks">
+    <span>T = 0.01 &nbsp;peaked</span>
+    <span>0.1</span>
+    <span>T = 1 &nbsp;standard</span>
+    <span>10</span>
+    <span>T = 100 &nbsp;uniform</span>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Normalized entropy</div>
+    <div class="stat-value" id="statEnt">&mdash;</div>
+    <div class="stat-sub">H(p) / log n &nbsp;&mdash;&nbsp; 0 peaked, 1 uniform</div>
+    <div class="entropy-bar-track">
+      <div class="entropy-bar-fill" id="entFill"></div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Max probability</div>
+    <div class="stat-value" id="statMax">&mdash;</div>
+    <div class="stat-sub">P(argmax s<sub>i</sub>)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Perplexity</div>
+    <div class="stat-value" id="statPerp">&mdash;</div>
+    <div class="stat-sub">exp(H) &mdash; effective # of states</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+/* ── constants ─────────────────────────────────────────────── */
+const LABELS  = ['A','B','C','D','E','F'];
+const N       = LABELS.length;
+const PRESETS = {
+  def:  [ 3.0, 1.8,  0.5, -0.3, -1.2,  2.4],
+  one:  [ 5.0, 0.0,  0.0,  0.5, -0.5,  0.0],
+  two:  [ 3.0, 2.8,  0.0, -0.5, -1.0,  0.0],
+  grad: [ 3.0, 2.0,  1.0,  0.0, -1.0, -2.0],
+  flat: [ 0.0, 0.0,  0.0,  0.0,  0.0,  0.0],
+};
+
+let scores = [...PRESETS.def];
+
+/* ── math helpers ──────────────────────────────────────────── */
+function sliderToT(v) {
+  /* linear slider 0–400 → log T in [0.01, 100] */
+  return Math.pow(10, (v - 200) / 100);
+}
+
+function softmax(sc, T) {
+  const s  = sc.map(x => x / T);
+  const mx = Math.max(...s);
+  const ex = s.map(x => Math.exp(x - mx));
+  const Z  = ex.reduce((a, b) => a + b, 0);
+  return ex.map(e => e / Z);
+}
+
+function entropy(p) {
+  return p.reduce((h, x) => h - (x > 1e-15 ? x * Math.log(x) : 0), 0);
+}
+
+/* ── colour ramp (cold→warm matches Boltzmann intuition) ───── */
+const STOPS = [
+  [0,   [55, 138, 221]],   /* blue  – low T */
+  [0.4, [127,119, 221]],   /* purple */
+  [0.7, [216, 90,  48]],   /* orange */
+  [1,   [226, 75,  74]],   /* red   – high T */
+];
+
+function heatRGB(t) {
+  let lo = STOPS[0], hi = STOPS[STOPS.length - 1];
+  for (let i = 0; i < STOPS.length - 1; i++) {
+    if (t >= STOPS[i][0] && t <= STOPS[i+1][0]) { lo = STOPS[i]; hi = STOPS[i+1]; break; }
+  }
+  const u = hi[0] === lo[0] ? 0 : (t - lo[0]) / (hi[0] - lo[0]);
+  return [0,1,2].map(i => Math.round(lo[1][i] + u * (hi[1][i] - lo[1][i])));
+}
+function heatRGBA(t, a) {
+  const [r,g,b] = heatRGB(t);
+  return a != null ? `rgba(${r},${g},${b},${a})` : `rgb(${r},${g},${b})`;
+}
+function heatHex(t) {
+  const [r,g,b] = heatRGB(t);
+  return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+}
+
+/* ── build score sliders ────────────────────────────────────── */
+const scoreContainer = document.getElementById('scoreSliders');
+scores.forEach((s, i) => {
+  const row = document.createElement('div');
+  row.className = 'score-row';
+  row.innerHTML = `
+    <span class="score-lbl">s<sub>${LABELS[i]}</sub></span>
+    <input type="range" class="score-slider" min="-30" max="30" step="1"
+           value="${Math.round(s * 10)}" id="ss${i}" style="flex:1">
+    <span class="score-val" id="sv${i}">${s.toFixed(1)}</span>`;
+  scoreContainer.appendChild(row);
+  row.querySelector('input').addEventListener('input', e => {
+    scores[i] = parseInt(e.target.value) / 10;
+    document.getElementById(`sv${i}`).textContent = scores[i].toFixed(1);
+    update();
+  });
+});
+
+function setPreset(name) {
+  scores = [...PRESETS[name]];
+  scores.forEach((s, i) => {
+    document.getElementById(`ss${i}`).value = Math.round(s * 10);
+    document.getElementById(`sv${i}`).textContent = s.toFixed(1);
+  });
+  update();
+}
+
+/* ── Chart.js setup ─────────────────────────────────────────── */
+const initProbs = softmax(scores, 1);
+const chart = new Chart(document.getElementById('smxChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: LABELS.map(l => `State ${l}`),
+    datasets: [{
+      data: initProbs,
+      backgroundColor: initProbs.map(() => heatRGBA(0.5, 0.65)),
+      borderColor:      initProbs.map(() => heatRGBA(0.5)),
+      borderWidth: 1,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: c => `P = ${(c.parsed.y * 100).toFixed(2)}%` }
+      }
+    },
+    scales: {
+      y: {
+        min: 0, max: 1,
+        ticks: {
+          color: '#888',
+          font: { size: 11 },
+          callback: v => `${(v * 100).toFixed(0)}%`
+        },
+        grid: { color: 'rgba(128,128,128,0.1)' },
+        title: { display: true, text: 'Probability P(i)', color: '#999', font: { size: 11 } }
+      },
+      x: {
+        ticks: { color: '#666', font: { size: 11 } },
+        grid:  { display: false }
+      }
+    }
+  },
+  plugins: [{
+    id: 'uniformLine',
+    afterDraw(ch) {
+      const { ctx: c, chartArea: { left, right }, scales: { y } } = ch;
+      const yp = y.getPixelForValue(1 / N);
+      c.save();
+      c.setLineDash([4, 4]);
+      c.strokeStyle = 'rgba(128,128,128,0.45)';
+      c.lineWidth = 1;
+      c.beginPath(); c.moveTo(left, yp); c.lineTo(right, yp); c.stroke();
+      c.setLineDash([]);
+      c.fillStyle = 'rgba(128,128,128,0.65)';
+      c.font = '10px monospace';
+      c.textAlign = 'right';
+      c.fillText(`uniform (1/${N})`, right - 2, yp - 4);
+      c.restore();
+    }
+  }]
+});
+
+/* ── main update ────────────────────────────────────────────── */
+function update() {
+  const v = parseFloat(document.getElementById('smxTemp').value);
+  const T = sliderToT(v);
+  const tN = v / 400;   /* normalized position on slider [0,1] */
+
+  const probs = softmax(scores, T);
+  const H     = entropy(probs);
+  const Hn    = H / Math.log(N);
+  const maxP  = Math.max(...probs);
+  const perp  = Math.exp(H);
+  const col   = heatHex(tN);
+
+  /* update chart */
+  chart.data.datasets[0].data            = probs;
+  chart.data.datasets[0].backgroundColor = probs.map(() => heatRGBA(tN, 0.65));
+  chart.data.datasets[0].borderColor     = probs.map(() => heatRGBA(tN));
+  chart.update('none');
+
+  /* temperature readout */
+  const Ts = T < 0.1 ? T.toFixed(3) : T < 10 ? T.toFixed(2) : T.toFixed(1);
+  const tv = document.getElementById('tempVal');
+  tv.textContent = Ts;
+  tv.style.color = col;
+
+  const regime =
+    T < 0.05 ? 'near-deterministic (argmax)' :
+    T < 0.3  ? 'strongly peaked' :
+    T < 0.8  ? 'moderately peaked' :
+    T < 1.5  ? 'standard softmax (T = 1)' :
+    T < 5    ? 'moderately diffuse' :
+    T < 20   ? 'strongly diffuse' :
+               'near-uniform (max-entropy)';
+  document.getElementById('tempRegime').textContent = regime;
+
+  /* stat cards */
+  const eEl = document.getElementById('statEnt');
+  eEl.textContent = Hn.toFixed(3);
+  eEl.style.color = col;
+
+  const ef = document.getElementById('entFill');
+  ef.style.width      = `${(Hn * 100).toFixed(1)}%`;
+  ef.style.background = col;
+
+  const mEl = document.getElementById('statMax');
+  mEl.textContent = `${(maxP * 100).toFixed(1)}%`;
+  mEl.style.color = col;
+
+  const pEl = document.getElementById('statPerp');
+  pEl.textContent = perp.toFixed(2);
+  pEl.style.color = col;
+}
+
+document.getElementById('smxTemp').addEventListener('input', update);
+update();
+</script>
+</body>
+</html>
