@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boltzmann Distribution — Random Exchange</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f0f2ec;
+  --card:      #ffffff;
+  --card-tint: #ecf4e8;
+  --border:    #c8d4c2;
+  --border-md: #b0c0aa;
+  --gd:        #1b3d27;
+  --gm:        #2d6045;
+  --gl:        #4a8c68;
+  --orange:    #c95c0a;
+  --text:      #1a1f1a;
+  --text-mid:  #475445;
+  --text-dim:  #8a9e88;
+  --sans:      'DM Sans', system-ui, sans-serif;
+  --mono:      'DM Mono', 'Courier New', monospace;
+}
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  padding: 16px 18px 28px;
+  font-size: 14px;
+  line-height: 1.55;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--gd);
+  margin-bottom: 2px;
+}
+.page-sub {
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  margin-bottom: 14px;
+}
+.formula-pill {
+  font-family: var(--mono);
+  font-size: 0.77rem;
+  background: var(--gd);
+  color: #d0f0d8;
+  border-radius: 4px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+
+/* ── TABS ── */
+.tab-lbl {
+  font-size: 0.75rem;
+  color: var(--text-mid);
+  margin-bottom: 5px;
+}
+.tab-lbl strong { color: var(--text); }
+.tab-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+.tab-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border-md);
+  background: var(--card);
+  color: var(--text-mid);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.12s;
+  line-height: 1;
+  white-space: nowrap;
+}
+.tab-btn:hover { border-color: var(--gm); color: var(--gm); }
+.tab-btn.active {
+  background: var(--gd);
+  border-color: var(--gd);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── DESCRIPTION BOX ── */
+.desc-box {
+  background: var(--card-tint);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  min-height: 58px;
+}
+.desc-box strong { color: var(--text); }
+.desc-box code {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  background: rgba(45,96,69,0.12);
+  color: var(--gm);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+
+/* ── CHART CARD ── */
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px 8px;
+  margin-bottom: 10px;
+}
+.chart-card-hdr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chart-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gm);
+}
+.log-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.log-toggle:hover { color: var(--text-mid); }
+input[type=checkbox] {
+  accent-color: var(--gm);
+  cursor: pointer;
+  width: 13px; height: 13px;
+}
+.chart-wrap { position: relative; height: 230px; }
+.copyright {
+  text-align: right;
+  font-size: 0.61rem;
+  color: var(--text-dim);
+  margin-top: 5px;
+}
+
+/* ── STATS ROW ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--border);
+  border-radius: 7px;
+  padding: 8px 11px 7px;
+}
+.stat-card.ok   { border-top-color: #3cb370; }
+.stat-card.warn { border-top-color: #e0a800; }
+.stat-card.bad  { border-top-color: #d04020; }
+.stat-lbl {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gm);
+  margin-bottom: 2px;
+}
+.stat-val {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--mono);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.stat-sub {
+  font-size: 0.61rem;
+  color: var(--text-dim);
+  margin-top: 3px;
+  min-height: 16px;
+  font-family: var(--mono);
+  line-height: 1.3;
+}
+.badge {
+  display: inline-block;
+  font-size: 0.61rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 8px;
+  padding: 1px 7px;
+}
+.badge-ok   { background:#d4f0e0; color:#1a5c38; border:1px solid #a0d4b8; }
+.badge-warn { background:#fef3d0; color:#8a5c00; border:1px solid #e0c060; }
+.badge-bad  { background:#fde8e4; color:#8a2810; border:1px solid #e0a898; }
+
+/* ── CONTROLS CARD ── */
+.ctrl-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.ctrl-grp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ctrl-lbl {
+  font-size: 0.63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gm);
+}
+.ctrl-mono {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--gd);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.22);
+  cursor: pointer;
+}
+
+select {
+  background: var(--bg);
+  border: 1.5px solid var(--border-md);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  font-family: var(--sans);
+  cursor: pointer;
+  outline: none;
+  min-width: 70px;
+}
+select:focus { border-color: var(--gm); }
+
+.ctrl-divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.btn-row { display: flex; gap: 7px; align-items: center; padding-top: 16px; }
+.btn {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: 1.5px solid transparent;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s;
+  line-height: 1;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--gd); border-color: var(--gd); color: #fff; }
+.btn-primary:hover { background: var(--gm); }
+.btn-primary.pause { background: var(--orange); border-color: var(--orange); }
+.btn-primary.pause:hover { filter: brightness(1.1); }
+.btn-sec   { background: var(--card); border-color: var(--border-md); color: var(--text-mid); }
+.btn-sec:hover   { border-color: var(--gm); color: var(--gm); }
+.btn-ghost { background: transparent; border-color: var(--border); color: var(--text-dim); }
+.btn-ghost:hover { border-color: #c04030; color: #c04030; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 620px) {
+  body { padding: 12px 12px 24px; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .ctrl-card { flex-direction: column; gap: 12px; }
+  .ctrl-divider { display: none; }
+  .chart-wrap { height: 190px; }
+  .tab-btn { font-size: 0.72rem; padding: 5px 10px; }
+}
+@media (max-width: 380px) {
+  .btn { padding: 7px 10px; font-size: 0.73rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-title">Boltzmann Distribution via Random Exchange</div>
+<div class="page-sub">
+  N agents repeatedly trade random amounts of wealth. Total wealth W is strictly conserved.
+  The maximum-entropy equilibrium for any conserved non-negative quantity is
+  <span class="formula-pill">P(w) = (1/μ) e<sup>−w/μ</sup></span>
+  — regardless of initial conditions.
+</div>
+
+<!-- ── INITIAL CONDITION TABS ── -->
+<div class="tab-lbl">Click to choose an <strong>initial wealth distribution</strong>:</div>
+<div class="tab-row" id="initTabs">
+  <button class="tab-btn active" data-init="equal">equal · δ(μ)</button>
+  <button class="tab-btn" data-init="concentrated">concentrated · one rich</button>
+  <button class="tab-btn" data-init="uniform">uniform random</button>
+  <button class="tab-btn" data-init="bimodal">bimodal · two classes</button>
+  <button class="tab-btn" data-init="exponential">exponential ✓ (control)</button>
+</div>
+
+<div class="desc-box" id="descBox">
+  <strong>Equal (δ-function at μ).</strong> Every agent begins with exactly the same
+  wealth <code>W/N</code> — maximum order, minimum entropy. Watch it broaden into the exponential.
+  The system spontaneously generates inequality from a perfectly egalitarian start.
+</div>
+
+<!-- ── CHART ── -->
+<div class="chart-card">
+  <div class="chart-card-hdr">
+    <span class="chart-title">Wealth Distribution</span>
+    <label class="log-toggle">
+      <input type="checkbox" id="logToggle">
+      log-scale y &nbsp;<span style="font-size:0.68rem;color:var(--text-dim)">(straight line confirms exponential)</span>
+    </label>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="histChart"></canvas>
+  </div>
+  <div class="copyright">© 2026 Theodore P. Pavlic · MIT License</div>
+</div>
+
+<!-- ── STATS ── -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-lbl">Sweeps</div>
+    <div class="stat-val" id="vSweeps">0</div>
+    <div class="stat-sub" style="color:var(--text-dim)">N trades each</div>
+  </div>
+  <div class="stat-card" id="cMean">
+    <div class="stat-lbl">Empirical Mean</div>
+    <div class="stat-val" id="vMean">—</div>
+    <div class="stat-sub" id="sMeanSub"></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-lbl">Theoretical μ</div>
+    <div class="stat-val" id="vTheo">—</div>
+    <div class="stat-sub" style="color:var(--text-dim)">W<sub>total</sub> / N</div>
+  </div>
+  <div class="stat-card" id="cFit">
+    <div class="stat-lbl">Fit to Exp(μ)</div>
+    <div class="stat-val" id="vFit">—</div>
+    <div class="stat-sub" id="sFitSub"></div>
+  </div>
+</div>
+
+<!-- ── CONTROLS ── -->
+<div class="ctrl-card">
+
+  <div class="ctrl-grp">
+    <span class="ctrl-lbl">Agents N</span>
+    <select id="selN">
+      <option value="50">50</option>
+      <option value="100" selected>100</option>
+      <option value="200">200</option>
+      <option value="500">500</option>
+    </select>
+  </div>
+
+  <div class="ctrl-divider"></div>
+
+  <div class="ctrl-grp">
+    <span class="ctrl-lbl">Speed</span>
+    <input type="range" id="sliderSpeed" min="0" max="4" value="1" step="1" style="width:140px">
+    <span class="ctrl-mono" id="speedLabel">2 sweeps / frame</span>
+  </div>
+
+  <div class="ctrl-grp">
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnRun">▶ Run</button>
+      <button class="btn btn-sec"     id="btnStep">Step</button>
+      <button class="btn btn-ghost"   id="btnReset">↺ Reset</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+//  CONSTANTS
+// ================================================================
+const TOTAL_W      = 1000;
+const N_BINS       = 30;
+const MAX_TRADE_MU = 0.25;   // fixed: each transfer drawn from U[0, 0.25·μ]
+
+const SPD_VALS = [1, 2, 5, 10, 50];
+const SPD_LBLS = ['1 sweep / frame','2 sweeps / frame','5 sweeps / frame',
+                  '10 sweeps / frame','50 sweeps / frame'];
+
+const INIT_DESC = {
+  equal:
+    '<strong>Equal (δ-function at μ).</strong> Every agent begins with exactly the same ' +
+    'wealth <code>W/N</code> — maximum order, minimum entropy. Watch it broaden into the exponential. ' +
+    'The system spontaneously generates inequality from a perfectly egalitarian start.',
+  concentrated:
+    '<strong>Concentrated — one rich agent.</strong> All wealth begins in a single wallet; ' +
+    'everyone else has zero. Wealth diffuses outward, still converging to the same exponential — ' +
+    'demonstrating that the equilibrium is path-independent.',
+  uniform:
+    '<strong>Uniform random.</strong> Initial wealth is drawn uniformly at random and renormalized. ' +
+    'Already spread, but with the wrong shape — flat rather than exponential. ' +
+    'It reshapes rapidly, showing that any initial condition flows to the same attractor.',
+  bimodal:
+    '<strong>Bimodal — two wealth classes.</strong> Half the agents start wealthy, half start poor. ' +
+    'The two peaks merge as exchange erases the class structure. Watch the valley between them fill in.',
+  exponential:
+    '<strong>Exponential ✓ (control).</strong> Agents are initialized by drawing directly from Exp(μ). ' +
+    'The distribution should be stable from the very first step — confirming the exponential is the ' +
+    'true fixed point, not just an approximate attractor.',
+};
+
+// ================================================================
+//  STATE
+// ================================================================
+let N      = 100;
+let agents = new Float64Array(N);
+let sweeps = 0;
+let running = false;
+let rafId   = null;
+let chart   = null;
+
+// ================================================================
+//  INITIALIZATION
+// ================================================================
+function renorm() {
+  let s = 0;
+  for (let i = 0; i < N; i++) s += agents[i];
+  const k = TOTAL_W / s;
+  for (let i = 0; i < N; i++) agents[i] *= k;
+}
+
+function initAgents() {
+  N      = +document.getElementById('selN').value;
+  agents = new Float64Array(N);
+  sweeps = 0;
+  const mode = document.querySelector('.tab-btn.active[data-init]').dataset.init;
+
+  if (mode === 'equal') {
+    agents.fill(TOTAL_W / N);
+  } else if (mode === 'concentrated') {
+    agents[0] = TOTAL_W;
+  } else if (mode === 'uniform') {
+    for (let i = 0; i < N; i++) agents[i] = Math.random() + 1e-6;
+    renorm();
+  } else if (mode === 'bimodal') {
+    const lo = 0.25 * (TOTAL_W / N), hi = 1.75 * (TOTAL_W / N);
+    for (let i = 0; i < N; i++) {
+      agents[i] = ((i < N/2) ? lo : hi) * (1 + 0.02*(Math.random()-0.5));
+    }
+    renorm();
+  } else if (mode === 'exponential') {
+    const mu = TOTAL_W / N;
+    for (let i = 0; i < N; i++) agents[i] = -mu * Math.log(Math.random() + 1e-15);
+    renorm();
+  }
+}
+
+// ================================================================
+//  TRADING STEP
+//
+//  Each trade:
+//    1. Pick two agents i, j at random.
+//    2. Draw amount a ~ U[0, 0.25·μ].
+//    3. Pick giver and receiver at random.
+//    4. Transfer min(a, w_giver) — giver cannot go negative.
+//
+//  Conservation: exact (no wealth created or destroyed).
+//  Non-negativity: guaranteed by the min().
+// ================================================================
+function doSweep() {
+  const maxTrade = MAX_TRADE_MU * (TOTAL_W / N);
+  for (let t = 0; t < N; t++) {
+    let i = (Math.random() * N) | 0;
+    let j = (Math.random() * (N-1)) | 0;
+    if (j >= i) j++;
+    const amount   = Math.random() * maxTrade;
+    const giverIsI = Math.random() < 0.5;
+    const giver    = giverIsI ? i : j;
+    const receiver = giverIsI ? j : i;
+    const transfer = Math.min(amount, agents[giver]);
+    agents[giver]    -= transfer;
+    agents[receiver] += transfer;
+  }
+  sweeps++;
+}
+
+// ================================================================
+//  HISTOGRAM DATA
+// ================================================================
+function histData() {
+  const mu  = TOTAL_W / N;
+  const bw  = (5.5 * mu) / N_BINS;
+  const cnt = new Float64Array(N_BINS);
+  for (let i = 0; i < N; i++) {
+    const b = Math.min((agents[i] / bw) | 0, N_BINS - 1);
+    cnt[b]++;
+  }
+  const theo = Float64Array.from({length: N_BINS}, (_, k) => {
+    const xm = (k + 0.5) * bw;
+    return N * bw / mu * Math.exp(-xm / mu);
+  });
+  const labels = Array.from({length: N_BINS}, (_, k) =>
+    ((k + 0.5) * bw).toFixed(1));
+  return {cnt, theo, labels, mu};
+}
+
+// ================================================================
+//  FIT ρ  (Pearson between empirical and theoretical bin counts)
+// ================================================================
+function fitRho(cnt, theo) {
+  const n = cnt.length;
+  let mx = 0, my = 0;
+  for (let i = 0; i < n; i++) { mx += cnt[i]; my += theo[i]; }
+  mx /= n; my /= n;
+  let num = 0, dx2 = 0, dy2 = 0;
+  for (let i = 0; i < n; i++) {
+    const dx = cnt[i]-mx, dy = theo[i]-my;
+    num += dx*dy; dx2 += dx*dx; dy2 += dy*dy;
+  }
+  return (dx2 > 1e-12 && dy2 > 1e-12) ? num / Math.sqrt(dx2 * dy2) : 0;
+}
+
+// ================================================================
+//  CHART
+// ================================================================
+function initChart() {
+  const ctx  = document.getElementById('histChart').getContext('2d');
+  const {cnt, theo, labels, mu} = histData();
+  const logY = document.getElementById('logToggle').checked;
+  chart = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Empirical counts',
+          data: Array.from(cnt),
+          backgroundColor: 'rgba(45,96,69,0.25)',
+          borderColor:     'rgba(45,96,69,0.70)',
+          borderWidth: 1,
+          barPercentage: 1.0,
+          categoryPercentage: 1.0,
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: `Theoretical  Exp(μ = ${mu.toFixed(2)})`,
+          data: Array.from(theo),
+          borderColor: '#c95c0a',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          tension: 0.35,
+          fill: false,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      scales: {
+        x: {
+          title: { display:true, text:'wealth  w',
+            color:'#7a9a78', font:{size:11,family:'DM Sans,sans-serif'} },
+          ticks: { color:'#8aaa88', maxTicksLimit:7,
+            font:{size:9,family:'DM Mono,monospace'} },
+          grid: { color:'rgba(180,210,178,0.35)' },
+        },
+        y: {
+          title: { display:true, text:'count',
+            color:'#7a9a78', font:{size:11,family:'DM Sans,sans-serif'} },
+          ticks: { color:'#8aaa88', font:{size:9,family:'DM Mono,monospace'} },
+          grid: { color:'rgba(180,210,178,0.35)' },
+          type: logY ? 'logarithmic' : 'linear',
+          min:  logY ? 0.5 : 0,
+        }
+      },
+      plugins: {
+        legend: {
+          labels: { color:'#475445', boxWidth:13, padding:14,
+            font:{size:11,family:'DM Sans,sans-serif'} }
+        },
+        tooltip: { enabled: false }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  if (!chart) return;
+  const {cnt, theo, mu} = histData();
+  const logY = document.getElementById('logToggle').checked;
+  chart.data.datasets[0].data = Array.from(cnt);
+  chart.data.datasets[1].data = Array.from(theo);
+  chart.data.datasets[1].label = `Theoretical  Exp(μ = ${mu.toFixed(2)})`;
+  chart.options.scales.y.type = logY ? 'logarithmic' : 'linear';
+  chart.options.scales.y.min  = logY ? 0.5 : 0;
+  chart.update('none');
+}
+
+// ================================================================
+//  STATS
+// ================================================================
+function updateStats() {
+  const {cnt, theo} = histData();
+  const mu   = TOTAL_W / N;
+  const mean = agents.reduce((s,v) => s+v, 0) / N;
+  const rho  = fitRho(cnt, theo);
+
+  document.getElementById('vSweeps').textContent = sweeps.toLocaleString();
+
+  document.getElementById('vMean').textContent = mean.toFixed(3);
+  const mErr = Math.abs(mean - mu) / mu * 100;
+  const sm   = document.getElementById('sMeanSub');
+  sm.style.color = mErr < 0.01 ? 'var(--gl)' : '#c09020';
+  sm.textContent = `err: ${mErr.toFixed(4)} %`;
+
+  document.getElementById('vTheo').textContent = mu.toFixed(3);
+
+  const fc = document.getElementById('cFit');
+  document.getElementById('vFit').textContent = `ρ = ${rho.toFixed(3)}`;
+  const sf = document.getElementById('sFitSub');
+  if (sweeps === 0) {
+    sf.innerHTML = '<span style="color:var(--text-dim)">run to assess</span>';
+    fc.className = 'stat-card';
+  } else if (rho > 0.97) {
+    sf.innerHTML = '<span class="badge badge-ok">converged ✓</span>';
+    fc.className = 'stat-card ok';
+  } else if (rho > 0.85) {
+    sf.innerHTML = '<span class="badge badge-warn">converging…</span>';
+    fc.className = 'stat-card warn';
+  } else {
+    sf.innerHTML = '<span class="badge badge-bad">not yet converged</span>';
+    fc.className = 'stat-card bad';
+  }
+}
+
+// ================================================================
+//  ANIMATION LOOP
+// ================================================================
+function frame() {
+  if (!running) return;
+  const nsw = SPD_VALS[+document.getElementById('sliderSpeed').value];
+  for (let s = 0; s < nsw; s++) doSweep();
+  updateChart();
+  updateStats();
+  rafId = requestAnimationFrame(frame);
+}
+
+// ================================================================
+//  UI HELPERS
+// ================================================================
+function setRunning(val) {
+  running = val;
+  const btn = document.getElementById('btnRun');
+  if (running) {
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('pause');
+    frame();
+  } else {
+    btn.textContent = '▶ Run';
+    btn.classList.remove('pause');
+    if (rafId) cancelAnimationFrame(rafId);
+  }
+}
+
+function doReset() {
+  setRunning(false);
+  initAgents();
+  if (chart) { chart.destroy(); chart = null; }
+  initChart();
+  updateStats();
+}
+
+// ================================================================
+//  EVENT LISTENERS
+// ================================================================
+document.getElementById('btnRun').addEventListener('click', () => setRunning(!running));
+document.getElementById('btnStep').addEventListener('click', () => {
+  doSweep(); updateChart(); updateStats();
+});
+document.getElementById('btnReset').addEventListener('click', doReset);
+document.getElementById('selN').addEventListener('change', doReset);
+
+document.getElementById('initTabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn[data-init]');
+  if (!btn) return;
+  document.querySelectorAll('.tab-btn[data-init]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('descBox').innerHTML = INIT_DESC[btn.dataset.init];
+  doReset();
+});
+
+document.getElementById('sliderSpeed').addEventListener('input', function () {
+  document.getElementById('speedLabel').textContent = SPD_LBLS[+this.value];
+});
+
+document.getElementById('logToggle').addEventListener('change', updateChart);
+
+// ================================================================
+//  BOOT
+// ================================================================
+document.getElementById('speedLabel').textContent = SPD_LBLS[1];
+initAgents();
+initChart();
+updateStats();
+</script>
+</body>
+</html>
