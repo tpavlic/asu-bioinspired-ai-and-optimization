@@ -11,8 +11,8 @@
   <meta property="og:title" content="Shifting Balance Theory — interactive explainer">
   <meta property="og:description" content="Step through the three phases of Wright's SBT: selection only, genetic drift, within-deme selection, and post-migration balance.">
   <meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/shifting_balance_theory/sbt_four_peaks-preview.png">
-  <meta property="og:image:width" content="1268">
-  <meta property="og:image:height" content="1026">
+  <meta property="og:image:width" content="1318">
+  <meta property="og:image:height" content="656">
   <meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/shifting_balance_theory/sbt_four_peaks.html">
   <meta property="fb:app_id" content="2385695445236853">
 
@@ -33,21 +33,17 @@
 .phtab.on{background:#085041;color:#9FE1CB;border-color:#085041}
 .cap{font-size:13px;color:#555;line-height:1.6;min-height:64px;margin:.75rem 0 0}
 </style>
-
-<div class="wrap">
-<div class="inner">
+<div class="wrap"><div class="inner">
   <div class="instr">Click a phase to step through the theory:</div>
   <div class="controls">
     <div class="phtab" id="tab0">0 · selection only</div>
     <div class="phtab" id="tab1">I · drift</div>
-    <div class="phtab" id="tab2">II · selection</div>
+    <div class="phtab" id="tab2">II · within-deme sel.</div>
     <div class="phtab" id="tab3">III · post-migration</div>
   </div>
   <canvas id="cv" style="width:100%;height:auto;display:block;border-radius:8px;border:1px solid #ddd"></canvas>
   <div class="cap" id="cap"></div>
-</div>
-</div>
-
+</div></div>
 <script>
 (function(){
 const cv=document.getElementById('cv');
@@ -56,7 +52,6 @@ const W=640,H=320;
 cv.width=W*dpr;cv.height=H*dpr;
 const ctx=cv.getContext('2d');
 ctx.scale(dpr,dpr);
-
 const PL=52,PR=16,PT=44,PB=56;
 const CW=W-PL-PR,CH=H-PT-PB;
 function mx(x){return PL+x*CW;}
@@ -68,7 +63,6 @@ function fit(x){
     +.82*Math.exp(-110*Math.pow(x-.65,2))
     +.80*Math.exp(-110*Math.pow(x-.90,2));
 }
-
 const DEMES=[
   {name:'Deme A',f:'#85B7EB',s:'#185FA5'},
   {name:'Deme B',f:'#FAC775',s:'#854F0B'},
@@ -76,37 +70,35 @@ const DEMES=[
   {name:'Deme D',f:'#F0997B',s:'#993C1D'},
 ];
 const JIT=[[2,-1,3,-2,1,-3,2],[-1,2,-3,1,-2,3,-1],[1,-2,2,-1,3,-2,1],[-2,1,-1,3,-1,2,-3]];
-
+const A_HIGH=[.616,.627,.637,.648,.658,.669,.679];
+const C_HIGH=[.865,.876,.886,.895,.904,.913,.922];
 const PHASES=[
   [[.091,.096,.101,.106,.111,.116,.121],
    [.094,.099,.104,.109,.114,.119,.124],
    [.343,.348,.353,.358,.363,.368,.373],
    [.346,.351,.356,.361,.366,.371,.376]],
-  [[.055,.080,.098,.116,.138,.508,.526],
-   [.060,.085,.103,.121,.143,.514,.532],
-   [.278,.306,.328,.352,.376,.782,.800],
-   [.284,.312,.336,.358,.382,.788,.806]],
-  [[.090,.100,.108,.116,.124,.636,.649],
-   [.094,.104,.112,.120,.128,.641,.654],
-   [.344,.354,.362,.370,.378,.882,.895],
-   [.348,.358,.366,.374,.382,.887,.900]],
-  [[.604,.618,.632,.646,.660,.672,.684],
-   [.609,.623,.637,.651,.665,.677,.689],
-   [.858,.870,.882,.896,.910,.922,.934],
-   [.863,.875,.887,.901,.915,.927,.939]],
+  [[.058,.082,.100,.120,.142,.516,.534],
+   [.068,.082,.096,.108,.120,.132,.146],
+   [.280,.306,.328,.352,.374,.786,.804],
+   [.300,.316,.332,.346,.360,.374,.388]],
+  [A_HIGH,
+   [.086,.095,.104,.113,.120,.128,.136],
+   C_HIGH,
+   [.336,.346,.356,.364,.372,.380,.388]],
+  [A_HIGH,
+   [.629,.641,.653,.664,.675,.687,.699],
+   C_HIGH,
+   [.873,.885,.897,.908,.919,.931,.943]],
 ];
-
 const CAPS=[
-  'Phase 0 — selection only (no drift). In the hypothetical absence of drift, selection pins each deme tightly to the nearest local fitness peak. The two low peaks are stable equilibria; no force can push a deme across the adaptive valley. This is the case that motivates the problem: selection alone is insufficient to explore the landscape.',
-  'Phase I — genetic drift. Small effective population sizes produce a balance of mutation, drift, and selection. Each within-deme distribution widens across allele-frequency space. The bracket shows this spread across all four demes: two individuals per deme have stochastically crossed the unstable equilibrium at the valley floor — a move selection would actively oppose.',
-  'Phase II — within-deme selection. Individuals that drifted past the unstable equilibrium at the valley floor are pulled uphill toward their nearest high peak (A & B toward high peak 1; C & D toward high peak 2). Individuals that did not cross are pulled back to their original low peaks. The "shift" arrows mark the direction of selection for those lucky crossers.',
-  'Phase III — post-migration balance. High-fitness pioneer individuals export migrants, dragging the remaining low-peak demes up to the high peaks. Once there, a new balance of mutation, drift, and selection establishes around the high peaks — shown by the bracket. The new drift spread is narrow enough that it does not reach the valley between the two high peaks, so the metapopulation stays on its new peaks.',
+  'Phase 0 — selection only (no drift). Each deme is a small population on its own geographic island. Demes A and B are on separate islands but happen to start with similar allele frequencies, placing both near low peak 1. Demes C and D are likewise on separate islands near low peak 2. The fitness landscape is not a map of geography: it shows how mean fitness f(p) changes with allele frequency p, and the same landscape applies to every island. Without drift, selection pins each island\'s population to its nearest peak, and no force can cross the adaptive valley. This is the problem SBT solves.',
+  'Phase I — genetic drift. Small island populations produce a balance of mutation, drift, and selection. On Deme A\'s island, the distribution widens enough that two individuals cross the unstable equilibrium at the valley floor, entering the basin of high peak 1 (upper bracket). Deme B, on its own separate island, also drifts but stays within low peak 1\'s basin. Similarly, Deme C crosses toward high peak 2 while Deme D stays near low peak 2.',
+  'Phase II — within-deme selection. Selection now dominates within each island. Deme A\'s crossers tip the balance: the whole deme is carried up to high peak 1, where a new balance of mutation, drift, and selection establishes (bracket). Deme B, which never crossed the valley on its island, is pulled back to low peak 1. Deme C converges on high peak 2 under the same new balance; Deme D returns to low peak 2. The spread of Demes A and C around their new peaks reflects that ongoing balance — this is not "selection only." Both low peaks still have occupants (B and D) that neither selection nor drift has been able to dislodge.',
+  'Phase III — post-migration balance. Deme A occasionally sends migrants from its island to Deme B\'s island (dashed arrow). Those migrants shift B\'s allele frequencies, and within-island selection then carries Deme B up to high peak 1 (solid arrow). Deme C does the same for Deme D toward high peak 2. Migration is essential: B and D could not have reached the high peaks by drift and selection alone. Demes A and C do not change — they were already at their balance. A new, higher balance of mutation, drift, and selection now holds across all four demes (bracket).',
 ];
-
 let cur=0,from=0,prog=1,raf;
 function ease(t){return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;}
 function lerp(a,b,t){return a+(b-a)*t;}
-
 function arrowhead(x1,y1,x2,y2,len,col){
   const a=Math.atan2(y2-y1,x2-x1);
   ctx.fillStyle=col;
@@ -115,7 +107,6 @@ function arrowhead(x1,y1,x2,y2,len,col){
   ctx.lineTo(x2-len*Math.cos(a+.38),y2-len*Math.sin(a+.38));
   ctx.closePath();ctx.fill();
 }
-
 function drawBracket(xlo,xhi,col,label,yFit){
   const by=my(yFit);
   ctx.strokeStyle=col;ctx.lineWidth=1;ctx.setLineDash([]);
@@ -125,99 +116,94 @@ function drawBracket(xlo,xhi,col,label,yFit){
   ctx.fillStyle=col;ctx.font='10px sans-serif';ctx.textAlign='center';
   ctx.fillText(label,mx((xlo+xhi)/2),by+13);
 }
-
+function drawBracketPx(xlo,xhi,col,label,yPx){
+  ctx.strokeStyle=col;ctx.lineWidth=.8;ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(mx(xlo),yPx-4);ctx.lineTo(mx(xlo),yPx+2);
+  ctx.lineTo(mx(xhi),yPx+2);ctx.lineTo(mx(xhi),yPx-4);ctx.stroke();
+  ctx.fillStyle=col;ctx.font='10px sans-serif';ctx.textAlign='center';
+  ctx.fillText(label,mx((xlo+xhi)/2),yPx+12);
+}
 function drawLegend(){
   const dotR=5,gap=6,itemGap=18;
   ctx.font='11px sans-serif';
-  const itemWidths=DEMES.map(d=>dotR*2+gap+ctx.measureText(d.name).width);
-  const totalW=itemWidths.reduce((s,w)=>s+w,0)+itemGap*(DEMES.length-1);
+  const iw=DEMES.map(d=>dotR*2+gap+ctx.measureText(d.name).width);
+  const totalW=iw.reduce((s,w)=>s+w,0)+itemGap*(DEMES.length-1);
   let x=(W-totalW)/2;
   const y=PT/2;
   DEMES.forEach((d,i)=>{
     ctx.beginPath();ctx.arc(x+dotR,y,dotR,0,2*Math.PI);
-    ctx.fillStyle=d.f;ctx.fill();
-    ctx.strokeStyle=d.s;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=d.f;ctx.fill();ctx.strokeStyle=d.s;ctx.lineWidth=1.5;ctx.stroke();
     ctx.fillStyle='#5F5E5A';ctx.textAlign='left';
     ctx.fillText(d.name,x+dotR*2+gap,y+4);
-    x+=itemWidths[i]+itemGap;
+    x+=iw[i]+itemGap;
   });
 }
-
 function drawCopyright(){
-  ctx.font='9px sans-serif';
-  ctx.fillStyle='rgba(136,135,128,.55)';
-  ctx.textAlign='right';
+  ctx.font='9px sans-serif';ctx.fillStyle='rgba(136,135,128,.55)';ctx.textAlign='right';
   ctx.fillText('\u00a9 2026 Theodore P. Pavlic \u00b7 MIT License',W-PR,H-6);
 }
-
+function drawPeakLabels(){
+  [[.10,'low peak 1','#854F0B'],[.35,'low peak 2','#854F0B'],
+   [.65,'high peak 1','#085041'],[.90,'high peak 2','#085041']].forEach(([px,lbl,c])=>{
+    ctx.fillStyle=c;ctx.font='11px sans-serif';ctx.textAlign='center';
+    ctx.fillText(lbl,mx(px),my(fit(px))-13);
+  });
+}
 function drawFrame(){
   ctx.clearRect(0,0,W,H);
   const t=ease(Math.min(1,prog));
-
   ctx.beginPath();ctx.moveTo(mx(0),my(0));ctx.lineTo(mx(0),my(fit(0)));
   for(let i=1;i<=500;i++)ctx.lineTo(mx(i/500),my(fit(i/500)));
   ctx.lineTo(mx(1),my(0));ctx.closePath();
   ctx.fillStyle='rgba(29,158,117,.07)';ctx.fill();
-
   ctx.beginPath();ctx.moveTo(mx(0),my(fit(0)));
   for(let i=1;i<=500;i++)ctx.lineTo(mx(i/500),my(fit(i/500)));
   ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
-
   ctx.strokeStyle='rgba(136,135,128,.22)';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(mx(0),my(0)+1);ctx.lineTo(mx(1),my(0)+1);ctx.stroke();
   ctx.beginPath();ctx.moveTo(mx(0)-1,my(0));ctx.lineTo(mx(0)-1,my(.99));ctx.stroke();
-
   ctx.fillStyle='#888';ctx.font='11px sans-serif';
   ctx.textAlign='center';ctx.fillText('allele frequency  p',mx(.5),my(0)+38);
   ctx.save();ctx.translate(13,my(.5));ctx.rotate(-Math.PI/2);
   ctx.fillText('mean fitness  f(p)',0,0);ctx.restore();
-
-  [[.10,'low','#854F0B'],[.35,'low','#854F0B'],[.65,'high','#085041'],[.90,'high','#085041']].forEach(([px,lbl,c])=>{
-    ctx.fillStyle=c;ctx.font='11px sans-serif';ctx.textAlign='center';
-    ctx.fillText(lbl+' peak',mx(px),my(fit(px))-12);
-  });
-
-  drawLegend();
-  drawCopyright();
+  drawPeakLabels();drawLegend();drawCopyright();
 
   if(cur===0){
-    const aa=Math.min(1,t*2);
-    ctx.globalAlpha=aa;
-    [[.091,.124,'A+B'],[.342,.377,'C+D']].forEach(([lo,hi,lbl])=>{
-      const by=my(0)+20;
-      ctx.strokeStyle='rgba(136,135,128,.45)';ctx.lineWidth=.8;ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.moveTo(mx(lo),by-4);ctx.lineTo(mx(lo),by+2);
-      ctx.lineTo(mx(hi),by+2);ctx.lineTo(mx(hi),by-4);ctx.stroke();
-      ctx.fillStyle='#5F5E5A';ctx.font='10px sans-serif';ctx.textAlign='center';
-      ctx.fillText('2 demes ('+lbl+')',mx((lo+hi)/2),by+12);
-    });
+    const aa=Math.min(1,t*2);ctx.globalAlpha=aa;
+    const yPx=my(0)+8;
+    drawBracketPx(.091,.124,'rgba(136,135,128,.7)','2 demes (A+B)',yPx);
+    drawBracketPx(.342,.377,'rgba(136,135,128,.7)','2 demes (C+D)',yPx);
     ctx.globalAlpha=1;
   }
 
+  // Phase 1: A at yFit=0.145 (raised a few px), C at yFit=0.052
   if(cur===1||(from===1&&t<.6)){
     const aa=cur===1?Math.min(1,t*1.8):Math.max(0,1-(t/.6));
     if(aa>.01){
       ctx.globalAlpha=aa;
-      const allX=PHASES[1].flat();
-      drawBracket(Math.min(...allX),Math.max(...allX),'#185FA5','balance of mutation, drift, and selection  (all demes)',.075);
+      drawBracket(Math.min(...PHASES[1][0]),Math.max(...PHASES[1][0]),'#185FA5','Deme A: balance spans valley',.145);
+      drawBracket(Math.min(...PHASES[1][2]),Math.max(...PHASES[1][2]),'#534AB7','Deme C: balance spans valley',.052);
+      const yPx=my(0)+8;
+      drawBracketPx(Math.min(...PHASES[1][1]),Math.max(...PHASES[1][1]),'#854F0B','Deme B: stays in basin',yPx);
+      drawBracketPx(Math.min(...PHASES[1][3]),Math.max(...PHASES[1][3]),'#993C1D','Deme D: stays in basin',yPx);
       ctx.globalAlpha=1;
     }
   }
 
+  // Phase 2: shift arrows + NEW balance bracket for A & C
   if(cur===2||(from===2&&t<.5)){
     const aa=cur===2?Math.min(1,t*2.5):Math.max(0,1-t/.5);
     ctx.globalAlpha=aa;
-    [[.22,.55,'#534AB7'],[.44,.78,'#854F0B']].forEach(([x1,x2,col])=>{
-      const ay1=my(.12),ay2=my(.20);
+    [[.24,.55,'#185FA5','A shifts',.385],[.46,.79,'#534AB7','C shifts',.625]].forEach(([x1,x2,col,lbl,lx])=>{
+      const ay1=my(.12);
       ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.setLineDash([]);
-      ctx.beginPath();ctx.moveTo(mx(x1),ay1);ctx.lineTo(mx(x2),ay2);ctx.stroke();
-      arrowhead(mx(x1),ay1,mx(x2),ay2,9,col);
+      ctx.beginPath();ctx.moveTo(mx(x1),ay1);ctx.lineTo(mx(x2),my(.20));ctx.stroke();
+      arrowhead(mx(x1),ay1,mx(x2),my(.20),9,col);
+      ctx.fillStyle=col;ctx.font='500 11px sans-serif';ctx.textAlign='center';
+      ctx.fillText(lbl,mx(lx),ay1-9);
     });
-    ctx.fillStyle='#534AB7';ctx.font='500 11px sans-serif';ctx.textAlign='center';
-    ctx.fillText('shift',mx(.385),my(.12)-9);
-    ctx.fillStyle='#854F0B';
-    ctx.fillText('shift',mx(.615),my(.12)-9);
+    drawBracket(Math.min(...A_HIGH),Math.max(...C_HIGH),'#185FA5','new balance of mutation, drift, and selection  (Demes A & C)',.075);
     ctx.globalAlpha=1;
   }
 
@@ -225,21 +211,35 @@ function drawFrame(){
     const aa=Math.min(1,(t-.2)*1.6);
     if(aa>.01){
       ctx.globalAlpha=Math.max(0,aa);
-      [[.65,.10],[.90,.35]].forEach(([src,dst])=>{
+      [[.65,.10,'rgba(23,95,165,.28)','rgba(23,95,165,.7)'],
+       [.90,.35,'rgba(83,74,183,.28)','rgba(83,74,183,.7)']].forEach(([src,dst,sc,ac])=>{
         const ang=Math.atan2(my(fit(dst))-my(fit(src)),mx(dst)-mx(src));
         const r=8;
         const sx=mx(src)+r*Math.cos(ang),sy=my(fit(src))+r*Math.sin(ang);
         const ex=mx(dst)-r*Math.cos(ang),ey=my(fit(dst))-r*Math.sin(ang);
-        ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(29,158,117,.32)';ctx.lineWidth=1.2;
+        ctx.setLineDash([4,4]);ctx.strokeStyle=sc;ctx.lineWidth=1.2;
         ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
         ctx.setLineDash([]);
-        arrowhead(sx,sy,ex,ey,8,'rgba(29,158,117,.55)');
+        arrowhead(sx,sy,ex,ey,8,ac);
+        const lx=sx+(ex-sx)*.25,ly=sy+(ey-sy)*.25;
+        ctx.fillStyle=ac;ctx.font='10px sans-serif';ctx.textAlign='center';
+        ctx.fillText('migrants',lx,ly-9);
+      });
+      [[.12,.65,'#854F0B','B shifts'],[.38,.90,'#993C1D','D shifts']].forEach(([startX,peakX,col,lbl])=>{
+        const len=50,ang=Math.atan2(my(fit(peakX))-my(fit(startX)),mx(peakX)-mx(startX));
+        const sx=mx(startX),sy=my(fit(startX));
+        const ex=sx+len*Math.cos(ang),ey=sy+len*Math.sin(ang);
+        ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.setLineDash([]);
+        ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke();
+        arrowhead(sx,sy,ex,ey,9,col);
+        ctx.fillStyle=col;ctx.font='500 11px sans-serif';ctx.textAlign='center';
+        ctx.fillText(lbl,(sx+ex)/2+18,(sy+ey)/2+16);
       });
       ctx.setLineDash([]);
       const allX3=PHASES[3].flat();
       drawBracket(Math.min(...allX3),Math.max(...allX3),'#085041','new balance of mutation, drift, and selection  (all demes)',.075);
       ctx.fillStyle='rgba(8,80,65,.9)';ctx.font='11px sans-serif';ctx.textAlign='center';
-      [.65,.90].forEach(px=>ctx.fillText('new balance',mx(px),my(fit(px))-26));
+      [.65,.90].forEach(px=>ctx.fillText('new balance',mx(px),my(fit(px))-27));
       ctx.globalAlpha=1;
     }
   }
@@ -253,24 +253,17 @@ function drawFrame(){
       ctx.strokeStyle=DEMES[d].s;ctx.lineWidth=1.5;ctx.stroke();
     }
   }
-
   if(prog<1){prog+=.02;raf=requestAnimationFrame(drawFrame);}
 }
-
 function stepTo(p){
   cancelAnimationFrame(raf);
   from=cur;cur=Math.max(0,Math.min(3,p));prog=0;
-  for(let i=0;i<4;i++){
-    document.getElementById('tab'+i).className='phtab'+(cur===i?' on':'');
-  }
+  for(let i=0;i<4;i++)document.getElementById('tab'+i).className='phtab'+(cur===i?' on':'');
   document.getElementById('cap').textContent=CAPS[cur];
   drawFrame();
 }
-
 for(let i=0;i<4;i++){
-  document.getElementById('tab'+i).addEventListener('click',(function(p){
-    return function(){stepTo(p);};
-  })(i));
+  document.getElementById('tab'+i).addEventListener('click',(function(p){return function(){stepTo(p);};})(i));
 }
 stepTo(0);
 })();
