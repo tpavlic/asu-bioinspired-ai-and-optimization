@@ -42,6 +42,12 @@ as iframes.
 | --- | --- |
 | [`radial_basis_function_nn/`](radial_basis_function_nn/) | Interactive explorer for RBF neural networks: centers, widths, weights, and the kernel-trick connection to SVMs |
 
+### Cellular Automata
+
+| Directory | Description |
+| --- | --- |
+| [`cellular_automata/`](cellular_automata/) | Interactive explorer for all 256 of Wolfram's elementary cellular automaton rules — seed the first row and watch simple local rules generate complex emergent patterns |
+
 ---
 
 ## Adding a new visualization

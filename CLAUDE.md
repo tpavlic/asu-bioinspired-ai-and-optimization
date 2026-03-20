@@ -102,6 +102,7 @@ Current sections and their placeholder comments:
 | Intuition Pumps for Genetic Algorithms | `<!-- Add more GA intuition demos here -->` |
 | Physics-Inspired Methods | `<!-- Add more physics-inspired demos here -->` |
 | Neural Networks | `<!-- Add more neural network demos here -->` |
+| Cellular Automata | `<!-- Add more cellular automata demos here -->` |
 
 To add a **new section**, copy the structure of an existing `<section class="demo-section">`
 block and add a corresponding nav link in the `<nav>` at the top of the page.
@@ -144,6 +145,10 @@ Add a row to the appropriate table under `## Contents`:
 
 - `radial_basis_function_nn/rbfnn_explorer.html`
 
+### Cellular Automata
+
+- `cellular_automata/eca_explorer.html`
+
 ---
 
 ## Course unit structure
@@ -160,7 +165,7 @@ course unit vocabulary so students can orient themselves.
 | Unit 5 | Simulated Annealing, MaxEnt, Gibbs/softmax, Metropolis–Hastings, MCMC | Physics-Inspired Methods |
 | Unit 6 | Ant Colony Optimization, Bacterial Foraging, Particle Swarm Optimization | *(no section yet — add "Swarm Intelligence")* |
 | Unit 7 | Perceptrons, RNNs, Hebbian learning, STDP, spiking neural networks | Neural Networks |
-| Unit 8 *(if time)* | Cellular automata | *(no section yet)* |
+| Unit 8 *(if time)* | Cellular automata | Cellular Automata |
 | Unit 9 *(if time)* | Stochastic policies, multi-scale robotics | *(no section yet)* |
 
 **Section title rationale:**
