@@ -490,7 +490,7 @@ function redrawAll() {
 function updateCanvasCursor() {
   canvas.style.cursor = running ? 'default' : 'crosshair';
   document.getElementById('canvas-hint').textContent =
-    running ? 'stop playback to paint cells' : 'click or drag to paint cells in the top row (initial condition)';
+    running ? 'stop playback to paint cells' : 'click or drag to paint cells on the leading edge (current generation)';
 }
 
 function toggleRun() { running ? stopRun() : startRun(); }
@@ -530,14 +530,16 @@ function onCanvasDown(e) {
   if (running) return;
   e.preventDefault(); painting = true;
   const {row, col} = canvasCell(e);
-  if (row<0||row>=rows.length||col<0||col>=N) return;
-  paintValue = rows[row][col]^1; rows[row][col] = paintValue; redrawAll();
+  const lastRow = rows.length - 1;
+  if (row !== lastRow || col < 0 || col >= N) return;
+  paintValue = rows[lastRow][col]^1; rows[lastRow][col] = paintValue; redrawAll();
 }
 function onCanvasMove(e) {
   if (!painting || running) return;
   const {row, col} = canvasCell(e);
-  if (row<0||row>=rows.length||col<0||col>=N) return;
-  rows[row][col] = paintValue; redrawAll();
+  const lastRow = rows.length - 1;
+  if (row !== lastRow || col < 0 || col >= N) return;
+  rows[lastRow][col] = paintValue; redrawAll();
 }
 
 function updateStats() {
