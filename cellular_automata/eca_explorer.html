@@ -360,10 +360,13 @@ function init() {
   document.getElementById('color-off').addEventListener('input', e => { colorOff = e.target.value; redrawAll(); });
   document.getElementById('wrap-chk').addEventListener('change', e => { wrapEdges = e.target.checked; updateStats(); });
 
-  canvas.addEventListener('mousedown', onCanvasDown);
-  canvas.addEventListener('mousemove', onCanvasMove);
-  canvas.addEventListener('mouseup',   () => { painting = false; });
-  canvas.addEventListener('mouseleave',() => { painting = false; });
+  canvas.addEventListener('mousedown',  onCanvasDown);
+  canvas.addEventListener('mousemove',  onCanvasMove);
+  canvas.addEventListener('mouseup',    () => { painting = false; });
+  canvas.addEventListener('mouseleave', () => { painting = false; });
+  canvas.addEventListener('touchstart', e => { onCanvasDown(e.touches[0]); }, {passive: false});
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); onCanvasMove(e.touches[0]); }, {passive: false});
+  canvas.addEventListener('touchend',   () => { painting = false; });
 
   window.addEventListener('resize', () => { recalcCanvas(); redrawAll(); });
   updateCanvasCursor();
@@ -529,17 +532,16 @@ function canvasCell(e) {
 function onCanvasDown(e) {
   if (running) return;
   e.preventDefault(); painting = true;
-  const {row, col} = canvasCell(e);
+  const {col} = canvasCell(e);
+  if (col < 0 || col >= N) return;
   const lastRow = rows.length - 1;
-  if (row !== lastRow || col < 0 || col >= N) return;
   paintValue = rows[lastRow][col]^1; rows[lastRow][col] = paintValue; redrawAll();
 }
 function onCanvasMove(e) {
   if (!painting || running) return;
-  const {row, col} = canvasCell(e);
-  const lastRow = rows.length - 1;
-  if (row !== lastRow || col < 0 || col >= N) return;
-  rows[lastRow][col] = paintValue; redrawAll();
+  const {col} = canvasCell(e);
+  if (col < 0 || col >= N) return;
+  rows[rows.length - 1][col] = paintValue; redrawAll();
 }
 
 function updateStats() {
