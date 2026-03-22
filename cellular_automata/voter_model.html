@@ -35,7 +35,7 @@
 body{background:var(--page);color:var(--body);font-family:'IBM Plex Sans',sans-serif;font-size:13px;line-height:1.5;}
 .phdr{padding:18px 24px 0;background:var(--surface);border-bottom:1px solid var(--border);}
 .phdr h1{font-size:18px;font-weight:600;color:var(--head);margin-bottom:4px;}
-.phdr p{font-size:12px;color:var(--muted);margin-bottom:12px;max-width:780px;}
+.phdr p{font-size:12px;color:var(--muted);margin-bottom:4px;max-width:780px;}
 .phdr em{color:var(--lbl);font-style:italic;}
 .tabs{display:flex;gap:3px;}
 .tab{padding:7px 16px;border:1px solid var(--border);border-bottom:none;border-radius:5px 5px 0 0;
@@ -100,8 +100,7 @@ canvas{display:block;}
 
 <div class="phdr">
   <h1>Voter Model &amp; Consensus Dynamics</h1>
-  <p>The voter model is a minimal model of opinion dynamics and neutral genetic drift: each cell copies a random neighbor's opinion with no selection or preference. Despite its simplicity it captures how topology shapes the spread of traits on a network — and how random takeover (fixation) is guaranteed in some geometries but not others. At each generation every cell copies a randomly chosen neighbor. Tab ① shows a 1D spacetime diagram; Tab ② shows a 2D grid. Both support ancestry tracing: click any cell to follow its opinion lineage backward in time. Tab ③ uses two random walkers in 2D vs. 3D to demonstrate <em>why</em> consensus (fixation by drift) is guaranteed in low dimensions but not on an infinite 3D lattice — the key is Pólya's theorem on when two independent random walks must eventually meet.</p>
-  <div style="text-align:right;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--muted);margin-bottom:8px;">&copy; 2026 Theodore P. Pavlic &nbsp;&middot;&nbsp; MIT License</div>
+  <p>The voter model is a minimal model of opinion dynamics and neutral genetic drift: each cell copies a random neighbor's opinion with no selection or preference. Despite its simplicity it captures how topology shapes the spread of traits on a network — and how random takeover (fixation) is guaranteed in some geometries but not others. At each generation every cell copies a randomly chosen neighbor. Tab ① shows a 1D spacetime diagram; Tab ② shows a 2D grid. Both support ancestry tracing: click any cell to follow its opinion lineage backward in time. Tab ③ uses two random walkers in 2D vs. 3D to demonstrate <em>why</em> consensus (fixation by drift) is guaranteed in low dimensions but not on an infinite 3D lattice — the key is Pólya's theorem on when two independent random walks must eventually meet.<br><span style="display:block;text-align:right;font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;">&copy; 2026 Theodore P. Pavlic &nbsp;&middot;&nbsp; MIT License</span></p>
   <div class="tabs">
     <button class="tab on" id="tb0" onclick="switchTab(0)">① 1D Voter Model &amp; Contact Tracing</button>
     <button class="tab"   id="tb1" onclick="switchTab(1)">② 2D Voter Model &amp; Contact Tracing</button>
