@@ -932,13 +932,26 @@ function drawHist3(){
     ctx.fillStyle='#b0a898';ctx.font="11px 'IBM Plex Mono',monospace";ctx.textAlign='center';
     ctx.fillText('Run to build histogram',W/2,H/2-20);ctx.fillText('(accumulates across trials)',W/2,H/2-6);ctx.fillStyle='#c0b8b0';ctx.fillText('Increase speed slider',W/2,H/2+12);ctx.fillText('to generate it sooner',W/2,H/2+26);ctx.textAlign='left';return;
   }
-  const p2=met2/nTrials,p3=met3/nTrials,bY=H-30,maxH=H-48,bW=44,gap=30,x2=14,x3=x2+bW+gap;
-  ctx.strokeStyle='#d8d4cc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(10,10);ctx.lineTo(10,bY);ctx.lineTo(W-6,bY);ctx.stroke();
-  ctx.setLineDash([2,4]);ctx.strokeStyle='#e8e4dc';ctx.beginPath();ctx.moveTo(10,10);ctx.lineTo(W-6,10);ctx.stroke();ctx.beginPath();ctx.moveTo(10,bY-maxH/2);ctx.lineTo(W-6,bY-maxH/2);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle='#a09080';ctx.font="9px 'IBM Plex Mono',monospace";ctx.textAlign='right';ctx.fillText('100%',8,14);ctx.fillText('50%',8,bY-maxH/2+4);
+  const p2=met2/nTrials,p3=met3/nTrials;
+  const bY=H-30,maxH=H-48,bW=40,gap=24;
+  const axX=30; // left margin for y-axis labels
+  // center the two bars in the area to the right of the axis
+  const totalBars=bW+gap+bW;
+  const midX=axX+(W-axX)/2;
+  const x2=midX-bW-gap/2, x3=midX+gap/2;
+  // axes
+  ctx.strokeStyle='#d8d4cc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(axX,10);ctx.lineTo(axX,bY);ctx.lineTo(W-4,bY);ctx.stroke();
+  ctx.setLineDash([2,4]);ctx.strokeStyle='#e8e4dc';
+  ctx.beginPath();ctx.moveTo(axX,10);ctx.lineTo(W-4,10);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(axX,bY-maxH/2);ctx.lineTo(W-4,bY-maxH/2);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#a09080';ctx.font="9px 'IBM Plex Mono',monospace";ctx.textAlign='right';
+  ctx.fillText('100%',axX-3,14);ctx.fillText('50%',axX-3,bY-maxH/2+4);
+  // 2D bar
   ctx.fillStyle='#fdf0e6';ctx.fillRect(x2,bY-p2*maxH,bW,p2*maxH);ctx.strokeStyle='#b85a14';ctx.lineWidth=1;ctx.strokeRect(x2,bY-p2*maxH,bW,p2*maxH);
   ctx.fillStyle='#b85a14';ctx.font="bold 12px 'IBM Plex Mono',monospace";ctx.textAlign='center';ctx.fillText(Math.round(p2*100)+'%',x2+bW/2,bY-p2*maxH-5);
   ctx.fillStyle='#a09080';ctx.font="10px 'IBM Plex Mono',monospace";ctx.fillText('2D',x2+bW/2,bY+12);ctx.fillText('n='+nTrials,x2+bW/2,bY+23);
+  // 3D bar
   ctx.fillStyle='#e6edf8';ctx.fillRect(x3,bY-p3*maxH,bW,p3*maxH);ctx.strokeStyle='#1a4a8a';ctx.lineWidth=1;ctx.strokeRect(x3,bY-p3*maxH,bW,p3*maxH);
   ctx.fillStyle='#1a4a8a';ctx.font="bold 12px 'IBM Plex Mono',monospace";ctx.textAlign='center';ctx.fillText(Math.round(p3*100)+'%',x3+bW/2,bY-p3*maxH-5);
   ctx.fillStyle='#a09080';ctx.font="10px 'IBM Plex Mono',monospace";ctx.fillText('3D',x3+bW/2,bY+12);ctx.fillText('n='+nTrials,x3+bW/2,bY+23);
