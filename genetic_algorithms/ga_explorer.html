@@ -51,7 +51,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--
 .fbox{background:#fff;border-bottom:1px solid var(--bdr);padding:8px 16px;
   font-size:11.5px;font-family:'Courier New',monospace;color:var(--md);
   line-height:1.85;display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
-.fbox .fcol{min-width:190px}
+.fbox .fcol{min-width:120px;flex:1}
 .fbox .fhdg{font-family:'Outfit',system-ui,sans-serif;font-size:10px;font-weight:700;
   letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
 .fbox em{font-style:normal;color:var(--ora);font-weight:700}
@@ -81,13 +81,13 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--
   text-transform:uppercase;color:var(--muted);margin-right:2px}
 
 /* viz */
-.vizrow{display:flex;border-bottom:1px solid var(--bdr)}
-.cvwrap{flex:1;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+.vizrow{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--bdr)}
+.cvwrap{flex:1;min-width:280px;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
 .cvwrap canvas{display:block;width:100%;height:auto;border:1px solid var(--bdr);
   border-radius:3px;background:#fff}
 
 /* side panel */
-.side{width:234px;min-width:234px;background:var(--card);border-left:1px solid var(--bdr);
+.side{width:234px;min-width:234px;max-width:100%;background:var(--card);border-left:1px solid var(--bdr);
   padding:11px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
 .clbl{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
   color:var(--md);margin-bottom:5px}
@@ -1054,7 +1054,7 @@ function buildTrueFront(prob){
 // ── Display axis limits ──────────────────────────
 const DISP={
   zdt1:{g1lo:-0.02,g1hi:1.05,g2lo:-0.05,g2hi:1.12},
-  zdt2:{g1lo:-0.02,g1hi:1.05,g2lo:-0.05,g2hi:1.12},
+  zdt2:{g1lo:-0.02,g1hi:1.05,g2lo:-1.0,g2hi:1.12},
   zdt3:{g1lo:-0.02,g1hi:1.05,g2lo:-0.08,g2hi:1.95},
   '1d':{g1lo:-0.1,g1hi:3.3,g2lo:-0.2,g2hi:4.3}
 };
@@ -1193,7 +1193,7 @@ function initRW(){
   const pop=Array.from({length:N},()=>{
     let x;
     if(curProb==='1d') x=[rng()];
-    else x=[rng(),...Array.from({length:NV-1},()=>rng()*0.001)];
+    else x=[rng(),...Array.from({length:NV-1},()=>rng()*(curProb==='zdt2'?0.12:0.15))];
     return{x, obj:evalProb(x)};
   });
   gaRW={pop}; rwArchive=[];
@@ -1275,9 +1275,12 @@ function initN(){
       return{x,obj:eval1D(x[0]),rank:1,cd:0};
     });
   } else {
-    // x[1..9] near 0 keeps g≈1 so f2 stays inside the display axes
+    // x[0]~U[0,1] sets f1; x[1..9] initialized to spread initial points
+    // visibly inside the displayed G-space box but below the Pareto front.
+    // ZDT2's quadratic f2 grows faster so needs a tighter x range.
+    const xInit=curProb==='zdt2'?0.12:0.15;
     pop=Array.from({length:N},()=>{
-      const x=[rng(),...Array.from({length:NV-1},()=>rng()*0.001)];
+      const x=[rng(),...Array.from({length:NV-1},()=>rng()*xInit)];
       return{x,obj:evalProb(x),rank:1,cd:0};
     });
   }
