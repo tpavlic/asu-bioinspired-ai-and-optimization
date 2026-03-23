@@ -185,7 +185,7 @@ canvas{display:block;}
         <button class="btn danger" onclick="t1ClearTrace()">Clear traces</button>
       </div>
       <div class="tracebox" id="tbox1">
-        <em style="color:#b0a898">Click any cell in the diagram to trace its opinion ancestry (model pauses automatically). Each click adds a trace in a new color.</em>
+        <em style="color:#b0a898">Click any cell to trace that column's current opinion ancestry backward in time (model pauses automatically). Each click adds a trace in a new color.</em>
       </div>
     </div>
     <div class="card" style="max-width:280px;">
@@ -414,7 +414,7 @@ const OP_HEX_BND=['#4474b8','#d87828','#5a9a6a','#a452a8','#28a090','#b06030'];
 const N1=200,CW=2,RH=2,CV1W=400,CV1H=360,NROWS=CV1H/RH;
 
 let g1d,t1gen=0,t1run=false,t1raf=null,t1spf=1,t1skip=false;
-let h1focal=[],h1src=[];
+let h1src=[];
 let imgData1=null,pix1=null;
 let traces1=[],lastCoal1=null,traceIdx1=0;
 const TCOLS=['#e87020','#2060d8','#9030c8','#107870'];
@@ -431,7 +431,7 @@ function t1Init(){
   imgData1=cv.getContext('2d').createImageData(CV1W,CV1H);
   pix1=imgData1.data;
   for(let i=0;i<pix1.length;i+=4){pix1[i]=247;pix1[i+1]=245;pix1[i+2]=240;pix1[i+3]=255;}
-  t1gen=0;h1focal=[];h1src=[];traces1=[];lastCoal1=null;ofrac1=[];
+  t1gen=0;h1src=[];traces1=[];lastCoal1=null;ofrac1=[];
   t1IC();
   renderRow1(NROWS-1,g1d);flush1();chart1();stat1();renderTB1();
 }
@@ -460,13 +460,20 @@ function loop1(){
 function t1Spd(){t1spf=+document.getElementById('sl1').value;document.getElementById('sv1').textContent=t1spf===0?'½ gen/frame':t1spf+' gen/frame';}
 
 function voterGen1D(){
-  const foc=new Uint8Array(N1),src=new Uint8Array(N1);
+  // Random-sequential updates (correct voter model dynamics) with unambiguous tracing.
+  // sourceOf[i] tracks which cell from the START of this generation
+  // currently determines cell i's opinion (updated as micro-steps propagate ancestry).
+  const sourceOf=new Uint8Array(N1);
+  for(let i=0;i<N1;i++)sourceOf[i]=i;
   for(let k=0;k<N1;k++){
-    const idx=ri(N1),j=(idx+(Math.random()<.5?1:-1)+N1)%N1;
-    foc[k]=idx;src[k]=j;g1d[idx]=g1d[j];
+    const i=ri(N1),j=(i+(Math.random()<.5?1:-1)+N1)%N1;
+    g1d[i]=g1d[j];
+    sourceOf[i]=sourceOf[j]; // i inherits j's current ancestry, not j itself
   }
-  h1focal.push(foc);h1src.push(src);
-  if(h1focal.length>NROWS){h1focal.shift();h1src.shift();}
+  // src[i] = column from start-of-generation whose opinion i now holds
+  const src=sourceOf.slice();
+  h1src.push(src);
+  if(h1src.length>NROWS){h1src.shift();}
   t1gen++;
 }
 
@@ -546,33 +553,38 @@ document.getElementById('cv1d').addEventListener('click',function(e){
   const scX=CV1W/rect.width,scY=CV1H/rect.height;
   const pxX=(e.clientX-rect.left)*scX,pxY=(e.clientY-rect.top)*scY;
   const cellIdx=Math.min(N1-1,Math.max(0,Math.floor(pxX/CW)|0));
-  const rowFromBot=Math.min(NROWS-1,Math.max(0,NROWS-1-(Math.floor(pxY/RH)|0)));
-  if(rowFromBot>=h1focal.length)return; // ignore clicks in unrendered rows
+  const rowFromBot=0; // always trace from current generation
   const col=TCOLS[traceIdx1%TCOLS.length];traceIdx1++;
   const path=trace1D(cellIdx,rowFromBot);
-  // Find coal with the most recent existing trace
-  let newCoal=null;
-  if(traces1.length>0){
-    newCoal=findCoal1(traces1[traces1.length-1].path,path);
-    if(newCoal)lastCoal1=newCoal;
-  }
-  traces1.push({cellIdx,rowFromBot,path,col,coal:newCoal});
+  // Check new trace against ALL existing traces (not just the last one)
+  const newEntry={cellIdx,rowFromBot,path,col,coal:null};
+  traces1.push(newEntry);
   if(traces1.length>8){
     traces1.shift();
-    if(traces1.length>0)traces1[0].coal=null; // predecessor removed
+    if(traces1.length>0)traces1[0].coal=null;
   }
-  // Recompute lastCoal1 from current traces only
+  // Pair each trace with every earlier trace to find coalescences
+  for(let i=0;i<traces1.length;i++){
+    traces1[i].coal=null;
+    for(let j=0;j<i;j++){
+      const c=findCoal1(traces1[j].path,traces1[i].path);
+      if(c){traces1[i].coal=c;break;}
+    }
+  }
+  // lastCoal1 = most recently discovered coalescence
   lastCoal1=null;
-  for(let i=1;i<traces1.length;i++){if(traces1[i].coal)lastCoal1=traces1[i].coal;}
+  for(let i=traces1.length-1;i>=1;i--){if(traces1[i].coal){lastCoal1=traces1[i].coal;break;}}
   renderTB1();flush1();
 });
 
 function trace1D(startC,startG){
-  const path=[{gBack:startG,c:startC}];let cur=startC;const nH=h1focal.length;
+  // With synchronous updates, foc[i]=i always, so src[cur] directly
+  // gives the column cur copied from in that generation.
+  const path=[{gBack:startG,c:startC}];let cur=startC;const nH=h1src.length;
   const maxBack=Math.min(NROWS-1,nH);
   for(let g=startG;g<startG+maxBack&&g<nH;g++){
-    const foc=h1focal[nH-1-g],src=h1src[nH-1-g];
-    for(let k=N1-1;k>=0;k--){if(foc[k]===cur){cur=src[k];break;}}
+    const src=h1src[nH-1-g];
+    cur=src[cur];
     path.push({gBack:g+1,c:cur});
   }
   return path;
@@ -590,12 +602,32 @@ function drawTrace1(ctx){
     const{path,col}=tr;
     if(!path||!path.length)continue;
     ctx.save();
-    ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.globalAlpha=0.88;
-    ctx.shadowColor=col;ctx.shadowBlur=1.5;
+    // White halo pass — break path at torus wraps (|Δcol| > N1/2)
+    ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=4;ctx.globalAlpha=1;
     ctx.beginPath();let f=true;
-    for(const p of path){
+    for(let i=0;i<path.length;i++){
+      const p=path[i];
       if(p.gBack>NROWS-1)break;
-      const{x,y}=p1toPx(p.gBack,p.c);f?ctx.moveTo(x,y):ctx.lineTo(x,y);f=false;
+      const{x,y}=p1toPx(p.gBack,p.c);
+      if(f){ctx.moveTo(x,y);f=false;}
+      else{
+        const prev=path[i-1];
+        if(Math.abs(p.c-prev.c)>N1/2){ctx.moveTo(x,y);}else ctx.lineTo(x,y);
+      }
+    }
+    ctx.stroke();
+    // Color pass
+    ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.globalAlpha=0.95;ctx.shadowBlur=0;
+    ctx.beginPath();f=true;
+    for(let i=0;i<path.length;i++){
+      const p=path[i];
+      if(p.gBack>NROWS-1)break;
+      const{x,y}=p1toPx(p.gBack,p.c);
+      if(f){ctx.moveTo(x,y);f=false;}
+      else{
+        const prev=path[i-1];
+        if(Math.abs(p.c-prev.c)>N1/2){ctx.moveTo(x,y);}else ctx.lineTo(x,y);
+      }
     }
     ctx.stroke();
     // Start dot
@@ -615,9 +647,9 @@ function drawTrace1(ctx){
 function renderTB1(){
   const el=document.getElementById('tbox1');
   if(!traces1.length){
-    el.innerHTML='<em style="color:#b0a898">Click any cell in the diagram to trace its opinion ancestry (model pauses automatically). Each click adds a trace in a new color.</em>';return;
+    el.innerHTML='<em style="color:#b0a898">Click any cell to trace that column&#39;s current opinion ancestry backward in time (model pauses automatically). Each click adds a trace in a new color.</em>';return;
   }
-  let h=`<em style="color:#888070">${traces1.length} trace${traces1.length>1?'s':''} active (up to 8 kept)</em>`;
+  let h=`<em style="color:#888070">${traces1.length} trace${traces1.length>1?'s':''} active — click any column to add</em>`;
   // Collect all pairwise coalescences from current traces
   const coals=traces1.filter(t=>t.coal).map(t=>t.coal);
   if(coals.length){
@@ -644,16 +676,29 @@ function t2Init(){
   hbuf2=new Array(MH);hwr2=0;htot2=0;vgen2=0;ofrac2=[];cons2=false;
   traces2=[];lastCoal2=null;renderTB2();
 }
-function t2Reset(){if(run2)t2Run();t2Init();g2Draw();chart2();stat2();}
+function t2Reset(){if(run2)t2Run();window._src2=[];window._src2gen=[];t2Init();g2Draw();chart2();stat2();}
 
 function voterGen2D(){
+  // Random-sequential with unambiguous ancestry tracking.
+  // sourceOf[r*GN+c] = which cell from start-of-generation determines cell (r,c).
   const N=GN*GN;
+  const sourceOf=new Int32Array(N);
+  for(let i=0;i<N;i++)sourceOf[i]=i;
   for(let k=0;k<N;k++){
     const r=ri(GN),c=ri(GN),[dr,dc]=D4[ri(4)];
     const sr=(r+dr+GN)%GN,sc=(c+dc+GN)%GN;
-    hbuf2[hwr2]=[vgen2,r,c,sr,sc];hwr2=(hwr2+1)%MH;htot2++;
-    grid2[r*GN+c]=grid2[sr*GN+sc];
+    const fi=r*GN+c,si=sr*GN+sc;
+    grid2[fi]=grid2[si];
+    sourceOf[fi]=sourceOf[si]; // inherit source's ancestry
   }
+  // Store one record per cell: focal=cell, src=sourceOf[cell]
+  // Encode as [vgen, focal_r, focal_c, src_r, src_c] for each changed cell
+  // To keep MH manageable, store a compact per-gen source map in a separate structure
+  // Actually: store sourceOf array directly (one per generation, ring-buffered)
+  if(!window._src2){window._src2=[];window._src2gen=[];}
+  window._src2.push(sourceOf.slice());
+  window._src2gen.push(vgen2);
+  if(window._src2.length>Math.ceil(MH/(N))){window._src2.shift();window._src2gen.shift();}
   vgen2++;
 }
 function t2Run(){
@@ -692,22 +737,70 @@ function g2Draw(){
     ctx.fillRect(c*S+1,r*S+1,S-1,S-1);
   }
   // Draw all accumulated traces
+  // Helper: draw a stub line from cell center to the canvas edge (or from edge into cell)
+  function wrapStub(ctx, x, y, dx, dy, W, H, col, toEdge){
+    // Find where the ray (x,y)+t*(dx,dy) hits the canvas boundary
+    let tX=Infinity,tY=Infinity;
+    if(dx>0)tX=(W-x)/dx;else if(dx<0)tX=-x/dx;
+    if(dy>0)tY=(H-y)/dy;else if(dy<0)tY=-y/dy;
+    const t=Math.min(tX,tY);
+    const ex=x+dx*t, ey=y+dy*t;
+    ctx.save();
+    ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=4.5;ctx.globalAlpha=1;
+    ctx.beginPath();
+    if(toEdge){ctx.moveTo(x,y);ctx.lineTo(ex,ey);}
+    else{ctx.moveTo(ex,ey);ctx.lineTo(x,y);}
+    ctx.stroke();
+    ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.globalAlpha=0.9;
+    ctx.beginPath();
+    if(toEdge){ctx.moveTo(x,y);ctx.lineTo(ex,ey);}
+    else{ctx.moveTo(ex,ey);ctx.lineTo(x,y);}
+    ctx.stroke();
+    ctx.restore();
+  }
+
   for(const tr of traces2){
     const{ch,col}=tr;if(!ch||!ch.length)continue;
-    ctx.save();ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.globalAlpha=0.85;
-    ctx.shadowColor=col;ctx.shadowBlur=1.5;
-    ctx.beginPath();let f=true;
-    for(let i=0;i<ch.length;i++){
-      const p=ch[i],x=(p.c+.5)*S,y=(p.r+.5)*S;
-      if(i>0){const pp=ch[i-1];if(Math.abs(pp.c-p.c)<=1&&Math.abs(pp.r-p.r)<=1){if(f){ctx.moveTo((pp.c+.5)*S,(pp.r+.5)*S);f=false;}ctx.lineTo(x,y);}else f=true;}
+    const W=cv.width,H=cv.height;
+    // Build segments: split at torus wraps (jump > GN/2 in either axis)
+    const segs=[];let seg=[ch[0]];
+    const wraps=[];
+    for(let i=1;i<ch.length;i++){
+      const a=ch[i-1],b=ch[i];
+      const dr=Math.abs(b.r-a.r),dc=Math.abs(b.c-a.c);
+      if(dr>GN/2||dc>GN/2){
+        segs.push(seg);
+        const dCol=b.c-a.c, dRow=b.r-a.r;
+        const edx=dCol>GN/2?-1:dCol<-GN/2?1:(dCol/Math.max(1,Math.abs(dCol)));
+        const edy=dRow>GN/2?-1:dRow<-GN/2?1:(dRow/Math.max(1,Math.abs(dRow)));
+        wraps.push({exitCell:a,entryCell:b,edx,edy});
+        seg=[b];
+      }else seg.push(b);
     }
-    ctx.stroke();
+    segs.push(seg);
+
+    ctx.save();
+    for(const sg of segs){
+      if(sg.length<2)continue;
+      ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=4.5;ctx.globalAlpha=1;
+      ctx.beginPath();sg.forEach((p,i)=>{const x=(p.c+.5)*S,y=(p.r+.5)*S;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+      ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.globalAlpha=0.9;
+      ctx.beginPath();sg.forEach((p,i)=>{const x=(p.c+.5)*S,y=(p.r+.5)*S;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+    }
+    // Start dot
     if(ch.length){
       const p=ch[0],x=(p.c+.5)*S,y=(p.r+.5)*S;
       ctx.globalAlpha=0.95;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
       ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill();
     }
     ctx.restore();
+    // Wrap stubs: line from exit cell center to canvas edge, and from opposite edge to entry cell center
+    for(const w of wraps){
+      const ex=(w.exitCell.c+.5)*S, ey=(w.exitCell.r+.5)*S;
+      const nx=(w.entryCell.c+.5)*S, ny=(w.entryCell.r+.5)*S;
+      wrapStub(ctx, ex, ey,  w.edx,  w.edy, W, H, col, true);   // exit → edge
+      wrapStub(ctx, nx, ny, -w.edx, -w.edy, W, H, col, false);   // edge → entry
+    }
   }
   // Common ancestor rings (open bright green)
   for(const tr of traces2){
@@ -756,27 +849,33 @@ document.getElementById('cv2d').addEventListener('click',function(e){
   if(r<0||r>=GN||c<0||c>=GN)return;
   const col=TCOLS[traceIdx2%TCOLS.length];traceIdx2++;
   const ch=traceChain2(r,c);
-  let newCoal=null;
-  if(traces2.length>0){
-    newCoal=findCoal2(traces2[traces2.length-1].ch,ch);
-    if(newCoal)lastCoal2=newCoal;
-  }
-  traces2.push({r,c,ch,col,coal:newCoal});
+  // Check new trace against ALL existing traces
+  traces2.push({r,c,ch,col,coal:null});
   if(traces2.length>8){
     traces2.shift();
     if(traces2.length>0)traces2[0].coal=null;
   }
+  for(let i=0;i<traces2.length;i++){
+    traces2[i].coal=null;
+    for(let j=0;j<i;j++){
+      const cv=findCoal2(traces2[j].ch,traces2[i].ch);
+      if(cv){traces2[i].coal=cv;break;}
+    }
+  }
   lastCoal2=null;
-  for(let i=1;i<traces2.length;i++){if(traces2[i].coal)lastCoal2=traces2[i].coal;}
+  for(let i=traces2.length-1;i>=1;i--){if(traces2[i].coal){lastCoal2=traces2[i].coal;break;}}
   renderTB2();g2Draw();
 });
 function traceChain2(sr,sc,maxD=120){
-  const ch=[{r:sr,c:sc,gen:vgen2}];let cr=sr,cc_=sc,bg=vgen2+1;
-  const n=Math.min(htot2,MH);
-  for(let i=0;i<n&&ch.length<maxD;i++){
-    const idx=((hwr2-1-i)%MH+MH)%MH,e=hbuf2[idx];if(!e)break;
-    const[gen,hr,hc,sr2,sc2]=e;if(gen>=bg)continue;
-    if(hr===cr&&hc===cc_){ch.push({r:sr2,c:sc2,gen});cr=sr2;cc_=sc2;bg=gen;}
+  if(!window._src2||!window._src2.length)return [{r:sr,c:sc,gen:vgen2}];
+  const ch=[{r:sr,c:sc,gen:vgen2}];
+  let cur=sr*GN+sc;
+  const nH=window._src2.length;
+  for(let i=0;i<nH&&ch.length<maxD;i++){
+    const src=window._src2[nH-1-i];
+    const gen=window._src2gen[nH-1-i];
+    cur=src[cur];
+    ch.push({r:(cur/GN)|0,c:cur%GN,gen});
   }
   return ch;
 }
