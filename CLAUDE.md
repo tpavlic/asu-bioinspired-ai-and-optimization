@@ -147,6 +147,7 @@ Add a row to the appropriate table under `## Contents`:
 - `shifting_balance_theory/sbt_four_peaks.html`
 - `ideal_free_distribution/ifd_on_pond.html`
 - `evolution_as_movement_in_drift_field/evolution_as_movement_in_drift_field.html` *(static figure)*
+- `genetic_algorithms/ga_explorer.html`
 
 ### Physics-Inspired Methods
 
