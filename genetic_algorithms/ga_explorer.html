@@ -1,0 +1,2805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genetic Algorithm Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --dk:#1B4332;--md:#2D6A4F;--lt:#52B788;--vlt:#D8F3DC;--bg:#F0FAF2;
+  --ora:#D4521A;--pur:#6B4FA8;--txt:#18221A;--muted:#587060;
+  --bdr:#B7E4C7;--card:#FFFFFF;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--txt);font-size:14px;line-height:1.5}
+
+.hdr{background:var(--dk);color:#fff;padding:11px 18px}
+.hdr h1{font-size:17px;font-weight:600;letter-spacing:-.3px}
+
+.tabs{display:flex;background:var(--vlt);border-bottom:1.5px solid var(--bdr)}
+.tbtn{padding:10px 18px;border:none;background:0;font-family:inherit;font-size:13px;
+  font-weight:500;color:var(--md);cursor:pointer;border-right:1px solid var(--bdr);
+  transition:all .12s;letter-spacing:.15px}
+.tbtn:hover{background:rgba(82,183,136,.2)}
+.tbtn.act{background:var(--dk);color:#fff}
+.tab{display:none}.tab.act{display:block}
+
+.info{background:var(--vlt);border-bottom:1px solid var(--bdr);padding:9px 16px;
+  font-size:12.5px;line-height:1.65;color:var(--txt)}
+.info strong{color:var(--dk)}
+
+/* formula / problem box */
+.fbox{background:#fff;border-bottom:1px solid var(--bdr);padding:8px 16px;
+  font-size:11.5px;font-family:'Courier New',monospace;color:var(--md);
+  line-height:1.85;display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+.fbox .fcol{min-width:190px}
+.fbox .fhdg{font-family:'Outfit',system-ui,sans-serif;font-size:10px;font-weight:700;
+  letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.fbox em{font-style:normal;color:var(--ora);font-weight:700}
+
+/* problem selector row */
+.probrow{display:flex;gap:20px;align-items:center;flex-wrap:wrap;
+  background:var(--vlt);border-bottom:1px solid var(--bdr);padding:7px 16px}
+.probrow .plbl{font-size:10px;font-weight:700;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--muted)}
+.probrow label{font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer}
+.probrow input[type=radio]{accent-color:var(--dk)}
+
+/* reference card */
+.refcard{background:#fff;border-top:1px solid var(--bdr);padding:10px 16px;
+  display:flex;gap:28px;flex-wrap:wrap}
+.refcol{min-width:180px;flex:1}
+.refhd{font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--md);margin-bottom:5px}
+.reftbl{font-size:11.5px;line-height:1.75;color:var(--txt)}
+.reftbl td:first-child{font-family:'Courier New',monospace;color:var(--ora);
+  font-size:11px;padding-right:8px;white-space:nowrap;font-weight:700}
+
+/* preset buttons */
+.presetrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  background:var(--vlt);border-bottom:1px solid var(--bdr);padding:6px 16px}
+.presetrow .plbl{font-size:10px;font-weight:700;letter-spacing:.6px;
+  text-transform:uppercase;color:var(--muted);margin-right:2px}
+
+/* viz */
+.vizrow{display:flex;border-bottom:1px solid var(--bdr)}
+.cvwrap{flex:1;padding:12px;background:var(--bg);display:flex;flex-direction:column;gap:8px}
+.cvwrap canvas{display:block;width:100%;height:auto;border:1px solid var(--bdr);
+  border-radius:3px;background:#fff}
+
+/* side panel */
+.side{width:234px;min-width:234px;background:var(--card);border-left:1px solid var(--bdr);
+  padding:11px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.clbl{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--md);margin-bottom:5px}
+.csec{border-bottom:1px solid var(--vlt);padding-bottom:9px}
+.csec:last-child{border-bottom:none;padding-bottom:0}
+.crow{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.crow label{font-size:12px;flex:1;min-width:68px;color:var(--txt)}
+.crow input[type=range]{flex:1.2;accent-color:var(--md);cursor:pointer;width:60px}
+.cval{font-size:11.5px;font-weight:700;color:var(--ora);min-width:32px;text-align:right}
+.crow select{flex:1.4;font-family:inherit;font-size:11px;padding:3px 5px;
+  border:1px solid var(--bdr);border-radius:3px;background:#fff;color:var(--txt)}
+
+.btnrow{display:flex;gap:4px;flex-wrap:wrap}
+.btn{padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;
+  border-radius:3px;cursor:pointer;border:2px solid var(--dk);transition:all .1s}
+.btp{background:var(--dk);color:#fff}.btp:hover{background:var(--md);border-color:var(--md)}
+.bto{background:#fff;color:var(--dk)}.bto:hover{background:var(--vlt)}
+.bts{padding:5px 10px;font-size:11.5px}
+
+.sbar{display:flex;background:#fff;border-top:1px solid var(--bdr)}
+.sc{flex:1;padding:9px 13px;border-right:1px solid var(--bdr)}
+.sc:last-child{border-right:none}
+.slbl{font-size:9px;font-weight:700;letter-spacing:.7px;
+  color:var(--muted);margin-bottom:2px}
+.sval{font-size:14px;font-weight:700;color:var(--txt)}
+.sval.hi{color:var(--ora)}
+
+.rleg{display:flex;gap:5px;flex-wrap:wrap;margin-top:3px}
+.rchip{display:flex;align-items:center;gap:3px;font-size:10.5px}
+.rdot{width:9px;height:9px;border-radius:50%;border:1.5px solid #0002}
+
+.ichips{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.ichip{padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;color:#fff}
+
+.botrow{display:flex;border-bottom:1px solid var(--bdr);background:var(--bg)}
+.botrow .cvwrap{padding:10px}
+
+.foot{text-align:right;font-size:9.5px;color:var(--muted);opacity:.45;padding:3px 14px 5px}
+.hidden{display:none!important}
+</style>
+</head>
+
+<body>
+
+<div class="hdr" style="display:flex;align-items:baseline;justify-content:space-between">
+  <h1>Genetic Algorithm Explorer</h1>
+  <span style="font-size:9.5px;opacity:.5;font-weight:300;color:#fff">&copy; 2026 Theodore P. Pavlic &middot; MIT License</span>
+</div>
+
+<div class="tabs">
+  <button class="tbtn act" onclick="switchTab('t1d',this)">&#9312; 1-D Multimodal GA</button>
+  <button class="tbtn" onclick="switchTab('tisl',this)">&#9313; Island Model / DGA</button>
+  <button class="tbtn" onclick="switchTab('tzoo',this)">&#9314; 2-D Opt. Zoo</button>
+  <button class="tbtn" onclick="switchTab('tns',this)">&#9315; 2-Obj MOEA</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TAB 1  —  1-D MULTIMODAL GA
+═══════════════════════════════════════════════ -->
+<div id="t1d" class="tab act">
+
+  <div class="fbox">
+    <div class="fcol">
+      <div class="fhdg">Fitness landscape &nbsp;·&nbsp; sum of 6 Gaussians</div>
+      <div>f(x) = <em>Σ</em> h<sub>i</sub> · exp(−(x−μ<sub>i</sub>)<sup>2</sup> / 2σ<sub>i</sub><sup>2</sup>)</div>
+      <div style="margin-top:4px;font-size:10.5px;color:#888">x ∈ [0, 10],&nbsp; all σ<sub>i</sub> ≈ 0.3–0.4</div>
+    </div>
+    <div class="fcol">
+      <div class="fhdg">Peak parameters &nbsp;(μ, σ, h)</div>
+      <div>① (0.85, 0.30, 2.5) &nbsp; ④ (5.50, 0.42, 2.2)</div>
+      <div>② (2.30, 0.38, 2.9) &nbsp; ⑤ (7.20, 0.35, 3.1)</div>
+      <div>③ (3.95, 0.32, 2.6) &nbsp; ⑥ (9.00, 0.28, 2.8)</div>
+    </div>
+  </div>
+
+  <div class="info">
+    A real-valued <strong>canonical GA</strong> maximizing a 6-peak landscape.
+    Without niching, the population converges on the highest peak.
+    Enable a <strong>niching method</strong> to maintain subpopulations at multiple peaks simultaneously.
+    <em>Tip for stable multimodal equilibria: use Roulette Wheel or SUS, Fitness Sharing,
+    σ<sub>share</sub> ≈ half the typical inter-peak distance, p<sub>c</sub> ≤ 0.3, N ≥ 60,
+    or just press <strong>MMO preset</strong>.</em>
+  </div>
+
+  <div class="presetrow">
+    <span class="plbl">Quick-set &rarr;</span>
+    <button class="btn bto bts" onclick="setPreset1('global')">Global Optimizer</button>
+    <button class="btn bto bts" onclick="setPreset1('mmo')">MMO / Niching</button>
+  </div>
+
+  <div class="vizrow">
+    <div class="cvwrap">
+      <canvas id="cv1d" width="680" height="220"></canvas>
+      <canvas id="cvHist1" width="680" height="165"></canvas>
+    </div>
+    <div class="side">
+      <div class="csec">
+        <div class="clbl">Population</div>
+        <div class="crow">
+          <label>Size N</label>
+          <input type="range" id="p-n" min="10" max="120" step="5" value="60"
+            oninput="sv(this,'pv-n')">
+          <span class="cval" id="pv-n">60</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Operators</div>
+        <div class="crow">
+          <label>p<sub>c</sub> (crossover)</label>
+          <input type="range" id="p-pc" min="0" max="1" step="0.05" value="0.5"
+            oninput="svf(this,'pv-pc',2)">
+          <span class="cval" id="pv-pc">0.50</span>
+        </div>
+        <div class="crow">
+          <label>p<sub>m</sub> (mutation)</label>
+          <input type="range" id="p-pm" min="0.005" max="0.4" step="0.005" value="0.12"
+            oninput="svf(this,'pv-pm',3)">
+          <span class="cval" id="pv-pm">0.120</span>
+        </div>
+        <div class="crow">
+          <label>σ<sub>m</sub> (step size)</label>
+          <input type="range" id="p-ms" min="0.05" max="2.0" step="0.05" value="0.45"
+            oninput="svf(this,'pv-ms',2)">
+          <span class="cval" id="pv-ms">0.45</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Selection</div>
+        <div class="crow">
+          <label>Operator</label>
+          <select id="p-sel" onchange="onSelChange()">
+            <option value="rw">Roulette Wheel</option>
+            <option value="sus" selected>SUS</option>
+            <option value="tourn">Tournament</option>
+            <option value="rank">Linear Rank</option>
+          </select>
+        </div>
+        <div class="crow hidden" id="row-tk">
+          <label>k (size)</label>
+          <input type="range" id="p-tk" min="2" max="12" step="1" value="3"
+            oninput="sv(this,'pv-tk')">
+          <span class="cval" id="pv-tk">3</span>
+        </div>
+        <div class="crow hidden" id="row-sp">
+          <label>s (pressure)</label>
+          <input type="range" id="p-sp" min="1.1" max="2.0" step="0.1" value="1.5"
+            oninput="svf(this,'pv-sp',1)">
+          <span class="cval" id="pv-sp">1.5</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Niching Method</div>
+        <div class="crow">
+          <label>Method</label>
+          <select id="p-div" onchange="onDivChange()">
+            <option value="none" selected>None</option>
+            <option value="sharing">Fitness Sharing</option>
+            <option value="crowding">Det. Crowding</option>
+            <option value="clearing">Clearing</option>
+          </select>
+        </div>
+        <div class="crow hidden" id="row-ss">
+          <label>σ<sub>share</sub></label>
+          <input type="range" id="p-ss" min="0.1" max="3.0" step="0.1" value="0.7"
+            oninput="svf(this,'pv-ss',1)">
+          <span class="cval" id="pv-ss">0.7</span>
+        </div>
+        <div class="crow hidden" id="row-sc">
+          <label>σ<sub>clear</sub></label>
+          <input type="range" id="p-sc" min="0.1" max="3.0" step="0.1" value="0.6"
+            oninput="svf(this,'pv-sc',1)">
+          <span class="cval" id="pv-sc">0.6</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Elitism</div>
+        <div class="crow">
+          <label>Copies</label>
+          <input type="range" id="p-el" min="0" max="5" step="1" value="1"
+            oninput="sv(this,'pv-el')">
+          <span class="cval" id="pv-el">1</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Controls</div>
+        <div class="btnrow">
+          <button class="btn btp bts" id="btn1-run" onclick="toggle1Run()">▶ Run</button>
+          <button class="btn bto bts" onclick="step1()">Step</button>
+          <button class="btn bto bts" onclick="reset1()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sbar">
+    <div class="sc"><div class="slbl">GENERATION</div><div class="sval" id="s1-gen">0</div></div>
+    <div class="sc"><div class="slbl">BEST f(x) ↑</div><div class="sval hi" id="s1-best">—</div></div>
+    <div class="sc"><div class="slbl">MEAN f(x) ↑</div><div class="sval" id="s1-mean">—</div></div>
+    <div class="sc"><div class="slbl">POP. SPREAD σ<sub>x</sub></div><div class="sval" id="s1-div">—</div></div>
+    <div class="sc"><div class="slbl">PEAKS OCCUPIED ↑</div><div class="sval" id="s1-pk">—</div></div>
+  </div>
+
+  <div class="refcard">
+    <div class="refcol">
+      <div class="refhd">Parameter key</div>
+      <table class="reftbl"><tbody>
+        <tr><td>p<sub>c</sub></td><td>Probability that two parents exchange genetic material (crossover)</td></tr>
+        <tr><td>p<sub>m</sub></td><td>Probability that each offspring is perturbed by mutation</td></tr>
+        <tr><td>σ<sub>m</sub></td><td>Gaussian step size of mutation — controls how far an individual can jump per mutation event</td></tr>
+        <tr><td>σ<sub>x</sub></td><td>Std. dev. of all individual x positions — a measure of population spatial diversity. No arrow: smaller = converged (good for single-peak), larger = spread across peaks (good for MMO).</td></tr>
+      </tbody></table>
+    </div>
+    <div class="refcol">
+      <div class="refhd">Niching parameters</div>
+      <table class="reftbl"><tbody>
+        <tr><td>σ<sub>share</sub></td><td>Niche radius for <em>Fitness Sharing</em> — individuals within this distance share fitness, reducing the effective payoff of crowded peaks</td></tr>
+        <tr><td>σ<sub>clear</sub></td><td>Niche radius for <em>Clearing</em> — only the best individual within this radius retains its fitness; others are zeroed out</td></tr>
+        <tr><td>Det. Crowding</td><td>Each offspring competes for survival against whichever parent it most resembles; no explicit radius needed</td></tr>
+        <tr><td>Peaks occupied</td><td>Count of landscape peaks with ≥ 1 individual within 1.5 × peak σ</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="foot">© 2026 Theodore P. Pavlic · MIT License</div>
+</div>
+
+
+
+<!-- ═══════════════════════════════════════════════
+     TAB 2  —  2-D MOEA
+═══════════════════════════════════════════════ -->
+<div id="tns" class="tab">
+
+  <div class="probrow">
+    <span class="plbl">Problem</span>
+    <label><input type="radio" name="zdt" value="zdt1" onchange="onProbChange('zdt1')"> ZDT1 — convex front</label>
+    <label><input type="radio" name="zdt" value="zdt2" checked onchange="onProbChange('zdt2')"> ZDT2 — concave front</label>
+    <label><input type="radio" name="zdt" value="zdt3" onchange="onProbChange('zdt3')"> ZDT3 — disconnected</label>
+    <label><input type="radio" name="zdt" value="1d" onchange="onProbChange('1d')"> Scalar Dec. Var.</label>
+  </div>
+
+  <div class="fbox" id="fbox"><!-- filled by JS --></div>
+
+  <div style="height:4px;background:var(--vlt);border-bottom:1px solid var(--bdr)"></div>
+
+  <div class="vizrow">
+    <div class="cvwrap">
+      <canvas id="cvns" width="680" height="310"></canvas>
+      <!-- 1D sub-plots: stacked below criteria space in the same column, hidden for ZDT problems -->
+      <div id="ns-1d-plots" class="hidden" style="display:flex;flex-direction:column;gap:6px">
+        <canvas id="cvns-f1" width="680" height="118"></canvas>
+        <canvas id="cvns-f2" width="680" height="118"></canvas>
+      </div>
+    </div>
+    <div class="side">
+      <div class="csec">
+        <div class="clbl">Population</div>
+        <div class="crow"><label>Size N</label>
+          <input type="range" id="q-n" min="20" max="200" step="10" value="80"
+            oninput="sv(this,'qv-n')">
+          <span class="cval" id="qv-n">80</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Algorithm</div>
+        <div class="crow"><label>Type</label>
+          <select id="q-alg" onchange="onAlgChange()">
+            <option value="moea" selected>MOEA (Pareto ranking)</option>
+            <option value="rwga">RWGA (Random Weight GA)</option>
+          </select></div>
+      </div>
+      <div class="csec" id="sec-div">
+        <div class="clbl">Diversity (MOEA)</div>
+        <div class="crow"><label>Method</label>
+          <select id="q-div">
+            <option value="cd" selected>Crowding distance</option>
+            <option value="none">None (rank only)</option>
+          </select></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Crossover (arithmetic)</div>
+        <div class="crow"><label>p<sub>c</sub></label>
+          <input type="range" id="q-pc" min="0" max="1" step="0.05" value="0.7"
+            oninput="svf(this,'qv-pc',2)">
+          <span class="cval" id="qv-pc">0.70</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Gaussian Mutation</div>
+        <div class="crow"><label>p<sub>m</sub> / gene</label>
+          <input type="range" id="q-pm" min="0.01" max="0.5" step="0.01" value="0.1"
+            oninput="svf(this,'qv-pm',2)">
+          <span class="cval" id="qv-pm">0.10</span></div>
+        <div class="crow"><label>σ<sub>m</sub></label>
+          <input type="range" id="q-ms" min="0.01" max="0.5" step="0.01" value="0.1"
+            oninput="svf(this,'qv-ms',2)">
+          <span class="cval" id="qv-ms">0.10</span></div>
+      </div>
+      <div class="csec" id="sec-rankkey">
+        <div id="rankkey-moea">
+          <div class="clbl">Rank Color Key</div>
+          <div class="rleg">
+            <div class="rchip"><div class="rdot" style="background:#FFD700"></div>Rank 1</div>
+            <div class="rchip"><div class="rdot" style="background:#EF4444"></div>Rank 2</div>
+            <div class="rchip"><div class="rdot" style="background:#3B82F6"></div>Rank 3</div>
+            <div class="rchip"><div class="rdot" style="background:#A855F7"></div>Rank 4</div>
+            <div class="rchip"><div class="rdot" style="background:#9CA3AF"></div>5+</div>
+          </div>
+        </div>
+        <div id="rankkey-rwga" class="hidden">
+          <div class="clbl">RWGA Color Key</div>
+          <div class="rleg">
+            <div class="rchip"><div class="rdot" style="background:#D4521A"></div>Archive (non-dom.)</div>
+            <div class="rchip"><div class="rdot" style="background:rgba(80,110,80,.7)"></div>Population</div>
+          </div>
+          <div style="font-size:10px;color:var(--muted);line-height:1.5;margin-top:4px">
+            Archive grows by at most 1 point per generation — only the top individual
+            under the current random weight enters. Archive size ≤ number of
+            supported Pareto-optimal points (those on the convex hull of the front).
+          </div>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Controls</div>
+        <div class="btnrow">
+          <button class="btn btp bts" id="btn2-run" onclick="toggleNRun()">&#9654; Run</button>
+          <button class="btn bto bts" onclick="stepN()">Step</button>
+          <button class="btn bto bts" onclick="resetN()">Reset</button>
+        </div>
+      </div>
+      <div class="csec" id="sec-ws">
+        <div class="clbl">Linear Weight Visualizer</div>
+        <div class="crow"><label>w<sub>1</sub></label>
+          <input type="range" id="q-w1" min="0.02" max="0.98" step="0.02" value="0.5"
+            oninput="svf(this,'qv-w1',2);drawN()">
+          <span class="cval" id="qv-w1">0.50</span></div>
+        <div style="font-size:10px;color:var(--muted);line-height:1.55;margin-top:2px">
+          Arrow + ring show where a single-objective linear weighted optimizer
+          (w<sub>1</sub>G<sub>1</sub>&nbsp;+&nbsp;w<sub>2</sub>G<sub>2</sub>,
+          w<sub>2</sub>&nbsp;=&nbsp;1&minus;w<sub>1</sub>) would land on the true front.
+          In RWGA mode, each generation uses one fresh random w.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sbar">
+    <div class="sc"><div class="slbl">GENERATION</div><div class="sval" id="s2-gen">0</div></div>
+    <div class="sc"><div class="slbl">RANK-1 / ARCHIVE ↑</div><div class="sval hi" id="s2-r1">—</div></div>
+    <div class="sc"><div class="slbl">HV (hypervolume) ↑</div><div class="sval" id="s2-hv">—</div></div>
+    <div class="sc"><div class="slbl">SPREAD σ<sub>cd</sub> ↓</div><div class="sval" id="s2-sp">—</div></div>
+  </div>
+
+  <div class="refcard">
+    <div class="refcol">
+      <div class="refhd">Operator key</div>
+      <table class="reftbl"><tbody>
+        <tr><td>p<sub>c</sub></td><td>Probability of applying arithmetic crossover; offspring are convex combinations of the two parents</td></tr>
+        <tr><td>p<sub>m</sub></td><td>Per-gene probability of applying Gaussian mutation</td></tr>
+        <tr><td>σ<sub>m</sub></td><td>Std. dev. of the Gaussian perturbation added during mutation</td></tr>
+        <tr><td>Crowding dist.</td><td>How isolated a rank-1 point is relative to its neighbors along the front; used as a diversity tie-breaker so that less-crowded points are preferred</td></tr>
+      </tbody></table>
+    </div>
+    <div class="refcol">
+      <div class="refhd">Statistics</div>
+      <table class="reftbl"><tbody>
+        <tr><td>HV</td><td><strong>Hypervolume</strong>: area of objective space simultaneously dominated by the rank-1 (or archive) set, measured from a reference corner. Increases as the front converges and spreads; higher = better</td></tr>
+        <tr><td>σ<sub>cd</sub></td><td>Std. dev. of crowding distances across rank-1 individuals. Low σ means evenly distributed; high σ means some regions are dense, others sparse</td></tr>
+        <tr><td>Archive (RWGA)</td><td>Persistent set of all non-dominated solutions found across all generations; grows monotonically and visualized as orange dots</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="foot">&copy; 2026 Theodore P. Pavlic &middot; MIT License</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     TAB 3  —  ISLAND MODEL / DGA
+═══════════════════════════════════════════════ -->
+<div id="tisl" class="tab">
+
+  <div class="info">
+    In a <strong>Distributed GA (DGA) / Island Model</strong>, the population is split into
+    semi-isolated subpopulations (<em>islands</em>) that evolve independently, then
+    periodically exchange individuals via <strong>migration</strong>.
+    Isolation prolongs the window during which drift can shift an island away from a local
+    optimum — essentially buying time for crossing fitness valleys.
+    Migration lets high-fitness genotypes spread once found.
+    The key tradeoff: too much migration collapses diversity and produces premature convergence
+    (as in a single large GA); too little means islands never share solutions.
+    This is less about Shifting Balance Theory and more like
+    <em>parallel tempering</em> — independent searchers that periodically synchronize.
+  </div>
+
+  <div class="vizrow">
+    <div class="cvwrap">
+      <canvas id="cvisl" width="680" height="220"></canvas>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
+        <canvas id="cvHistI" width="490" height="140" style="flex:1;min-width:260px"></canvas>
+        <canvas id="cvTopo" width="182" height="140" style="flex:0 0 182px"></canvas>
+      </div>
+    </div>
+    <div class="side">
+      <div class="csec">
+        <div class="clbl">Islands</div>
+        <div class="crow">
+          <label>No. islands</label>
+          <input type="range" id="i-ni" min="2" max="6" step="1" value="4"
+            oninput="sv(this,'iv-ni');schedResetIsl()">
+          <span class="cval" id="iv-ni">4</span>
+        </div>
+        <div class="crow">
+          <label>Pop / island</label>
+          <input type="range" id="i-np" min="5" max="30" step="5" value="15"
+            oninput="sv(this,'iv-np')">
+          <span class="cval" id="iv-np">15</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Operators</div>
+        <div class="crow">
+          <label>p<sub>c</sub> (crossover)</label>
+          <input type="range" id="i-pc" min="0" max="1" step="0.05" value="0.5"
+            oninput="svf(this,'iv-pc',2)">
+          <span class="cval" id="iv-pc">0.50</span>
+        </div>
+        <div class="crow">
+          <label>σ<sub>m</sub> (step size)</label>
+          <input type="range" id="i-ms" min="0.05" max="1.0" step="0.05" value="0.3"
+            oninput="svf(this,'iv-ms',2)">
+          <span class="cval" id="iv-ms">0.30</span>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Migration</div>
+        <div class="crow">
+          <label>Rate (fraction)</label>
+          <input type="range" id="i-mr" min="0" max="0.5" step="0.05" value="0.1"
+            oninput="svf(this,'iv-mr',2)">
+          <span class="cval" id="iv-mr">0.10</span>
+        </div>
+        <div class="crow">
+          <label>Interval (gen)</label>
+          <input type="range" id="i-mi" min="1" max="20" step="1" value="5"
+            oninput="sv(this,'iv-mi')">
+          <span class="cval" id="iv-mi">5</span>
+        </div>
+        <div class="crow">
+          <label>Topology</label>
+          <select id="i-topo" onchange="drawTopo()">
+            <option value="ring" selected>Ring</option>
+            <option value="full">Fully connected</option>
+            <option value="rand1">Random (1 neighbor)</option>
+          </select>
+        </div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Deme Colors</div>
+        <div class="ichips" id="isl-chips"></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Controls</div>
+        <div class="btnrow">
+          <button class="btn btp bts" id="btn3-run" onclick="toggleIRun()">▶ Run</button>
+          <button class="btn bto bts" onclick="stepI()">Step</button>
+          <button class="btn bto bts" onclick="resetI()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="sbar">
+    <div class="sc"><div class="slbl">GENERATION</div><div class="sval" id="s3-gen">0</div></div>
+    <div class="sc"><div class="slbl">GLOBAL BEST f(x) ↑</div><div class="sval hi" id="s3-best">—</div></div>
+    <div class="sc"><div class="slbl">MIGRATION EVENTS</div><div class="sval" id="s3-mig">0</div></div>
+    <div class="sc"><div class="slbl">BETWEEN-ISLAND σ<sub>x</sub></div><div class="sval" id="s3-bsig">—</div></div>
+  </div>
+
+  <div class="refcard">
+    <div class="refcol">
+      <div class="refhd">Parameter key</div>
+      <table class="reftbl"><tbody>
+        <tr><td>σ<sub>m</sub></td><td>Gaussian mutation step size — larger values give each island more local exploration</td></tr>
+        <tr><td>Migration rate</td><td>Fraction of each island's population that copies to a neighbor each migration event</td></tr>
+        <tr><td>Migration interval</td><td>How many generations between migration events — longer intervals = more isolation = more drift</td></tr>
+      </tbody></table>
+    </div>
+    <div class="refcol">
+      <div class="refhd">Statistics</div>
+      <table class="reftbl"><tbody>
+        <tr><td>σ<sub>x</sub></td><td>Std. dev. of each island's mean x position — measures how spread out the islands are in genome space; drops toward 0 when all islands converge on the same peak. No arrow: large = diverse exploration, small = convergence — which is desirable depends on context.</td></tr>
+        <tr><td>Shaded bands</td><td>Per-island min / mean / max fitness over generations; overlap shows when islands have found similar fitness values on different peaks</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="foot">© 2026 Theodore P. Pavlic · MIT License</div>
+</div>
+
+
+
+<script>
+// ─── helpers ───────────────────────────────────
+const rng = () => Math.random();
+function randn(){
+  let u=0,v=0;
+  while(!u) u=rng(); while(!v) v=rng();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+function sv(el,id)    { document.getElementById(id).textContent=+el.value|0; }
+function svf(el,id,d) { document.getElementById(id).textContent=parseFloat(el.value).toFixed(d); }
+function gv(id)       { return parseFloat(document.getElementById(id).value); }
+function gi(id)       { return parseInt(document.getElementById(id).value,10); }
+function gs(id)       { return document.getElementById(id).value; }
+
+function setSlider(id,val,dispId,dp){
+  const el=document.getElementById(id);
+  el.value=val;
+  if(dp===undefined) document.getElementById(dispId).textContent=+val|0;
+  else document.getElementById(dispId).textContent=(+val).toFixed(dp);
+}
+
+
+// ─── One-time per-tab DPI canvas scaler ─────────────────────────────────────
+// Call when a tab becomes visible. Reads the rendered CSS width ONCE via
+// getBoundingClientRect (safe here — not in a draw loop), scales the backing
+// store to rendered × dpr, and stores cssW/cssH as data attributes so draw
+// functions can read them without touching dimensions again.
+function scaleToDPR(cv){
+  const dpr=window.devicePixelRatio||1;
+  if(dpr===1) return; // nothing to do on standard screens
+  if(cv.dataset.dprScaled==='1') return; // already done
+  const rect=cv.getBoundingClientRect();
+  const cssW=rect.width>4?Math.round(rect.width):parseInt(cv.getAttribute('width'))||680;
+  const cssH=parseInt(cv.getAttribute('height'))||240; // height from attribute always
+  cv.width=Math.round(cssW*dpr);
+  cv.height=Math.round(cssH*dpr);
+  cv.dataset.dprScaled='1';
+  cv.dataset.cssW=cssW;
+  cv.dataset.cssH=cssH;
+}
+
+// Draw functions call this to get ctx + logical CSS dimensions.
+// If scaleToDPR was called, returns scaled dims and applies DPR transform.
+// Otherwise draws 1:1 so nothing is clipped before scaleToDPR fires.
+function getCtx(cv){
+  const dpr=window.devicePixelRatio||1;
+  const ctx=cv.getContext('2d');
+  const scaled=cv.dataset.dprScaled==='1';
+  const W=scaled?parseInt(cv.dataset.cssW):cv.width;
+  const H=scaled?parseInt(cv.dataset.cssH):cv.height;
+  ctx.setTransform(scaled?dpr:1, 0, 0, scaled?dpr:1, 0, 0);
+  return{ctx,W,H};
+}
+
+function switchTab(id,btn){
+  stop1(); stopN(); stopI(); stopZ();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
+  document.getElementById(id).classList.add('act');
+  btn.classList.add('act');
+  if(id==='t1d'){
+    ['cv1d','cvHist1'].forEach(id2=>{ const el=document.getElementById(id2); if(el)scaleToDPR(el); });
+    if(!ga1)// Scale tab-1 canvases on initial load (they're visible immediately)
+['cv1d','cvHist1'].forEach(id=>{ const el=document.getElementById(id); if(el)scaleToDPR(el); });
+init1(); draw1(); drawHist1();
+  }
+  if(id==='tns'){
+    ['cvns','cvns-f1','cvns-f2'].forEach(id2=>{ const el=document.getElementById(id2); if(el)scaleToDPR(el); });
+    if(!gaNS)initN(); drawN();
+  }
+  if(id==='tisl'){
+    ['cvisl','cvHistI','cvTopo'].forEach(id2=>{ const el=document.getElementById(id2); if(el)scaleToDPR(el); });
+    if(!islGA)initI(); drawI(); drawHistI(); drawTopo();
+  }
+  if(id==='tzoo'){
+    ['cvZoo','cvZoo3d','cvZooHist'].forEach(id2=>{ const el=document.getElementById(id2); if(el)scaleToDPR(el); });
+    initZTab();
+  }
+}
+
+// ─── FITNESS LANDSCAPE ─────────────────────────
+const XLO=0, XHI=10;
+const PEAKS=[
+  {m:0.85,s:0.30,h:2.5},{m:2.30,s:0.38,h:2.9},{m:3.95,s:0.32,h:2.6},
+  {m:5.50,s:0.42,h:2.2},{m:7.20,s:0.35,h:3.1},{m:9.00,s:0.28,h:2.8}
+];
+function fit(x){
+  let f=0;
+  for(const p of PEAKS) f+=p.h*Math.exp(-((x-p.m)**2)/(2*p.s*p.s));
+  return f;
+}
+const NLS=600;
+const LS_Y=Array.from({length:NLS+1},(_,i)=>fit(XLO+(XHI-XLO)*i/NLS));
+const LS_FMAX=Math.max(...LS_Y);
+
+
+function drawLandscape(ctx,W,H,ml,mr,mt,mb){
+  const pw=W-ml-mr, ph=H-mt-mb;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const fsc=ph/(LS_FMAX*1.12);
+  ctx.beginPath(); ctx.moveTo(ml,mt+ph);
+  for(let i=0;i<=NLS;i++) ctx.lineTo(ml+pw*i/NLS,mt+ph-LS_Y[i]*fsc);
+  ctx.lineTo(ml+pw,mt+ph); ctx.closePath();
+  ctx.fillStyle='rgba(200,240,215,.55)'; ctx.fill();
+  ctx.beginPath();
+  for(let i=0;i<=NLS;i++){
+    const xx=ml+pw*i/NLS,yy=mt+ph-LS_Y[i]*fsc;
+    i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy);
+  }
+  ctx.strokeStyle='#2D6A4F'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#587060'; ctx.font='11px Outfit,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('genome  x',ml+pw/2,H-3);
+  ctx.save(); ctx.translate(10,mt+ph/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('fitness  f(x)',0,0); ctx.restore();
+  return{pw,ph,fsc,ml,mt};
+}
+const x2c=(x,ml,pw)=>ml+pw*(x-XLO)/(XHI-XLO);
+const f2c=(f,mt,ph,fsc)=>mt+ph-f*fsc;
+
+// ─── SELECTION ─────────────────────────────────
+function selSUS(pop,sfit){
+  const N=pop.length, tot=sfit.reduce((a,b)=>a+b,0);
+  if(tot<=0) return pop[Math.floor(rng()*N)];
+  const step=tot/N, start=rng()*step;
+  const sel=[]; let c=0,j=0;
+  for(let i=0;i<N&&j<N;i++){
+    c+=sfit[i];
+    while(j<N&&start+j*step<=c){sel.push(pop[i]);j++;}
+  }
+  return sel.length?sel[Math.floor(rng()*sel.length)]:pop[0];
+}
+function selRW(pop,sfit){
+  const tot=sfit.reduce((a,b)=>a+b,0);
+  if(tot<=0) return pop[Math.floor(rng()*pop.length)];
+  const r=rng()*tot; let c=0;
+  for(let i=0;i<pop.length;i++){c+=sfit[i];if(c>=r)return pop[i];}
+  return pop[0];
+}
+function selTourn(pop,sfit,k){
+  let bi=-1,bf=-Infinity;
+  for(let t=0;t<k;t++){const i=Math.floor(rng()*pop.length);if(sfit[i]>bf){bf=sfit[i];bi=i;}}
+  return pop[bi];
+}
+function selRank(pop,sfit,sp){
+  const N=pop.length;
+  const ord=sfit.map((f,i)=>({f,i})).sort((a,b)=>a.f-b.f);
+  const probs=ord.map((_,r)=>(2-sp)/N+2*r*(sp-1)/(N*(N-1)));
+  const tot=probs.reduce((a,b)=>a+b,0);
+  const r=rng()*tot; let c=0;
+  for(let i=0;i<N;i++){c+=probs[i];if(c>=r)return pop[ord[i].i];}
+  return pop[0];
+}
+function doSelect(pop,sfit){
+  const sel=gs('p-sel');
+  if(sel==='rw')    return selRW(pop,sfit);
+  if(sel==='tourn') return selTourn(pop,sfit,gi('p-tk'));
+  if(sel==='rank')  return selRank(pop,sfit,gv('p-sp'));
+  return selSUS(pop,sfit);
+}
+
+// ─── VARIATION ─────────────────────────────────
+function xover(x1,x2,pc){
+  if(rng()>pc) return[x1,x2];
+  const a=rng();
+  return[clamp(a*x1+(1-a)*x2,XLO,XHI),clamp(a*x2+(1-a)*x1,XLO,XHI)];
+}
+function mutate(x,pm,sig){
+  return rng()<pm?clamp(x+sig*randn(),XLO,XHI):x;
+}
+
+// ─── NICHING ───────────────────────────────────
+function applySharing(pop,rawFit,sig){
+  return rawFit.map((fi,i)=>{
+    let niche=0;
+    for(let j=0;j<pop.length;j++){
+      const d=Math.abs(pop[i].x-pop[j].x);
+      niche+=Math.exp(-(d*d)/(2*sig*sig));
+    }
+    return fi/Math.max(niche,1e-9);
+  });
+}
+function applyClearing(pop,rawFit,sig){
+  const sh=[...rawFit];
+  const used=new Array(pop.length).fill(false);
+  const ord=rawFit.map((f,i)=>({f,i})).sort((a,b)=>b.f-a.f);
+  for(const w of ord){
+    if(used[w.i]) continue; used[w.i]=true;
+    for(let j=0;j<pop.length;j++){
+      if(!used[j]&&Math.abs(pop[j].x-pop[w.i].x)<sig){sh[j]=1e-10;used[j]=true;}
+    }
+  }
+  return sh;
+}
+
+// ─── TAB 1  STATE ──────────────────────────────
+let ga1=null,timer1=null,gen1=0;
+let h1=[];
+const MAX_HIST=200;
+
+function init1(){
+  const N=gi('p-n');
+  const pop=Array.from({length:N},()=>{const x=XLO+rng()*(XHI-XLO);return{x,f:fit(x)};});
+  ga1={pop,bestX:null,bestF:-Infinity};
+  gen1=0; h1=[];
+  updBest1(); pushHist1(); updStats1();
+}
+function reset1(){stop1();init1();draw1();drawHist1();}
+function updBest1(){for(const ind of ga1.pop)if(ind.f>ga1.bestF){ga1.bestF=ind.f;ga1.bestX=ind.x;}}
+function pushHist1(){
+  const fs=ga1.pop.map(i=>i.f);
+  h1.push({min:Math.min(...fs),avg:fs.reduce((a,b)=>a+b,0)/fs.length,max:Math.max(...fs)});
+  if(h1.length>MAX_HIST) h1.shift();
+}
+function countPeaks(){
+  let cnt=0;
+  for(const p of PEAKS) if(ga1.pop.some(ind=>Math.abs(ind.x-p.m)<p.s*1.5)) cnt++;
+  return cnt;
+}
+function updStats1(){
+  document.getElementById('s1-gen').textContent=gen1;
+  document.getElementById('s1-best').textContent=ga1.bestF.toFixed(4);
+  const avg=ga1.pop.reduce((s,i)=>s+i.f,0)/ga1.pop.length;
+  document.getElementById('s1-mean').textContent=avg.toFixed(4);
+  const mx2=ga1.pop.reduce((s,i)=>s+i.x,0)/ga1.pop.length;
+  const sx=Math.sqrt(ga1.pop.reduce((s,i)=>s+(i.x-mx2)**2,0)/ga1.pop.length);
+  document.getElementById('s1-div').textContent=sx.toFixed(3);
+  document.getElementById('s1-pk').textContent=countPeaks()+' / '+PEAKS.length;
+}
+
+function step1(){
+  if(!ga1) init1();
+  const pc=gv('p-pc'),pm=gv('p-pm'),sig=gv('p-ms'),elite=gi('p-el');
+  const divM=gs('p-div'),sigS=gv('p-ss'),sigC=gv('p-sc');
+  const pop=ga1.pop, N=pop.length;
+  const rawF=pop.map(ind=>ind.f);
+  const minF=Math.min(...rawF);
+  let selF=rawF.map(f=>f-minF+0.01);
+  if(divM==='sharing') selF=applySharing(pop,selF,sigS);
+  else if(divM==='clearing') selF=applyClearing(pop,selF,sigC);
+  let newPop=[];
+  if(divM==='crowding'){
+    const shuf=[...pop].sort(()=>rng()-.5);
+    for(let i=0;i<N-1;i+=2){
+      const p1=shuf[i],p2=shuf[i+1];
+      let[c1x,c2x]=xover(p1.x,p2.x,pc);
+      c1x=mutate(c1x,pm,sig); c2x=mutate(c2x,pm,sig);
+      const cf1=fit(c1x),cf2=fit(c2x);
+      const d11=Math.abs(p1.x-c1x)+Math.abs(p2.x-c2x);
+      const d12=Math.abs(p1.x-c2x)+Math.abs(p2.x-c1x);
+      if(d11<=d12){
+        newPop.push(cf1>=p1.f?{x:c1x,f:cf1}:{...p1});
+        newPop.push(cf2>=p2.f?{x:c2x,f:cf2}:{...p2});
+      } else {
+        newPop.push(cf2>=p1.f?{x:c2x,f:cf2}:{...p1});
+        newPop.push(cf1>=p2.f?{x:c1x,f:cf1}:{...p2});
+      }
+    }
+    if(N%2!==0) newPop.push({...pop[N-1]});
+  } else {
+    while(newPop.length<N){
+      const p1=doSelect(pop,selF),p2=doSelect(pop,selF);
+      let[c1x,c2x]=xover(p1.x,p2.x,pc);
+      c1x=mutate(c1x,pm,sig); c2x=mutate(c2x,pm,sig);
+      newPop.push({x:c1x,f:fit(c1x)});
+      if(newPop.length<N) newPop.push({x:c2x,f:fit(c2x)});
+    }
+    if(elite>0){
+      const sortedOld=[...pop].sort((a,b)=>b.f-a.f);
+      newPop.sort((a,b)=>a.f-b.f);
+      for(let e=0;e<Math.min(elite,N);e++) newPop[e]={...sortedOld[e]};
+    }
+  }
+  ga1.pop=newPop; gen1++;
+  updBest1(); pushHist1(); updStats1(); draw1(); drawHist1();
+}
+
+function draw1(){
+  const cv=document.getElementById('cv1d');
+  const{ctx,W,H}=getCtx(cv);
+  const{pw,ph,fsc,ml,mt}=drawLandscape(ctx,W,H,42,14,18,26);
+  if(!ga1) return;
+  for(const ind of ga1.pop){
+    const cx=x2c(ind.x,ml,pw),cy=f2c(ind.f,mt,ph,fsc);
+    ctx.beginPath(); ctx.arc(cx,cy,5,0,2*Math.PI);
+    ctx.fillStyle='rgba(212,82,26,.72)'; ctx.fill();
+    ctx.strokeStyle='rgba(140,40,10,.85)'; ctx.lineWidth=1; ctx.stroke();
+  }
+  if(ga1.bestX!==null){
+    const cx=x2c(ga1.bestX,ml,pw),cy=f2c(ga1.bestF,mt,ph,fsc);
+    ctx.beginPath(); ctx.arc(cx,cy,9,0,2*Math.PI);
+    ctx.strokeStyle='#6B4FA8'; ctx.lineWidth=2.5; ctx.stroke();
+    ctx.fillStyle='rgba(107,79,168,.12)'; ctx.fill();
+    ctx.fillStyle='#6B4FA8'; ctx.font='9px Outfit,sans-serif';
+    ctx.textAlign='center'; ctx.fillText('best',cx,cy-12);
+  }
+  ctx.fillStyle='#2D6A4F'; ctx.font='bold 11.5px Outfit,sans-serif';
+  ctx.textAlign='center';
+  const dlab={'none':'No Niching','sharing':'Fitness Sharing','crowding':'Det. Crowding','clearing':'Clearing'}[gs('p-div')]||'';
+  ctx.fillText('Goal: Maximize f(x)  \u00b7  '+dlab,W/2,13);
+}
+
+function drawHist1(){
+  const cv=document.getElementById('cvHist1');
+  const{ctx,W,H}=getCtx(cv);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const ml=42,mr=14,mt=14,mb=24,pw=W-ml-mr,ph=H-mt-mb;
+  ctx.fillStyle='#587060'; ctx.font='10px Outfit,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('Fitness over Generations',W/2,10);
+  const N=h1.length;
+  if(N<2){
+    ctx.fillStyle='#bbb'; ctx.fillText('Run the GA to see fitness history',W/2,H/2); return;
+  }
+  const allMn=Math.min(...h1.map(e=>e.min))*0.97;
+  const allMx=Math.max(...h1.map(e=>e.max))*1.03;
+  const ysc=ph/(allMx-allMn), xsc=pw/(N-1);
+  const tx=i=>ml+i*xsc, ty=v=>mt+ph-(v-allMn)*ysc;
+  ctx.strokeStyle='#e8f5ea'; ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=mt+ph*g/4;ctx.beginPath();ctx.moveTo(ml,y);ctx.lineTo(ml+pw,y);ctx.stroke();}
+  ctx.fillStyle='#587060'; ctx.font='9px Outfit,sans-serif';
+  ctx.textAlign='right';
+  for(let g=0;g<=2;g++){const v=allMn+(allMx-allMn)*g/2;ctx.fillText(v.toFixed(2),ml-3,ty(v)+3);}
+  ctx.textAlign='center';
+  const step=Math.max(1,Math.round(N/5));
+  for(let i=0;i<N;i+=step) ctx.fillText(Math.max(0,gen1-N+1+i),tx(i),H-3);
+  // band
+  ctx.beginPath(); ctx.moveTo(tx(0),ty(h1[0].max));
+  for(let i=1;i<N;i++) ctx.lineTo(tx(i),ty(h1[i].max));
+  for(let i=N-1;i>=0;i--) ctx.lineTo(tx(i),ty(h1[i].min));
+  ctx.closePath(); ctx.fillStyle='rgba(82,183,136,.18)'; ctx.fill();
+  // avg
+  ctx.beginPath(); ctx.moveTo(tx(0),ty(h1[0].avg));
+  for(let i=1;i<N;i++) ctx.lineTo(tx(i),ty(h1[i].avg));
+  ctx.strokeStyle='#2D6A4F'; ctx.lineWidth=1.8; ctx.stroke();
+  // max
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tx(0),ty(h1[0].max));
+  for(let i=1;i<N;i++) ctx.lineTo(tx(i),ty(h1[i].max));
+  ctx.strokeStyle='#D4521A'; ctx.lineWidth=1.2; ctx.stroke();
+  // min — dashed
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tx(0),ty(h1[0].min));
+  for(let i=1;i<N;i++) ctx.lineTo(tx(i),ty(h1[i].min));
+  ctx.strokeStyle='#95d5b2'; ctx.lineWidth=1; ctx.stroke();
+  ctx.setLineDash([]);
+  // legend — anchored bottom-right so it doesn't overlap the fitness lines
+  const legH=3*12+2;
+  const lx=ml+pw-92, ly=mt+ph-legH;
+  ctx.font='9px Outfit,sans-serif'; ctx.textAlign='left';
+  // max — dashed orange
+  ctx.setLineDash([3,3]); ctx.strokeStyle='#D4521A'; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(lx,ly+3);ctx.lineTo(lx+14,ly+3);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#587060'; ctx.fillText('max',lx+17,ly+6);
+  // mean — solid green
+  ctx.strokeStyle='#2D6A4F'; ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(lx,ly+15);ctx.lineTo(lx+14,ly+15);ctx.stroke();
+  ctx.fillStyle='#587060'; ctx.fillText('mean',lx+17,ly+18);
+  // min — dashed light green
+  ctx.setLineDash([3,3]); ctx.strokeStyle='#95d5b2'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(lx,ly+27);ctx.lineTo(lx+14,ly+27);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#587060'; ctx.fillText('min',lx+17,ly+30);
+}
+
+function toggle1Run(){
+  const btn=document.getElementById('btn1-run');
+  if(timer1){stop1();}
+  else{if(!ga1)init1();btn.textContent='\u23f8 Pause';timer1=setInterval(step1,80);}
+}
+function stop1(){if(timer1){clearInterval(timer1);timer1=null;}
+  document.getElementById('btn1-run').textContent='\u25b6 Run';}
+
+function onSelChange(){
+  const v=gs('p-sel');
+  document.getElementById('row-tk').classList.toggle('hidden',v!=='tourn');
+  document.getElementById('row-sp').classList.toggle('hidden',v!=='rank');
+}
+function onDivChange(){
+  const v=gs('p-div');
+  document.getElementById('row-ss').classList.toggle('hidden',v!=='sharing');
+  document.getElementById('row-sc').classList.toggle('hidden',v!=='clearing');
+}
+
+function setPreset1(mode){
+  stop1();
+  if(mode==='global'){
+    setSlider('p-n',40,'pv-n'); setSlider('p-pc',0.70,'pv-pc',2);
+    setSlider('p-pm',0.05,'pv-pm',3); setSlider('p-ms',0.4,'pv-ms',2);
+    setSlider('p-el',2,'pv-el');
+    document.getElementById('p-sel').value='tourn';
+    setSlider('p-tk',5,'pv-tk');
+    document.getElementById('p-div').value='none';
+    onSelChange(); onDivChange();
+  } else {
+    setSlider('p-n',80,'pv-n'); setSlider('p-pc',0.20,'pv-pc',2);
+    setSlider('p-pm',0.15,'pv-pm',3); setSlider('p-ms',0.4,'pv-ms',2);
+    setSlider('p-el',0,'pv-el');
+    document.getElementById('p-sel').value='sus';
+    document.getElementById('p-div').value='sharing';
+    setSlider('p-ss',0.7,'pv-ss',1);
+    onSelChange(); onDivChange();
+  }
+  init1(); draw1(); drawHist1();
+}
+
+
+// ─── TAB 2  MOEA / RWGA ────────────────────────
+let gaNS=null,timerN=null,genN=0,curProb='zdt2';
+let rwMode=false, gaRW=null, rwArchive=[];
+const NV=10;
+
+// ── ZDT problem evaluators ──────────────────────
+function evalZDT1(x){
+  const f1=x[0], g=1+x.slice(1).reduce((a,b)=>a+b,0);
+  return[f1,g*(1-Math.sqrt(f1/g))];
+}
+function evalZDT2(x){
+  const f1=x[0], g=1+x.slice(1).reduce((a,b)=>a+b,0);
+  return[f1,g*(1-(f1/g)*(f1/g))];
+}
+function evalZDT3(x){
+  const f1=x[0], g=1+x.slice(1).reduce((a,b)=>a+b,0);
+  return[f1,g*(1-Math.sqrt(f1/g)-(f1/g)*Math.sin(10*Math.PI*f1))];
+}
+
+// ── Scalar Dec. Var. problem ─────────────────────
+// f1(x) = 3x + sin(2πx),  f2(x) = cos(4πx) − 2x + 3,  x ∈ [0,1]
+function eval1D(x){ return[3*x+Math.sin(2*Math.PI*x), Math.cos(4*Math.PI*x)-2*x+3]; }
+
+const CURVE1D=(()=>{
+  const N=1000;
+  return Array.from({length:N+1},(_,i)=>{ const x=i/N; return{x,obj:eval1D(x)}; });
+})();
+function findPareto1D(pts){
+  const s=[...pts].sort((a,b)=>{
+    if(b.obj[0]!==a.obj[0]) return b.obj[0]-a.obj[0];
+    return b.obj[1]-a.obj[1];
+  });
+  let mxF2=-Infinity; const nd=[];
+  for(const p of s){ if(p.obj[1]>=mxF2){nd.push(p);mxF2=p.obj[1];} }
+  return nd;
+}
+const PARETO1D=findPareto1D(CURVE1D);
+
+function evalProb(x){
+  if(curProb==='zdt1') return evalZDT1(x);
+  if(curProb==='zdt3') return evalZDT3(x);
+  if(curProb==='1d')   return eval1D(x[0]);
+  return evalZDT2(x);
+}
+
+// ── True fronts for ZDT (minimization coords) ───
+const ZDT3_SEGS=[[0,0.0830],[0.1822,0.2577],[0.4093,0.4538],[0.6183,0.6525],[0.8233,0.8518]];
+function buildTrueFront(prob){
+  const pts=[];
+  if(prob==='zdt1'){ for(let i=0;i<=300;i++){const f1=i/300;pts.push([f1,1-Math.sqrt(f1)]);} }
+  else if(prob==='zdt2'){ for(let i=0;i<=300;i++){const f1=i/300;pts.push([f1,1-f1*f1]);} }
+  else if(prob==='zdt3'){ for(const[lo,hi] of ZDT3_SEGS) for(let i=0;i<=80;i++){
+    const f1=lo+(hi-lo)*i/80; pts.push([f1,1-Math.sqrt(f1)-f1*Math.sin(10*Math.PI*f1)]); }}
+  return pts;
+}
+
+// ── Display axis limits ──────────────────────────
+const DISP={
+  zdt1:{g1lo:-0.02,g1hi:1.05,g2lo:-0.05,g2hi:1.12},
+  zdt2:{g1lo:-0.02,g1hi:1.05,g2lo:-0.05,g2hi:1.12},
+  zdt3:{g1lo:-0.02,g1hi:1.05,g2lo:-0.08,g2hi:1.95},
+  '1d':{g1lo:-0.1,g1hi:3.3,g2lo:-0.2,g2hi:4.3}
+};
+
+// ── Formula boxes ────────────────────────────────
+const FBOX_HTML={
+  zdt1:`<div class="fcol"><div class="fhdg">ZDT1 &middot; 10 variables &middot; maximize both G<sub>1</sub>&nbsp;=&nbsp;1&minus;f<sub>1</sub>, G<sub>2</sub>&nbsp;=&nbsp;1&minus;f<sub>2</sub></div>
+    <div>f<sub>1</sub> = x<sub>1</sub>,&nbsp; g = 1 + &Sigma;<sub>i&ge;2</sub>x<sub>i</sub>,&nbsp; f<sub>2</sub> = g&middot;(1&minus;&radic;(f<sub>1</sub>/g))</div></div>
+  <div class="fcol"><div class="fhdg">True front</div><div>Concave arc in G-space &mdash; weighted-sum reaches all points (convex problem)</div></div>`,
+  zdt2:`<div class="fcol"><div class="fhdg">ZDT2 &middot; 10 variables &middot; maximize both G<sub>1</sub>&nbsp;=&nbsp;1&minus;f<sub>1</sub>, G<sub>2</sub>&nbsp;=&nbsp;1&minus;f<sub>2</sub></div>
+    <div>f<sub>1</sub> = x<sub>1</sub>,&nbsp; g = 1 + &Sigma;<sub>i&ge;2</sub>x<sub>i</sub>,&nbsp; f<sub>2</sub> = g&middot;(1&minus;(f<sub>1</sub>/g)<sup>2</sup>)</div></div>
+  <div class="fcol"><div class="fhdg">True front</div><div>Convex arc in G-space &mdash; <em>non-convex problem</em>: weighted-sum only reaches the two extreme corners</div></div>`,
+  zdt3:`<div class="fcol"><div class="fhdg">ZDT3 &middot; 10 variables &middot; maximize both G<sub>1</sub>&nbsp;=&nbsp;1&minus;f<sub>1</sub>, G<sub>2</sub>&nbsp;=&nbsp;1&minus;f<sub>2</sub></div>
+    <div>f<sub>1</sub> = x<sub>1</sub>,&nbsp; g = 1 + &Sigma;<sub>i&ge;2</sub>x<sub>i</sub>,&nbsp; f<sub>2</sub> = g&middot;[1&minus;&radic;(f<sub>1</sub>/g)&minus;(f<sub>1</sub>/g)&middot;sin(10&pi;f<sub>1</sub>)]</div></div>
+  <div class="fcol"><div class="fhdg">True front</div><div>5 disconnected arcs &mdash; tests whether the MOEA maintains spread across all segments</div></div>`,
+  '1d':`<div class="fcol"><div class="fhdg">Scalar Dec. Var. &middot; x &isin; [0,1] &middot; maximize both</div>
+    <div>f<sub>1</sub>(x) = 3x + sin(2&pi;x)</div>
+    <div>f<sub>2</sub>(x) = cos(4&pi;x) &minus; 2x + 3</div></div>
+  <div class="fcol"><div class="fhdg">Decision space</div>
+    <div>Single variable x; the curve (f<sub>1</sub>(x), f<sub>2</sub>(x)) self-intersects in objective space, producing a non-convex, disconnected Pareto front from simple 1-D oscillatory functions</div></div>`
+};
+
+// ── Core NSGA-II machinery ───────────────────────
+function fastNDS(pop){
+  const n=pop.length;
+  const dom=Array.from({length:n},()=>[]);
+  const cnt=new Array(n).fill(0);
+  const fronts=[[]];
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      if(i===j) continue;
+      const[a1,a2]=pop[i].obj,[b1,b2]=pop[j].obj;
+      if(a1<=b1&&a2<=b2&&(a1<b1||a2<b2)) dom[i].push(j);
+      else if(b1<=a1&&b2<=a2&&(b1<a1||b2<a2)) cnt[i]++;
+    }
+    if(cnt[i]===0){pop[i].rank=1;fronts[0].push(i);}
+  }
+  let fi=0;
+  while(fronts[fi]&&fronts[fi].length){
+    const nxt=[];
+    for(const i of fronts[fi]) for(const j of dom[i]) if(--cnt[j]===0){pop[j].rank=fi+2;nxt.push(j);}
+    fi++;
+    if(nxt.length) fronts.push(nxt); else break;
+  }
+  return fronts;
+}
+// For the 1D scalar problem we MAXIMIZE both objectives.
+// fastNDS uses minimization logic, so we temporarily negate objectives.
+function fastNDSForProblem(pop){
+  if(curProb==='1d'){
+    pop.forEach(p=>{ p.obj=[-p.obj[0],-p.obj[1]]; });
+    const fronts=fastNDS(pop);
+    pop.forEach(p=>{ p.obj=[-p.obj[0],-p.obj[1]]; }); // restore
+    return fronts;
+  }
+  return fastNDS(pop);
+}
+function crowdDist(pop,front){
+  const n=front.length; front.forEach(i=>pop[i].cd=0);
+  for(let m=0;m<2;m++){
+    const s=[...front].sort((a,b)=>pop[a].obj[m]-pop[b].obj[m]);
+    pop[s[0]].cd=Infinity; pop[s[n-1]].cd=Infinity;
+    const r=(pop[s[n-1]].obj[m]-pop[s[0]].obj[m])||1;
+    for(let i=1;i<n-1;i++) pop[s[i]].cd+=(pop[s[i+1]].obj[m]-pop[s[i-1]].obj[m])/r;
+  }
+}
+// Decision-space crowding for scalar-x problems: sort by x, measure gaps in x-space.
+// This keeps individuals spread across all Pareto-efficient x-intervals, not just obj-space.
+function crowdDist1D(pop,front){
+  const n=front.length; front.forEach(i=>pop[i].cd=0);
+  if(n<=2){ front.forEach(i=>pop[i].cd=Infinity); return; }
+  const s=[...front].sort((a,b)=>pop[a].x[0]-pop[b].x[0]);
+  pop[s[0]].cd=Infinity; pop[s[n-1]].cd=Infinity;
+  for(let i=1;i<n-1;i++) pop[s[i]].cd=pop[s[i+1]].x[0]-pop[s[i-1]].x[0];
+}
+
+// ── Simplified operators ─────────────────────────
+// Arithmetic crossover (BLX-0 / uniform blend)
+function arithX(x1,x2,pc){
+  if(rng()>pc) return[x1.slice(),x2.slice()];
+  const c1=[],c2=[];
+  for(let i=0;i<x1.length;i++){
+    const a=rng(); c1.push(a*x1[i]+(1-a)*x2[i]); c2.push((1-a)*x1[i]+a*x2[i]);
+  }
+  return[c1,c2];
+}
+// Gaussian mutation per gene
+function gaussMut(x,pm,sig){
+  return x.map(xi=>rng()<pm?clamp(xi+sig*randn(),0,1):xi);
+}
+// 1-D scalar versions
+function arithX1D(x1,x2,pc){
+  if(rng()>pc) return[x1,x2];
+  const a=rng(); return[a*x1+(1-a)*x2,(1-a)*x1+a*x2];
+}
+function gaussMut1D(x,pm,sig){ return rng()<pm?clamp(x+sig*randn(),0,1):x; }
+
+function tournNS(pop,useCd){
+  const a=Math.floor(rng()*pop.length);
+  let b=Math.floor(rng()*pop.length);
+  while(b===a) b=Math.floor(rng()*pop.length);
+  const pa=pop[a],pb=pop[b];
+  if(pa.rank<pb.rank) return pa;
+  if(pb.rank<pa.rank) return pb;
+  if(useCd&&pa.cd>pb.cd) return pa;
+  if(useCd&&pb.cd>pa.cd) return pb;
+  return rng()<0.5?pa:pb;
+}
+
+// ── Algorithm selector ───────────────────────────
+function onAlgChange(){
+  rwMode=gs('q-alg')==='rwga';
+  document.getElementById('sec-div').classList.toggle('hidden',rwMode);
+  document.getElementById('rankkey-moea').classList.toggle('hidden',rwMode);
+  document.getElementById('rankkey-rwga').classList.toggle('hidden',!rwMode);
+  stopN(); initN(); drawN();
+}
+
+// ── RWGA ─────────────────────────────────────────
+function rwAddToArchive(ind){
+  const o=ind.obj;
+  const is1d=curProb==='1d';
+  // dominance direction: 1D maximizes (higher=better), ZDT minimizes (lower=better)
+  // domAoverB(ao, o): returns true if ao strictly dominates o
+  const domAoverB=(ao,o)=>is1d
+    ?(ao[0]>=o[0]&&ao[1]>=o[1]&&(ao[0]>o[0]||ao[1]>o[1]))   // maximization
+    :(ao[0]<=o[0]&&ao[1]<=o[1]&&(ao[0]<o[0]||ao[1]<o[1]));   // minimization
+  for(const a of rwArchive){ if(domAoverB(a.obj,o)) return; }  // o is dominated, reject
+  for(let i=rwArchive.length-1;i>=0;i--){
+    if(domAoverB(o,rwArchive[i].obj)) rwArchive.splice(i,1);   // o dominates archive[i], remove
+  }
+  rwArchive.push({obj:[...o]});
+}
+function initRW(){
+  const N=gi('q-n');
+  const pop=Array.from({length:N},()=>{
+    let x;
+    if(curProb==='1d') x=[rng()];
+    else x=[rng(),...Array.from({length:NV-1},()=>rng()*0.001)];
+    return{x, obj:evalProb(x)};
+  });
+  gaRW={pop}; rwArchive=[];
+  // Archive starts empty — only the scalar winner of each generation enters.
+  // This enforces that only supported (convex-hull) Pareto points are discovered.
+}
+function stepRW(){
+  if(!gaRW) initRW();
+  const N=gaRW.pop.length,pc=gv('q-pc'),pm=gv('q-pm'),sig=gv('q-ms');
+  const pop=gaRW.pop;
+  // One fresh random weight for the whole generation (RWGA).
+  // For ZDT we minimize f, so maximize (1-f); for 1D we maximize f directly.
+  const w1=rng();
+  const scalar=p=>curProb==='1d'
+    ? w1*p.obj[0]+(1-w1)*p.obj[1]
+    : w1*(1-p.obj[0])+(1-w1)*(1-p.obj[1]);
+  const sfit=pop.map(p=>scalar(p));
+  const minSF=Math.min(...sfit);
+  const selF=sfit.map(f=>f-minSF+0.01);
+  const newPop=[];
+  if(curProb==='1d'){
+    while(newPop.length<N){
+      const p1=selTourn(pop,selF,3),p2=selTourn(pop,selF,3);
+      const[c1x0,c2x0]=arithX1D(p1.x[0],p2.x[0],pc);
+      const m1=[gaussMut1D(c1x0,pm,sig)],m2=[gaussMut1D(c2x0,pm,sig)];
+      newPop.push({x:m1,obj:evalProb(m1)});
+      if(newPop.length<N) newPop.push({x:m2,obj:evalProb(m2)});
+    }
+  } else {
+    while(newPop.length<N){
+      const p1=selTourn(pop,selF,3),p2=selTourn(pop,selF,3);
+      const[c1x,c2x]=arithX(p1.x,p2.x,pc);
+      const m1=gaussMut(c1x,pm,sig),m2=gaussMut(c2x,pm,sig);
+      newPop.push({x:m1,obj:evalProb(m1)});
+      if(newPop.length<N) newPop.push({x:m2,obj:evalProb(m2)});
+    }
+  }
+  gaRW.pop=newPop;
+  // Only the single best individual under this generation's weight enters the archive.
+  const best=newPop.reduce((b,p)=>scalar(p)>scalar(b)?p:b, newPop[0]);
+  rwAddToArchive(best);
+}
+
+// Landing point on the ZDT true front for a given w1 (displays in G-space: G=1-f)
+function frontLandingPt(w1){
+  const front=buildTrueFront(curProb);
+  if(!front.length) return null;
+  let best=null,bestVal=-Infinity;
+  const w2=1-w1;
+  for(const[f1,f2] of front){
+    const v=w1*(1-f1)+w2*(1-f2);
+    if(v>bestVal){bestVal=v;best=[f1,f2];}
+  }
+  return best;  // [f1,f2] minimization coords
+}
+// Landing point on the 1D Pareto front for a given w1 (maximization: higher f = better)
+function frontLandingPt1D(w1){
+  if(!PARETO1D.length) return null;
+  let best=null,bestVal=-Infinity;
+  const w2=1-w1;
+  for(const p of PARETO1D){
+    const v=w1*p.obj[0]+w2*p.obj[1];
+    if(v>bestVal){bestVal=v;best=p;}
+  }
+  return best; // {x, obj:[f1,f2]}
+}
+
+// ── NSGA-II init & step ───────────────────────────
+function initN(){
+  document.getElementById('fbox').innerHTML=FBOX_HTML[curProb];
+  // show/hide 1D sub-plots
+  document.getElementById('ns-1d-plots').classList.toggle('hidden',curProb!=='1d');
+  if(rwMode){ initRW(); genN=0; updStatsN(); return; }
+  const N=gi('q-n');
+  let pop;
+  if(curProb==='1d'){
+    pop=Array.from({length:N},()=>{
+      const x=[rng()];
+      return{x,obj:eval1D(x[0]),rank:1,cd:0};
+    });
+  } else {
+    // x[1..9] near 0 keeps g≈1 so f2 stays inside the display axes
+    pop=Array.from({length:N},()=>{
+      const x=[rng(),...Array.from({length:NV-1},()=>rng()*0.001)];
+      return{x,obj:evalProb(x),rank:1,cd:0};
+    });
+  }
+  fastNDSForProblem(pop).forEach(f=>(curProb==='1d'?crowdDist1D:crowdDist)(pop,f));
+  gaNS={pop}; genN=0; updStatsN();
+}
+function resetN(){stopN();initN();drawN();}
+
+function stepN(){
+  if(rwMode){ if(!gaRW)initRW(); stepRW(); genN++; updStatsN(); drawN(); return; }
+  if(!gaNS) initN();
+  const N=gaNS.pop.length,pc=gv('q-pc'),pm=gv('q-pm'),sig=gv('q-ms');
+  const useCd=gs('q-div')==='cd';
+  const off=[];
+  if(curProb==='1d'){
+    while(off.length<N){
+      const p1=tournNS(gaNS.pop,useCd),p2=tournNS(gaNS.pop,useCd);
+      const[c1x0,c2x0]=arithX1D(p1.x[0],p2.x[0],pc);
+      const m1=[gaussMut1D(c1x0,pm,sig)],m2=[gaussMut1D(c2x0,pm,sig)];
+      off.push({x:m1,obj:eval1D(m1[0]),rank:0,cd:0});
+      if(off.length<N) off.push({x:m2,obj:eval1D(m2[0]),rank:0,cd:0});
+    }
+  } else {
+    while(off.length<N){
+      const p1=tournNS(gaNS.pop,useCd),p2=tournNS(gaNS.pop,useCd);
+      const[c1x,c2x]=arithX(p1.x,p2.x,pc);
+      const m1=gaussMut(c1x,pm,sig),m2=gaussMut(c2x,pm,sig);
+      off.push({x:m1,obj:evalProb(m1),rank:0,cd:0});
+      if(off.length<N) off.push({x:m2,obj:evalProb(m2),rank:0,cd:0});
+    }
+  }
+  const comb=[...gaNS.pop,...off];
+  const fronts=fastNDSForProblem(comb);
+  const cdFn=curProb==='1d'?crowdDist1D:crowdDist;
+  if(useCd) fronts.forEach(f=>cdFn(comb,f));
+  const newPop=[];
+  for(const front of fronts){
+    if(newPop.length+front.length<=N){
+      front.forEach(i=>newPop.push(comb[i]));
+    } else {
+      const rem=N-newPop.length;
+      const s=useCd?[...front].sort((a,b)=>comb[b].cd-comb[a].cd):[...front].sort(()=>rng()-0.5);
+      for(let i=0;i<rem;i++) newPop.push(comb[s[i]]);
+      break;
+    }
+  }
+  gaNS.pop=newPop; genN++;
+  updStatsN(); drawN();
+}
+
+// ── Stats ─────────────────────────────────────────
+function updStatsN(){
+  document.getElementById('s2-gen').textContent=genN;
+  if(rwMode){
+    document.getElementById('s2-r1').textContent=rwArchive.length?rwArchive.length+' pts':'0';
+    document.getElementById('s2-hv').textContent='—';
+    document.getElementById('s2-sp').textContent='—';
+    return;
+  }
+  if(!gaNS) return;
+  const r1pts=gaNS.pop.filter(p=>p.rank===1);
+  document.getElementById('s2-r1').textContent=r1pts.length;
+  // Hypervolume (ref point: slightly above G1=1, G2=1)
+  const dp=DISP[curProb];
+  const refG1=1.05, refG2=(curProb==='1d'?4.2:1.05);
+  if(curProb==='1d'){
+    // HV in (f1,f2) space (maximize)
+    const sorted=r1pts.slice().sort((a,b)=>a.obj[0]-b.obj[0]);
+    let hv=0;
+    for(let i=0;i<sorted.length;i++){
+      const w=i===sorted.length-1?refG1-sorted[i].obj[0]:sorted[i+1].obj[0]-sorted[i].obj[0];
+      hv+=w*(sorted[i].obj[1]);
+    }
+    document.getElementById('s2-hv').textContent=Math.max(0,hv).toFixed(3);
+  } else {
+    const sorted=r1pts.slice().sort((a,b)=>a.obj[0]-b.obj[0]);
+    let hv=0;
+    for(let i=0;i<sorted.length;i++){
+      const w=i===sorted.length-1?1.05-sorted[i].obj[0]:sorted[i+1].obj[0]-sorted[i].obj[0];
+      hv+=w*(1.05-sorted[i].obj[1]);
+    }
+    document.getElementById('s2-hv').textContent=Math.max(0,hv).toFixed(4);
+  }
+  // Spread = std dev of crowding distances
+  const cds=r1pts.map(p=>p.cd).filter(c=>isFinite(c));
+  if(cds.length>1){
+    const mc=cds.reduce((a,b)=>a+b,0)/cds.length;
+    const sc=Math.sqrt(cds.reduce((s,c)=>s+(c-mc)**2,0)/cds.length);
+    document.getElementById('s2-sp').textContent=sc.toFixed(3);
+  } else {
+    document.getElementById('s2-sp').textContent='—';
+  }
+
+}
+
+// ── Rank colors ───────────────────────────────────
+const RANK_C=[
+  {fill:'rgba(255,215,0,.88)',stk:'#A0720A'},
+  {fill:'rgba(239,68,68,.82)',stk:'#991B1B'},
+  {fill:'rgba(59,130,246,.82)',stk:'#1E40AF'},
+  {fill:'rgba(168,85,247,.78)',stk:'#6B21A8'},
+  {fill:'rgba(156,163,175,.7)',stk:'#374151'}
+];
+function rCol(r){return RANK_C[Math.min(r-1,4)].fill;}
+function rStk(r){return RANK_C[Math.min(r-1,4)].stk;}
+
+// ── Draw ──────────────────────────────────────────
+function drawN(){
+  drawNMain();
+  if(curProb==='1d') draw1DSubplots();
+}
+
+// Shared weight-direction overlay for ZDT G-space display
+function drawWeightOverlayZDT(ctx,tx,ty,pw,ph,dp){
+  const w1=gv('q-w1'),w2=1-w1;
+  const arrowLen=65;
+  const ax=tx(0),ay=ty(0);
+  const dxW=w1*(pw/(dp.g1hi-dp.g1lo)),dyW=-w2*(ph/(dp.g2hi-dp.g2lo));
+  const dLen=Math.sqrt(dxW*dxW+dyW*dyW)||1;
+  const aex=ax+arrowLen*dxW/dLen,aey=ay+arrowLen*dyW/dLen;
+  ctx.strokeStyle='rgba(212,82,26,.75)';ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(aex,aey);ctx.stroke();
+  const ux=(aex-ax)/arrowLen,uy=(aey-ay)/arrowLen,ox=-uy,oy=ux;
+  ctx.beginPath();ctx.moveTo(aex,aey);
+  ctx.lineTo(aex-ux*9+ox*4,aey-uy*9+oy*4);
+  ctx.lineTo(aex-ux*9-ox*4,aey-uy*9-oy*4);
+  ctx.closePath();ctx.fillStyle='rgba(212,82,26,.75)';ctx.fill();
+  ctx.fillStyle='rgba(180,60,10,.85)';ctx.font='bold 9px Outfit,sans-serif';
+  ctx.textAlign='left';
+  ctx.fillText('w\u2081='+w1.toFixed(2)+', w\u2082='+w2.toFixed(2),aex+5,aey+4);
+  const land=frontLandingPt(w1);
+  if(land){
+    const lpx=tx(1-land[0]),lpy=ty(1-land[1]);
+    ctx.setLineDash([3,5]);ctx.strokeStyle='rgba(212,82,26,.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(aex,aey);ctx.lineTo(lpx,lpy);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(lpx,lpy,8,0,2*Math.PI);
+    ctx.strokeStyle='#D4521A';ctx.lineWidth=2.5;ctx.stroke();
+    ctx.fillStyle='rgba(212,82,26,.15)';ctx.fill();
+  }
+}
+
+function drawNMain(){
+  const cv=document.getElementById('cvns');
+  const{ctx,W,H}=getCtx(cv);
+  const ml=52,mr=16,mt=28,mb=40,pw=W-ml-mr,ph=H-mt-mb;
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const dp=DISP[curProb];
+  const{g1lo,g1hi,g2lo,g2hi}=dp;
+  const tx=v=>ml+pw*(v-g1lo)/(g1hi-g1lo);
+  const ty=v=>mt+ph-ph*(v-g2lo)/(g2hi-g2lo);
+  const xLabel=curProb==='1d'?'f\u2081(x) = 3x + sin(2\u03c0x)':'G\u2081 = 1\u2212f\u2081  (maximize)';
+  const yLabel=curProb==='1d'?'f\u2082(x) = cos(4\u03c0x) \u2212 2x + 3':'G\u2082 = 1\u2212f\u2082  (maximize)';
+
+  // grid
+  ctx.strokeStyle='#e8f5ea'; ctx.lineWidth=1;
+  for(let g=Math.ceil(g1lo*4)/4;g<=g1hi+0.01;g+=((g1hi-g1lo)/5)){
+    ctx.beginPath();ctx.moveTo(tx(g),mt);ctx.lineTo(tx(g),mt+ph);ctx.stroke();
+  }
+  for(let g=Math.ceil(g2lo);g<=g2hi+0.01;g+=((g2hi-g2lo)/5)){
+    ctx.beginPath();ctx.moveTo(ml,ty(g));ctx.lineTo(ml+pw,ty(g));ctx.stroke();
+  }
+  ctx.strokeStyle='#95d5b2'; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(ml,mt);ctx.lineTo(ml,mt+ph);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ml,mt+ph);ctx.lineTo(ml+pw,mt+ph);ctx.stroke();
+
+  ctx.fillStyle='#587060'; ctx.font='10px Outfit,sans-serif';
+  ctx.textAlign='center'; ctx.fillText(xLabel,ml+pw/2,H-4);
+  ctx.save();ctx.translate(14,mt+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText(yLabel,0,0);ctx.restore();
+
+  ctx.save();
+  ctx.beginPath();ctx.rect(ml,mt,pw,ph);ctx.clip();
+
+  if(curProb==='1d'){
+    // Full feasible curve (thin dotted)
+    ctx.beginPath();
+    CURVE1D.forEach((p,i)=>{ const xx=tx(p.obj[0]),yy=ty(p.obj[1]); i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy); });
+    ctx.strokeStyle='rgba(45,106,79,.3)'; ctx.lineWidth=1; ctx.setLineDash([2,4]); ctx.stroke(); ctx.setLineDash([]);
+    // Pareto front segments (thick purple dashed)
+    ctx.setLineDash([5,5]); ctx.strokeStyle='#6B4FA8'; ctx.lineWidth=2.5;
+    let firstP=true,prevX=-99;
+    for(const p of PARETO1D){
+      const xx=tx(p.obj[0]),yy=ty(p.obj[1]);
+      if(firstP||Math.abs(p.x-prevX)>0.1){
+        if(!firstP) ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(xx,yy);
+      } else { ctx.lineTo(xx,yy); }
+      firstP=false; prevX=p.x;
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+    // Population
+    const pop=rwMode?gaRW&&gaRW.pop:gaNS&&gaNS.pop;
+    if(pop){
+      const maxR=rwMode?1:Math.max(...pop.map(p=>p.rank||1));
+      if(rwMode){
+        for(const ind of pop){
+          const px=tx(ind.obj[0]),py=ty(ind.obj[1]);
+          ctx.beginPath();ctx.arc(px,py,4,0,2*Math.PI);
+          ctx.fillStyle='rgba(80,110,80,.45)';ctx.fill();
+        }
+        for(const a of rwArchive){
+          const px=tx(a.obj[0]),py=ty(a.obj[1]);
+          ctx.beginPath();ctx.arc(px,py,7,0,2*Math.PI);
+          ctx.fillStyle='rgba(212,82,26,.85)';ctx.fill();
+          ctx.strokeStyle='#8b3008';ctx.lineWidth=0.8;ctx.stroke();
+        }
+        // Weight-direction overlay for 1D (arrow from corner + landing ring on Pareto front)
+        const w1v=gv('q-w1'),w2v=1-w1v;
+        // Arrow from lower-left of plot showing gradient direction (w1, w2) in (f1,f2) space
+        const arrowLen=55;
+        const ax=tx(g1lo+0.05), ay=ty(g2lo+0.05);
+        const dxW=w1v*(pw/(g1hi-g1lo)), dyW=-w2v*(ph/(g2hi-g2lo));
+        const dLen=Math.sqrt(dxW*dxW+dyW*dyW)||1;
+        const aex=ax+arrowLen*dxW/dLen, aey=ay+arrowLen*dyW/dLen;
+        ctx.strokeStyle='rgba(212,82,26,.8)';ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(aex,aey);ctx.stroke();
+        const ux=(aex-ax)/arrowLen,uy=(aey-ay)/arrowLen,oxv=-uy,oyv=ux;
+        ctx.beginPath();ctx.moveTo(aex,aey);
+        ctx.lineTo(aex-ux*8+oxv*3.5,aey-uy*8+oyv*3.5);
+        ctx.lineTo(aex-ux*8-oxv*3.5,aey-uy*8-oyv*3.5);
+        ctx.closePath();ctx.fillStyle='rgba(212,82,26,.8)';ctx.fill();
+        ctx.fillStyle='rgba(180,60,10,.9)';ctx.font='bold 9px Outfit,sans-serif';
+        ctx.textAlign='left';
+        ctx.fillText('w\u2081='+w1v.toFixed(2)+', w\u2082='+w2v.toFixed(2),aex+4,aey-4);
+        // Landing dot on Pareto front
+        const land1d=frontLandingPt1D(w1v);
+        if(land1d){
+          const lpx=tx(land1d.obj[0]),lpy=ty(land1d.obj[1]);
+          ctx.setLineDash([3,5]);ctx.strokeStyle='rgba(212,82,26,.35)';ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(aex,aey);ctx.lineTo(lpx,lpy);ctx.stroke();ctx.setLineDash([]);
+          ctx.beginPath();ctx.arc(lpx,lpy,9,0,2*Math.PI);
+          ctx.strokeStyle='#D4521A';ctx.lineWidth=2.5;ctx.stroke();
+          ctx.fillStyle='rgba(212,82,26,.18)';ctx.fill();
+        }
+      } else {
+        for(let r=maxR;r>=1;r--) for(const ind of pop){
+          if(ind.rank!==r) continue;
+          ctx.beginPath();ctx.arc(tx(ind.obj[0]),ty(ind.obj[1]),4.5,0,2*Math.PI);
+          ctx.fillStyle=rCol(r);ctx.fill();
+          ctx.strokeStyle=rStk(r);ctx.lineWidth=0.8;ctx.stroke();
+        }
+      }
+    }
+  } else {
+    // ZDT: true Pareto front (dashed purple)
+    const front=buildTrueFront(curProb);
+    ctx.setLineDash([5,5]); ctx.strokeStyle='#6B4FA8'; ctx.lineWidth=2;
+    let fp=true,prev=-99;
+    for(const[f1,f2] of front){
+      const gx=tx(1-f1),gy=ty(1-f2);
+      if(fp||Math.abs((1-f1)-prev)>0.06){ if(!fp)ctx.stroke(); ctx.beginPath();ctx.moveTo(gx,gy); }
+      else ctx.lineTo(gx,gy);
+      fp=false; prev=1-f1;
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+
+    if(rwMode){
+      // RWGA population + archive
+      if(gaRW) for(const ind of gaRW.pop){
+        const px=tx(1-ind.obj[0]),py=ty(1-ind.obj[1]);
+        ctx.beginPath();ctx.arc(px,py,4,0,2*Math.PI);
+        ctx.fillStyle='rgba(80,110,80,.42)';ctx.fill();
+      }
+      for(const a of rwArchive){
+        const px=tx(1-a.obj[0]),py=ty(1-a.obj[1]);
+        ctx.beginPath();ctx.arc(px,py,5.5,0,2*Math.PI);
+        ctx.fillStyle='rgba(212,82,26,.82)';ctx.fill();
+        ctx.strokeStyle='#8b3008';ctx.lineWidth=0.8;ctx.stroke();
+      }
+      // Weight overlay always drawn
+      drawWeightOverlayZDT(ctx,tx,ty,pw,ph,dp);
+    } else if(gaNS){
+      // MOEA population
+      const maxR=Math.max(...gaNS.pop.map(p=>p.rank));
+      for(let r=maxR;r>=1;r--) for(const ind of gaNS.pop){
+        if(ind.rank!==r) continue;
+        const px=tx(1-ind.obj[0]),py=ty(1-ind.obj[1]);
+        ctx.beginPath();ctx.arc(px,py,4.5,0,2*Math.PI);
+        ctx.fillStyle=rCol(r);ctx.fill();
+        ctx.strokeStyle=rStk(r);ctx.lineWidth=0.9;ctx.stroke();
+      }
+      // Weight overlay always drawn (slider always visible)
+      drawWeightOverlayZDT(ctx,tx,ty,pw,ph,dp);
+    }
+  }
+  ctx.restore();
+
+  // Legend (outside clip)
+  if(curProb==='1d'){
+    ctx.setLineDash([5,5]);ctx.strokeStyle='#6B4FA8';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(ml+pw-175,mt+14);ctx.lineTo(ml+pw-148,mt+14);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#6B4FA8';ctx.font='10px Outfit,sans-serif';ctx.textAlign='left';
+    ctx.fillText('Pareto front',ml+pw-143,mt+18);
+    if(rwMode&&rwArchive.length>0){
+      ctx.beginPath();ctx.arc(ml+pw-169,mt+30,5,0,2*Math.PI);
+      ctx.fillStyle='rgba(212,82,26,.85)';ctx.fill();
+      ctx.fillStyle='#8b3008';ctx.fillText('archive ('+rwArchive.length+')',ml+pw-161,mt+34);
+    }
+  } else {
+    ctx.setLineDash([5,5]);ctx.strokeStyle='#6B4FA8';ctx.lineWidth=1.8;
+    ctx.beginPath();ctx.moveTo(ml+pw-145,mt+14);ctx.lineTo(ml+pw-118,mt+14);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#6B4FA8';ctx.font='10px Outfit,sans-serif';ctx.textAlign='left';
+    ctx.fillText('true Pareto front',ml+pw-113,mt+18);
+    if(rwMode&&rwArchive.length>0){
+      ctx.beginPath();ctx.arc(ml+pw-139,mt+30,4,0,2*Math.PI);
+      ctx.fillStyle='rgba(212,82,26,.82)';ctx.fill();
+      ctx.fillStyle='#8b3008';ctx.fillText('archive ('+rwArchive.length+')',ml+pw-131,mt+34);
+    }
+  }
+
+  const algLabel=rwMode?'RWGA':'MOEA (Pareto Ranking)';
+  const plab={zdt1:'ZDT1',zdt2:'ZDT2',zdt3:'ZDT3','1d':'Scalar Dec. Var.'}[curProb];
+  ctx.fillStyle='#2D6A4F';ctx.font='bold 11.5px Outfit,sans-serif';
+  ctx.textAlign='center';ctx.fillText(algLabel+' \u00b7 '+plab,W/2,18);
+}
+
+// ── 1D sub-plots ──────────────────────────────────
+// Compute contiguous Pareto-efficient x-intervals from the precomputed PARETO1D set
+const PARETO1D_SEGS=(()=>{
+  const sorted=[...PARETO1D].sort((a,b)=>a.x-b.x);
+  if(!sorted.length) return [];
+  const segs=[[sorted[0].x, sorted[0].x]];
+  for(let i=1;i<sorted.length;i++){
+    if(sorted[i].x - sorted[i-1].x < 0.015) segs[segs.length-1][1]=sorted[i].x;
+    else segs.push([sorted[i].x, sorted[i].x]);
+  }
+  return segs;
+})();
+
+function draw1DSubplots(){
+  const pop=rwMode?(gaRW&&gaRW.pop):gaNS&&gaNS.pop;
+
+  [
+    {id:'cvns-f1', idx:0, label:'f\u2081(x) = 3x + sin(2\u03c0x)'},
+    {id:'cvns-f2', idx:1, label:'f\u2082(x) = cos(4\u03c0x) \u2212 2x + 3'}
+  ].forEach(({id,idx,label})=>{
+    const cv=document.getElementById(id); if(!cv) return;
+    const{ctx,W,H}=getCtx(cv);
+    const ml=42, mr=14, mt=20, mb=26, pw=W-ml-mr, ph=H-mt-mb;
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+
+    const vals=CURVE1D.map(p=>p.obj[idx]);
+    const vlo=Math.min(...vals)-0.15, vhi=Math.max(...vals)+0.15;
+    const tx=x=>ml+pw*x;
+    const ty=v=>mt+ph-ph*(v-vlo)/(vhi-vlo);
+
+    // Axis baseline
+    ctx.strokeStyle='#95d5b2'; ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(ml,mt+ph);ctx.lineTo(ml+pw,mt+ph);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ml,mt);ctx.lineTo(ml,mt+ph);ctx.stroke();
+
+    // Light vertical grid
+    ctx.strokeStyle='#e8f5ea'; ctx.lineWidth=1;
+    [0,0.25,0.5,0.75,1].forEach(x=>{
+      ctx.beginPath();ctx.moveTo(tx(x),mt);ctx.lineTo(tx(x),mt+ph);ctx.stroke();
+    });
+
+    // Pareto-efficient x-intervals: highlight on x-axis as thick colored bar
+    PARETO1D_SEGS.forEach(([xlo,xhi])=>{
+      ctx.fillStyle='rgba(107,79,168,.30)';
+      ctx.fillRect(tx(xlo), mt+ph, tx(xhi)-tx(xlo), 6);
+    });
+
+    // f(x) curve
+    ctx.beginPath();
+    CURVE1D.forEach((p,i)=>{
+      const xx=tx(p.x), yy=ty(p.obj[idx]);
+      i===0 ? ctx.moveTo(xx,yy) : ctx.lineTo(xx,yy);
+    });
+    ctx.strokeStyle='#2D6A4F'; ctx.lineWidth=1.6; ctx.stroke();
+
+    // Pareto-efficient portion of curve highlighted
+    PARETO1D_SEGS.forEach(([xlo,xhi])=>{
+      const seg=CURVE1D.filter(p=>p.x>=xlo-0.001&&p.x<=xhi+0.001);
+      if(!seg.length) return;
+      ctx.beginPath();
+      seg.forEach((p,i)=>{ const xx=tx(p.x),yy=ty(p.obj[idx]); i===0?ctx.moveTo(xx,yy):ctx.lineTo(xx,yy); });
+      ctx.strokeStyle='#6B4FA8'; ctx.lineWidth=3; ctx.stroke();
+    });
+
+    // Population: drop-line from point on curve to x-axis dot
+    if(pop){
+      for(const ind of pop){
+        const xi=ind.x[0];
+        const fi=ind.obj[idx];
+        const px=tx(xi), py=ty(fi), pxb=tx(xi), pyb=ty(vlo);
+        ctx.strokeStyle='rgba(212,82,26,.25)'; ctx.lineWidth=1; ctx.setLineDash([2,3]);
+        ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(pxb,pyb); ctx.stroke();
+        ctx.setLineDash([]);
+        // dot on curve
+        ctx.beginPath(); ctx.arc(px,py,3.5,0,2*Math.PI);
+        const col=rwMode?'rgba(80,110,80,.7)':rCol(ind.rank||1);
+        ctx.fillStyle=col; ctx.fill();
+        // tick on x-axis
+        ctx.beginPath(); ctx.arc(pxb,mt+ph+3,2.5,0,2*Math.PI);
+        ctx.fillStyle=col; ctx.fill();
+      }
+    }
+
+    // Axis tick labels
+    ctx.fillStyle='#587060'; ctx.font='9px Outfit,sans-serif';
+    ctx.textAlign='right';
+    ctx.fillText(vhi.toFixed(1),ml-3,ty(vhi)+4);
+    ctx.fillText(vlo.toFixed(1),ml-3,ty(vlo)+4);
+    ctx.textAlign='center';
+    [0,0.25,0.5,0.75,1].forEach(x=>ctx.fillText(x.toFixed(2),tx(x),H-3));
+
+    // Labels
+    ctx.fillStyle='#2D6A4F'; ctx.font='bold 10px Outfit,sans-serif';
+    ctx.textAlign='center'; ctx.fillText(label,ml+pw/2,13);
+
+    // Pareto legend
+    ctx.fillStyle='rgba(107,79,168,.9)';
+    ctx.fillRect(ml+pw-130,mt+4,12,4);
+    ctx.fillStyle='#6B4FA8'; ctx.font='9px Outfit,sans-serif';
+    ctx.textAlign='left'; ctx.fillText('Pareto-efficient x',ml+pw-115,mt+9);
+  });
+}
+
+// ── Controls ──────────────────────────────────────
+function toggleNRun(){
+  const btn=document.getElementById('btn2-run');
+  if(timerN){stopN();}
+  else{
+    if(rwMode){if(!gaRW)initRW();}else{if(!gaNS)initN();}
+    btn.textContent='\u23f8 Pause'; timerN=setInterval(stepN,90);
+  }
+}
+function stopN(){if(timerN){clearInterval(timerN);timerN=null;}
+  document.getElementById('btn2-run').textContent='\u25b6 Run';}
+
+function onProbChange(p){
+  curProb=p; stopN();
+  // For scalar decision-variable problem, a larger mutation step is needed
+  // to bridge the ~0.25–0.5 x-gaps between Pareto segments
+  if(p==='1d'){
+    setSlider('q-ms',0.25,'qv-ms',2);
+    setSlider('q-pc',0.3,'qv-pc',2);
+  } else {
+    setSlider('q-ms',0.10,'qv-ms',2);
+    setSlider('q-pc',0.7,'qv-pc',2);
+  }
+  initN(); drawN();
+}
+
+
+// ─── TAB 3  ISLAND MODEL ───────────────────────
+const ICOLORS=[
+  {fill:'rgba(212,82,26,.78)',stk:'#8b3008',rgb:[212,82,26],name:'Deme A'},
+  {fill:'rgba(37,99,235,.78)',stk:'#1e40af',rgb:[37,99,235],name:'Deme B'},
+  {fill:'rgba(107,79,168,.78)',stk:'#4a1d96',rgb:[107,79,168],name:'Deme C'},
+  {fill:'rgba(16,185,129,.78)',stk:'#065f46',rgb:[16,185,129],name:'Deme D'},
+  {fill:'rgba(234,179,8,.82)',stk:'#854d0e',rgb:[234,179,8],name:'Deme E'},
+  {fill:'rgba(236,72,153,.78)',stk:'#831843',rgb:[236,72,153],name:'Deme F'},
+];
+
+let islGA=null,timerI=null,genI=0,migI=0;
+let hI=[],migFlash=0,pendingIslReset=false,randNbrs=[];
+
+function schedResetIsl(){ pendingIslReset=true; }
+
+function initI(){
+  const ni=gi('i-ni'),np=gi('i-np');
+  islGA=Array.from({length:ni},(_,k)=>{
+    const cx=XLO+(XHI-XLO)*(k+0.5)/ni;
+    const pop=Array.from({length:np},()=>{
+      const x=clamp(cx+(rng()*2-1)*1.5,XLO,XHI);
+      return{x,f:fit(x)};
+    });
+    return{pop,bestX:null,bestF:-Infinity,col:ICOLORS[k%ICOLORS.length]};
+  });
+  for(const isl of islGA) updBestI(isl);
+  genI=0;migI=0;hI=[];migFlash=0;
+  randNbrs=islGA.map((_,k)=>{
+    const o=islGA.map((_,i)=>i).filter(i=>i!==k);
+    return o[Math.floor(rng()*o.length)];
+  });
+  buildIslChips(); pushHistI(); updStatsI();
+}
+function updBestI(isl){for(const ind of isl.pop)if(ind.f>isl.bestF){isl.bestF=ind.f;isl.bestX=ind.x;}}
+function buildIslChips(){
+  if(!islGA) return;
+  document.getElementById('isl-chips').innerHTML=
+    islGA.map(isl=>`<span class="ichip" style="background:${isl.col.stk}">${isl.col.name}</span>`).join('');
+}
+function resetI(){stopI();pendingIslReset=false;initI();drawI();drawHistI();drawTopo();}
+
+function pushHistI(){
+  if(!islGA) return;
+  hI.push(islGA.map(isl=>{
+    const fs=isl.pop.map(i=>i.f);
+    return{min:Math.min(...fs),avg:fs.reduce((a,b)=>a+b,0)/fs.length,max:Math.max(...fs)};
+  }));
+  if(hI.length>MAX_HIST) hI.shift();
+}
+
+function stepI(){
+  if(!islGA||pendingIslReset){initI();pendingIslReset=false;}
+  const pc=gv('i-pc'),sig=gv('i-ms');
+  const mr=gv('i-mr'),mi=gi('i-mi'),topo=gs('i-topo');
+  for(const isl of islGA){
+    const pop=isl.pop,N=pop.length;
+    const rawF=pop.map(i=>i.f);
+    const minF=Math.min(...rawF);
+    const selF=rawF.map(f=>f-minF+0.01);
+    const newPop=[];
+    while(newPop.length<N){
+      const p1=selTourn(pop,selF,3),p2=selTourn(pop,selF,3);
+      let[c1x,c2x]=xover(p1.x,p2.x,pc);
+      c1x=mutate(c1x,0.15,sig); c2x=mutate(c2x,0.15,sig);
+      newPop.push({x:c1x,f:fit(c1x)});
+      if(newPop.length<N) newPop.push({x:c2x,f:fit(c2x)});
+    }
+    newPop.sort((a,b)=>a.f-b.f);
+    newPop[0]={x:isl.bestX,f:isl.bestF};
+    isl.pop=newPop; updBestI(isl);
+  }
+  genI++;
+  migFlash=Math.max(0,migFlash-1);
+  if(mr>0&&genI%mi===0){doMigI(mr,topo);migI++;migFlash=5;}
+  pushHistI(); updStatsI(); drawI(); drawHistI(); drawTopo();
+}
+
+function getNbrs(k,topo,ni){
+  if(topo==='ring') return[(k-1+ni)%ni,(k+1)%ni];
+  if(topo==='full') return islGA.map((_,i)=>i).filter(i=>i!==k);
+  return[randNbrs[k]];
+}
+function doMigI(mr,topo){
+  const ni=islGA.length;
+  const migs=islGA.map(isl=>{
+    const n=Math.max(1,Math.round(isl.pop.length*mr));
+    return[...isl.pop].sort((a,b)=>b.f-a.f).slice(0,n);
+  });
+  for(let k=0;k<ni;k++){
+    for(const nb of getNbrs(k,topo,ni)){
+      const incoming=migs[nb],isl=islGA[k];
+      isl.pop.sort((a,b)=>a.f-b.f);
+      for(let i=0;i<Math.min(incoming.length,isl.pop.length);i++){
+        if(incoming[i].f>isl.pop[i].f) isl.pop[i]={...incoming[i]};
+      }
+      updBestI(isl);
+    }
+  }
+}
+
+function updStatsI(){
+  document.getElementById('s3-gen').textContent=genI;
+  if(!islGA) return;
+  const gb=Math.max(...islGA.map(isl=>isl.bestF));
+  document.getElementById('s3-best').textContent=gb.toFixed(4);
+  document.getElementById('s3-mig').textContent=migI;
+  // between-island sigma: std dev of per-island mean x
+  const means=islGA.map(isl=>isl.pop.reduce((s,i)=>s+i.x,0)/isl.pop.length);
+  const gm=means.reduce((a,b)=>a+b,0)/means.length;
+  const sig=Math.sqrt(means.reduce((s,v)=>s+(v-gm)**2,0)/means.length);
+  document.getElementById('s3-bsig').textContent=sig.toFixed(3);
+}
+
+function drawI(){
+  const cv=document.getElementById('cvisl');
+  const{ctx,W,H}=getCtx(cv);
+  const{pw,ph,fsc,ml,mt}=drawLandscape(ctx,W,H,42,14,18,26);
+  if(!islGA) return;
+  for(const isl of islGA){
+    for(const ind of isl.pop){
+      const cx=x2c(ind.x,ml,pw),cy=f2c(ind.f,mt,ph,fsc);
+      ctx.beginPath();ctx.arc(cx,cy,4.5,0,2*Math.PI);
+      ctx.fillStyle=isl.col.fill;ctx.fill();
+      ctx.strokeStyle=isl.col.stk;ctx.lineWidth=0.8;ctx.stroke();
+    }
+  }
+  for(const isl of islGA){
+    if(isl.bestX===null) continue;
+    const cx=x2c(isl.bestX,ml,pw),cy=f2c(isl.bestF,mt,ph,fsc);
+    ctx.beginPath();ctx.arc(cx,cy,8,0,2*Math.PI);
+    ctx.strokeStyle=isl.col.stk;ctx.lineWidth=2.5;ctx.stroke();
+  }
+  ctx.fillStyle='#2D6A4F';ctx.font='bold 11.5px Outfit,sans-serif';
+  ctx.textAlign='center';
+  ctx.fillText('Island Model \u2014 Independent Demes with Migration',W/2,13);
+}
+
+function drawHistI(){
+  const cv=document.getElementById('cvHistI');
+  const{ctx,W,H}=getCtx(cv);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  const ml=40,mr=10,mt=16,mb=24,pw=W-ml-mr,ph=H-mt-mb;
+  ctx.fillStyle='#587060';ctx.font='10px Outfit,sans-serif';
+  ctx.textAlign='center';ctx.fillText('Per-deme Fitness over Generations',W/2,10);
+  const N=hI.length;
+  if(N<2||!islGA){ctx.fillStyle='#bbb';ctx.fillText('Run the island model to see history',W/2,H/2);return;}
+  const ni=islGA.length;
+  let allMn=Infinity,allMx=-Infinity;
+  for(const entry of hI) for(const d of entry){allMn=Math.min(allMn,d.min);allMx=Math.max(allMx,d.max);}
+  allMn*=0.97;allMx*=1.03;
+  const ysc=ph/(allMx-allMn),xsc=pw/(N-1);
+  const tx=i=>ml+i*xsc,ty=v=>mt+ph-(v-allMn)*ysc;
+  ctx.strokeStyle='#e8f5ea';ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=mt+ph*g/4;ctx.beginPath();ctx.moveTo(ml,y);ctx.lineTo(ml+pw,y);ctx.stroke();}
+  ctx.fillStyle='#587060';ctx.font='9px Outfit,sans-serif';ctx.textAlign='right';
+  for(let g=0;g<=2;g++){const v=allMn+(allMx-allMn)*g/2;ctx.fillText(v.toFixed(2),ml-3,ty(v)+3);}
+  ctx.textAlign='center';
+  const step=Math.max(1,Math.round(N/5));
+  for(let i=0;i<N;i+=step) ctx.fillText(Math.max(0,genI-N+1+i),tx(i),H-3);
+  for(let d=0;d<ni;d++){
+    const col=ICOLORS[d%ICOLORS.length];
+    const[r,g2,b]=[col.rgb[0],col.rgb[1],col.rgb[2]];
+    ctx.beginPath();ctx.moveTo(tx(0),ty(hI[0][d].max));
+    for(let i=1;i<N;i++) ctx.lineTo(tx(i),ty(hI[i][d].max));
+    for(let i=N-1;i>=0;i--) ctx.lineTo(tx(i),ty(hI[i][d].min));
+    ctx.closePath();ctx.fillStyle=`rgba(${r},${g2},${b},0.13)`;ctx.fill();
+    ctx.beginPath();ctx.moveTo(tx(0),ty(hI[0][d].avg));
+    for(let i=1;i<N;i++) ctx.lineTo(tx(i),ty(hI[i][d].avg));
+    ctx.strokeStyle=col.stk;ctx.lineWidth=1.6;ctx.stroke();
+  }
+  if(ni<=6){
+    // anchor legend at bottom-right so it doesn't overlap the typically high-fitness lines
+    const rowH=13, legH=ni*rowH+2;
+    const lx=ml+pw-90, ly=mt+ph-legH;
+    ctx.font='9px Outfit,sans-serif';ctx.textAlign='left';
+    for(let d=0;d<ni;d++){
+      const col=ICOLORS[d%ICOLORS.length];
+      ctx.strokeStyle=col.stk;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(lx,ly+d*rowH+5);ctx.lineTo(lx+14,ly+d*rowH+5);ctx.stroke();
+      ctx.fillStyle='#587060';ctx.fillText(col.name,lx+17,ly+d*rowH+8);
+    }
+  }
+}
+
+function drawTopo(){
+  if(!islGA) return;
+  const cv=document.getElementById('cvTopo');
+  const ctx=cv.getContext('2d');
+  // HiDPI fix: scale canvas backing store to devicePixelRatio
+  const dpr=window.devicePixelRatio||1;
+  const cssW=182, cssH=140;
+  if(cv.width!==cssW*dpr||cv.height!==cssH*dpr){
+    cv.width=cssW*dpr; cv.height=cssH*dpr;
+    cv.style.width=cssW+'px'; cv.style.height=cssH+'px';
+    ctx.scale(dpr,dpr);
+  }
+  const W=cssW,H=cssH;
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#587060';ctx.font='10px Outfit,sans-serif';ctx.textAlign='center';
+  ctx.fillText('Migration Topology',W/2,13);
+  const ni=islGA.length,topo=gs('i-topo');
+  const R=Math.min(W,H)*0.32;
+  const cx=W/2,cy=H/2+5,r=13;
+  const pts=Array.from({length:ni},(_,k)=>{
+    const a=-Math.PI/2+2*Math.PI*k/ni;
+    return{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a)};
+  });
+  const isFl=migFlash>0;
+  for(let k=0;k<ni;k++){
+    for(const nb of getNbrs(k,topo,ni)){
+      const p1=pts[k],p2=pts[nb];
+      const dx=p2.x-p1.x,dy=p2.y-p1.y;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      const ux=dx/dist,uy=dy/dist;
+      const sx=p1.x+ux*r,sy=p1.y+uy*r,ex=p2.x-ux*r,ey=p2.y-uy*r;
+      ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);
+      ctx.strokeStyle=isFl?'rgba(212,82,26,.9)':'rgba(45,106,79,.35)';
+      ctx.lineWidth=isFl?2:1.2;ctx.stroke();
+      const ah=7,aw=4,ox=-uy,oy=ux;
+      ctx.beginPath();
+      ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-ux*ah+ox*aw,ey-uy*ah+oy*aw);
+      ctx.lineTo(ex-ux*ah-ox*aw,ey-uy*ah-oy*aw);
+      ctx.closePath();
+      ctx.fillStyle=isFl?'rgba(212,82,26,.9)':'rgba(45,106,79,.35)';ctx.fill();
+    }
+  }
+  for(let k=0;k<ni;k++){
+    const p=pts[k],col=ICOLORS[k%ICOLORS.length];
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,2*Math.PI);
+    ctx.fillStyle=col.fill;ctx.fill();
+    ctx.strokeStyle=col.stk;ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle=col.stk;ctx.font='bold 10px Outfit,sans-serif';ctx.textAlign='center';
+    ctx.fillText(String.fromCharCode(65+k),p.x,p.y+3.5);
+  }
+}
+
+function toggleIRun(){
+  const btn=document.getElementById('btn3-run');
+  if(timerI){stopI();}
+  else{if(!islGA||pendingIslReset)initI();btn.textContent='\u23f8 Pause';timerI=setInterval(stepI,85);}
+}
+function stopI(){if(timerI){clearInterval(timerI);timerI=null;}
+  document.getElementById('btn3-run').textContent='\u25b6 Run';}
+
+
+
+// ─── BOOT ──────────────────────────────────────
+curProb='zdt2';
+document.querySelector('input[value="zdt2"]').checked=true;
+init1(); draw1(); drawHist1();
+initN(); drawN();
+// After layout settles: scale canvases to DPR then redraw sharp
+requestAnimationFrame(()=>{
+  ['cv1d','cvHist1'].forEach(id=>{ const el=document.getElementById(id); if(el)scaleToDPR(el); });
+  draw1(); drawHist1();
+});
+
+
+// ─── TAB 4 BOOT ───
+// ─── TAB 4  2-D OPTIMIZATION ZOO ─────────────────
+// All variables prefixed z_ or ZOO_ to avoid collision
+
+let zGA=null, zTimer=null, zGen=0, zFuncIdx=0, zCachedGrid=null, zHist=[], zConverged=false, zHistYlo=null, zHistYhi=null;
+
+// ── Function library ──────────────────────────────
+// All functions return a value to MAXIMIZE (negated from standard minimization form)
+const ZOO_FUNCS=[
+  {
+    id:'gausspeaks', name:'Gaussian Peaks (6)',
+    category:'6 equal-height peaks — collapse demo',
+    formula:'f = \u03a3\u2096 exp(\u2212((x\u2212\u03bc\u2096\u00b9)\u00b2+(y\u2212\u03bc\u2096\u00b2)\u00b2) / 2\u00b7(0.55)\u00b2)',
+    domain:[[-6,6],[-6,6]],
+    peakRadius:0.55,
+    optima:[[-3.5,-3.5],[-3.5,0],[-3.5,3.5],[3.5,-3.5],[3.5,0],[3.5,3.5]], nOptima:6,
+    fn:(x,y)=>{
+      const peaks=[[-3.5,-3.5],[-3.5,0],[-3.5,3.5],[3.5,-3.5],[3.5,0],[3.5,3.5]];
+      const s=0.55;
+      return peaks.reduce((sum,[px,py])=>sum+Math.exp(-((x-px)**2+(y-py)**2)/(2*s*s)),0);
+    }
+  },
+  {
+    id:'himmelblau', name:"Himmelblau",
+    category:'4 equal global optima',
+    formula:'f = \u2212(x\u00b2+y\u221211)\u00b2 \u2212 (x+y\u00b2\u22127)\u00b2',
+    domain:[[-5,5],[-5,5]],
+    peakRadius:0.4,
+    optima:[[3,2],[-2.805,3.131],[-3.779,-3.283],[3.584,-1.848]], nOptima:4,
+    fn:(x,y)=>{const v=(x*x+y-11)**2+(x+y*y-7)**2; return -v;}
+  },
+  {
+    id:'crossintray', name:'Cross-in-Tray',
+    category:'4 equal global optima',
+    formula:'f = \u22120.0001\u00b7(|sin(x)\u00b7sin(y)\u00b7exp(|100\u2212\u221a(x\u00b2+y\u00b2)/\u03c0|)|+1)\u2070\u00b7\u00b9',
+    domain:[[-10,10],[-10,10]],
+    peakRadius:0.5,
+    optima:[[1.3494,1.3494],[1.3494,-1.3494],[-1.3494,1.3494],[-1.3494,-1.3494]], nOptima:4,
+    fn:(x,y)=>{
+      const v=-0.0001*(Math.abs(Math.sin(x)*Math.sin(y)*
+        Math.exp(Math.abs(100-Math.sqrt(x*x+y*y)/Math.PI)))+1)**0.1;
+      return -v;
+    }
+  },
+  {
+    id:'rastrigin', name:'Rastrigin',
+    category:'Multimodal — many local, one global',
+    formula:'f = \u2212(20 + x\u00b2 \u2212 10cos(2\u03c0x) + y\u00b2 \u2212 10cos(2\u03c0y))',
+    domain:[[-5.12,5.12],[-5.12,5.12]],
+    peakRadius:0.3,
+    optima:[[0,0]], nOptima:1,
+    fn:(x,y)=>-(20+x*x-10*Math.cos(2*Math.PI*x)+y*y-10*Math.cos(2*Math.PI*y))
+  },
+  {
+    id:'ackley', name:'Ackley',
+    category:'Multimodal — many local, one global',
+    formula:'f = 20exp(\u22120.2\u221a(\u00bd(x\u00b2+y\u00b2)))+exp(\u00bd(cos2\u03c0x+cos2\u03c0y))\u2212e\u221220',
+    domain:[[-5,5],[-5,5]],
+    peakRadius:0.35,
+    optima:[[0,0]], nOptima:1,
+    fn:(x,y)=>{
+      const a=20,b=0.2,c=2*Math.PI;
+      const t1=-a*Math.exp(-b*Math.sqrt(0.5*(x*x+y*y)));
+      const t2=-Math.exp(0.5*(Math.cos(c*x)+Math.cos(c*y)));
+      return -(t1+t2+a+Math.E);
+    }
+  },
+  {
+    id:'rosenbrock', name:'Rosenbrock',
+    category:'Single global (curved valley)',
+    formula:'f = \u2212(100(y\u2212x\u00b2)\u00b2+(1\u2212x)\u00b2)',
+    domain:[[-2,2],[-1,3]],
+    peakRadius:0.15,
+    optima:[[1,1]], nOptima:1,
+    fn:(x,y)=>-(100*(y-x*x)**2+(1-x)**2)
+  },
+  {
+    id:'easom', name:'Easom',
+    category:'Needle-in-haystack',
+    formula:'f = cos(x)\u00b7cos(y)\u00b7exp(\u2212((x\u2212\u03c0)\u00b2+(y\u2212\u03c0)\u00b2))',
+    domain:[[-10,10],[-10,10]],
+    peakRadius:0.4,
+    optima:[[Math.PI,Math.PI]], nOptima:1,
+    fn:(x,y)=>-(-Math.cos(x)*Math.cos(y)*Math.exp(-((x-Math.PI)**2+(y-Math.PI)**2)))
+  },
+  {
+    id:'levi13', name:'L\u00e9vi N.13',
+    category:'Multimodal (moderate)',
+    formula:'f = \u2212(sin\u00b2(3\u03c0x)+(x\u22121)\u00b2(1+sin\u00b2(3\u03c0y))+(y\u22121)\u00b2(1+sin\u00b2(2\u03c0y)))',
+    domain:[[-10,10],[-10,10]],
+    peakRadius:0.5,
+    optima:[[1,1]], nOptima:1,
+    fn:(x,y)=>-(Math.sin(3*Math.PI*x)**2+(x-1)**2*(1+Math.sin(3*Math.PI*y)**2)
+               +(y-1)**2*(1+Math.sin(2*Math.PI*y)**2))
+  },
+  {
+    id:'styblinski', name:'Styblinski-Tang',
+    category:'Multiple local optima',
+    formula:'f = \u2212\u00bd\u03a3(x\u1d62\u2074 \u2212 16x\u1d62\u00b2 + 5x\u1d62)',
+    domain:[[-5,5],[-5,5]],
+    peakRadius:0.3,
+    optima:[[-2.9035,-2.9035]], nOptima:1,
+    fn:(x,y)=>-0.5*((x**4-16*x*x+5*x)+(y**4-16*y*y+5*y))
+  }
+];
+
+// ── Grid sampling for contour + 3D ────────────────
+const ZGRID=90; // resolution of contour grid
+function zSampleGrid(fn,dom){
+  const[[x0,x1],[y0,y1]]=dom;
+  const data=new Float32Array(ZGRID*ZGRID);
+  let mn=Infinity,mx=-Infinity;
+  for(let j=0;j<ZGRID;j++){
+    const y=y0+(y1-y0)*j/(ZGRID-1);
+    for(let i=0;i<ZGRID;i++){
+      const x=x0+(x1-x0)*i/(ZGRID-1);
+      const v=fn(x,y);
+      data[j*ZGRID+i]=v;
+      if(v<mn)mn=v; if(v>mx)mx=v;
+    }
+  }
+  return{data,mn,mx};
+}
+
+// ── Contour canvas rendering ───────────────────────
+function zDrawContour(ctx,W,H,ml,mr,mt,mb,grid,dom){
+  const pw=W-ml-mr,ph=H-mt-mb;
+  // Render pixel grid into an offscreen canvas, then drawImage into main ctx.
+  // drawImage respects the transform matrix; putImageData does not.
+  const off=document.createElement('canvas');
+  off.width=pw; off.height=ph;
+  const octx=off.getContext('2d');
+  const img=octx.createImageData(pw,ph);
+  const{data,mn,mx}=grid;
+  const range=mx-mn||1;
+  for(let py=0;py<ph;py++){
+    const yFrac=1-(py/(ph-1));
+    const gj_raw=yFrac*(ZGRID-1);
+    const gj=Math.min(ZGRID-2,Math.floor(gj_raw)),gjt=gj_raw-gj;
+    for(let px=0;px<pw;px++){
+      const gi_raw=(px/(pw-1))*(ZGRID-1);
+      const gi=Math.min(ZGRID-2,Math.floor(gi_raw)),git=gi_raw-gi;
+      const v=
+        data[gj*ZGRID+gi]*(1-git)*(1-gjt)+
+        data[gj*ZGRID+gi+1]*git*(1-gjt)+
+        data[(gj+1)*ZGRID+gi]*(1-git)*gjt+
+        data[(gj+1)*ZGRID+gi+1]*git*gjt;
+      const t=(v-mn)/range;
+      let r,g,b;
+      if(t<0.5){const s=t*2;r=10+s*20;g=20+s*80;b=40+s*60;}
+      else{const s=(t-0.5)*2;r=30+s*170;g=100+s*155;b=100-s*50;}
+      const idx=(py*pw+px)*4;
+      img.data[idx]=Math.round(r);img.data[idx+1]=Math.round(g);
+      img.data[idx+2]=Math.round(b);img.data[idx+3]=255;
+    }
+  }
+  octx.putImageData(img,0,0);
+
+  // Clear and draw background
+  ctx.fillStyle='#f0faf2';ctx.fillRect(0,0,W,H);
+  // Blit heatmap — drawImage respects the ctx transform
+  ctx.drawImage(off,ml,mt,pw,ph);
+
+  // Axis lines
+  const[[ax0,ax1],[ay0,ay1]]=dom;
+  const tx2=v=>ml+pw*(v-ax0)/(ax1-ax0);
+  const ty2=v=>mt+ph-ph*(v-ay0)/(ay1-ay0);
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;
+  ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='9px Outfit,sans-serif';
+  ctx.textAlign='center';
+  [ax0,(ax0+ax1)/2,ax1].forEach(v=>{
+    ctx.fillText(v.toFixed(1),tx2(v),mt+ph+13);
+    ctx.beginPath();ctx.moveTo(tx2(v),mt+ph);ctx.lineTo(tx2(v),mt+ph+4);ctx.stroke();
+  });
+  ctx.textAlign='right';
+  [ay0,(ay0+ay1)/2,ay1].forEach(v=>{
+    ctx.fillText(v.toFixed(1),ml-4,ty2(v)+3);
+    ctx.beginPath();ctx.moveTo(ml-3,ty2(v));ctx.lineTo(ml,ty2(v));ctx.stroke();
+  });
+  ctx.textAlign='center';
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='10px Outfit,sans-serif';
+  ctx.fillText('x',ml+pw/2,H-2);
+  ctx.save();ctx.translate(10,mt+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText('y',0,0);ctx.restore();
+
+  return{tx:tx2,ty:ty2};
+}
+
+// ── 3-D thumbnail (isometric projection) ──────────
+const Z3D_RES=40;
+function zDraw3D(){
+  const cv=document.getElementById('cvZoo3d');
+  if(!cv) return;
+  const{ctx,W,H}=getCtx(cv);
+  ctx.fillStyle='#f8fdf9';ctx.fillRect(0,0,W,H);
+  const f=ZOO_FUNCS[zFuncIdx];
+  const[[x0,x1],[y0,y1]]=f.domain;
+  const N=Z3D_RES;
+  // Sample
+  const z=[];let zMin=Infinity,zMax=-Infinity;
+  for(let j=0;j<N;j++){
+    z[j]=[];
+    const y=y0+(y1-y0)*j/(N-1);
+    for(let i=0;i<N;i++){
+      const x=x0+(x1-x0)*i/(N-1);
+      const v=f.fn(x,y);
+      z[j][i]=v;if(v<zMin)zMin=v;if(v>zMax)zMax=v;
+    }
+  }
+  const zR=zMax-zMin||1;
+  // Wide oblique projection centred in wider canvas
+  const scX=W*0.32,scY=H*0.22,scZ=H*0.55;
+  const ox=W*0.5, oy=H*0.80;
+  const toC=(i,j,zv)=>{
+    const fi=i/(N-1)-0.5, fj=j/(N-1)-0.5;
+    const fz=(zv-zMin)/zR;
+    const px=ox + fi*scX - fj*scX*0.5;
+    const py=oy - fz*scZ + fj*scY + fi*scY*0.3;
+    return[px,py];
+  };
+  for(let j=N-2;j>=0;j--){
+    for(let i=0;i<N-1;i++){
+      const zv=(z[j][i]+z[j][i+1]+z[j+1][i]+z[j+1][i+1])/4;
+      const t=(zv-zMin)/zR;
+      let r,g,b;
+      if(t<0.5){const s=t*2;r=10+s*20;g=20+s*80;b=40+s*60;}
+      else{const s=(t-0.5)*2;r=30+s*170;g=100+s*155;b=100-s*50;}
+      const[p0x,p0y]=toC(i,j,z[j][i]);
+      const[p1x,p1y]=toC(i+1,j,z[j][i+1]);
+      const[p2x,p2y]=toC(i+1,j+1,z[j+1][i+1]);
+      const[p3x,p3y]=toC(i,j+1,z[j+1][i]);
+      ctx.beginPath();
+      ctx.moveTo(p0x,p0y);ctx.lineTo(p1x,p1y);ctx.lineTo(p2x,p2y);ctx.lineTo(p3x,p3y);
+      ctx.closePath();
+      ctx.fillStyle=`rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,.06)';ctx.lineWidth=0.4;ctx.stroke();
+    }
+  }
+  ctx.fillStyle='#2D6A4F';ctx.font='bold 10px Outfit,sans-serif';
+  ctx.textAlign='center';ctx.fillText(f.name+' — 3-D view',W/2,13);
+  // Optima markers
+  for(const[ox2,oy2] of f.optima){
+    const zv=f.fn(ox2,oy2);
+    const fi=(ox2-x0)/(x1-x0),fj=(oy2-y0)/(y1-y0);
+    const ii=Math.round(fi*(N-1)),jj=Math.round(fj*(N-1));
+    const[px,py]=toC(ii,jj,zv);
+    ctx.beginPath();ctx.arc(px,py,5,0,2*Math.PI);
+    ctx.fillStyle='rgba(212,82,26,.9)';ctx.fill();
+  }
+}
+
+// ── Coord transforms for contour canvas ───────────
+let zTx=null,zTy=null; // set by drawZ
+
+// ── Domain helpers ────────────────────────────────
+function zClampInd(ind){
+  const[[x0,x1],[y0,y1]]=ZOO_FUNCS[zFuncIdx].domain;
+  ind.x=Math.max(x0,Math.min(x1,ind.x));
+  ind.y=Math.max(y0,Math.min(y1,ind.y));
+  ind.f=ZOO_FUNCS[zFuncIdx].fn(ind.x,ind.y);
+}
+function zRandInd(domain){
+  const[[x0,x1],[y0,y1]]=domain;
+  const x=x0+rng()*(x1-x0), y=y0+rng()*(y1-y0);
+  return{x,y,f:ZOO_FUNCS[zFuncIdx].fn(x,y)};
+}
+
+// ── Island color reuse ─────────────────────────────
+// ICOLORS already defined in Tab 3 section
+
+// ── GA state ──────────────────────────────────────
+// zGA = {islands:[{pop,bestX,bestY,bestF,col}], migCount}
+// if single-island: islands.length=1
+
+function zInitIsland(k,ni,domain){
+  // Initialize island k in a region of the domain
+  const[[x0,x1],[y0,y1]]=domain;
+  const np=Math.max(5,Math.round(gi('z-n')/ni));
+  // Spread islands across domain in a grid
+  const cols=Math.ceil(Math.sqrt(ni)), row=Math.floor(k/cols), col=k%cols;
+  const dx=(x1-x0)/cols, dy=(y1-y0)/Math.ceil(ni/cols);
+  const cx=x0+col*dx+dx/2, cy=y0+row*dy+dy/2;
+  const rx=dx*0.45, ry=dy*0.45;
+  const pop=Array.from({length:np},()=>{
+    const x=clamp(cx+(rng()*2-1)*rx,x0,x1);
+    const y=clamp(cy+(rng()*2-1)*ry,y0,y1);
+    return{x,y,f:ZOO_FUNCS[zFuncIdx].fn(x,y)};
+  });
+  let bestF=-Infinity,bestX=0,bestY=0;
+  for(const ind of pop) if(ind.f>bestF){bestF=ind.f;bestX=ind.x;bestY=ind.y;}
+  return{pop,bestF,bestX,bestY,col:ICOLORS[k%ICOLORS.length]};
+}
+
+function initZ(){
+  const ni=parseInt(gs('z-isl'),10)||1;
+  const f=ZOO_FUNCS[zFuncIdx];
+  zCachedGrid=zSampleGrid(f.fn,f.domain);
+  const islands=Array.from({length:ni},(_,k)=>zInitIsland(k,ni,f.domain));
+  zGA={islands,migCount:0}; zGen=0; zHist=[]; zConverged=false; zHistYlo=null; zHistYhi=null;
+  zPushHist();
+  updZStats(); drawZ(); drawZHist();
+}
+function resetZ(){stopZ();initZ();}
+
+// ── Operators (2-D wrappers) ───────────────────────
+function zXover(p1,p2){
+  const pc=gv('z-pc');
+  if(rng()>pc) return{x:p1.x,y:p1.y};
+  const a=rng();
+  return{x:a*p1.x+(1-a)*p2.x, y:a*p1.y+(1-a)*p2.y};
+}
+function zMutate(ind){
+  const pm=gv('z-pm'),sig=gv('z-ms');
+  const[[x0,x1],[y0,y1]]=ZOO_FUNCS[zFuncIdx].domain;
+  const x=rng()<pm?clamp(ind.x+sig*randn(),x0,x1):ind.x;
+  const y=rng()<pm?clamp(ind.y+sig*randn(),y0,y1):ind.y;
+  return{x,y,f:ZOO_FUNCS[zFuncIdx].fn(x,y)};
+}
+
+// ── Selection ──────────────────────────────────────
+function zSelect(pop,sfit){
+  const sel=gs('z-sel');
+  if(sel==='rw')   return selRW(pop,sfit);
+  if(sel==='sus')  return selSUS(pop,sfit);
+  if(sel==='rank') return selRank(pop,sfit,1.5);
+  return selTourn(pop,sfit,gi('z-tk'));
+}
+
+// ── Niching (2-D) ──────────────────────────────────
+function zDist(a,b){ return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2); }
+
+function zApplySharing(pop,rawF,sig){
+  return rawF.map((fi,i)=>{
+    let niche=0;
+    for(let j=0;j<pop.length;j++){
+      const d=zDist(pop[i],pop[j]);
+      niche+=Math.exp(-(d*d)/(2*sig*sig));
+    }
+    return fi/Math.max(niche,1e-9);
+  });
+}
+function zApplyClearing(pop,rawF,sig){
+  const sh=[...rawF];
+  const used=new Array(pop.length).fill(false);
+  const ord=rawF.map((f,i)=>({f,i})).sort((a,b)=>b.f-a.f);
+  for(const w of ord){
+    if(used[w.i])continue; used[w.i]=true;
+    for(let j=0;j<pop.length;j++){
+      if(!used[j]&&zDist(pop[j],pop[w.i])<sig){sh[j]=1e-10;used[j]=true;}
+    }
+  }
+  return sh;
+}
+
+// ── One GA step on one island ──────────────────────
+function zStepIsland(isl){
+  const pop=isl.pop, N=pop.length;
+  const niche=gs('z-niche');
+  const sigS=gv('z-ss'), sigC=gv('z-sc');
+  const rawF=pop.map(i=>i.f);
+  const minF=Math.min(...rawF);
+  let selF=rawF.map(f=>f-minF+0.01);
+  if(niche==='sharing') selF=zApplySharing(pop,selF,sigS);
+  else if(niche==='clearing') selF=zApplyClearing(pop,selF,sigC);
+
+  let newPop=[];
+  if(niche==='crowding'){
+    const shuf=[...pop].sort(()=>rng()-.5);
+    for(let i=0;i<N-1;i+=2){
+      const p1=shuf[i],p2=shuf[i+1];
+      const c1=zMutate(zXover(p1,p2)), c2=zMutate(zXover(p2,p1));
+      const d11=zDist(p1,c1)+zDist(p2,c2), d12=zDist(p1,c2)+zDist(p2,c1);
+      if(d11<=d12){
+        newPop.push(c1.f>=p1.f?c1:{...p1});
+        newPop.push(c2.f>=p2.f?c2:{...p2});
+      } else {
+        newPop.push(c2.f>=p1.f?c2:{...p1});
+        newPop.push(c1.f>=p2.f?c1:{...p2});
+      }
+    }
+    if(N%2) newPop.push({...pop[N-1]});
+  } else {
+    while(newPop.length<N){
+      const p1=zSelect(pop,selF), p2=zSelect(pop,selF);
+      newPop.push(zMutate(zXover(p1,p2)));
+    }
+    // Elitism
+    const el=gi('z-el');
+    if(el>0){
+      const sorted=[...pop].sort((a,b)=>b.f-a.f);
+      newPop.sort((a,b)=>a.f-b.f);
+      for(let e=0;e<Math.min(el,N);e++) newPop[e]={...sorted[e]};
+    }
+  }
+  isl.pop=newPop;
+  for(const ind of newPop) if(ind.f>isl.bestF){isl.bestF=ind.f;isl.bestX=ind.x;isl.bestY=ind.y;}
+}
+
+// ── Migration ──────────────────────────────────────
+function zDoMigration(){
+  const islands=zGA.islands, ni=islands.length;
+  const mr=gv('z-mr');
+  const migs=islands.map(isl=>{
+    const n=Math.max(1,Math.round(isl.pop.length*mr));
+    return[...isl.pop].sort((a,b)=>b.f-a.f).slice(0,n);
+  });
+  for(let k=0;k<ni;k++){
+    const nb=(k+1)%ni; // ring topology
+    const incoming=migs[nb], isl=islands[k];
+    isl.pop.sort((a,b)=>a.f-b.f);
+    for(let i=0;i<Math.min(incoming.length,isl.pop.length);i++){
+      if(incoming[i].f>isl.pop[i].f) isl.pop[i]={...incoming[i]};
+    }
+    for(const ind of isl.pop) if(ind.f>isl.bestF){isl.bestF=ind.f;isl.bestX=ind.x;isl.bestY=ind.y;}
+  }
+  zGA.migCount++;
+}
+
+function stepZ(){
+  if(!zGA) initZ();
+  for(const isl of zGA.islands) zStepIsland(isl);
+  zGen++;
+  const ni2=zGA.islands.length;
+  if(ni2>1&&gv('z-mr')>0&&zGen%gi('z-mi')===0) zDoMigration();
+  zPushHist();
+  updZStats(); drawZ(); drawZHist();
+}
+
+// ── Peaks occupied (for known optima) ─────────────
+function zCountPeaks(){
+  const f=ZOO_FUNCS[zFuncIdx];
+  const allPop=zGA.islands.flatMap(i=>i.pop);
+  const[[x0,x1],[y0,y1]]=f.domain;
+  // Use function-specific peak radius if provided, else 10% of domain
+  const tol=f.peakRadius!==undefined?f.peakRadius*3:Math.min(x1-x0,y1-y0)*0.10;
+  return f.optima.filter(([ox,oy])=>
+    allPop.some(ind=>Math.sqrt((ind.x-ox)**2+(ind.y-oy)**2)<tol)
+  ).length;
+}
+
+function zPushHist(){
+  if(!zGA) return;
+  const allPop=zGA.islands.flatMap(i=>i.pop);
+  const fs2=allPop.map(i=>i.f);
+  const mn=Math.min(...fs2), mx=Math.max(...fs2);
+  const avg=fs2.reduce((a,b)=>a+b,0)/fs2.length;
+  const np=zCountPeaks();
+  zHist.push({min:mn,avg,max:mx,peaks:np});
+  if(zHist.length>MAX_HIST) zHist.shift();
+}
+
+function drawZHist(){
+  const cv=document.getElementById('cvZooHist');
+  if(!cv) return;
+  const{ctx,W,H}=getCtx(cv);
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  const ml=42,mr=20,mt=14,mb=24, pw=W-ml-mr, ph=H-mt-mb;
+  ctx.fillStyle='#587060'; ctx.font='10px Outfit,sans-serif';
+  ctx.textAlign='center'; ctx.fillText('Fitness over Generations',W/2,10);
+  const N=zHist.length;
+  if(N<2){
+    ctx.fillStyle='#bbb'; ctx.fillText('Run to see fitness history',W/2,H/2); return;
+  }
+  // Sticky y-axis: only ever expand, never shrink — prevents constant rescaling
+  const curMn=Math.min(...zHist.map(e=>e.min));
+  const curMx=Math.max(...zHist.map(e=>e.max));
+  zHistYlo=Math.min(zHistYlo??curMn, curMn);
+  zHistYhi=Math.max(zHistYhi??curMx, curMx);
+  const pad=(zHistYhi-zHistYlo)*0.05||0.1;
+  const ylo=zHistYlo-pad, yhi=zHistYhi+pad;
+  const ysc=ph/(yhi-ylo), xsc=pw/(N-1);
+  const tx3=i=>ml+i*xsc, ty3=v=>mt+ph-(v-ylo)*ysc;
+
+  // Light grid
+  ctx.strokeStyle='#e8f5ea'; ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){const y=mt+ph*g/4;ctx.beginPath();ctx.moveTo(ml,y);ctx.lineTo(ml+pw,y);ctx.stroke();}
+
+  // Y tick labels
+  ctx.fillStyle='#587060'; ctx.font='9px Outfit,sans-serif'; ctx.textAlign='right';
+  for(let g=0;g<=2;g++){
+    const v=ylo+(yhi-ylo)*g/2;
+    ctx.fillText(v.toFixed(2),ml-3,ty3(v)+3);
+  }
+  // X tick labels
+  ctx.textAlign='center';
+  const step=Math.max(1,Math.round(N/5));
+  for(let i=0;i<N;i+=step){
+    ctx.fillText(Math.max(0,zGen-N+1+i),tx3(i),H-3);
+  }
+
+  // Shaded min-max band
+  ctx.beginPath(); ctx.moveTo(tx3(0),ty3(zHist[0].max));
+  for(let i=1;i<N;i++) ctx.lineTo(tx3(i),ty3(zHist[i].max));
+  for(let i=N-1;i>=0;i--) ctx.lineTo(tx3(i),ty3(zHist[i].min));
+  ctx.closePath(); ctx.fillStyle='rgba(82,183,136,.18)'; ctx.fill();
+
+  // Avg line
+  ctx.beginPath(); ctx.moveTo(tx3(0),ty3(zHist[0].avg));
+  for(let i=1;i<N;i++) ctx.lineTo(tx3(i),ty3(zHist[i].avg));
+  ctx.strokeStyle='#2D6A4F'; ctx.lineWidth=1.8; ctx.stroke();
+
+  // Max line (dashed)
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tx3(0),ty3(zHist[0].max));
+  for(let i=1;i<N;i++) ctx.lineTo(tx3(i),ty3(zHist[i].max));
+  ctx.strokeStyle='#D4521A'; ctx.lineWidth=1.2; ctx.stroke();
+
+  // Min line — dashed
+  ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tx3(0),ty3(zHist[0].min));
+  for(let i=1;i<N;i++) ctx.lineTo(tx3(i),ty3(zHist[i].min));
+  ctx.strokeStyle='#95d5b2'; ctx.lineWidth=1; ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Legend — bottom-right, dashed lines match the actual line styles
+  const legH2=3*12+2;
+  const lx=ml+pw-92, ly=mt+ph-legH2;
+  ctx.font='9px Outfit,sans-serif'; ctx.textAlign='left';
+  // max — dashed orange
+  ctx.setLineDash([3,3]); ctx.strokeStyle='#D4521A'; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(lx,ly+3);ctx.lineTo(lx+14,ly+3);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#587060'; ctx.fillText('max',lx+17,ly+6);
+  // mean — solid green
+  ctx.strokeStyle='#2D6A4F'; ctx.lineWidth=1.8;
+  ctx.beginPath();ctx.moveTo(lx,ly+15);ctx.lineTo(lx+14,ly+15);ctx.stroke();
+  ctx.fillStyle='#587060'; ctx.fillText('mean',lx+17,ly+18);
+  // min — dashed light green
+  ctx.setLineDash([3,3]); ctx.strokeStyle='#95d5b2'; ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(lx,ly+27);ctx.lineTo(lx+14,ly+27);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#587060'; ctx.fillText('min',lx+17,ly+30);
+}
+
+function updZStats(){
+  document.getElementById('sz-gen').textContent=zGen;
+  if(!zGA){document.getElementById('sz-best').textContent='—';return;}
+  const allPop=zGA.islands.flatMap(i=>i.pop);
+  const bestF=Math.max(...allPop.map(i=>i.f));
+  const meanF=allPop.reduce((s,i)=>s+i.f,0)/allPop.length;
+  document.getElementById('sz-best').textContent=bestF.toFixed(4);
+  document.getElementById('sz-mean').textContent=meanF.toFixed(4);
+  const np=zCountPeaks(), nt=ZOO_FUNCS[zFuncIdx].optima.length;
+  document.getElementById('sz-pk').textContent=np+' / '+nt;
+  // Convergence: std dev of positions
+  const mx=allPop.reduce((s,i)=>s+i.x,0)/allPop.length;
+  const my=allPop.reduce((s,i)=>s+i.y,0)/allPop.length;
+  const sx=Math.sqrt(allPop.reduce((s,i)=>s+(i.x-mx)**2,0)/allPop.length);
+  const sy=Math.sqrt(allPop.reduce((s,i)=>s+(i.y-my)**2,0)/allPop.length);
+  const f=ZOO_FUNCS[zFuncIdx];
+  const[[x0,x1],[y0,y1]]=f.domain;
+  const domScale=Math.min(x1-x0,y1-y0);
+  // Converged if all individuals clustered in <3% of domain
+  zConverged=(sx+sy)<domScale*0.03;
+}
+
+// ── Drawing ────────────────────────────────────────
+function drawZ(){
+  const cv=document.getElementById('cvZoo');
+  if(!cv) return;
+  const{ctx,W,H}=getCtx(cv);
+  const ml=42,mr=14,mt=24,mb=30;
+  const f=ZOO_FUNCS[zFuncIdx];
+  if(!zCachedGrid) zCachedGrid=zSampleGrid(f.fn,f.domain);
+
+  const{tx,ty}=zDrawContour(ctx,W,H,ml,mr,mt,mb,zCachedGrid,f.domain);
+  zTx=tx; zTy=ty;
+
+  // Known optima markers (white rings)
+  for(const[ox,oy] of f.optima){
+    const px=tx(ox),py=ty(oy);
+    ctx.beginPath();ctx.arc(px,py,6,0,2*Math.PI);
+    ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.stroke();
+    ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(255,200,0,.6)';ctx.lineWidth=1.5;
+    ctx.stroke();ctx.setLineDash([]);
+  }
+
+  // Population
+  if(zGA){
+    const ni=zGA.islands.length;
+    for(const isl of zGA.islands){
+      const col=ni===1?null:isl.col;
+      for(const ind of isl.pop){
+        const px=tx(ind.x),py=ty(ind.y);
+        ctx.beginPath();ctx.arc(px,py,4,0,2*Math.PI);
+        if(col){
+          ctx.fillStyle=col.fill; ctx.fill();
+          ctx.strokeStyle=col.stk;
+        } else {
+          ctx.fillStyle='rgba(212,82,26,.75)'; ctx.fill();
+          ctx.strokeStyle='rgba(140,40,10,.9)';
+        }
+        ctx.lineWidth=0.8;ctx.stroke();
+      }
+      // Best individual ring
+      if(isl.bestX!==null){
+        const px=tx(isl.bestX),py=ty(isl.bestY);
+        ctx.beginPath();ctx.arc(px,py,8,0,2*Math.PI);
+        ctx.strokeStyle=ni===1?'rgba(255,255,255,.9)':(isl.col?.stk||'#fff');
+        ctx.lineWidth=2.5;ctx.stroke();
+      }
+    }
+    // Island color legend
+    if(ni>1){
+      const lx=ml+8, ly=mt+5;
+      zGA.islands.forEach((isl,k)=>{
+        ctx.beginPath();ctx.arc(lx+4,ly+k*14+4,5,0,2*Math.PI);
+        ctx.fillStyle=isl.col.fill;ctx.fill();
+        ctx.strokeStyle=isl.col.stk;ctx.lineWidth=1.5;ctx.stroke();
+        ctx.fillStyle='rgba(255,255,255,.85)';ctx.font='9px Outfit,sans-serif';
+        ctx.textAlign='left';ctx.fillText(isl.col.name,lx+12,ly+k*14+8);
+      });
+    }
+  }
+
+  // Title
+  ctx.fillStyle='#1B4332';ctx.font='bold 11px Outfit,sans-serif';
+  ctx.textAlign='center';ctx.fillText(f.name+' — '+f.category,ml+(W-ml-mr)/2,16);
+
+  // Convergence warning banner
+  if(zConverged&&zGen>10){
+    const bw=160,bh=20,bx=ml+(W-ml-mr)/2-bw/2,by=mt+8;
+    ctx.fillStyle='rgba(212,82,26,.88)';
+    ctx.beginPath();
+    ctx.roundRect?ctx.roundRect(bx,by,bw,bh,3):ctx.rect(bx,by,bw,bh);
+    ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 10px Outfit,sans-serif';
+    ctx.textAlign='center';ctx.fillText('\u26a0 Population converged',bx+bw/2,by+13);
+  }
+}
+
+// ── Function selector setup ────────────────────────
+function zBuildFuncSelector(){
+  const row=document.getElementById('zoo-funcrow');
+  ZOO_FUNCS.forEach((f,k)=>{
+    const lbl=document.createElement('label');
+    lbl.style.cssText='font-size:12.5px;display:flex;align-items:center;gap:5px;cursor:pointer';
+    const inp=document.createElement('input');
+    inp.type='radio';inp.name='zoofunc';inp.value=k;
+    if(k===0) inp.checked=true;
+    inp.style.accentColor='var(--dk)';
+    inp.addEventListener('change',()=>{
+      zFuncIdx=k;stopZ();
+      zCachedGrid=null;
+      initZ(); zDraw3D(); drawZHist();
+    });
+    lbl.appendChild(inp);
+    lbl.appendChild(document.createTextNode(f.name));
+    row.appendChild(lbl);
+  });
+  // Reference table
+  const tbody=document.getElementById('zoo-refrows');
+  ZOO_FUNCS.forEach(f=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="font-weight:700;color:var(--ora);min-width:90px">${f.name}</td>
+      <td style="color:var(--muted);font-size:10.5px">${f.category} &middot; ${f.nOptima} global optimum${f.nOptima>1?'a':''} &middot; domain x,y ∈ [${f.domain[0][0]}, ${f.domain[0][1]}]</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Controls ──────────────────────────────────────
+function onZSelChange(){
+  document.getElementById('zrow-tk').classList.toggle('hidden',gs('z-sel')!=='tourn');
+}
+function onZNicheChange(){
+  const v=gs('z-niche');
+  document.getElementById('zrow-ss').classList.toggle('hidden',v!=='sharing');
+  document.getElementById('zrow-sc').classList.toggle('hidden',v!=='clearing');
+}
+function toggleZRun(){
+  const btn=document.getElementById('btnZ-run');
+  if(zTimer){stopZ();}
+  else{if(!zGA)initZ();btn.textContent='\u23f8 Pause';zTimer=setInterval(stepZ,85);}
+}
+function stopZ(){if(zTimer){clearInterval(zTimer);zTimer=null;}
+  const btn=document.getElementById('btnZ-run');
+  if(btn) btn.textContent='\u25b6 Run';
+}
+
+// ── Init on tab switch ─────────────────────────────
+function initZTab(){
+  if(!zGA) initZ();
+  drawZ();
+  zDraw3D();
+  drawZHist();
+}
+
+// Tab 4 elements are inserted after this script tag, so defer until parsed
+document.addEventListener('DOMContentLoaded', zBuildFuncSelector);
+</script>
+<!-- ═══════════════════════════════════════════════
+     TAB 4  —  2-D OPTIMIZATION ZOO
+═══════════════════════════════════════════════ -->
+<div id="tzoo" class="tab">
+
+  <div class="info">
+    A real-valued <strong>2-D GA</strong> on classic single-objective test functions — the same
+    algorithms and operators as Tabs 1 and 2, now in a 2-D decision space.
+    The <strong>heatmap</strong> shows the fitness landscape (dark = low, bright = high);
+    dots are individuals colored by fitness. The <strong>3-D thumbnail</strong> gives a
+    surface view of the same function. Enable <strong>island mode</strong> to split the
+    population into colored demes; enable a <strong>niching method</strong> to maintain
+    multiple peaks simultaneously. Goal: maximize.
+  </div>
+
+  <!-- Function selector strip -->
+  <div class="probrow" id="zoo-funcrow" style="flex-wrap:wrap;gap:6px 18px">
+    <span class="plbl">Function</span>
+  </div>
+
+  <div class="vizrow">
+    <div class="cvwrap">
+      <!-- Contour map fills the column; 3D thumbnail sits below it -->
+      <canvas id="cvZoo" width="640" height="370"></canvas>
+      <canvas id="cvZoo3d" width="640" height="180"></canvas>
+      <canvas id="cvZooHist" width="640" height="130"></canvas>
+    </div>
+    <div class="side">
+      <div class="csec">
+        <div class="clbl">Population</div>
+        <div class="crow"><label>Size N</label>
+          <input type="range" id="z-n" min="10" max="120" step="5" value="50"
+            oninput="sv(this,'zv-n')">
+          <span class="cval" id="zv-n">50</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Operators</div>
+        <div class="crow"><label>p<sub>c</sub></label>
+          <input type="range" id="z-pc" min="0" max="1" step="0.05" value="0.5"
+            oninput="svf(this,'zv-pc',2)">
+          <span class="cval" id="zv-pc">0.50</span></div>
+        <div class="crow"><label>p<sub>m</sub></label>
+          <input type="range" id="z-pm" min="0.005" max="0.5" step="0.005" value="0.05"
+            oninput="svf(this,'zv-pm',3)">
+          <span class="cval" id="zv-pm">0.050</span></div>
+        <div class="crow"><label>σ<sub>m</sub></label>
+          <input type="range" id="z-ms" min="0.01" max="2.0" step="0.01" value="0.15"
+            oninput="svf(this,'zv-ms',2)">
+          <span class="cval" id="zv-ms">0.15</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Selection</div>
+        <div class="crow"><label>Operator</label>
+          <select id="z-sel" onchange="onZSelChange()">
+            <option value="tourn" selected>Tournament</option>
+            <option value="sus">SUS</option>
+            <option value="rw">Roulette Wheel</option>
+            <option value="rank">Linear Rank</option>
+          </select></div>
+        <div class="crow" id="zrow-tk"><label>k (size)</label>
+          <input type="range" id="z-tk" min="2" max="10" step="1" value="3"
+            oninput="sv(this,'zv-tk')">
+          <span class="cval" id="zv-tk">3</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Niching</div>
+        <div class="crow"><label>Method</label>
+          <select id="z-niche" onchange="onZNicheChange()">
+            <option value="none" selected>None</option>
+            <option value="sharing">Fitness Sharing</option>
+            <option value="crowding">Det. Crowding</option>
+            <option value="clearing">Clearing</option>
+          </select></div>
+        <div class="crow hidden" id="zrow-ss"><label>σ<sub>share</sub></label>
+          <input type="range" id="z-ss" min="0.05" max="3.0" step="0.05" value="0.8"
+            oninput="svf(this,'zv-ss',2)">
+          <span class="cval" id="zv-ss">0.80</span></div>
+        <div class="crow hidden" id="zrow-sc"><label>σ<sub>clear</sub></label>
+          <input type="range" id="z-sc" min="0.05" max="3.0" step="0.05" value="0.8"
+            oninput="svf(this,'zv-sc',2)">
+          <span class="cval" id="zv-sc">0.80</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Island Mode</div>
+        <div class="crow"><label>Islands</label>
+          <select id="z-isl">
+            <option value="1" selected>Off (1 pop.)</option>
+            <option value="2">2 islands</option>
+            <option value="3">3 islands</option>
+            <option value="4">4 islands</option>
+            <option value="5">5 islands</option>
+          </select></div>
+        <div class="crow" id="zrow-mig"><label>Mig. rate</label>
+          <input type="range" id="z-mr" min="0.05" max="0.5" step="0.05" value="0.15"
+            oninput="svf(this,'zv-mr',2)">
+          <span class="cval" id="zv-mr">0.15</span></div>
+        <div class="crow" id="zrow-mi"><label>Interval</label>
+          <input type="range" id="z-mi" min="1" max="20" step="1" value="5"
+            oninput="sv(this,'zv-mi')">
+          <span class="cval" id="zv-mi">5</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Elitism</div>
+        <div class="crow"><label>Copies</label>
+          <input type="range" id="z-el" min="0" max="5" step="1" value="1"
+            oninput="sv(this,'zv-el')">
+          <span class="cval" id="zv-el">1</span></div>
+      </div>
+      <div class="csec">
+        <div class="clbl">Controls</div>
+        <div class="btnrow">
+          <button class="btn btp bts" id="btnZ-run" onclick="toggleZRun()">&#9654; Run</button>
+          <button class="btn bto bts" onclick="stepZ()">Step</button>
+          <button class="btn bto bts" onclick="resetZ()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sbar">
+    <div class="sc"><div class="slbl">GENERATION</div><div class="sval" id="sz-gen">0</div></div>
+    <div class="sc"><div class="slbl">BEST f(x,y) ↑</div><div class="sval hi" id="sz-best">—</div></div>
+    <div class="sc"><div class="slbl">MEAN f(x,y) ↑</div><div class="sval" id="sz-mean">—</div></div>
+    <div class="sc"><div class="slbl">PEAKS OCCUPIED ↑</div><div class="sval" id="sz-pk">—</div></div>
+  </div>
+
+  <div class="refcard">
+    <div class="refcol">
+      <div class="refhd">Function library</div>
+      <table class="reftbl"><tbody id="zoo-refrows"></tbody></table>
+    </div>
+    <div class="refcol">
+      <div class="refhd">Tips</div>
+      <table class="reftbl"><tbody>
+        <tr><td>Single-peak</td><td>Sphere or Rosenbrock — use tournament selection, no niching, small σ<sub>m</sub></td></tr>
+        <tr><td>Multimodal</td><td>Rastrigin or Ackley — try fitness sharing with σ<sub>share</sub> ≈ 1.0; watch how many peaks the population occupies</td></tr>
+        <tr><td>Multiple equal optima</td><td>Himmelblau or Cross-in-tray — 4 global minima at equal depth; deterministic crowding naturally splits the population</td></tr>
+        <tr><td>Island mode</td><td>Each island is initialized in a different region; set migration interval high (≥ 10) to let islands diverge before synchronizing</td></tr>
+        <tr><td>Needle-in-haystack</td><td>Easom — flat everywhere except a tiny basin at (π, π); standard GA struggles; try large σ<sub>m</sub> or many islands</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+
+  <div class="foot">&copy; 2026 Theodore P. Pavlic &middot; MIT License</div>
+</div>
+
+</body>
+</html>
