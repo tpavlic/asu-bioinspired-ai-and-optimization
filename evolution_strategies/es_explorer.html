@@ -241,7 +241,7 @@ select:focus { outline:none; border-color:var(--green); }
       <div class="li"><span class="sym" style="color:#ffee88;font-size:13px;">●</span>best sample</div>
       <div class="li"><span class="sym" style="color:rgba(190,40,40,.9);font-size:14px;">●</span>best-ever ★</div>
       <div class="li"><span class="sym" style="font-size:11px;color:rgba(255,255,255,.85);">⊕</span>optimum</div>
-      <div class="li"><span class="sym" style="font-size:10px;color:rgba(255,255,255,.55);">○</span>σ circle = step size</div>
+      <div class="li"><span class="sym" style="font-size:10px;color:rgba(255,255,255,.55);">○</span>σ circle = parent step size</div>
     </div>
     <div id="bottom-row">
       <div class="cpanel" id="fitness-wrap">
@@ -339,7 +339,7 @@ select:focus { outline:none; border-color:var(--green); }
         <label class="drow">
           <input type="checkbox" id="chk-circles" checked>
           <span class="sw" style="border:1.5px solid rgba(255,255,255,.5);background:none;border-radius:50%"></span>
-          <span style="color:rgba(180,210,180,1)">σ circles around individuals</span>
+          <span style="color:rgba(180,210,180,1)">σ circles on selected parents (μ)</span>
         </label>
         <label class="drow">
           <input type="checkbox" id="chk-parents" checked>
@@ -647,7 +647,7 @@ function drawLandscapeLegend(ctx,W,H) {
   if(showParents) items.push({type:'dot',col:'rgba(255,220,80,.7)',r:4,ring:true,label:'selected parents (μ)'});
   items.push({type:'dot',col:'rgba(80,200,65,.8)',r:3,label:'offspring (λ)'});
   items.push({type:'opt',label:'global optima'});
-  if(showCirc)    items.push({type:'circ',label:'σ circle = step size'});
+  if(showCirc)    items.push({type:'circ',label:'σ circle = parent step size'});
   if(showTrail)   items.push({type:'line',col:'rgba(160,100,210,.8)',lw:2,label:'best-ever trail'});
   if(showOld)     items.push({type:'dot',col:'rgba(70,160,60,.3)',r:3,label:'prior gen (faded)'});
   if(rotMode)     items.push({type:'line',col:'#c07010',lw:1.5,dash:[3,3],label:'mutation axes θ'});
@@ -726,13 +726,16 @@ function renderLandscape() {
     ctx.fill();
   });
 
-  // σ circles
-  if(showCirc){
-    displayPop.forEach(ind=>{
+  // σ circles — drawn only for selected parents (μ individuals)
+  // Shows the mutation radius that will seed the next generation.
+  // Drawing all λ offspring causes concentric-ring confusion when they cluster.
+  if(showCirc && s.parents.length){
+    const worldToCanvas = W / span;
+    s.parents.forEach(ind=>{
       const[cx,cy]=w2c(ind.x,ind.y,W,H);
-      const r=sigToR(ind.sig,span)/span*W;
+      const r = Math.max(2, ind.sig * worldToCanvas);
       ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
-      ctx.strokeStyle='rgba(255,255,255,.22)';ctx.lineWidth=1;ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.2;ctx.stroke();
     });
   }
 
@@ -747,13 +750,14 @@ function renderLandscape() {
 
   // Mutation angle axes (correlated mode)
   if(s.rotMode&&s.parents.length){
+    const worldToCanvas = W / span;
     s.parents.forEach(ind=>{
       const[cx,cy]=w2c(ind.x,ind.y,W,H);
-      const sc=Math.min(30, sigToR(ind.sig,span)/span*W*2);
+      const sc = Math.max(4, ind.sig * worldToCanvas);
       const c=Math.cos(ind.theta),sv=Math.sin(ind.theta);
       ctx.beginPath();
       ctx.moveTo(cx-sc*c,cy+sc*sv);ctx.lineTo(cx+sc*c,cy-sc*sv);
-      ctx.strokeStyle='rgba(192,112,16,.6)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+      ctx.strokeStyle='rgba(192,112,16,.7)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
     });
   }
 
