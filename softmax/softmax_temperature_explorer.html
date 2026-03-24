@@ -24,44 +24,26 @@
 <style>
 :root {
   --bg:      #ffffff;
-  --bg2:     #f5f4f0;
-  --bg3:     #eceae4;
-  --bd0:     rgba(0,0,0,0.08);
-  --bd1:     rgba(0,0,0,0.16);
-  --bd2:     rgba(0,0,0,0.28);
-  --tx:      #1c1c1a;
-  --tx2:     #55534e;
-  --tx3:     #8a8880;
-  --acc:     #185FA5;
-  --acc-bg:  #e6f1fb;
-  --acc-tx:  #0c447c;
-  --eng-bd:  #BA7517;
-  --eng-bg:  #faeeda;
-  --eng-tx:  #633806;
+  --bg2:     #f2f0eb;
+  --bg3:     #e6e3db;
+  --bd0:     rgba(0,0,0,0.12);
+  --bd1:     rgba(0,0,0,0.22);
+  --bd2:     rgba(0,0,0,0.40);
+  --tx:      #18180f;
+  --tx2:     #44423a;
+  --tx3:     #7a7870;
+  --acc:     #1358a0;
+  --acc-bg:  #deeaf8;
+  --acc-tx:  #0a3870;
+  --eng-bd:  #a86210;
+  --eng-bg:  #fbe9c8;
+  --eng-tx:  #5a3000;
   --serif:   Georgia, 'Times New Roman', serif;
   --mono:    'Courier New', Courier, monospace;
   --rm: 8px;
   --rl: 12px;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg:      #1e1e1c;
-    --bg2:     #282825;
-    --bg3:     #323230;
-    --bd0:     rgba(255,255,255,0.07);
-    --bd1:     rgba(255,255,255,0.14);
-    --bd2:     rgba(255,255,255,0.26);
-    --tx:      #f0efe9;
-    --tx2:     #a8a7a1;
-    --tx3:     #706f6a;
-    --acc:     #85B7EB;
-    --acc-bg:  #0c1e30;
-    --acc-tx:  #B5D4F4;
-    --eng-bd:  #EF9F27;
-    --eng-bg:  #2a1e08;
-    --eng-tx:  #FAC775;
-  }
-}
+
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -80,8 +62,8 @@ body {
 .fbanner {
   margin-bottom: 12px;
   border-radius: var(--rl);
-  border: 0.5px solid var(--bd0);
-  border-left: 3px solid var(--acc);
+  border: 1px solid var(--bd0);
+  border-left: 3.5px solid var(--acc);
   background: var(--acc-bg);
   transition: border-color .2s, background .2s;
 }
@@ -165,7 +147,7 @@ body {
 /* ── generic card ───────────────────────────────── */
 .card {
   background: var(--bg);
-  border: 0.5px solid var(--bd0);
+  border: 1px solid var(--bd0);
   border-radius: var(--rl);
   padding: 14px 16px;
 }
@@ -285,23 +267,24 @@ input[type=range].vslider::-moz-range-thumb {
 .prow {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 5px;
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 0.5px solid var(--bd0);
+  border-top: 1px solid var(--bd0);
 }
 .pbtn {
-  font-size: 11px;
-  padding: 3px 8px;
+  font-size: 11.5px;
+  padding: 4px 11px;
   cursor: pointer;
-  background: var(--bg2);
-  border: 0.5px solid var(--bd1);
-  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--bd1);
+  border-radius: 20px;
   color: var(--tx2);
   font-family: inherit;
-  transition: background .12s;
+  font-weight: 500;
+  transition: background .12s, border-color .12s;
 }
-.pbtn:hover { background: var(--bg3); }
+.pbtn:hover { background: var(--bg2); border-color: var(--bd2); }
 
 /* ── chart wrappers ─────────────────────────────── */
 .cwrap { position: relative; width: 100%; height: 220px; }
@@ -310,7 +293,7 @@ input[type=range].vslider::-moz-range-thumb {
 /* ── temperature card ───────────────────────────── */
 .tcard {
   background: var(--bg);
-  border: 0.5px solid var(--bd0);
+  border: 1px solid var(--bd0);
   border-radius: var(--rl);
   padding: 14px 18px 10px;
   margin-bottom: 12px;
@@ -362,7 +345,6 @@ input[type=range]#smxT::-moz-range-thumb {
   cursor: pointer;
 }
 
-/* ── stats row ──────────────────────────────────── */
 .sgrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0,1fr));
@@ -370,11 +352,17 @@ input[type=range]#smxT::-moz-range-thumb {
   margin-bottom: 12px;
 }
 @media (max-width: 400px) { .sgrid { grid-template-columns: 1fr; } }
-.scard { background: var(--bg2); border-radius: var(--rm); padding: 12px 14px; text-align: center; }
-.stlbl { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing:.06em; color:var(--tx3); margin-bottom:3px; }
+.scard {
+  background: var(--bg2);
+  border: 1px solid var(--bd0);
+  border-radius: var(--rm);
+  padding: 12px 14px;
+  text-align: center;
+}
+.stlbl { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing:.07em; color:var(--tx3); margin-bottom:3px; }
 .stval { font-size: 20px; font-weight: 500; font-family: var(--mono); transition: color .08s; }
 .stsub { font-size: 10px; color: var(--tx3); margin-top: 2px; }
-.etrk { height: 3px; background: var(--bg3); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.etrk { height: 4px; background: var(--bg3); border-radius: 2px; margin-top: 8px; overflow: hidden; }
 .efil { height: 100%; border-radius: 2px; transition: width .04s, background .08s; background: #378ADD; }
 
 /* ── Boltzmann panel ────────────────────────────── */
