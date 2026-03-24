@@ -26,6 +26,8 @@ as iframes.
 | [`ideal_free_distribution/`](ideal_free_distribution/) | Interactive visualization of the Ideal Free Distribution, motivating fitness sharing in multi-modal GAs |
 | [`evolution_as_movement_in_drift_field/`](evolution_as_movement_in_drift_field/) | Graphical explainer of selection, drift, and mutation as parallel forces pushing a population toward fixation |
 | [`genetic_algorithms/ga_explorer.html`](genetic_algorithms/ga_explorer.html) | Interactive GA explorer: 1-D multimodal landscape with niching, island model / distributed GA, 2-D optimization zoo, and two-objective MOEA with Pareto ranking |
+| [`evolution_strategies/es_explorer.html`](evolution_strategies/es_explorer.html) | Interactive (μ,λ)- or (μ+λ)-ES explorer: per-individual step-size self-adaptation on a 1-D multimodal landscape, with optional correlated mutations |
+| [`evolution_strategies/cmaes_explorer.html`](evolution_strategies/cmaes_explorer.html) | Interactive CMA-ES explorer: watch the algorithm adapt its mean, step size (CSA), and full covariance matrix (rank-1/rank-μ updates) on a 2-D landscape in real time |
 
 ### Physics-Inspired Methods
 

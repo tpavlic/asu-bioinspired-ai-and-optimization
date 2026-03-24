@@ -148,6 +148,8 @@ Add a row to the appropriate table under `## Contents`:
 - `ideal_free_distribution/ifd_on_pond.html`
 - `evolution_as_movement_in_drift_field/evolution_as_movement_in_drift_field.html` *(static figure)*
 - `genetic_algorithms/ga_explorer.html`
+- `evolution_strategies/es_explorer.html`
+- `evolution_strategies/cmaes_explorer.html`
 
 ### Physics-Inspired Methods
 
