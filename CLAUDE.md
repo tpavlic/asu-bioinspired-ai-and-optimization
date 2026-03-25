@@ -150,6 +150,7 @@ Add a row to the appropriate table under `## Contents`:
 - `genetic_algorithms/ga_explorer.html`
 - `evolution_strategies/es_explorer.html`
 - `evolution_strategies/cmaes_explorer.html`
+- `evolutionary_programming/evolprog_representations.html`
 
 ### Physics-Inspired Methods
 

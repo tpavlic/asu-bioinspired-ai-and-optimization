@@ -28,6 +28,7 @@ as iframes.
 | [`genetic_algorithms/ga_explorer.html`](genetic_algorithms/ga_explorer.html) | Interactive GA explorer: 1-D multimodal landscape with niching, island model / distributed GA, 2-D optimization zoo, and two-objective MOEA with Pareto ranking |
 | [`evolution_strategies/es_explorer.html`](evolution_strategies/es_explorer.html) | Interactive (μ,λ)- or (μ+λ)-ES explorer: per-individual step-size self-adaptation on a 1-D multimodal landscape, with optional correlated mutations |
 | [`evolution_strategies/cmaes_explorer.html`](evolution_strategies/cmaes_explorer.html) | Interactive CMA-ES explorer: watch the algorithm adapt its mean, step size (CSA), and full covariance matrix (rank-1/rank-μ updates) on a 2-D landscape in real time |
+| [`evolutionary_programming/evolprog_representations.html`](evolutionary_programming/evolprog_representations.html) | Side-by-side explorer for three EP representation families — Abstract Syntax Trees, Linear Genetic Programs, and Finite-State Machines — with interactive variation operators and a cross-representation comparison |
 
 ### Physics-Inspired Methods
 
