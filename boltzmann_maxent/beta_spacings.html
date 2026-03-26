@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beta Distribution Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #f2f5fa;
+  --card:         #ffffff;
+  --border:       #dde2ed;
+  --shadow:       0 1px 4px rgba(30,37,65,0.08);
+  --text:         #1e2534;
+  --muted:        #6a748a;
+  --label:        #3d4860;
+  --accent:       #5c6bc0;
+  --accent-lt:    #e8eaf6;
+  --accent2:      #c2407a;
+  --teal:         rgba(36,160,154,0.9);
+  --teal-bar:     rgba(50,165,160,0.50);
+  --teal-border:  rgba(36,155,148,0.82);
+  --blue-bar:     rgba(92,107,192,0.50);
+  --blue-border:  rgba(92,107,192,0.82);
+  --hdr:          linear-gradient(135deg,#dce6f5 0%,#e6ecf8 100%);
+  --stat-bg:      #f5f7fc;
+  --font:        'IBM Plex Sans', sans-serif;
+  --mono:        'IBM Plex Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px 16px 44px;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+.header {
+  background: var(--hdr);
+  border: 1px solid #c5d0ea;
+  border-radius: 10px;
+  padding: 15px 24px 13px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+.header-title {
+  font-family: var(--mono);
+  font-size: 15.5px;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  margin-bottom: 5px;
+}
+.header-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+.header-sub b { color: var(--accent); font-weight: 500; }
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+.sec-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 13px;
+}
+
+/* ── Beta info grid ──────────────────────────────────────── */
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 215px;
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 560px) {
+  .info-grid { grid-template-columns: 1fr; }
+}
+
+.beta-desc {
+  font-size: 12.5px;
+  color: var(--label);
+  line-height: 1.75;
+}
+.coin-formula {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--stat-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  padding: 9px 11px;
+  margin: 9px 0 0;
+  line-height: 2.1;
+}
+.coin-formula .hi { color: var(--accent); font-weight: 500; }
+
+.coin-interp {
+  background: var(--stat-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 5px 5px 0;
+  padding: 10px 12px 9px;
+  margin: 10px 0 0;
+}
+.coin-row {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin-bottom: 8px;
+}
+.coin-icon { font-size: 15px; line-height: 1.4; flex-shrink: 0; }
+.coin-text { font-size: 12px; color: var(--label); line-height: 1.65; }
+.coin-counts {
+  display: flex; flex-direction: column; gap: 4px;
+  padding-left: 4px; border-left: 2px solid #d8ddf0;
+  margin-left: 4px;
+}
+.coin-count-row {
+  display: flex; align-items: baseline; gap: 0; flex-wrap: wrap;
+  font-family: var(--mono); font-size: 11px; line-height: 1.7;
+}
+.coin-label { color: var(--accent); font-weight: 500; width: 22px; }
+.coin-eq    { color: var(--muted); white-space: pre; }
+.coin-dyn.hi { color: var(--accent); font-weight: 500; }
+
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 10px;
+}
+.stat-box {
+  background: var(--stat-bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 9px;
+}
+.stat-key {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+.stat-num {
+  font-family: var(--mono);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--accent);
+  margin: 1px 0;
+}
+.stat-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted);
+}
+.stat-tip {
+  font-family: var(--font);
+  font-size: 9px;
+  color: #9aa0b8;
+  font-style: italic;
+  margin-top: 3px;
+  line-height: 1.45;
+  border-top: 1px solid #edf0f8;
+  padding-top: 3px;
+}
+
+/* ── Sliders ─────────────────────────────────────────────── */
+.sliders-wrap { display: flex; flex-direction: column; gap: 13px; }
+.sl-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.sl-name { font-family: var(--mono); font-size: 12px; color: var(--label); }
+.sl-val  { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 500; min-width: 36px; text-align: right; }
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 4px; border-radius: 2px; outline: none; cursor: pointer;
+  background: linear-gradient(to right,
+    var(--accent) 0%, var(--accent) var(--fill,50%),
+    #d0d5e8 var(--fill,50%), #d0d5e8 100%);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width:14px; height:14px; border-radius:50%;
+  background:#fff; border:2px solid var(--accent);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+input[type=range]::-moz-range-thumb {
+  width:14px; height:14px; border-radius:50%;
+  background:#fff; border:2px solid var(--accent);
+}
+.sl-bounds { display:flex; justify-content:space-between; font-family:var(--mono); font-size:9.5px; color:var(--muted); margin-top:2px; }
+
+/* ── Presets ─────────────────────────────────────────────── */
+.presets-label { font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:0.05em; margin-bottom:5px; }
+.presets { display:flex; gap:5px; flex-wrap:wrap; }
+.preset {
+  font-family:var(--mono); font-size:9.5px;
+  border:1px solid var(--border); background:#fff; color:var(--label);
+  border-radius:20px; padding:3px 9px; cursor:pointer; transition:all 0.12s; white-space:nowrap;
+}
+.preset:hover { background:var(--accent-lt); border-color:var(--accent); color:var(--accent); }
+.preset.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* ── Sample card ─────────────────────────────────────────── */
+.resample-row { display:flex; justify-content:flex-end; margin-bottom:11px; }
+.btn-resample {
+  font-family:var(--font); font-size:11.5px; font-weight:500;
+  background:var(--accent-lt); border:1px solid var(--accent); color:var(--accent);
+  border-radius:5px; padding:4px 13px; cursor:pointer; transition:all 0.12s;
+}
+.btn-resample:hover { background:var(--accent); color:#fff; }
+
+.sub-label { font-size:9.5px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+.sub-label .nc { text-transform: none; letter-spacing: 0; }
+
+#strip-canvas {
+  width:100%; height:52px; display:block;
+  border:1px solid var(--border); border-radius:5px;
+  background:#f8f9fd; margin-bottom:15px;
+}
+.chart-note { font-size:11.5px; color:var(--muted); margin-top:8px; line-height:1.6; font-style:italic; }
+
+/* ── Footer ──────────────────────────────────────────────── */
+.footer { text-align:center; font-size:11px; color:var(--muted); margin-top:16px; padding-top:12px; border-top:1px solid var(--border); }
+.footer a { color:var(--accent); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">Beta(α, β) &nbsp;·&nbsp; Distribution Explorer</div>
+    <div class="header-sub">
+      Draw N points from a Beta distribution and examine how their structure shapes the gaps between them
+    </div>
+  </div>
+
+  <!-- CARD 1: DISTRIBUTION INFO + CONTROLS -->
+  <div class="card">
+    <div class="sec-label">Beta Distribution</div>
+    <div class="info-grid">
+
+      <!-- Left: description + stats -->
+      <div>
+        <div class="beta-desc">
+          <strong>Beta(α, β)</strong> is a flexible distribution over [0,&thinsp;1]
+          that models uncertainty about an unknown probability — for example,
+          the bias <em>p</em> of a coin.
+          <div class="coin-interp">
+            <div class="coin-row">
+              <span class="coin-icon">🪙</span>
+              <span class="coin-text">
+                <strong>Coin interpretation.</strong>
+                Alpha and beta are <em>pseudo-counts</em> — they encode
+                a prior belief plus observed data. The uniform prior on
+                [0,&thinsp;1] is equivalent to assuming you already saw
+                <strong>1 head and 1 tail</strong> before collecting any data,
+                giving the starting point Beta(1,&thinsp;1).
+                Additional observations accumulate:
+              </span>
+            </div>
+            <div class="coin-counts">
+              <div class="coin-count-row">
+                <span class="coin-label">α =</span>
+                <span class="coin-eq">1 (prior) + </span>
+                <span class="coin-dyn hi" id="lbl-succ">0 observed heads</span>
+              </div>
+              <div class="coin-count-row">
+                <span class="coin-label">β =</span>
+                <span class="coin-eq">1 (prior) + </span>
+                <span class="coin-dyn hi" id="lbl-fail">0 observed tails</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-key">E[X]</div>
+            <div class="stat-num" id="st-mean">0.5000</div>
+            <div class="stat-sub">α / (α + β)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-key">Var[X]</div>
+            <div class="stat-num" id="st-var">0.0833</div>
+            <div class="stat-sub">αβ / [(α+β)²(α+β+1)]</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-key">Differential Entropy h (bits)</div>
+            <div class="stat-num" id="st-H">0.000</div>
+            <div class="stat-sub">−∫ f(x) log₂ f(x) dx &nbsp;·&nbsp; can be &lt; 0</div>
+            <div class="stat-tip">extra bits to describe outcomes vs. U(0,&thinsp;1); negative means more concentrated</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-key">Continuous Perplexity</div>
+            <div class="stat-num" id="st-perp">1.000</div>
+            <div class="stat-sub">exp(h)</div>
+            <div class="stat-tip">effective width of a uniform interval with the same information content</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: sliders -->
+      <div class="sliders-wrap">
+        <div>
+          <div class="sl-head"><span class="sl-name">α &nbsp;(alpha)</span><span class="sl-val" id="disp-a">1.0</span></div>
+          <input type="range" id="sl-a" min="0.1" max="50" step="0.1" value="1">
+          <div class="sl-bounds"><span>0.1 (not 0: degenerate)</span><span>50</span></div>
+        </div>
+        <div>
+          <div class="sl-head"><span class="sl-name">β &nbsp;(beta)</span><span class="sl-val" id="disp-b">1.0</span></div>
+          <input type="range" id="sl-b" min="0.1" max="50" step="0.1" value="1">
+          <div class="sl-bounds"><span>0.1 (not 0: degenerate)</span><span>50</span></div>
+        </div>
+        <div>
+          <div class="sl-head"><span class="sl-name">N &nbsp;(points)</span><span class="sl-val" id="disp-n">500</span></div>
+          <input type="range" id="sl-n" min="100" max="2000" step="50" value="500">
+          <div class="sl-bounds"><span>100</span><span>2000</span></div>
+        </div>
+        <div>
+          <div class="presets-label">Quick shapes</div>
+          <div class="presets">
+            <button class="preset active" data-a="1"   data-b="1">Uniform</button>
+            <button class="preset"        data-a="0.5" data-b="0.5">U-shape</button>
+            <button class="preset"        data-a="4"   data-b="4">Mound</button>
+            <button class="preset"        data-a="6"   data-b="2">Near 1</button>
+            <button class="preset"        data-a="2"   data-b="6">Near 0</button>
+            <button class="preset"        data-a="0.5" data-b="3">J-shape</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 2: SAMPLE DISPLAY -->
+  <div class="card">
+    <div class="sec-label">Sample</div>
+    <div class="resample-row">
+      <button class="btn-resample" id="btn-resample">↺ &nbsp;Resample</button>
+    </div>
+    <div class="sub-label" id="lbl-strip">N points drawn from Beta(α, β) on [0, 1]</div>
+    <canvas id="strip-canvas"></canvas>
+    <div class="sub-label" id="lbl-sample-hist">Sample histogram &nbsp;·&nbsp; Beta(α, β) PDF</div>
+    <canvas id="chart-sample" height="180"></canvas>
+  </div>
+
+  <!-- CARD 3: SPACINGS -->
+  <div class="card">
+    <div class="sec-label">Sample Spacings</div>
+    <div class="sub-label" id="lbl-spacing-hist">Histogram of N+1 gaps between sorted points (including endpoints 0 and 1)</div>
+    <canvas id="chart-spacing" height="200"></canvas>
+    <div class="chart-note" id="spacing-note"></div>
+  </div>
+
+  <div class="footer">
+    © 2026 Theodore P. Pavlic &nbsp;·&nbsp; <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  Math utilities
+// ═══════════════════════════════════════════════════════
+
+function lgamma(z) {
+  // Lanczos approximation, g=7
+  const c = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - lgamma(1 - z);
+  z -= 1;
+  let x = c[0];
+  for (let i = 1; i <= 8; i++) x += c[i] / (z + i);
+  const t = z + 7.5;
+  return 0.5*Math.log(2*Math.PI) + (z+0.5)*Math.log(t) - t + Math.log(x);
+}
+
+function digamma(x) {
+  if (x <= 0) return NaN;
+  let r = 0;
+  // shift x >= 8 via recurrence ψ(x) = ψ(x+1) - 1/x
+  while (x < 8) { r -= 1/x; x += 1; }
+  // asymptotic series
+  const x2 = x*x;
+  r += Math.log(x) - 0.5/x - (1/12)/x2 + (1/120)/(x2*x2) - (1/252)/(x2*x2*x2);
+  return r;
+}
+
+function betaEntropy(a, b) {
+  return lgamma(a) + lgamma(b) - lgamma(a+b)
+       - (a-1)*digamma(a) - (b-1)*digamma(b) + (a+b-2)*digamma(a+b);
+}
+
+function betaPDF(x, a, b) {
+  if (x <= 0 || x >= 1) return 0;
+  if (a === 1 && b === 1) return 1;
+  return Math.exp((a-1)*Math.log(x) + (b-1)*Math.log(1-x)
+                  - lgamma(a) - lgamma(b) + lgamma(a+b));
+}
+
+// Polar Box-Muller for N(0,1)
+function randn() {
+  let u, v, s;
+  do { u = 2*Math.random()-1; v = 2*Math.random()-1; s = u*u+v*v; }
+  while (s >= 1 || s === 0);
+  return u * Math.sqrt(-2*Math.log(s)/s);
+}
+
+// Marsaglia-Tsang Gamma sampler (shape >= 1)
+function rgamma(shape) {
+  if (shape < 1) return rgamma(shape+1) * Math.pow(Math.random(), 1/shape);
+  const d = shape - 1/3, c = 1/Math.sqrt(9*d);
+  for (;;) {
+    let x, v;
+    do { x = randn(); v = 1 + c*x; } while (v <= 0);
+    v = v*v*v;
+    const u = Math.random();
+    if (u < 1 - 0.0331*(x*x)*(x*x)) return d*v;
+    if (Math.log(u) < 0.5*x*x + d*(1 - v + Math.log(v))) return d*v;
+  }
+}
+
+function rbeta(a, b) {
+  const ga = rgamma(a), gb = rgamma(b);
+  return ga / (ga + gb);
+}
+
+// ═══════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════
+
+let A = 1, B = 1, N = 500;
+let pts = [];           // sorted sample
+let cSample = null, cSpacing = null;
+
+const NBINS_SAMPLE  = 40;
+const NBINS_SPACING = 40;
+
+// ═══════════════════════════════════════════════════════
+//  Sampling
+// ═══════════════════════════════════════════════════════
+
+function doSample() {
+  pts = [];
+  for (let i = 0; i < N; i++) pts.push(rbeta(A, B));
+  pts.sort((a, b) => a - b);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Slider fill-gradient helper
+// ═══════════════════════════════════════════════════════
+
+function fillSlider(el) {
+  const pct = ((+el.value - +el.min) / (+el.max - +el.min) * 100).toFixed(1) + '%';
+  el.style.setProperty('--fill', pct);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Summary statistics panel
+// ═══════════════════════════════════════════════════════
+
+function updateStats() {
+  const mean  = A / (A + B);
+  const vari  = A*B / ((A+B)*(A+B)*(A+B+1));
+  const H_nat = betaEntropy(A, B);
+  const H_bit = H_nat / Math.LN2;          // convert nats → bits
+  const perp  = Math.exp(H_nat);           // perplexity = exp(H in nats) regardless of base
+
+  document.getElementById('st-mean').textContent = mean.toFixed(4);
+  document.getElementById('st-var').textContent  = vari.toFixed(4);
+  document.getElementById('st-H').textContent    = H_bit.toFixed(3);
+  document.getElementById('st-perp').textContent = perp.toFixed(3);
+
+  const fmt = v => (v % 1 === 0 ? v.toFixed(0) : v.toFixed(2));
+  document.getElementById('lbl-succ').textContent = `${fmt(A-1)} observed heads`;
+  document.getElementById('lbl-fail').textContent = `${fmt(B-1)} observed tails`;
+
+  // Sync preset highlight: only light up when &alpha;,&beta; match exactly
+  document.querySelectorAll('.preset').forEach(btn => {
+    const pa = parseFloat(btn.dataset.a), pb = parseFloat(btn.dataset.b);
+    btn.classList.toggle('active', Math.abs(pa - A) < 1e-9 && Math.abs(pb - B) < 1e-9);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  Strip / rug-plot
+// ═══════════════════════════════════════════════════════
+
+function drawStrip() {
+  document.getElementById('lbl-strip').innerHTML =
+    `${N} points drawn from <span class="nc">Beta(&alpha;&thinsp;=&thinsp;${A.toFixed(1)}, &beta;&thinsp;=&thinsp;${B.toFixed(1)})</span> on [0,&thinsp;1]`;
+  const canvas = document.getElementById('strip-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 760;
+  const H = canvas.clientHeight || 52;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#f8f9fd';
+  ctx.fillRect(0, 0, W, H);
+
+  const mid = H / 2;
+  const PAD = 8;
+  const span = W - 2*PAD;
+
+  // axis line
+  ctx.strokeStyle = '#c6cde0';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, mid); ctx.lineTo(W-PAD, mid); ctx.stroke();
+
+  // reference ticks
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    const x = PAD + t*span;
+    ctx.strokeStyle = '#a8b0c8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, mid-5); ctx.lineTo(x, mid+5); ctx.stroke();
+  }
+
+  // rug marks (keep them crisp even at high N)
+  ctx.strokeStyle = 'rgba(92,107,192,0.32)';
+  ctx.lineWidth = 1.2;
+  for (const p of pts) {
+    const x = PAD + p * span;
+    ctx.beginPath(); ctx.moveTo(x, mid-10); ctx.lineTo(x, mid+10); ctx.stroke();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  Density histogram helper
+// ═══════════════════════════════════════════════════════
+
+function densityHist(data, lo, hi, n) {
+  const bw = (hi - lo) / n;
+  const c = new Array(n).fill(0);
+  for (const x of data) {
+    const b = Math.min(Math.floor((x - lo) / bw), n - 1);
+    if (b >= 0) c[b]++;
+  }
+  return c.map(v => v / (data.length * bw));
+}
+
+// ═══════════════════════════════════════════════════════
+//  Shared Chart.js options factory
+// ═══════════════════════════════════════════════════════
+
+function mkOpts(xLabel, yLabel) {
+  const tickCfg = { font: { family: 'IBM Plex Mono', size: 10 }, color: '#6a748a' };
+  return {
+    responsive: true, maintainAspectRatio: true,
+    animation: { duration: 200 },
+    plugins: {
+      legend: { labels: { font: { family: 'IBM Plex Sans', size: 11 }, color: '#6a748a', boxWidth: 12, boxHeight: 8, padding: 12 } },
+      tooltip: { enabled: false }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: xLabel, font: { family: 'IBM Plex Sans', size: 11 }, color: '#6a748a' },
+        ticks: { ...tickCfg, maxTicksLimit: 7 },
+        grid: { color: '#eaecf5' }
+      },
+      y: {
+        title: { display: true, text: yLabel, font: { family: 'IBM Plex Sans', size: 11 }, color: '#6a748a' },
+        ticks: tickCfg,
+        grid: { color: '#eaecf5' },
+        beginAtZero: true
+      }
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+//  Sample histogram + Beta PDF
+// ═══════════════════════════════════════════════════════
+
+function drawSampleChart() {
+  document.getElementById('lbl-sample-hist').innerHTML =
+    `Sample histogram &nbsp;&middot;&nbsp; <span class="nc">Beta(&alpha;&thinsp;=&thinsp;${A.toFixed(1)}, &beta;&thinsp;=&thinsp;${B.toFixed(1)})</span> PDF`;
+  const n  = NBINS_SAMPLE;
+  const bw = 1 / n;
+  const dens    = densityHist(pts, 0, 1, n);
+  const pdfVals = Array.from({length: n}, (_, i) => betaPDF((i + 0.5)*bw, A, B));
+  const labels  = Array.from({length: n}, (_, i) => ((i + 0.5)*bw).toFixed(2));
+
+  if (cSample) { cSample.destroy(); cSample = null; }
+  cSample = new Chart(document.getElementById('chart-sample'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar', label: `Sample density  (N = ${N})`, data: dens,
+          backgroundColor: 'rgba(92,107,192,0.46)',
+          borderColor:     'rgba(92,107,192,0.78)',
+          borderWidth: 1, barPercentage: 1.0, categoryPercentage: 1.0
+        },
+        {
+          type: 'line', label: `Beta(\u03b1 = ${A.toFixed(1)}, \u03b2 = ${B.toFixed(1)}) PDF`, data: pdfVals,
+          borderColor: 'rgba(194,64,122,0.90)', borderWidth: 2.5,
+          pointRadius: 0, fill: false, tension: 0.35
+        }
+      ]
+    },
+    options: mkOpts('Value  x', 'Density')
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  Spacings histogram  (N+1 inter-point gaps)
+// ═══════════════════════════════════════════════════════
+
+function drawSpacingChart() {
+  document.getElementById('lbl-spacing-hist').innerHTML =
+    `Histogram of N+1 = ${N+1} gaps between sorted points (including endpoints 0 and 1) for <span class="nc">Beta(&alpha;&thinsp;=&thinsp;${A.toFixed(1)}, &beta;&thinsp;=&thinsp;${B.toFixed(1)})</span>`;
+
+  // compute spacings from sorted pts, including 0→first and last→1
+  const sp = [];
+  sp.push(pts[0] - 0);
+  for (let i = 1; i < pts.length; i++) sp.push(pts[i] - pts[i-1]);
+  sp.push(1 - pts[pts.length - 1]);
+
+  const mu   = 1 / (N + 1);           // expected spacing (always 1/(N+1))
+  const rate = N + 1;                  // Exp rate when underlying is Uniform
+  const maxSp = sp.reduce((a, b) => Math.max(a, b));
+  const hiX  = Math.min(maxSp * 1.08, mu * 12);
+  const n    = NBINS_SPACING;
+  const bw   = hiX / n;
+
+  const c = new Array(n).fill(0);
+  for (const s of sp) {
+    const b = Math.floor(s / bw);
+    if (b >= 0 && b < n) c[b]++;
+  }
+  const dens   = c.map(v => v / (sp.length * bw));
+  const expPDF = Array.from({length: n}, (_, i) => rate * Math.exp(-rate * (i+0.5)*bw));
+  const labels  = Array.from({length: n}, (_, i) => ((i+0.5)*bw).toFixed(4));
+
+  if (cSpacing) { cSpacing.destroy(); cSpacing = null; }
+  cSpacing = new Chart(document.getElementById('chart-spacing'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar', label: `Spacing density  (N+1 = ${N+1} gaps)`, data: dens,
+          backgroundColor: 'rgba(50,165,160,0.46)',
+          borderColor:     'rgba(36,155,148,0.80)',
+          borderWidth: 1, barPercentage: 1.0, categoryPercentage: 1.0
+        },
+        {
+          type: 'line', label: `Exp(μ = 1/(N+1) = ${mu.toFixed(4)}) reference`, data: expPDF,
+          borderColor: 'rgba(30,148,140,0.90)', borderWidth: 2,
+          borderDash: [5, 3], pointRadius: 0, fill: false, tension: 0.2
+        }
+      ]
+    },
+    options: mkOpts('Spacing size', 'Density')
+  });
+
+  // Contextual note
+  const nearUnif = Math.abs(A - 1) < 0.16 && Math.abs(B - 1) < 0.16;
+  document.getElementById('spacing-note').innerHTML = nearUnif
+    ? `<strong>&alpha; ≈ &beta; ≈ 1 (near-Uniform):</strong> The N+1 = ${N+1} spacings follow approximately Exp(μ = 1/(N+1) = ${mu.toFixed(4)}) for large N. The dashed teal curve shows this theoretical density. <strong>Uniformly distributed points produce exponentially distributed gaps.</strong>`
+    : `The dashed teal curve shows Exp(μ = 1/(N+1) = ${mu.toFixed(4)}) — what the spacings would look like if the points were drawn from a Uniform distribution. With &alpha; ≠ 1 or &beta; ≠ 1, the Beta distribution concentrates points non-uniformly, causing the spacing distribution to deviate from exponential. <em>Note: when &alpha; = &beta; = 1, the Beta reduces to a Uniform distribution and the spacings become approximately exponential.</em>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  Master update routines
+// ═══════════════════════════════════════════════════════
+
+function fullUpdate() {
+  doSample();
+  updateStats();
+  drawStrip();
+  drawSampleChart();
+  drawSpacingChart();
+}
+
+function redrawCharts() {
+  updateStats();
+  drawStrip();
+  drawSampleChart();
+  drawSpacingChart();
+}
+
+// ═══════════════════════════════════════════════════════
+//  Event wiring
+// ═══════════════════════════════════════════════════════
+
+const slA = document.getElementById('sl-a');
+const slB = document.getElementById('sl-b');
+const slN = document.getElementById('sl-n');
+
+slA.addEventListener('input', () => {
+  A = +slA.value;
+  document.getElementById('disp-a').textContent = A.toFixed(1);
+  fillSlider(slA);
+  fullUpdate();
+});
+slB.addEventListener('input', () => {
+  B = +slB.value;
+  document.getElementById('disp-b').textContent = B.toFixed(1);
+  fillSlider(slB);
+  fullUpdate();
+});
+slN.addEventListener('input', () => {
+  N = +slN.value;
+  document.getElementById('disp-n').textContent = N;
+  fillSlider(slN);
+  fullUpdate();
+});
+
+document.getElementById('btn-resample').addEventListener('click', fullUpdate);
+
+document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', function () {
+    A = +this.dataset.a;
+    B = +this.dataset.b;
+    slA.value = A;  slB.value = B;
+    document.getElementById('disp-a').textContent = A.toFixed(1);
+    document.getElementById('disp-b').textContent = B.toFixed(1);
+    fillSlider(slA); fillSlider(slB);
+    fullUpdate();
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+//  Boot
+// ═══════════════════════════════════════════════════════
+
+fillSlider(slA); fillSlider(slB); fillSlider(slN);
+window.addEventListener('load', fullUpdate);
+</script>
+</body>
+</html>
