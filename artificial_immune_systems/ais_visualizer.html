@@ -1,0 +1,2774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artificial Immune Systems — Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:         #F1EDE3;
+  --surface:    #FAF7F2;
+  --surface2:   #F5F1E8;
+  --border:     #D3C9B5;
+  --border2:    #C4B9A2;
+  --g900:       #192E08;
+  --g700:       #1E4409;
+  --g500:       #2D6018;
+  --g300:       #4E8C30;
+  --gfill:      rgba(46,96,24,0.09);
+  --gfill2:     rgba(46,96,24,0.18);
+  --orange:     #C4622D;
+  --orange-lt:  rgba(196,98,45,0.10);
+  --red:        #B82828;
+  --red-lt:     rgba(184,40,40,0.09);
+  --blue:       #2858A4;
+  --blue-lt:    rgba(40,88,164,0.09);
+  --blue-med:   rgba(40,88,164,0.20);
+  --text:       #1C1712;
+  --muted:      #6B5F4C;
+  --soft:       #9A8D78;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  line-height:1.5;
+  padding:18px 20px 28px;
+  max-width:940px;
+  margin:0 auto;
+}
+
+/* ── Header ── */
+.hdr{margin-bottom:14px;}
+.hdr h1{
+  font-family:'Outfit',sans-serif;
+  font-size:19px;font-weight:700;
+  color:var(--g900);letter-spacing:-0.01em;
+}
+
+/* ── Tabs ── */
+.tab-bar{
+  display:flex;gap:2px;
+  border-bottom:2px solid var(--border);
+  margin-bottom:14px;
+}
+.tab{
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:0.04em;text-transform:uppercase;
+  padding:7px 18px;border:none;
+  background:none;color:var(--muted);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  margin-bottom:-2px;
+  border-radius:4px 4px 0 0;
+  transition:color .15s,background .15s;
+}
+.tab.active{color:var(--g700);background:var(--surface);border-color:var(--g700);}
+.tab:not(.active):hover{color:var(--g700);}
+
+/* ── Domain bar ── */
+.domain-bar{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:9px 14px;margin-bottom:12px;
+}
+.domain-bar label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+}
+.domain-bar select{
+  flex:1;min-width:0;font-family:'DM Sans',sans-serif;font-size:13px;
+  padding:4px 8px;border:1px solid var(--border);
+  border-radius:5px;background:var(--bg);color:var(--text);
+  cursor:pointer;outline:none;
+}
+.domain-bar select:focus{border-color:var(--g500);}
+
+/* ── Info box ── */
+.info-box{
+  background:var(--surface);border:1px solid var(--border);
+  border-left:3px solid var(--g500);
+  border-radius:0 8px 8px 0;
+  padding:10px 14px;font-size:13px;
+  color:var(--muted);line-height:1.65;
+  margin-bottom:14px;
+}
+.info-box strong{color:var(--text);}
+.info-box em{font-style:italic;}
+
+/* ── Main grid ── */
+.main-grid{
+  display:grid;
+  grid-template-columns:1fr 256px;
+  gap:12px;
+  margin-bottom:12px;
+  align-items:start;
+}
+
+/* ── Canvas card ── */
+.canvas-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.canvas-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:9px 13px 8px;border-bottom:1px solid var(--border);
+}
+.canvas-header span{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--g500);}
+.mode-tag{
+  font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;padding:2px 9px;
+  border-radius:10px;background:var(--gfill);color:var(--g700);
+  transition:background .3s,color .3s;
+}
+.mode-tag.test{background:var(--orange-lt);color:var(--orange);}
+.mode-tag.paused{background:var(--surface2);color:var(--muted);}
+
+.canvas-wrap{position:relative;width:100%;aspect-ratio:1;}
+.canvas-wrap canvas{display:block;width:100%;height:100%;cursor:crosshair;}
+
+/* Axis labels */
+.ax-label-x{
+  position:absolute;bottom:3px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:var(--soft);font-family:'DM Sans',sans-serif;
+  pointer-events:none;white-space:nowrap;
+}
+.ax-label-y{
+  position:absolute;top:50%;left:2px;
+  writing-mode:vertical-lr;
+  transform:translateY(-50%) rotate(180deg);
+  font-size:10px;color:var(--soft);font-family:'DM Sans',sans-serif;
+  pointer-events:none;white-space:nowrap;
+}
+
+.canvas-legend{
+  display:flex;flex-wrap:wrap;gap:12px;
+  padding:7px 13px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);align-items:center;
+}
+.leg{display:flex;align-items:center;gap:5px;}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.leg-ring{width:12px;height:12px;border-radius:50%;border:1.5px solid;flex-shrink:0;background:transparent;}
+
+/* ── Controls panel ── */
+.ctrl-panel{display:flex;flex-direction:column;gap:10px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 13px;}
+.card-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+
+.param-row{margin-bottom:9px;}
+.param-row:last-child{margin-bottom:0;}
+.param-hdr{display:flex;justify-content:space-between;margin-bottom:3px;}
+.param-name{font-size:12px;color:var(--muted);}
+.param-name i{font-style:italic;font-family:Georgia,serif;}
+.param-val{font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;color:var(--orange);}
+
+input[type=range]{
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:4px;border-radius:2px;
+  background:var(--border);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--g700);cursor:pointer;border:2px solid var(--surface);
+  box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:var(--g700);
+  cursor:pointer;border:2px solid var(--surface);
+}
+
+.btn-row{display:flex;gap:6px;margin-bottom:0;}
+.btn{
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;
+  padding:7px 0;border-radius:6px;border:1.5px solid transparent;
+  cursor:pointer;transition:all .15s;letter-spacing:.02em;
+  flex:1;text-align:center;
+}
+.btn-primary{background:var(--g700);color:#fff;border-color:var(--g700);}
+.btn-primary:hover{background:var(--g500);}
+.btn-outline{background:transparent;color:var(--g700);border-color:var(--g700);}
+.btn-outline:hover{background:var(--gfill);}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border);}
+.btn-ghost:hover{border-color:var(--g500);color:var(--g500);}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.toggle-row:last-child{margin-bottom:0;}
+.toggle-label{font-size:12px;color:var(--muted);}
+.tog{position:relative;width:30px;height:16px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.tog-sl{position:absolute;inset:0;background:var(--border);border-radius:8px;cursor:pointer;transition:.2s;}
+.tog-sl::before{
+  content:'';position:absolute;width:12px;height:12px;left:2px;top:2px;
+  background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2);
+}
+.tog input:checked + .tog-sl{background:var(--g700);}
+.tog input:checked + .tog-sl::before{transform:translateX(14px);}
+
+.speed-row{display:flex;gap:5px;margin-top:4px;}
+.speed-btn{
+  flex:1;font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;
+  padding:4px 0;border:1.5px solid var(--border);border-radius:5px;
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.speed-btn.active{background:var(--g700);color:#fff;border-color:var(--g700);}
+.speed-btn:not(.active):hover{border-color:var(--g500);color:var(--g500);}
+
+/* ── Event panel ── */
+.event-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:11px 14px;
+  margin-bottom:12px;min-height:85px;transition:border-color .3s;
+}
+/* NSA flashes */
+.event-card.reject-flash{border-color:rgba(130,75,190,0.7);}
+.event-card.accept-flash{border-color:var(--g500);}
+/* CLONALG flashes */
+.event-card.gen-flash{border-color:var(--g500);}
+.event-card.rep-flash{border-color:rgba(130,75,190,0.7);}
+.event-card.test-flash{border-color:var(--orange);}
+
+.event-title{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-bottom:5px;}
+.event-body{font-size:13px;color:var(--muted);line-height:1.6;}
+.event-body strong{color:var(--text);}
+.event-body .acc{color:var(--g500);font-weight:600;}
+.event-body .rej{color:var(--red);font-weight:600;}
+.event-body .rep{color:rgba(123,79,160,0.9);font-weight:600;}
+.event-body .cls-anom{color:var(--red);font-weight:700;}
+.event-body .cls-self{color:var(--blue);font-weight:700;}
+.event-body .cls-gap{color:#7B4FA0;font-weight:700;}
+.event-body .cls-match{color:var(--orange);font-weight:700;}
+.event-body .cls-none{color:var(--blue);font-weight:700;}
+
+/* ── Stats bar ── */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 11px;text-align:center;}
+.stat-val{font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;color:var(--g900);line-height:1.1;}
+.stat-val.orange{color:var(--orange);}
+.stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--soft);margin-top:3px;}
+
+/* ── Pseudocode card ── */
+.pseudo-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:14px 16px;margin-bottom:12px;
+  overflow-x:auto;position:relative;
+}
+.pseudo-card-scroll-hint{
+  display:none;position:sticky;top:0;left:0;right:0;z-index:1;
+  background:linear-gradient(to top,transparent,var(--surface) 70%);
+  text-align:center;padding:4px 0 10px;
+  font-size:10px;font-weight:600;letter-spacing:.06em;
+  color:var(--muted);text-transform:uppercase;
+  pointer-events:none;margin:-14px -16px 8px;
+}
+.pseudo-card.is-overflowing .pseudo-card-scroll-hint{display:block;}
+.pseudo-card-title{
+  font-size:10px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:12px;
+}
+.pseudo-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pseudo-block-hdr{
+  font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--g500);
+  border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:8px;
+}
+.pseudo-code{
+  font-family:'Courier New',Courier,monospace;font-size:11.5px;
+  line-height:1.7;color:var(--text);white-space:pre;overflow-x:auto;
+}
+.pseudo-code .kw{color:var(--g700);font-weight:700;}
+.pseudo-code .cm{color:var(--soft);font-style:italic;}
+.pseudo-notes{margin-top:10px;border-top:1px solid var(--border);padding-top:8px;}
+.pseudo-notes-hdr{
+  font-size:10px;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:6px;
+}
+.pseudo-notes-hdr.mixed-case{text-transform:none;letter-spacing:.02em;font-size:11px;}
+.pseudo-note-row{
+  position:relative;
+  padding-left:14px;
+  font-size:11.5px;color:var(--muted);line-height:1.6;margin-bottom:5px;
+}
+.pseudo-note-row::before{
+  content:'▸';color:var(--g300);font-size:10px;
+  position:absolute;left:0;top:2px;
+}
+.pseudo-note-row strong{color:var(--text);}
+.pseudo-note-row em{color:var(--orange);font-style:italic;}
+@media(max-width:680px){.pseudo-cols{grid-template-columns:1fr;}}
+
+/* ── Footnote & copyright ── */
+.footnote{font-size:11px;color:var(--soft);border-top:1px solid var(--border);padding-top:8px;margin-bottom:4px;line-height:1.55;}
+.footnote strong{color:var(--muted);}
+.copyright{font-size:10px;color:var(--soft);text-align:right;}
+
+@media(max-width:680px){
+  .main-grid{grid-template-columns:1fr;}
+  .stats-bar{grid-template-columns:repeat(2,1fr);}
+  .pseudo-cols{grid-template-columns:1fr;}
+  .pseudo-two-col{grid-template-columns:1fr !important;}
+}
+@media(max-width:480px){
+  .domain-bar{flex-direction:column;align-items:stretch;gap:6px;}
+  .domain-bar select{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>Artificial Immune Systems</h1>
+</div>
+
+<div class="tab-bar">
+  <button class="tab active" id="tabNSA">Negative Selection (NSA)</button>
+  <button class="tab" id="tabCLONALG">CLONALG</button>
+</div>
+
+<!-- ================================================================
+     NSA PANEL
+================================================================ -->
+<div id="panelNSA">
+
+  <div class="domain-bar">
+    <label for="domSel">Application Domain</label>
+    <select id="domSel">
+      <option value="network">Network intrusion detection</option>
+      <option value="acoustic">Acoustic anomaly detection</option>
+      <option value="structural">Structural health monitoring</option>
+      <option value="generic">Generic / abstract features</option>
+    </select>
+  </div>
+
+  <div class="info-box" id="infoBox"></div>
+
+  <div class="main-grid">
+
+    <div class="canvas-card">
+      <div class="canvas-header">
+        <span>Feature Space · 2D Projection</span>
+        <span class="mode-tag" id="modeTag">READY</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="cvs" width="500" height="500"></canvas>
+        <div class="ax-label-x" id="axX">feature dimension 1</div>
+        <div class="ax-label-y" id="axY">feature dimension 2</div>
+      </div>
+      <div class="canvas-legend">
+        <span class="leg">
+          <span class="leg-dot" style="background:#2858A4;border:1.5px solid #fff;"></span>
+          self data
+        </span>
+        <span class="leg">
+          <span class="leg-ring" style="border-color:rgba(40,88,164,.4);background:rgba(40,88,164,.07);border-style:solid;"></span>
+          self-tolerance zone
+        </span>
+        <span class="leg">
+          <span class="leg-ring" style="border-color:rgba(196,98,45,.7);border-style:dashed;"></span>
+          candidate (evaluating)
+        </span>
+        <span class="leg">
+          <span class="leg-ring" style="border-color:rgba(130,75,190,.7);border-style:dashed;background:rgba(130,75,190,.07);"></span>
+          rejected (overlaps self)
+        </span>
+        <span class="leg">
+          <span class="leg-ring" style="border-color:rgba(184,40,40,.6);background:rgba(184,40,40,.09);"></span>
+          mature detector
+        </span>
+        <span class="leg">
+          <span style="display:inline-block;width:12px;height:12px;border-radius:50%;
+                    background:#7B4FA0;position:relative;flex-shrink:0;vertical-align:middle;">
+          <svg viewBox="0 0 12 12" width="12" height="12" style="position:absolute;top:0;left:0;">
+            <line x1="3.5" y1="3.5" x2="8.5" y2="8.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+            <line x1="8.5" y1="3.5" x2="3.5" y2="8.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </span>
+          test point (color = zone)
+        </span>
+      </div>
+    </div>
+
+    <div class="ctrl-panel">
+
+      <div class="card">
+        <div class="card-title">Parameters</div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">self points</span>
+            <span class="param-val" id="vNSelf">8</span>
+          </div>
+          <input type="range" id="sNSelf" min="3" max="20" value="8">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">self-tolerance radius <i>r</i><sub>s</sub></span>
+            <span class="param-val" id="vRSelf">0.070</span>
+          </div>
+          <input type="range" id="sRSelf" min="2" max="14" value="7">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">detector radius min <i>r</i><sub>min</sub></span>
+            <span class="param-val" id="vRMin">0.040</span>
+          </div>
+          <input type="range" id="sRMin" min="1" max="45" value="4">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">detector radius max <i>r</i><sub>max</sub></span>
+            <span class="param-val" id="vRMax">0.120</span>
+          </div>
+          <input type="range" id="sRMax" min="1" max="45" value="12">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">max live detectors (drag to &#x221E;)</span>
+            <span class="param-val" id="vMaxDet">25</span>
+          </div>
+          <input type="range" id="sMaxDet" min="5" max="65" value="25">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">lifespan (steps &mdash; drag to &#x221E;)</span>
+            <span class="param-val" id="vLife">250</span>
+          </div>
+          <input type="range" id="sLife" min="30" max="610" step="10" value="250">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Speed</div>
+        <div class="speed-row" id="nsaSpeedRow">
+          <button class="speed-btn" data-spd="0.5">½×</button>
+          <button class="speed-btn active" data-spd="2">1×</button>
+          <button class="speed-btn" data-spd="5">2×</button>
+          <button class="speed-btn" data-spd="10">5×</button>
+          <button class="speed-btn" data-spd="25">10×</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Controls</div>
+        <div class="btn-row" style="margin-bottom:6px;">
+          <button class="btn btn-primary" id="btnRun">▶ Run</button>
+          <button class="btn btn-outline" id="btnStep">Step</button>
+          <button class="btn btn-ghost" id="btnReset">↺ Reset</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btnTest" style="font-size:11px;">+ Add Test Point</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Display</div>
+        <div class="toggle-row">
+          <span class="toggle-label">self-tolerance halos</span>
+          <label class="tog"><input type="checkbox" id="togHalos" checked><span class="tog-sl"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">detector age fade</span>
+          <label class="tog"><input type="checkbox" id="togFade" checked><span class="tog-sl"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">axis labels</span>
+          <label class="tog"><input type="checkbox" id="togAxes" checked><span class="tog-sl"></span></label>
+        </div>
+      </div>
+
+    </div><!-- /ctrl-panel -->
+  </div><!-- /main-grid -->
+
+  <div class="event-card" id="eventCard">
+    <div class="event-title">Status <span id="nsaDragHint" style="display:none;font-size:9px;font-weight:400;letter-spacing:.02em;color:var(--soft);text-transform:none;margin-left:3px;">(drag the test point around the space)</span></div>
+    <div class="event-body" id="eventBody">
+      Press <strong>▶ Run</strong> to begin generating candidate detectors, or use <strong>Step</strong> to advance one at a time. Drag a <strong>test point</strong> onto the canvas to classify a new observation.
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-val" id="sMature">0</div><div class="stat-lbl">Live Detectors</div></div>
+    <div class="stat"><div class="stat-val orange" id="sCensored">0</div><div class="stat-lbl">Censored</div></div>
+    <div class="stat"><div class="stat-val" id="sTotal">0</div><div class="stat-lbl">Generated</div></div>
+    <div class="stat"><div class="stat-val" id="sCoverage">—</div><div class="stat-lbl">Non-Self Coverage</div></div>
+  </div>
+
+  <!-- NSA Detector Card -->
+  <div class="pseudo-card" style="margin-bottom:10px;">
+    <div class="pseudo-card-title">Detector Representation &amp; Censoring Criterion</div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-bottom:14px;">
+      Like in the CLONALG demo, anomaly classifiers are modelled here as
+      <strong>abstract circular detectors</strong> parameterised by a center
+      <em>b</em> and a recognition radius <em>r</em><sub>B</sub>. However, NSA does not evolve
+      these parameters: candidates are <strong>generated randomly</strong> and accepted or
+      rejected by a binary censoring test. There is no affinity function, no selection pressure,
+      and no hypermutation &mdash; only the constraint that a mature detector must not overlap
+      any self-tolerance zone.
+    </p>
+
+    <div class="pseudo-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+      <!-- Left: censoring geometry -->
+      <div>
+        <div class="pseudo-block-hdr" style="margin-bottom:8px;">Censoring geometry</div>
+        <svg viewBox="0 0 200 190" xmlns="http://www.w3.org/2000/svg"
+             style="display:block;width:100%;height:auto;">
+          <rect width="200" height="190" fill="#FAF7F2" rx="5"/>
+          <g stroke="#D3C9B5" stroke-width="0.5">
+            <line x1="0" y1="47" x2="200" y2="47"/><line x1="0" y1="95" x2="200" y2="95"/>
+            <line x1="0" y1="143" x2="200" y2="143"/>
+            <line x1="50" y1="0" x2="50" y2="190"/><line x1="100" y1="0" x2="100" y2="190"/>
+            <line x1="150" y1="0" x2="150" y2="190"/>
+          </g>
+          <!-- Self point with tolerance halo -->
+          <circle cx="80" cy="85" r="32" fill="rgba(40,88,164,0.07)"
+                  stroke="rgba(40,88,164,0.40)" stroke-width="1.5"/>
+          <circle cx="80" cy="85" r="5" fill="#2858A4"/>
+          <circle cx="80" cy="85" r="5" fill="none" stroke="#FAF7F2" stroke-width="1.5"/>
+          <!-- "self" above the dot -->
+          <text x="80" y="76" font-size="9" font-family="'DM Sans',sans-serif"
+                fill="#2858A4" text-anchor="middle">self</text>
+          <!-- r_s horizontal spoke + label at right end -->
+          <line x1="80" y1="85" x2="112" y2="85"
+                stroke="rgba(40,88,164,0.50)" stroke-width="1" stroke-dasharray="2,2"/>
+          <text x="113" y="82" font-size="9" font-family="Georgia,serif"
+                font-style="italic" fill="#2858A4">r</text>
+          <text x="120" y="86" font-size="7" font-family="Georgia,serif" fill="#2858A4">s</text>
+          <!-- Accepted candidate detector (no overlap) -->
+          <circle cx="148" cy="145" r="35" fill="rgba(184,40,40,0.07)"
+                  stroke="rgba(184,40,40,0.65)" stroke-width="1.5"/>
+          <circle cx="148" cy="145" r="3.5" fill="rgba(184,40,40,0.80)"/>
+          <!-- "accepted" inside circle, below center -->
+          <text x="148" y="168" font-size="9" font-family="'DM Sans',sans-serif"
+                fill="#B82828" text-anchor="middle">accepted</text>
+          <!-- r_B horizontal spoke to right edge + label -->
+          <line x1="148" y1="145" x2="183" y2="145"
+                stroke="rgba(184,40,40,0.45)" stroke-width="1" stroke-dasharray="2,2"/>
+          <text x="185" y="142" font-size="9" font-family="Georgia,serif"
+                font-style="italic" fill="#B82828">r</text>
+          <text x="192" y="146" font-size="7" font-family="Georgia,serif" fill="#B82828">B</text>
+          <!-- Rejected candidate (overlaps self halo) -->
+          <circle cx="95" cy="130" r="28" fill="rgba(130,75,190,0.06)"
+                  stroke="rgba(130,75,190,0.60)" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <circle cx="95" cy="130" r="3.5" fill="rgba(130,75,190,0.75)"/>
+          <!-- "rejected" shifted down-left, hanging outside circle is fine -->
+          <text x="72" y="160" font-size="9" font-family="'DM Sans',sans-serif"
+                fill="rgba(130,75,190,0.90)">rejected</text>
+          <!-- "overlap" in clear white space to the left of the overlap region -->
+          <text x="30" y="118" font-size="8" font-family="'DM Sans',sans-serif"
+                fill="rgba(130,75,190,0.80)" font-style="italic">overlap</text>
+        </svg>
+      </div>
+
+      <!-- Right: censoring criterion + comparison -->
+      <div>
+        <div class="pseudo-block-hdr" style="margin-bottom:8px;">Censoring criterion</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+                    padding:10px 14px;margin-bottom:12px;font-size:12px;line-height:1.8;">
+          <div style="font-family:Georgia,serif;color:var(--text);margin-bottom:4px;">
+            <strong style="font-family:'DM Sans',sans-serif;font-size:10.5px;color:var(--muted);
+                           text-transform:uppercase;letter-spacing:.04em;">accept</strong>
+            &nbsp;(b, r<sub>B</sub>) &nbsp;if&nbsp;
+            &forall;&thinsp;s &isin; S : dist(b, s) &ge; r<sub>s</sub> + r<sub>B</sub>
+          </div>
+          <div style="font-family:Georgia,serif;color:var(--text);">
+            <strong style="font-family:'DM Sans',sans-serif;font-size:10.5px;color:var(--muted);
+                           text-transform:uppercase;letter-spacing:.04em;">reject</strong>
+            &nbsp;(b, r<sub>B</sub>) &nbsp;if&nbsp;
+            &exist;&thinsp;s &isin; S : dist(b, s) &lt; r<sub>s</sub> + r<sub>B</sub>
+          </div>
+          <div style="margin-top:8px;font-size:10.5px;color:var(--soft);
+                      font-family:'DM Sans',sans-serif;border-top:1px solid var(--border);padding-top:6px;">
+            r<sub>s</sub> = self-tolerance radius (same for all self points in this demo) &nbsp;&middot;&nbsp;
+            r<sub>B</sub> drawn from [r<sub>min</sub>, r<sub>max</sub>] uniformly at random
+          </div>
+        </div>
+        <div class="pseudo-notes" style="margin-top:0;">
+          <div class="pseudo-notes-hdr mixed-case">Relationship to Evolutionary Strategies (ES without positive selection)</div>
+          <div class="pseudo-note-row"><strong>Mutation-only ES under negative selection</strong> &mdash; each new candidate is a random draw (mutation without a parent), and the censoring test is a binary selection step. Over time, especially with long detector lifetimes, the surviving population reflects the selection pressure exerted by the self-string distribution &mdash; large r<sub>B</sub> are penalised by their higher probability of hitting a self-tolerance zone; small and intermediate r<sub>B</sub> are shaped by their local context near self clusters.</div>
+          <div class="pseudo-note-row"><strong>Negative selection, not positive</strong> &mdash; unlike CLONALG, there is no fitness gradient pulling detectors toward a target. The population structure emerges entirely from what <em>survives</em> censoring, not from what is rewarded. This is analogous to purifying selection in population genetics &mdash; variation is generated blindly; the environment removes the unfit.</div>
+          <div class="pseudo-note-row"><strong>Long lifetimes &asymp; sessile clonal accumulation</strong> &mdash; with lifespan set to &infin; and max detectors set to &infin;, detectors accumulate indefinitely without dispersal. The surviving population tiles the non-self space in a way shaped entirely by the geometry of the self distribution &mdash; a &ldquo;mutation-only&rdquo; process whose output distribution is carved by negative selection.</div>
+          <div class="pseudo-note-row"><strong>b and r<sub>B</sub> are both constrained</strong> &mdash; centers b are sampled uniformly within the feature space bounds; r<sub>B</sub> is drawn from [r<sub>min</sub>, r<sub>max</sub>]. These bounds are the only free parameters the user controls &mdash; everything else is determined by the censoring geometry.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+    <!-- NSA Pseudocode -->
+  <div class="pseudo-card">
+    <div class="pseudo-card-title">Algorithm Reference &mdash; Negative Selection</div>
+    <div class="pseudo-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="pseudo-block">
+        <div class="pseudo-block-hdr">Training (online/continuous form)</div>
+        <div class="pseudo-code"><span class="kw">given</span>  self set S,  tolerance radius r<sub>s</sub>
+<span class="kw">output</span> detector set D,  capacity N<sub>d</sub>
+
+<span class="cm">&#x25B7; G = 1: classical offline NSA</span>
+<span class="cm">       generate N<sub>d</sub> detectors once, then deploy</span>
+<span class="cm">  G = <span style="font-size:1.25em;line-height:1;">&#x221E;</span>: continuous form (implemented here)</span>
+<span class="cm">       G &gt; 1 forces turnover via the N<sub>d</sub> cap &rarr;</span>
+<span class="cm">       coverage shifts each iteration ("random patrol")</span>
+<span class="cm">       no other finite G is typically useful</span>
+<span class="kw">repeat</span> for G iterations :
+
+  draw random candidate (c, r<sub>B</sub>)
+  <span class="kw">if</span> &forall; s &isin; S : dist(c, s) &gt; r<sub>s</sub> + r<sub>B</sub>
+    add (c, r<sub>B</sub>) to D  <span class="cm">&larr; mature detector</span>
+    <span class="kw">if</span> |D| &gt; N<sub>d</sub> : evict oldest  <span class="cm">&larr; circular buffer</span>
+  <span class="kw">else</span>
+    discard  <span class="cm">&larr; censored (overlaps self)</span>
+  optionally expire after &tau; steps  <span class="cm">&larr; additional turnover</span></div>
+      </div>
+      <div class="pseudo-block">
+        <div class="pseudo-block-hdr">Detection (online)</div>
+        <div class="pseudo-code"><span class="kw">for</span> new sample x :
+
+  <span class="kw">if</span> &exist; d &isin; D : &Vert;x &minus; d.c&Vert; &lt; d.r
+    flag x as <strong>NON-SELF / ANOMALY</strong>
+
+  <span class="kw">else</span>
+    accept x as <strong>SELF / NORMAL</strong></div>
+      </div>
+    </div>
+    <div class="pseudo-notes">
+      <div class="pseudo-notes-hdr mixed-case">Relationship to GAs &amp; NSA</div>
+      <div class="pseudo-note-row"><strong>No fitness function</strong> &mdash; selection is binary (pass/fail censoring), not graded; there is no objective to optimize</div>
+      <div class="pseudo-note-row"><strong>No crossover, no population</strong> &mdash; detectors are generated independently; there is no recombination or generational loop</div>
+      <div class="pseudo-note-row"><strong>Negative selection</strong> &mdash; keeps what does <em>not</em> match a template, the inverse of GA positive/fitness-proportionate selection</div>
+      <div class="pseudo-note-row"><strong>One-class learning</strong> &mdash; trains only on normal (self) data; anomaly labels are never required</div>
+    </div>
+  </div>
+
+</div><!-- /panelNSA -->
+
+
+<!-- ================================================================
+     CLONALG PANEL
+================================================================ -->
+<div id="panelCLONALG" style="display:none">
+
+  <div class="domain-bar">
+    <label for="cDomSel">Application Domain</label>
+    <select id="cDomSel">
+      <option value="network">Network intrusion detection</option>
+      <option value="acoustic">Acoustic anomaly detection</option>
+      <option value="structural">Structural health monitoring</option>
+      <option value="generic">Generic / abstract features</option>
+    </select>
+  </div>
+
+  <div class="info-box" id="cInfoBox"></div>
+
+  <div class="main-grid">
+
+    <div class="canvas-card">
+      <div class="canvas-header">
+        <span>Feature Space · 2D Projection</span>
+        <span class="mode-tag" id="cModeTag">READY</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="cCvs" width="500" height="500"></canvas>
+        <div class="ax-label-x" id="cAxX">feature dimension 1</div>
+        <div class="ax-label-y" id="cAxY">feature dimension 2</div>
+      </div>
+      <div class="canvas-legend" id="cLegend"></div>
+    </div>
+
+    <div class="ctrl-panel">
+
+      <div class="card">
+        <div class="card-title">Parameters</div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">antibody population <i>N</i><sub>ab</sub></span>
+            <span class="param-val" id="vNAb">20</span>
+          </div>
+          <input type="range" id="sNAb" min="6" max="40" value="20">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">antigens <i>N</i><sub>ag</sub></span>
+            <span class="param-val" id="vNAg">4</span>
+          </div>
+          <input type="range" id="sNAg" min="2" max="6" value="4">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">selection size top-<i>k</i></span>
+            <span class="param-val" id="vTopK">5</span>
+          </div>
+          <input type="range" id="sTopK" min="1" max="12" value="5">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">rank-proportional cloning <i>&beta;</i></span>
+            <span class="param-val" id="vBeta">0.50</span>
+          </div>
+          <input type="range" id="sBeta" min="1" max="20" value="10">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">replacements <i>d</i></span>
+            <span class="param-val" id="vNRand">2</span>
+          </div>
+          <input type="range" id="sNRand" min="0" max="8" value="2">
+        </div>
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">mutation scale <i>σ</i><sub>0</sub></span>
+            <span class="param-val" id="vSigBase">0.08</span>
+          </div>
+          <input type="range" id="sSigBase" min="1" max="25" value="8">
+        </div>
+
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">recognition radius min <i>r</i><sub>min</sub></span>
+            <span class="param-val" id="cVRMin">0.025</span>
+          </div>
+          <input type="range" id="cSRMin" min="1" max="45" value="3">
+        </div>
+
+        <div class="param-row">
+          <div class="param-hdr">
+            <span class="param-name">recognition radius max <i>r</i><sub>max</sub></span>
+            <span class="param-val" id="cVRMax">0.230</span>
+          </div>
+          <input type="range" id="cSRMax" min="1" max="45" value="23">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Speed</div>
+        <div class="speed-row" id="cSpeedRow">
+          <button class="speed-btn" data-gpf="120">½×</button>
+          <button class="speed-btn active" data-gpf="60">1×</button>
+          <button class="speed-btn" data-gpf="30">2×</button>
+          <button class="speed-btn" data-gpf="12">5×</button>
+          <button class="speed-btn" data-gpf="6">10×</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Controls</div>
+        <div class="btn-row" style="margin-bottom:6px;">
+          <button class="btn btn-primary" id="cBtnRun">▶ Run</button>
+          <button class="btn btn-outline" id="cBtnStep">Step</button>
+          <button class="btn btn-ghost" id="cBtnReset">↺ Reset</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="cBtnTest" style="font-size:11px;">+ Add Test Point</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Display</div>
+        <div class="toggle-row">
+          <span class="toggle-label">mutation σ-rings</span>
+          <label class="tog"><input type="checkbox" id="cTogSigma" checked><span class="tog-sl"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">clone cloud</span>
+          <label class="tog"><input type="checkbox" id="cTogCloud" checked><span class="tog-sl"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">axis labels</span>
+          <label class="tog"><input type="checkbox" id="cTogAxes" checked><span class="tog-sl"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">evolve r<sub>B</sub> (vs. fixed)</span>
+          <label class="tog"><input type="checkbox" id="cTogEvolveR" checked><span class="tog-sl"></span></label>
+        </div>
+      </div>
+
+    </div><!-- /ctrl-panel -->
+  </div><!-- /main-grid -->
+
+  <div class="event-card" id="cEventCard">
+    <div class="event-title">Status <span id="cDragHint" style="display:none;font-size:9px;font-weight:400;letter-spacing:.02em;color:var(--soft);text-transform:none;margin-left:3px;">(drag the test point around the space)</span></div>
+    <div class="event-body" id="cEventBody">
+      Press <strong>▶ Run</strong> to begin evolving antibodies, or use <strong>Step</strong> to advance one generation at a time. Drag a <strong>test point</strong> onto the canvas to classify a new observation.
+    </div>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat"><div class="stat-val" id="cSGen">0</div><div class="stat-lbl">Generation</div></div>
+    <div class="stat"><div class="stat-val" id="cSPass">—</div><div class="stat-lbl">Active Pass</div></div>
+    <div class="stat"><div class="stat-val" id="cSBest">—</div><div class="stat-lbl">Best M Affinity</div></div>
+    <div class="stat"><div class="stat-val orange" id="cSCov">—</div><div class="stat-lbl">Memory Filled</div></div>
+  </div>
+
+  <!-- Affinity Function Card -->
+  <div class="pseudo-card" style="margin-bottom:10px;">
+    <div class="pseudo-card-title">Affinity Function &mdash; f(b, ag)</div>
+
+    <!-- Intro paragraph -->
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.65;margin-bottom:14px;">
+      A B cell represents a <strong>pattern classifier</strong> whose parameters are subject
+      to hypermutation and selection. In this demonstration, an
+      <strong>abstract circular detector</strong> with center position <em>b</em> and
+      detection radius <em>r</em><sub>B</sub> is used as a model of such a B-cell classifier.
+      <strong>Affinity</strong> quantifies how well that classifier recognises a specific
+      antigen: it measures both <em>how close</em> the center is to the antigen pattern
+      and <em>how tight</em> the recognition circle is.
+      Affinity drives selection, cloning, and hypermutation &mdash; it is the immune analogue
+      of fitness, but grounded in <em>classification quality</em>, not an optimization objective.
+      Both the center <em>b</em> and the radius <em>r</em><sub>B</sub> are mutated during
+      hypermutation; selection and cloning then propagate whichever combination best covers
+      each antigen tightly.
+    </p>
+
+    <!-- Formula box -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+                padding:12px 16px;margin-bottom:14px;">
+
+      <!-- Covered row -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="width:78px;text-align:right;color:var(--muted);font-size:10.5px;
+                     font-family:'DM Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;
+                     flex-shrink:0;">covered</span>
+        <span style="font-family:Georgia,serif;font-size:13px;color:var(--text);">
+          f(b,&thinsp;ag)
+        </span>
+        <span style="font-family:Georgia,serif;font-size:13px;color:var(--text);">=</span>
+        <!-- 1/r_B fraction -->
+        <span style="display:inline-flex;flex-direction:column;align-items:center;
+                     font-family:Georgia,serif;font-size:12px;color:var(--text);">
+          <span style="border-bottom:1px solid var(--text);padding:0 5px;">1</span>
+          <span style="padding:0 5px;"><em>r</em><sub>B</sub></span>
+        </span>
+        <span style="font-family:Georgia,serif;font-size:13px;color:var(--text);">&sdot;</span>
+        <!-- 1/(D+eps) fraction -->
+        <span style="display:inline-flex;flex-direction:column;align-items:center;
+                     font-family:Georgia,serif;font-size:12px;color:var(--text);">
+          <span style="border-bottom:1px solid var(--text);padding:0 5px;">1</span>
+          <span style="padding:0 5px;"><em>D</em>&thinsp;+&thinsp;&epsilon;</span>
+        </span>
+        <span style="color:var(--muted);font-size:11px;font-family:'DM Sans',sans-serif;margin-left:6px;">
+          when <em>D</em> &lt; <em>r</em><sub>B</sub>
+        </span>
+      </div>
+
+      <!-- Not-covered row -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+        <span style="width:78px;text-align:right;color:var(--muted);font-size:10.5px;
+                     font-family:'DM Sans',sans-serif;letter-spacing:.04em;text-transform:uppercase;
+                     flex-shrink:0;">not covered</span>
+        <span style="font-family:Georgia,serif;font-size:13px;color:var(--text);">
+          f(b,&thinsp;ag)
+        </span>
+        <span style="font-family:Georgia,serif;font-size:13px;color:var(--text);">=</span>
+        <!-- 1/r_B fraction -->
+        <span style="display:inline-flex;flex-direction:column;align-items:center;
+                     font-family:Georgia,serif;font-size:12px;color:var(--text);">
+          <span style="border-bottom:1px solid var(--text);padding:0 5px;">1</span>
+          <span style="padding:0 5px;"><em>r</em><sub>B</sub></span>
+        </span>
+        <span style="font-family:Georgia,serif;font-size:13px;color:var(--text);">&sdot;</span>
+        <!-- delta/(D+eps) fraction -->
+        <span style="display:inline-flex;flex-direction:column;align-items:center;
+                     font-family:Georgia,serif;font-size:12px;color:var(--text);">
+          <span style="border-bottom:1px solid var(--text);padding:0 5px;">&delta;</span>
+          <span style="padding:0 5px;"><em>D</em>&thinsp;+&thinsp;&epsilon;</span>
+        </span>
+        <span style="color:var(--muted);font-size:11px;font-family:'DM Sans',sans-serif;margin-left:6px;">
+          when <em>D</em> &ge; <em>r</em><sub>B</sub>
+        </span>
+      </div>
+
+      <!-- Parameter definitions -->
+      <div style="font-size:11px;color:var(--soft);font-family:'DM Sans',sans-serif;
+                  border-top:1px solid var(--border);padding-top:8px;line-height:1.75;">
+        <em style="font-family:Georgia,serif;">D</em> &triangleq; dist(b, ag)
+          &nbsp;&mdash;&nbsp; Euclidean distance between B-cell center and antigen in feature space
+        <br>
+        &epsilon;&thinsp;=&thinsp;0.008 &nbsp;&mdash;&nbsp; prevents &divide;0 when <em>D</em>&thinsp;=&thinsp;0
+        &nbsp;&middot;&nbsp;
+        &delta;&thinsp;=&thinsp;0.04 &nbsp;&mdash;&nbsp; non-coverage penalty (&delta;&thinsp;&laquo;&thinsp;1)
+        <br>
+        <em style="font-family:Georgia,serif;">r</em><sub>B</sub>
+          &isin; [<em>r</em><sub>min</sub>, <em>r</em><sub>max</sub>]
+          &nbsp;&mdash;&nbsp; recognition radius, evolved jointly with center <em>b</em> by hypermutation
+      </div>
+    </div>
+
+    <!-- Two diagrams side by side -->
+    <div class="pseudo-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;">
+
+      <!-- Left: geometry -->
+      <div>
+        <div class="pseudo-block-hdr" style="margin-bottom:8px;">Classifier Geometry</div>
+        <svg viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg"
+             style="display:block;width:100%;max-width:240px;height:auto;">
+          <rect width="200" height="180" fill="#FAF7F2" rx="5"/>
+          <g stroke="#D3C9B5" stroke-width="0.5">
+            <line x1="0" y1="45" x2="200" y2="45"/>
+            <line x1="0" y1="90" x2="200" y2="90"/>
+            <line x1="0" y1="135" x2="200" y2="135"/>
+            <line x1="50" y1="0" x2="50" y2="180"/>
+            <line x1="100" y1="0" x2="100" y2="180"/>
+            <line x1="150" y1="0" x2="150" y2="180"/>
+          </g>
+          <!-- B-cell recognition circle -->
+          <circle cx="95" cy="100" r="62" fill="rgba(40,88,164,0.07)"
+                  stroke="rgba(40,88,164,0.65)" stroke-width="1.8"/>
+          <!-- r_B spoke rightward -->
+          <line x1="95" y1="100" x2="157" y2="100"
+                stroke="rgba(40,88,164,0.55)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="116" y="95" font-size="11" font-family="Georgia,serif"
+                font-style="italic" fill="#2858A4">r</text>
+          <text x="123" y="100" font-size="8" font-family="Georgia,serif" fill="#2858A4">B</text>
+          <!-- D dashed line to antigen -->
+          <line x1="95" y1="100" x2="120" y2="68"
+                stroke="rgba(100,90,70,0.6)" stroke-width="1" stroke-dasharray="3,2"/>
+          <text x="100" y="83" font-size="11" font-family="Georgia,serif"
+                font-style="italic" fill="#6B5F4C">D</text>
+          <!-- B-cell center -->
+          <circle cx="95" cy="100" r="4" fill="rgba(40,88,164,0.85)"/>
+          <text x="100" y="116" font-size="11" font-family="Georgia,serif"
+                font-style="italic" fill="#2858A4">b</text>
+          <!-- antigen -->
+          <circle cx="120" cy="68" r="11" fill="rgba(196,98,45,0.13)"
+                  stroke="rgba(196,98,45,0.38)" stroke-width="1"/>
+          <circle cx="120" cy="68" r="6.5" fill="rgb(196,98,45)"/>
+          <circle cx="120" cy="68" r="6.5" fill="none" stroke="#FAF7F2" stroke-width="1.5"/>
+          <text x="131" y="65" font-size="10" font-family="'DM Sans',sans-serif"
+                fill="#C4622D">ag</text>
+          <text x="18" y="72" font-size="9" font-family="'DM Sans',sans-serif"
+                font-style="italic" fill="rgba(40,88,164,0.65)">covered</text>
+
+        </svg>
+      </div>
+
+      <!-- Right: f vs D plot -->
+      <div>
+        <div class="pseudo-block-hdr" style="margin-bottom:8px;">f vs. D
+          <span style="font-size:9px;color:var(--soft);text-transform:none;
+                       letter-spacing:0;font-weight:400;">&nbsp;(for a given r<sub>B</sub>)</span>
+        </div>
+        <svg viewBox="0 0 220 180" xmlns="http://www.w3.org/2000/svg"
+             style="display:block;width:100%;max-width:260px;height:auto;">
+          <rect width="220" height="180" fill="#FAF7F2" rx="5"/>
+          <!-- axes -->
+          <line x1="38" y1="148" x2="208" y2="148" stroke="#6B5F4C" stroke-width="1.2"/>
+          <line x1="38" y1="148" x2="38"  y2="12"  stroke="#6B5F4C" stroke-width="1.2"/>
+          <polygon points="205,145 212,148 205,151" fill="#6B5F4C"/>
+          <polygon points="35,15 38,8 41,15" fill="#6B5F4C"/>
+          <!-- r_B dashed vertical -->
+          <line x1="130" y1="12" x2="130" y2="148"
+                stroke="#9A8D78" stroke-width="1" stroke-dasharray="4,3"/>
+          <text x="120" y="162" font-size="9.5" font-family="Georgia,serif"
+                font-style="italic" fill="#6B5F4C">r</text>
+          <text x="128" y="164" font-size="7.5" font-family="Georgia,serif" fill="#6B5F4C">B</text>
+          <!-- f_max tick: 1/(eps * r_B) -->
+          <line x1="34" y1="18" x2="38" y2="18" stroke="#2858A4" stroke-width="0.8"/>
+          <text x="1" y="22" font-size="7" font-family="Georgia,serif" fill="#2858A4">1/(&#949;r<tspan dy="2" font-size="5.5">B</tspan>)</text>
+          <!-- delta tick -->
+          <line x1="34" y1="143" x2="38" y2="143" stroke="#9A8D78" stroke-width="0.8"/>
+          <text x="12" y="146" font-size="9" font-family="Georgia,serif"
+                font-style="italic" fill="#9A8D78">&#948;/(r<tspan dy="2" font-size="6">B</tspan>)</text>
+          <!-- Covered curve -->
+          <polyline points="38,18 57,18 76,18 95,18 108,23 115,32 122,48 126,62 129,75"
+            fill="none" stroke="rgba(40,88,164,0.85)" stroke-width="2.2"
+            stroke-linejoin="round" stroke-linecap="round"/>
+          <!-- Not-covered curve — now (1/r_B)*(delta/(D+eps)), slightly higher than before -->
+          <polyline points="131,143 150,143.5 170,144 190,144.5 208,145"
+            fill="none" stroke="rgba(40,88,164,0.38)" stroke-width="2.2"
+            stroke-linejoin="round" stroke-linecap="round"/>
+          <!-- Discontinuity markers -->
+          <circle cx="130" cy="75" r="3" fill="rgba(40,88,164,0.85)"/>
+          <circle cx="130" cy="143" r="3" fill="none"
+                  stroke="rgba(40,88,164,0.50)" stroke-width="1.5"/>
+          <!-- Region labels -->
+          <text x="42" y="35" font-size="9" font-family="'DM Sans',sans-serif"
+                font-style="italic" fill="rgba(40,88,164,0.80)">covered</text>
+          <text x="42" y="46" font-size="8" font-family="Georgia,serif"
+                fill="rgba(40,88,164,0.65)">(1/r<tspan dy="2" font-size="6">B</tspan><tspan dy="-2">)&#xB7;1/(D+&#949;)</tspan></text>
+          <text x="138" y="132" font-size="9" font-family="'DM Sans',sans-serif"
+                font-style="italic" fill="rgba(40,88,164,0.50)">not covered</text>
+          <text x="138" y="143" font-size="8" font-family="Georgia,serif"
+                fill="rgba(40,88,164,0.38)">(1/r<tspan dy="2" font-size="6">B</tspan><tspan dy="-2">)&#xB7;&#948;/(D+&#949;)</tspan></text>
+          <!-- axis labels -->
+          <text x="65" y="174" font-size="10" font-family="'DM Sans',sans-serif"
+                fill="#6B5F4C"><tspan font-family="Georgia,serif" font-style="italic">D</tspan> &#x225C; dist(b, ag)</text>
+          <text x="6" y="85" font-size="10" font-family="'DM Sans',sans-serif"
+                fill="#6B5F4C" transform="rotate(-90,14,85)">f (b, ag)</text>
+          <rect x="0" y="0" width="220" height="18" fill="#FAF7F2"/>
+        </svg>
+        <p style="font-size:11px;color:var(--muted);margin-top:4px;line-height:1.55;">
+          The 1/<em>r</em><sub>B</sub> factor penalises oversized circles even when covered
+          &mdash; driving maturation toward the <em>tightest circle that still contains
+          the antigen</em>. Equilibrium: <em>r</em><sub>B</sub>&thinsp;&rarr;&thinsp;<em>D</em>
+          from above.
+        </p>
+      </div>
+
+    </div><!-- /two diagrams -->
+
+    <div class="pseudo-notes" style="margin-top:12px;">
+      <div class="pseudo-notes-hdr">Interpretation</div>
+      <div class="pseudo-note-row"><strong>Covered and close:</strong> high f &mdash; the (1/r<sub>B</sub>) factor rewards a small radius, so affinity peaks when the center is near the antigen and the circle is tight. The cell reliably detects this pattern with few false positives (low Type&nbsp;I error).</div>
+      <div class="pseudo-note-row"><strong>Covered but loose:</strong> lower f &mdash; the antigen is inside the circle but the large r<sub>B</sub> is penalised by (1/r<sub>B</sub>). Evolution shrinks r<sub>B</sub> toward D, tightening the classifier and reducing false positives at deployment.</div>
+      <div class="pseudo-note-row"><strong>Not covered:</strong> near-zero f (the &delta;&thinsp;&laquo;&thinsp;1 factor applies to both cases for consistency) &mdash; the classifier misses this antigen entirely (Type&nbsp;II error). The cell is unlikely to be selected or enter the memory set.</div>
+      <div class="pseudo-note-row"><strong>Large-radius exploitation:</strong> the (1/r<sub>B</sub>) factor in both cases prevents a degenerate solution where one enormous circle covers all antigens and dominates the population &mdash; a known weakness of basic CLONALG without this term.</div>
+      <div class="pseudo-note-row"><strong>More sophisticated variants</strong> (AIRS, aiNet) add a term penalising affinity to <em>self</em> strings, blending the NSA censoring concept directly into the affinity function. This reduces false positives on normal inputs and is the natural extension beyond what is shown here.</div>
+    </div>
+  </div>
+
+    <!-- CLONALG Pseudocode -->
+  <div class="pseudo-card">
+    <div class="pseudo-card-title">Algorithm Reference &mdash; Clonal Selection (CLONALG) &mdash; Pattern Recognition Form</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="pseudo-two-col">
+      <div class="pseudo-block">
+        <div class="pseudo-block-hdr">Training loop</div>
+        <div class="pseudo-code"><span class="kw">input</span>  S = antigen set
+<span class="kw">output</span> M = memory cells
+<span class="cm">&#x25B7; one slot in M per ag &isin; S (canonical CLONALG)</span>
+
+<span class="kw">generate</span> random B-cell population
+
+<span class="cm">&#x25B7; one generation = one sweep over all ag &isin; S</span>
+<span class="cm">  G = <span style="font-size:1.25em;line-height:1;">&#x221E;</span> (runs continuously) here</span>
+<span class="kw">repeat</span> for G generations :
+
+  <span class="kw">for all</span> antigens ag &isin; S :
+
+    <span class="cm">&#x25B7; Phase 1: evaluate, select, clone, mutate</span>
+    compute f(b, ag) &forall; b &isin; B
+    <span class="cm">  uses evolved (b, r<sub>B</sub>) — see affinity card</span>
+    Ab* &larr; top-<em>k</em> B cells by f(&middot;, ag)  <span class="cm">&larr; k by user</span>
+    <span class="kw">for</span> rank i, parent b<sub>i</sub> &isin; Ab* :
+      n<sub>i</sub> &larr; round(&beta; &times; N<sub>ab</sub> / i)  <span class="cm">&larr; rank-proportional cloning</span>
+      &sigma;<sub>i</sub> &larr; &sigma;<sub>0</sub> &middot; exp(&minus;f(b<sub>i</sub>, ag))  <span class="cm">&larr; inv. proportional mutation</span>
+      &sigma;<sub>r,i</sub> &larr; &sigma;<sub>0</sub> &middot; r<sub>B</sub> &middot; exp(&minus;f(b<sub>i</sub>, ag))  <span class="cm">&larr; scales with current r<sub>B</sub></span>
+      C<sub>i</sub> &larr; n<sub>i</sub> clones of b<sub>i</sub>; <span class="kw">for each</span> clone :
+        b &larr; b + <i>N</i>(0, &sigma;<sub>i</sub><sup>2</sup>)  <span class="cm">&larr; additive zero-mean Gaussian</span>
+        r<sub>B</sub> &larr; r<sub>B</sub> + <i>N</i>(0, &sigma;<sub>r,i</sub><sup>2</sup>)  <span class="cm">&larr; r<sub>B</sub> mutated independently</span>
+      re-evaluate f(c, ag) &forall; c &isin; C<sub>i</sub>
+
+    <span class="cm">&#x25B7; Phase 2: update B, memory, and diversity</span>
+    <span class="cm">  B &cup; C (all clones) compete; top-N<sub>ab</sub> survive</span>
+    B &larr; top-N<sub>ab</sub> of (B &cup; C<sub>1</sub> &cup; &hellip; &cup; C<sub>k</sub>)  <span class="cm">&larr; full affinity competition</span>
+    <span class="kw">if</span> f(best c, ag) &gt; f(M[ag], ag) :
+      M[ag] &larr; best c  <span class="cm">&larr; M only ever improves</span>
+    replace d lowest-f(B) cells with random  <span class="cm">&larr; d by user; diversity</span></div>
+      </div>
+      <div class="pseudo-block">
+        <div class="pseudo-block-hdr">Recognition (deployment)</div>
+        <div class="pseudo-code"><span class="kw">for</span> new sample x :
+
+  m* &larr; <span class="kw">argmax</span><sub>m &isin; M</sub> f(x, m)
+         s.t. dist(x, m) &le; m.r<sub>B</sub>
+
+  <span class="kw">if</span> m* found
+    label x as class(m*)
+
+  <span class="kw">else</span>
+    return <strong>NO MATCH</strong>
+</div>
+        <div style="margin-top:12px;">
+        <div class="pseudo-block-hdr">What this visualizer shows</div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.65;">
+          Each generation sweeps through all antigens in sequence.
+          <strong>Phase&nbsp;1</strong> (first Step click): the active antigen glows;
+          top-<i>k</i> parents are selected and their clone cloud appears.
+          <strong>Phase&nbsp;2</strong> (second Step click): best clones replace parents;
+          memory M is updated; <i>d</i> lowest-affinity cells are replaced with randoms.
+          B cells are coloured by nearest antigen <em>during the pass only</em>
+          &mdash; at rest all cells render neutrally, since CLONALG tracks no ownership.
+        </div>
+        </div>
+      </div>
+    </div>
+    <div class="pseudo-notes">
+      <div class="pseudo-notes-hdr mixed-case">Relationship to GAs &amp; ES &mdash; key similarities and differences</div>
+      <div class="pseudo-note-row"><strong>Affinity = fitness</strong> &mdash; same role, different name; both drive selection toward better solutions</div>
+      <div class="pseudo-note-row"><strong>Clonal expansion &asymp; fitness-proportionate selection + replication</strong> &mdash; more clones for higher-affinity cells, analogous to roulette-wheel; unlike GA, clones are copies of a single parent (no crossover)</div>
+      <div class="pseudo-note-row"><strong>No crossover</strong> &mdash; purely mutation-driven; structurally similar to (&mu;+&lambda;)-ES but run independently per antigen each generation</div>
+      <div class="pseudo-note-row"><strong>Hypermutation rate &prop; 1/f</strong> &mdash; mutation <em>tightens</em> as affinity grows, the inverse of early GA intuition; compare to self-adaptive ES where &sigma; also shrinks near the optimum via a separate strategy parameter</div>
+      <div class="pseudo-note-row"><strong>Per-antigen loop = multi-modal structure</strong> &mdash; each antigen is a separate peak to cover; the outer loop over S is analogous to Unit 4 niching, maintaining diversity across multiple targets simultaneously</div>
+      <div class="pseudo-note-row"><strong>Memory set M = elitism per antigen</strong> &mdash; M is the output, not just the population; analogous to an archive in multi-objective EA (Unit 3) but indexed by class rather than by objective trade-off</div>
+      <div class="pseudo-note-row"><strong>Random replacement = diversity maintenance</strong> &mdash; prevents full convergence; analogous to random immigrants in GAs</div>
+      <div class="pseudo-note-row"><strong>Can follow NSA</strong> &mdash; NSA learns the self/non-self boundary (one-class); CLONALG then learns to distinguish <em>which</em> non-self class, using NSA&rsquo;s rejected regions as the anomaly search space</div>
+    </div>
+  </div>
+
+</div><!-- /panelCLONALG -->
+
+
+<!-- Shared footer -->
+<p class="footnote">
+  <strong>Note on dimensionality:</strong> This 2D projection is a pedagogical simplification. In practice, feature spaces are high-dimensional (dozens to hundreds of features), and random detector coverage becomes exponentially sparse — a fundamental challenge for real-valued immune algorithms that motivates structured detector generation strategies.
+</p>
+<p class="copyright">© 2026 Theodore P. Pavlic · MIT License</p>
+
+
+<script>
+/* ================================================================
+   NSA — DATA
+================================================================ */
+const DOMAINS = {
+  network:{
+    name:'Network Intrusion Detection',
+    xLabel:'connection duration (normalized)',
+    yLabel:'bytes transferred (normalized)',
+    info:`Each point represents one time-windowed connection profile from a trusted baseline network — these are your <strong>"self"</strong> samples. In practice, features like (duration, bytes) are extracted per window from packet captures, normalized against baseline statistics, and projected here. The algorithm needs only this <em>unlabeled normal data</em> — no examples of attacks required.`,
+    selfDesc:'normal traffic profile',
+    anomDesc:'Potential intrusion or anomalous connection pattern.',
+    selfZone:'This region is near known-normal traffic — few or no detectors cover it by design, reducing false positives on legitimate connections.'
+  },
+  acoustic:{
+    name:'Acoustic Anomaly Detection',
+    xLabel:'RMS energy (normalized)',
+    yLabel:'spectral centroid (normalized)',
+    info:`Each point is a short-time window of an acoustic signal recorded during normal operating conditions — machinery hum, ambient background. In practice: apply a sliding window (e.g., 50 ms) to the audio stream, compute <strong>(RMS energy, spectral centroid)</strong> per window using a short-time Fourier transform, normalize, and project here. Unusual sounds (faults, target events) should appear in non-self regions.`,
+    selfDesc:'normal acoustic window',
+    anomDesc:'Target acoustic event detected — e.g., machinery fault signature or wildlife call outside the normal background.',
+    selfZone:'This acoustic profile matches the normal background — no detectors assigned here by the censoring process.'
+  },
+  structural:{
+    name:'Structural Health Monitoring',
+    xLabel:'vibration variance (normalized)',
+    yLabel:'signal kurtosis (normalized)',
+    info:`Each point is an accelerometer feature vector from an undamaged structural element (bridge, turbine blade) during normal operation. In practice: window the vibration signal, compute <strong>(variance, kurtosis)</strong> — variance captures energy level, kurtosis captures impulsive spikes characteristic of crack damage. Normalize per sensor and project here.`,
+    selfDesc:'healthy vibration signature',
+    anomDesc:'Statistically anomalous vibration — possible structural damage or crack signature. Kurtosis spikes and variance shifts are characteristic early indicators.',
+    selfZone:'This vibration profile resembles healthy baseline behavior — the censoring process ensured no detectors overlap this region.'
+  },
+  generic:{
+    name:'Abstract Feature Space',
+    xLabel:'feature dimension 1',
+    yLabel:'feature dimension 2',
+    info:`Each point is a 2D feature vector from the <strong>normal (self) class</strong>. Feature extraction is domain-specific — the NSA algorithm operates identically regardless of how this space was constructed. The algorithm learns only from normal examples; anomalies are anything statistically distant from the self-space coverage.`,
+    selfDesc:'self-class instance',
+    anomDesc:'Non-self pattern — statistically outside the normal class region.',
+    selfZone:'Inside the self-tolerance region — no detectors placed here by design.'
+  }
+};
+
+/* ================================================================
+   NSA — STATE
+================================================================ */
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+const W = cvs.width, H = cvs.height;
+const wx = x => x * W;
+const wy = y => y * H;
+const wr = r => r * W;
+
+let selfPts   = [];
+let detectors = [];
+let pending   = [];
+let flashes   = [];
+let testPt    = null;
+let testActive = false;
+let dragging  = false;
+
+let running    = false;
+let rafId      = null;
+let frameCount = 0;
+
+let nGenerated = 0, nCensored = 0;
+
+let pNSelf  = 8;
+let pRSelf  = 0.070;
+let pRMin   = 0.040;
+let pRMax   = 0.120;
+let pMaxDet = 25;
+let pLife   = 250;
+let pSpeed  = 2;
+
+const PENDING_FRAMES = 20;
+
+let showHalos = true;
+let showFade  = true;
+let showAxes  = true;
+
+/* ================================================================
+   NSA — INIT
+================================================================ */
+function init() {
+  selfPts   = [];
+  detectors = [];
+  pending   = [];
+  flashes   = [];
+  testPt    = testActive ? {x:0.5,y:0.5} : null;
+  nGenerated = 0;
+  nCensored  = 0;
+  frameCount = 0;
+
+  for (let i = 0; i < pNSelf; i++) {
+    selfPts.push({ x: 0.1 + Math.random()*0.8, y: 0.1 + Math.random()*0.8 });
+  }
+  updateStats();
+  setEventIdle();
+  render();
+}
+
+/* ================================================================
+   NSA — ALGORITHM
+================================================================ */
+function isCensored(cx, cy, r) {
+  for (const s of selfPts) {
+    if (Math.hypot(cx - s.x, cy - s.y) < pRSelf + r) return true;
+  }
+  return false;
+}
+
+function addCandidate() {
+  const cx = Math.random();
+  const cy = Math.random();
+  const r  = pRMin + Math.random() * Math.max(0, pRMax - pRMin);
+  pending.push({ cx, cy, r, timer: 0, maxTimer: PENDING_FRAMES });
+}
+
+function classifyCandidate(p) {
+  nGenerated++;
+  if (isCensored(p.cx, p.cy, p.r)) {
+    nCensored++;
+    flashes.push({ cx:p.cx, cy:p.cy, r:p.r, alpha:1.0, type:'rej' });
+    setEventReject(p);
+  } else {
+    // Only evict by capacity when lifespan is finite.
+    // With infinite lifespan the user wants accumulation — max-detectors cap is ignored.
+    if (detectors.length >= pMaxDet) detectors.shift();
+    detectors.push({ cx:p.cx, cy:p.cy, r:p.r, age:0, maxAge:pLife });
+    setEventAccept(p);
+  }
+}
+
+/* ================================================================
+   NSA — ANIMATION LOOP
+================================================================ */
+function loop() {
+  if (!running) return;
+
+  frameCount++;
+  const fpc = Math.max(1, Math.round(60 / pSpeed));
+
+  if (frameCount % fpc === 0) addCandidate();
+
+  for (const p of pending) p.timer++;
+  const done = pending.filter(p => p.timer >= p.maxTimer);
+  pending = pending.filter(p => p.timer < p.maxTimer);
+  for (const p of done) classifyCandidate(p);
+
+  for (const f of flashes) f.alpha -= 0.035;
+  flashes = flashes.filter(f => f.alpha > 0);
+
+  for (const d of detectors) d.age++;
+  detectors = detectors.filter(d => d.age < d.maxAge);
+
+  render();
+  updateStats();
+  rafId = requestAnimationFrame(loop);
+}
+
+function drainFlashes() {
+  // Lightweight post-pause loop: finishes in-flight visuals but adds no new algorithm state.
+  // - Advances pending candidate timers until they classify (no new candidates added)
+  // - Decays rejection flash alphas
+  // Stops itself once both are empty.
+  if (running) return;  // full loop restarted — hand off
+
+  // Advance pending candidates to completion (no new ones added)
+  for (const p of pending) p.timer++;
+  const done = pending.filter(p => p.timer >= p.maxTimer);
+  pending = pending.filter(p => p.timer < p.maxTimer);
+  for (const p of done) classifyCandidate(p);
+
+  // Decay rejection flashes
+  for (const f of flashes) f.alpha -= 0.035;
+  flashes = flashes.filter(f => f.alpha > 0);
+
+  render();
+  updateStats();
+
+  if (flashes.length > 0 || pending.length > 0) {
+    rafId = requestAnimationFrame(drainFlashes);
+  } else {
+    rafId = null;
+  }
+}
+
+function startStop() {
+  if (running) {
+    running = false;
+    // Don't cancel immediately — let drainFlashes() wind down visuals.
+    document.getElementById('btnRun').textContent = '▶ Run';
+    setModeTag('PAUSED','paused');
+    // The current RAF will call loop() one more time, see running=false, and return.
+    // We then kick off the drain loop for any lingering flashes.
+    rafId = requestAnimationFrame(drainFlashes);
+  } else {
+    running = true;
+    frameCount = 0;
+    document.getElementById('btnRun').textContent = '⏸ Pause';
+    setModeTag('TRAINING','');
+    rafId = requestAnimationFrame(loop);
+  }
+}
+
+function stepOnce() {
+  // Age existing detectors and add one new candidate to pending.
+  // We do NOT immediately classify — drainFlashes will advance the pending
+  // timer frame-by-frame so the dashed animation and acceptance/rejection
+  // flash play out exactly as they do during Run.
+  for (const d of detectors) d.age++;
+  detectors = detectors.filter(d => d.age < d.maxAge);
+  addCandidate();
+  render();
+  updateStats();
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = requestAnimationFrame(drainFlashes);
+}
+
+/* ================================================================
+   NSA — RENDER
+================================================================ */
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = '#FAF7F2';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = 'rgba(200,190,172,0.5)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 10; i++) {
+    const xi = (i/10)*W, yi = (i/10)*H;
+    ctx.beginPath(); ctx.moveTo(xi,0); ctx.lineTo(xi,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,yi); ctx.lineTo(W,yi); ctx.stroke();
+  }
+
+  if (showHalos) {
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1;
+    for (const s of selfPts) {
+      ctx.beginPath();
+      ctx.arc(wx(s.x), wy(s.y), wr(pRSelf), 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(40,88,164,0.07)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(40,88,164,0.35)';
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  ctx.setLineDash([4,4]);
+  for (const f of flashes) {
+    ctx.beginPath();
+    ctx.arc(wx(f.cx), wy(f.cy), wr(f.r), 0, Math.PI*2);
+    ctx.fillStyle = `rgba(130,75,190,${f.alpha*0.08})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(130,75,190,${f.alpha*0.75})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.setLineDash([5,5]);
+  for (const p of pending) {
+    const t = p.timer / p.maxTimer;
+    ctx.beginPath();
+    ctx.arc(wx(p.cx), wy(p.cy), wr(p.r), 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(196,98,45,0.06)';
+    ctx.fill();
+    ctx.strokeStyle = `rgba(196,98,45,${0.55 + 0.35*Math.sin(t*Math.PI)})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(196,98,45,0.45)';
+    ctx.lineWidth = 0.8;
+    const cx2 = wx(p.cx), cy2 = wy(p.cy), cs = 3.5;
+    ctx.beginPath(); ctx.moveTo(cx2-cs,cy2); ctx.lineTo(cx2+cs,cy2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx2,cy2-cs); ctx.lineTo(cx2,cy2+cs); ctx.stroke();
+    ctx.setLineDash([5,5]);
+  }
+  ctx.setLineDash([]);
+
+  const triggered = new Set();
+  if (testPt) {
+    for (let i = 0; i < detectors.length; i++) {
+      const d = detectors[i];
+      if (Math.hypot(testPt.x - d.cx, testPt.y - d.cy) < d.r) triggered.add(i);
+    }
+  }
+
+  for (let i = 0; i < detectors.length; i++) {
+    const d = detectors[i];
+    const ageRatio = isFinite(d.maxAge) ? d.age / d.maxAge : 0;
+    const fade = showFade ? (1 - ageRatio * 0.72) : 1;
+    const hit = triggered.has(i);
+
+    ctx.beginPath();
+    ctx.arc(wx(d.cx), wy(d.cy), wr(d.r), 0, Math.PI*2);
+    ctx.fillStyle = hit ? `rgba(184,40,40,${0.22*fade})` : `rgba(184,40,40,${0.08*fade})`;
+    ctx.fill();
+    ctx.strokeStyle = hit ? `rgba(184,40,40,${0.95*fade})` : `rgba(184,40,40,${0.45*fade})`;
+    ctx.lineWidth = hit ? 2 : 1.2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(wx(d.cx), wy(d.cy), 2, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(184,40,40,${0.5*fade})`;
+    ctx.fill();
+  }
+
+  for (const s of selfPts) {
+    ctx.beginPath();
+    ctx.arc(wx(s.x), wy(s.y), 5.5, 0, Math.PI*2);
+    ctx.fillStyle = '#2858A4';
+    ctx.fill();
+    ctx.strokeStyle = '#FAF7F2';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  if (testPt) {
+    const hit = triggered.size > 0;
+    const inSelf = selfPts.some(s => Math.hypot(testPt.x - s.x, testPt.y - s.y) < pRSelf);
+
+    // Filled dot
+    ctx.beginPath();
+    ctx.arc(wx(testPt.x), wy(testPt.y), 8, 0, Math.PI*2);
+    ctx.fillStyle = hit ? '#B82828' : (inSelf ? '#2858A4' : '#7B4FA0');
+    ctx.fill();
+
+    // White X mark
+    const tpx = wx(testPt.x), tpy = wy(testPt.y), xs = 4;
+    ctx.strokeStyle = '#FAF7F2';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(tpx-xs, tpy-xs); ctx.lineTo(tpx+xs, tpy+xs); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(tpx+xs, tpy-xs); ctx.lineTo(tpx-xs, tpy+xs); ctx.stroke();
+    ctx.lineCap = 'butt';
+
+    updateTestClassification(hit, inSelf, triggered.size);
+  }
+}
+
+/* ================================================================
+   NSA — EVENT TEXT
+================================================================ */
+function setModeTag(text, cls) {
+  const t = document.getElementById('modeTag');
+  t.textContent = text;
+  t.className = 'mode-tag' + (cls ? ' '+cls : '');
+  const hint = document.getElementById('nsaDragHint');
+  if (hint) hint.style.display = (text === 'DEPLOY TEST') ? 'inline' : 'none';
+}
+
+function setEventIdle() {
+  setModeTag('READY','');
+  document.getElementById('eventBody').innerHTML =
+    `Press <strong>▶ Run</strong> to begin generating candidate detectors, or use <strong>Step</strong> to advance one at a time. You can add a <strong>test point</strong> and drag it around the canvas to classify new observations.`;
+  flashEventCard('');
+}
+
+function setEventReject(p) {
+  const dom = DOMAINS[getCurrentDomain()];
+  document.getElementById('eventBody').innerHTML =
+    `Candidate detector at (${p.cx.toFixed(2)}, ${p.cy.toFixed(2)}) with <i>r</i>\u202f=\u202f${p.r.toFixed(3)} was <span class="rej">censored</span> — its recognition region overlapped a self-tolerance zone. In deployment, this detector would have generated <strong>false positives on normal ${dom.selfDesc}s</strong>.`;
+  flashEventCard('reject-flash');
+}
+
+function setEventAccept(p) {
+  document.getElementById('eventBody').innerHTML =
+    `Candidate detector <span class="acc">matured</span> — its recognition region is entirely in non-self space. In deployment, any new observation landing inside this circle will be flagged as <strong>anomalous</strong>.`;
+  flashEventCard('accept-flash');
+}
+
+function updateTestClassification(hit, inSelf, nHit) {
+  if (!testActive) return;
+  const dom = DOMAINS[getCurrentDomain()];
+  setModeTag('DEPLOY TEST','test');
+  if (hit) {
+    document.getElementById('eventBody').innerHTML =
+      `Test point falls inside <strong>${nHit} detector region${nHit>1?'s':''}</strong> → <span class="cls-anom">NON-SELF · ANOMALY</span>. ${dom.anomDesc}`;
+    flashEventCard('');
+  } else if (inSelf) {
+    document.getElementById('eventBody').innerHTML =
+      `Test point lies within the self-tolerance zone → <span class="cls-self">SELF · NORMAL</span>. ${dom.selfZone}`;
+    flashEventCard('');
+  } else {
+    document.getElementById('eventBody').innerHTML =
+      `Test point is in an undetected non-self region → <span class="cls-gap">UNDETECTED GAP</span>. This is a <strong>false negative</strong> — a potential anomaly that the current detector population would miss. More generations or a larger detector pool reduce such gaps.`;
+    flashEventCard('');
+  }
+}
+
+let flashTO = null;
+function flashEventCard(cls) {
+  const card = document.getElementById('eventCard');
+  card.className = 'event-card' + (cls ? ' '+cls : '');
+  if (flashTO) clearTimeout(flashTO);
+  if (cls) flashTO = setTimeout(() => { card.className = 'event-card'; }, 600);
+}
+
+/* ================================================================
+   NSA — STATS
+================================================================ */
+let lastCoverageFrame = -1;
+
+function computeCoverage() {
+  const N = 40;
+  let nonSelf = 0, covered = 0;
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < N; j++) {
+      const x = (i+0.5)/N, y = (j+0.5)/N;
+      const inSelf = selfPts.some(s => Math.hypot(x-s.x, y-s.y) < pRSelf);
+      if (!inSelf) {
+        nonSelf++;
+        if (detectors.some(d => Math.hypot(x-d.cx, y-d.cy) < d.r)) covered++;
+      }
+    }
+  }
+  return nonSelf > 0 ? Math.round(100*covered/nonSelf) : 0;
+}
+
+function updateStats() {
+  document.getElementById('sMature').textContent   = detectors.length;
+  document.getElementById('sCensored').textContent = nCensored;
+  document.getElementById('sTotal').textContent    = nGenerated;
+  if (frameCount - lastCoverageFrame > 30 || !running) {
+    document.getElementById('sCoverage').textContent = computeCoverage() + '%';
+    lastCoverageFrame = frameCount;
+  }
+}
+
+/* ================================================================
+   NSA — DOMAIN
+================================================================ */
+function getCurrentDomain() {
+  return document.getElementById('domSel').value;
+}
+
+function updateDomain() {
+  const d = DOMAINS[getCurrentDomain()];
+  document.getElementById('infoBox').innerHTML = d.info;
+  document.getElementById('axX').textContent = showAxes ? d.xLabel : '';
+  document.getElementById('axY').textContent = showAxes ? d.yLabel : '';
+}
+
+/* ================================================================
+   NSA — TEST POINT
+================================================================ */
+function getWorld(e) {
+  const rect = cvs.getBoundingClientRect();
+  return {
+    x: ((e.clientX ?? e.touches[0].clientX) - rect.left) / rect.width,
+    y: ((e.clientY ?? e.touches[0].clientY) - rect.top)  / rect.height
+  };
+}
+
+cvs.addEventListener('mousedown', e => {
+  if (!testActive) return;
+  const pt = getWorld(e);
+  if (testPt && Math.hypot(pt.x - testPt.x, pt.y - testPt.y) < 0.05) {
+    dragging = true; e.preventDefault();
+  }
+});
+cvs.addEventListener('mousemove', e => {
+  if (!testActive || !dragging) return;
+  testPt = clampPt(getWorld(e));
+  render(); updateStats();
+});
+cvs.addEventListener('mouseup',    () => { dragging = false; });
+cvs.addEventListener('mouseleave', () => { dragging = false; });
+
+// Touch equivalents for tablet support
+cvs.addEventListener('touchstart', e => {
+  if (!testActive) return;
+  const pt = getWorld(e);
+  if (testPt && Math.hypot(pt.x - testPt.x, pt.y - testPt.y) < 0.08) {
+    dragging = true; e.preventDefault();
+  }
+}, { passive: false });
+cvs.addEventListener('touchmove', e => {
+  if (!testActive || !dragging) return;
+  e.preventDefault();
+  testPt = clampPt(getWorld(e));
+  render(); updateStats();
+}, { passive: false });
+cvs.addEventListener('touchend', () => { dragging = false; });
+
+function clampPt(p) {
+  return { x: Math.max(0.01, Math.min(0.99, p.x)), y: Math.max(0.01, Math.min(0.99, p.y)) };
+}
+
+/* ================================================================
+   NSA — UI BINDINGS
+================================================================ */
+function bindSlider(id, valId, decimals, scale, onChange) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value) * scale;
+    vl.textContent = v.toFixed(decimals);
+    onChange(v);
+  });
+}
+
+bindSlider('sNSelf',  'vNSelf',  0, 1,    v => { pNSelf  = v; init(); });
+bindSlider('sRSelf',  'vRSelf',  3, 0.01, v => { pRSelf  = v; render(); });
+// rMin and rMax sliders share the same 1–45 integer scale (×0.01).
+// Locking: if min is dragged past max, max is pushed along (and vice versa).
+document.getElementById('sRMin').addEventListener('input', () => {
+  const elMin = document.getElementById('sRMin');
+  const elMax = document.getElementById('sRMax');
+  if (parseInt(elMin.value) > parseInt(elMax.value)) {
+    elMax.value = elMin.value;
+    pRMax = parseInt(elMax.value) * 0.01;
+    document.getElementById('vRMax').textContent = pRMax.toFixed(3);
+  }
+  pRMin = parseInt(elMin.value) * 0.01;
+  document.getElementById('vRMin').textContent = pRMin.toFixed(3);
+});
+document.getElementById('sRMax').addEventListener('input', () => {
+  const elMin = document.getElementById('sRMin');
+  const elMax = document.getElementById('sRMax');
+  if (parseInt(elMax.value) < parseInt(elMin.value)) {
+    elMin.value = elMax.value;
+    pRMin = parseInt(elMin.value) * 0.01;
+    document.getElementById('vRMin').textContent = pRMin.toFixed(3);
+  }
+  pRMax = parseInt(elMax.value) * 0.01;
+  document.getElementById('vRMax').textContent = pRMax.toFixed(3);
+});
+// Max detectors: slider value 65 is the ∞ sentinel
+document.getElementById('sMaxDet').addEventListener('input', () => {
+  const raw = parseInt(document.getElementById('sMaxDet').value);
+  if (raw >= 65) {
+    document.getElementById('vMaxDet').textContent = '∞';
+    pMaxDet = Infinity;
+  } else {
+    document.getElementById('vMaxDet').textContent = raw;
+    pMaxDet = raw;
+  }
+});
+// Lifespan: slider value 610 is the ∞ sentinel
+document.getElementById('sLife').addEventListener('input', () => {
+  const raw = parseInt(document.getElementById('sLife').value);
+  if (raw >= 610) {
+    document.getElementById('vLife').textContent = '∞';
+    pLife = Infinity;
+  } else {
+    document.getElementById('vLife').textContent = raw;
+    pLife = raw;
+  }
+  // Retroactively update all existing detectors so the change takes effect immediately
+  for (const d of detectors) d.maxAge = pLife;
+});
+
+// Speed buttons — scoped to NSA panel only
+document.getElementById('nsaSpeedRow').querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('nsaSpeedRow').querySelectorAll('.speed-btn')
+      .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    pSpeed = parseFloat(btn.dataset.spd);
+  });
+});
+
+document.getElementById('btnRun').addEventListener('click', () => {
+  startStop();
+  if (!running) setEventIdle();
+});
+document.getElementById('btnStep').addEventListener('click', () => {
+  if (running) { startStop(); setModeTag('READY', ''); }  // pause → READY, then step
+  stepOnce();
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  if (running) startStop();
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  init();
+});
+document.getElementById('btnTest').addEventListener('click', () => {
+  testActive = !testActive;
+  const btn = document.getElementById('btnTest');
+  if (testActive) {
+    testPt = {x:0.5, y:0.5};
+    btn.textContent = '× Remove Test Point';
+    btn.style.borderColor = 'var(--orange)';
+    btn.style.color = 'var(--orange)';
+    setModeTag('DEPLOY TEST','test');
+  } else {
+    testPt = null;
+    btn.textContent = '+ Add Test Point';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    setModeTag(running ? 'TRAINING' : 'READY', '');
+    if (!running) setEventIdle();
+  }
+  render(); updateStats();
+});
+
+document.getElementById('togHalos').addEventListener('change', e => { showHalos = e.target.checked; render(); });
+document.getElementById('togFade').addEventListener('change',  e => { showFade  = e.target.checked; render(); });
+document.getElementById('togAxes').addEventListener('change',  e => { showAxes  = e.target.checked; updateDomain(); });
+document.getElementById('domSel').addEventListener('change', updateDomain);
+
+
+/* ================================================================
+   CLONALG — DATA
+================================================================ */
+const CDOMAINS = {
+  network:{
+    name:'Network Intrusion Detection',
+    xLabel:'connection duration (normalized)',
+    yLabel:'bytes transferred (normalized)',
+    info:`Antigens represent <strong>known attack signatures</strong> — labeled examples of confirmed intrusion patterns (port scans, brute-force attempts, data exfiltration). Unlike NSA, which trains only on normal traffic, CLONALG requires positive anomaly exemplars. The algorithm evolves antibodies that generalize each signature into a recognition region, enabling <strong>multi-class detection</strong> — not just "anomalous," but <em>which attack type</em>. The cost is a labeled anomaly library; the benefit is interpretable, class-specific alerts.`,
+    agLabel:'attack signature',
+    matchDesc: n => `Connection profile matches <strong>${n}</strong> — classify and route to incident response.`,
+    noMatchDesc:'Connection profile falls outside all known attack recognition regions — no match to the trained signature library.'
+  },
+  acoustic:{
+    name:'Acoustic Anomaly Detection',
+    xLabel:'RMS energy (normalized)',
+    yLabel:'spectral centroid (normalized)',
+    info:`Antigens are <strong>known target acoustic signatures</strong> — labeled templates of specific events of interest (fault types, target species vocalizations) captured from confirmed recordings. In practice: extract (RMS energy, spectral centroid) from reference recordings of each target class, normalize, and use as antigen exemplars. CLONALG evolves antibodies that generalize each template into a recognition region, enabling the system to classify <em>which type</em> of acoustic event is present, not just whether one occurred.`,
+    agLabel:'acoustic target',
+    matchDesc: n => `Acoustic profile matches <strong>${n}</strong> — target event class detected.`,
+    noMatchDesc:'Acoustic profile falls outside all known target recognition regions — no match to the trained library.'
+  },
+  structural:{
+    name:'Structural Health Monitoring',
+    xLabel:'vibration variance (normalized)',
+    yLabel:'signal kurtosis (normalized)',
+    info:`Antigens are <strong>confirmed damage signatures</strong> from destructive testing or finite element simulation — feature vectors of specific fault modes (crack propagation, joint loosening, corrosion fatigue). CLONALG evolves antibodies specialized to each damage mode. The key advantage over NSA: the system can distinguish fault <em>type</em>, not just fault presence. A structural engineer can then route the alert directly to the appropriate maintenance response.`,
+    agLabel:'damage mode',
+    matchDesc: n => `Vibration signature matches <strong>${n}</strong> — specific damage mode identified.`,
+    noMatchDesc:'Vibration signature falls outside all known damage recognition regions — no match to the trained library.'
+  },
+  generic:{
+    name:'Abstract Feature Space',
+    xLabel:'feature dimension 1',
+    yLabel:'feature dimension 2',
+    info:`Each antigen is a labeled exemplar from the <strong>anomaly (non-self) class</strong>. Unlike NSA — which learns only from normal data — CLONALG requires positive examples of the patterns it should detect. This is the fundamental distinction: <em>one-class learning</em> (NSA) vs. <em>exemplar-based recognition</em> (CLONALG). The cost of CLONALG's multi-class capability is the need for a labeled anomaly library; the benefit is interpretable, class-specific recognition regions.`,
+    agLabel:'anomaly class',
+    matchDesc: n => `Test point matches <strong>${n}</strong>.`,
+    noMatchDesc:'Test point falls outside all antibody recognition regions — unclassified.'
+  }
+};
+
+const AGC = [
+  {r:196, g:98,  b:45 },
+  {r:40,  g:88,  b:164},
+  {r:45,  g:96,  b:24 },
+  {r:123, g:79,  b:160},
+  {r:26,  g:122, b:110},
+  {r:139, g:105, b:20 },
+];
+const AG_NAMES = ['A','B','C','D','E','F'];
+
+function agRgba(idx, a) {
+  const c = AGC[idx % AGC.length];
+  return `rgba(${c.r},${c.g},${c.b},${a})`;
+}
+function agHex(idx) {
+  const c = AGC[idx % AGC.length];
+  return `rgb(${c.r},${c.g},${c.b})`;
+}
+
+/* ================================================================
+   CLONALG — CANVAS SETUP
+================================================================ */
+const cCvs = document.getElementById('cCvs');
+const cCtx = cCvs.getContext('2d');
+const CW = cCvs.width, CH = cCvs.height;
+const cwx = x => x * CW;
+const cwy = y => y * CH;
+const cwr = r => r * CW;
+
+/* ================================================================
+   CLONALG — STATE
+================================================================ */
+let antigens    = [];   // {x, y, colorIdx}
+let antibodies  = [];   // {cx, cy, r, affinityToActiveAg, fresh, isReplacement}
+let memorySet   = [];   // one entry per antigen: {cx, cy, r, agIdx, affinityRaw} | null
+let memFlash    = [];   // per-antigen flash alpha when M is updated
+
+// Per-pass animation state
+let passAgIdx     = 0;      // which antigen is currently being processed (0..pNAg-1)
+let passPhaseF    = 9999;   // frame counter within current antigen pass
+let generation    = 0;      // completed full sweeps over all antigens
+
+let passCloud     = [];     // clone trial points {x, y, colorIdx}
+let passSigRings  = [];     // sigma rings {cx, cy, sigma, colorIdx}
+let passSelectedSet = new Set(); // antibody indices selected in current pass
+let pendingAbs    = null;   // computed next-state, applied after cloud phase
+
+let cRunning = false, cRafId = null;
+let cStepPhase   = 'idle';  // 'idle' | 'cloud' — tracks two-click step state
+let cLastNReplaced  = 0;       // remembered for phase-2 status text
+let pendingMem      = null;    // M update deferred to Phase 2
+let cTestPt = null, cTestActive = false, cDragging = false;
+
+let pNAb       = 20;
+let pNAg       = 4;
+let pTopK      = 5;
+let pBeta      = 0.5;  // cloning multiplier: n_i = round(β × N_ab / i)
+let pNRand     = 2;
+let pSigBase   = 0.08;
+let pAgFrames  = 60;   // frames per antigen pass (speed control)
+
+const MIN_CLOUD_FRAMES = 3;
+
+let cShowSigma   = true;
+let cShowCloud   = true;
+let cShowAxes    = true;
+let cEvolveR     = true;  // if false, only center b is mutated; r_B stays fixed
+
+/* ================================================================
+   CLONALG — UTILITY
+================================================================ */
+function randn() {
+  const u = 1 - Math.random(), v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function clamp01(x) { return Math.max(0.02, Math.min(0.98, x)); }
+
+// ── Affinity constants ────────────────────────────────────────────
+// B cells are (center, radius) classifiers.  Affinity measures how
+// well a B cell classifies a specific antigen:
+//
+//   f(b, ag) = 1 / ((dist(b.center, ag) + ε) · r_b)   if dist < r_b  (covered)
+//            = δ / (dist(b.center, ag) + ε)             otherwise      (not covered)
+//
+// The 1/r_b term penalises large recognition circles even when covered,
+// creating joint pressure to (a) move the center toward the antigen
+// AND (b) shrink the radius.  The coverage constraint dist < r_b means
+// r cannot shrink below dist, so the equilibrium is r_b → dist from
+// above: the tightest circle that still reliably contains the antigen.
+// This is the Type I / Type II tradeoff made explicit: oversized circles
+// generate false positives at deployment; undersized ones miss the antigen.
+const AFF_EPS    = 0.008;  // prevents division by zero at dist=0
+const DELTA      = 0.04;   // affinity multiplier when antigen is outside circle
+let R_MIN_C      = 0.025;  // minimum recognition radius (user-adjustable)
+let R_MAX_C      = 0.23;   // maximum recognition radius (user-adjustable)
+let R_INIT_MAX_C = 0.18;   // upper bound for random initial radii
+
+function affinityToAg(cx, cy, r, agIdx) {
+  const ag   = antigens[agIdx];
+  const dist = Math.hypot(cx - ag.x, cy - ag.y);
+  const covered  = dist < r;
+  const affinity = covered
+    ? (1 / ((dist + AFF_EPS) * r))  // reward: close center AND small radius
+    : (DELTA / (dist + AFF_EPS));   // heavy penalty: antigen outside circle
+  return { dist, covered, affinity };
+}
+
+// Nearest antigen by center distance — used only for color assignment
+// nearestAg: used only for memory cell M[agIdx] updates — B cells have no antigen allegiance
+function nearestAg(cx, cy) {
+  let minDist = Infinity, idx = 0;
+  for (let i = 0; i < antigens.length; i++) {
+    const d = Math.hypot(cx - antigens[i].x, cy - antigens[i].y);
+    if (d < minDist) { minDist = d; idx = i; }
+  }
+  return { dist: minDist, idx };
+}
+
+/* ================================================================
+   CLONALG — INIT
+================================================================ */
+function cInit() {
+  antigens = [];
+  let attempts = 0;
+  while (antigens.length < pNAg && attempts < 600) {
+    const x = 0.15 + Math.random() * 0.70;
+    const y = 0.15 + Math.random() * 0.70;
+    if (antigens.every(ag => Math.hypot(x - ag.x, y - ag.y) > 0.22))
+      antigens.push({ x, y, colorIdx: antigens.length });
+    attempts++;
+  }
+  while (antigens.length < pNAg)
+    antigens.push({ x: 0.15 + Math.random()*0.70, y: 0.15 + Math.random()*0.70, colorIdx: antigens.length });
+
+  antibodies = [];
+  for (let i = 0; i < pNAb; i++) {
+    const cx = 0.04 + Math.random() * 0.92;
+    const cy = 0.04 + Math.random() * 0.92;
+    const r  = R_MIN_C + Math.random() * (R_INIT_MAX_C - R_MIN_C);
+    antibodies.push({ cx, cy, r,
+                      affinityToActiveAg: 0, fresh: 0, isReplacement: false });
+  }
+
+  memorySet     = new Array(pNAg).fill(null);
+  memFlash      = new Array(pNAg).fill(0);
+  passAgIdx     = pNAg - 1;  // so first loop advance goes to 0
+  passPhaseF    = 9999;
+  generation    = 0;
+  passCloud     = [];  passSigRings = [];  passSelectedSet = new Set();  pendingAbs = null;
+  cStepPhase = 'idle';
+  cCloudFadeAlpha = 1.0;
+  pendingMem = null;
+
+  cUpdateDomain();
+  cUpdateStats();
+  cUpdateLegend();
+  cSetEventIdle();
+  cRender(0, -1);  // -1 = no active antigen yet
+}
+
+/* ================================================================
+   CLONALG — ONE ANTIGEN PASS (canonical De Castro & Von Zuben 2002)
+================================================================ */
+function runAgPass(agIdx) {
+  const cIdx = antigens[agIdx].colorIdx;
+
+  // Clear replacement flag immediately — dashed border is a one-pass marker only
+  for (const ab of antibodies) ab.isReplacement = false;
+
+  // 1. Evaluate affinity of ALL B cells to THIS antigen
+  const affs = antibodies.map((ab, i) => {
+    const a = affinityToAg(ab.cx, ab.cy, ab.r, agIdx);
+    return { idx: i, ab, dist: a.dist, covered: a.covered, affinity: a.affinity };
+  });
+  affs.sort((a, b) => b.affinity - a.affinity);
+  const k = Math.min(pTopK, affs.length);
+  const selected = affs.slice(0, k);
+  passSelectedSet = new Set(selected.map(s => s.idx));
+
+  passCloud = []; passSigRings = [];
+
+  // Seed M tracking
+  const prevMemAff = memorySet[agIdx]?.affinityRaw || 0;
+  let bestMemAff = prevMemAff;
+  let bestMemCx  = memorySet[agIdx]?.cx ?? null;
+  let bestMemCy  = memorySet[agIdx]?.cy ?? null;
+  let bestMemR   = memorySet[agIdx]?.r  ?? null;
+
+  // 2. Proportional cloning: n_i = round(β × N_ab / i)  (rank i, 1-indexed)
+  //    σ_i = σ₀ × exp(−ρ × f_i)  (De Castro & Von Zuben Eq. 14; ρ = 1)
+  //    Mutation rate inversely proportional to affinity → high-affinity = fine-tuning
+  const allClones = [];
+  let totalClones = 0;
+
+  for (let ri = 0; ri < selected.length; ri++) {
+    const s     = selected[ri];
+    const rank  = ri + 1;  // 1-indexed
+    const nClon = Math.max(1, Math.round(pBeta * pNAb / rank));
+    totalClones += nClon;
+
+    // σ ∝ exp(−f): high affinity → small σ (fine-tuning); low affinity → broad exploration
+    const fNorm  = Math.min(s.affinity / (prevMemAff + 0.001 + s.affinity), 0.99);
+    const sigma  = Math.max(0.005, pSigBase * Math.exp(-fNorm));
+    const sigmaR = Math.max(0.005, pSigBase * s.ab.r * Math.exp(-fNorm));
+
+    passSigRings.push({ cx: s.ab.cx, cy: s.ab.cy, sigma, colorIdx: cIdx });
+
+    if (s.affinity > bestMemAff) {
+      bestMemAff = s.affinity; bestMemCx = s.ab.cx; bestMemCy = s.ab.cy; bestMemR = s.ab.r;
+    }
+
+    for (let c = 0; c < nClon; c++) {
+      const nx = clamp01(s.ab.cx + randn() * sigma);
+      const ny = clamp01(s.ab.cy + randn() * sigma);
+      const nr = cEvolveR ? Math.max(R_MIN_C, Math.min(R_MAX_C, s.ab.r + randn() * sigmaR)) : s.ab.r;
+      passCloud.push({ x: nx, y: ny, colorIdx: cIdx });
+      const ca = affinityToAg(nx, ny, nr, agIdx);
+      allClones.push({ cx: nx, cy: ny, r: nr,
+                       affinityToActiveAg: ca.affinity, fresh: 0.20, isReplacement: false,
+                       _affForCull: ca.affinity });
+      if (ca.affinity > bestMemAff) {
+        bestMemAff = ca.affinity; bestMemCx = nx; bestMemCy = ny; bestMemR = nr;
+      }
+    }
+  }
+
+  // 3. New population = ALL current B cells (aged) + ALL clones — full competition
+  //    Selected parents compete alongside their own clones.
+  //    isReplacement cleared on aging: dashed border shows only the pass a cell was introduced.
+  const allAged = antibodies.map(ab => ({
+    ...ab,
+    fresh: Math.max(0, (ab.fresh || 0) - 0.20),
+    isReplacement: false,
+    _affForCull: affinityToAg(ab.cx, ab.cy, ab.r, agIdx).affinity
+  }));
+  let newPop = [...allAged, ...allClones];
+
+  // 4. Cull: sort by affinity, keep top (N_ab − d), inject d random cells
+  newPop.sort((a, b) => b._affForCull - a._affForCull);
+  const nReplace = Math.min(pNRand, newPop.length);
+  const keepN    = Math.min(pNAb - nReplace, newPop.length);
+  let finalPop   = newPop.slice(0, keepN);
+  finalPop.forEach(ab => delete ab._affForCull);
+
+  for (let i = 0; i < nReplace; i++) {
+    const cx = 0.04 + Math.random() * 0.92;
+    const cy = 0.04 + Math.random() * 0.92;
+    const r  = cEvolveR ? R_MIN_C + Math.random() * (R_INIT_MAX_C - R_MIN_C) : (R_MIN_C + R_MAX_C) / 2;
+    finalPop.push({ cx, cy, r,
+                    affinityToActiveAg: 0, fresh: 0.60, isReplacement: true });
+  }
+
+  // M update deferred to Phase 2 (when pendingAbs is applied)
+  // Store best candidate so Phase 2 can update M atomically with population update
+  const nCulled = newPop.length - keepN;
+  pendingAbs = finalPop;
+  pendingMem = (bestMemCx !== null && (bestMemAff > prevMemAff || memorySet[agIdx] === null))
+    ? { cx: bestMemCx, cy: bestMemCy, r: bestMemR, agIdx, affinityRaw: bestMemAff }
+    : null;
+  cSetEventGen(agIdx, selected, nReplace, nCulled, totalClones);
+}
+
+/* ================================================================
+   CLONALG — ANIMATION LOOP
+================================================================ */
+function cLoop() {
+  if (!cRunning) return;
+
+  passPhaseF++;
+  const cloudFrames = Math.max(MIN_CLOUD_FRAMES, Math.floor(pAgFrames * 0.5));
+
+  // Advance to next antigen pass
+  if (passPhaseF >= pAgFrames) {
+    passPhaseF = 0;
+    passAgIdx  = (passAgIdx + 1) % pNAg;
+    if (passAgIdx === 0) generation++;
+    runAgPass(passAgIdx);
+  }
+
+  // Apply population update once cloud phase is done
+  if (pendingAbs && passPhaseF >= cloudFrames) {
+    antibodies = pendingAbs;  pendingAbs = null;
+    if (pendingMem) { memorySet[pendingMem.agIdx] = pendingMem; memFlash[pendingMem.agIdx] = 1.0; pendingMem = null; }
+    passCloud = [];  passSigRings = [];  passSelectedSet = new Set();
+    cSetEventApply(passAgIdx);
+  }
+
+  // Decay M-cell and replacement flashes
+  for (let i = 0; i < memFlash.length; i++) {
+    if (memFlash[i] > 0) memFlash[i] = Math.max(0, memFlash[i] - 0.025);
+  }
+
+  const cloudAlpha = (pendingAbs && passPhaseF > 0)
+    ? Math.sin((passPhaseF / cloudFrames) * Math.PI) : 0;
+
+  cRender(cloudAlpha, passAgIdx);
+  cUpdateStats();
+  cRafId = requestAnimationFrame(cLoop);
+}
+
+function cStartStop() {
+  if (cRunning) {
+    cRunning = false;
+    cancelAnimationFrame(cRafId);
+    document.getElementById('cBtnRun').textContent = '▶ Run';
+    cSetModeTag('PAUSED', 'paused');
+  } else {
+    cRunning = true;
+    cStepPhase = 'idle';
+    document.getElementById('cBtnRun').textContent = '⏸ Pause';
+    cSetModeTag('TRAINING', '');
+    cRafId = requestAnimationFrame(cLoop);
+  }
+}
+
+// Drain loop for Step mode: animates cloud phase then applies pending update
+// Brief post-phase-2 fade: animates cloud dots fading to zero then clears them
+let cCloudFadeAlpha = 1.0;
+function cFadeCloud() {
+  if (cRunning) return;
+  cCloudFadeAlpha = Math.max(0, cCloudFadeAlpha - 0.07);
+  cRender(cCloudFadeAlpha, passAgIdx);
+  if (cCloudFadeAlpha > 0) {
+    cRafId = requestAnimationFrame(cFadeCloud);
+  } else {
+    passCloud = []; passSigRings = []; passSelectedSet = new Set();
+    cRafId = null;
+    cRender(0, passAgIdx);
+  }
+}
+
+function cDrainCloud() {
+  if (cRunning) return;  // main loop restarted — hand off
+
+  passPhaseF++;
+  const cloudFrames = Math.max(3, Math.floor(pAgFrames * 0.5));
+  const halfFrames  = Math.floor(cloudFrames / 2);  // sine peak
+
+  // In step mode, animate the rising half of the cloud sine then STOP and hold.
+  // The cloud stays at full alpha until the next Step click triggers phase 2.
+  if (cStepPhase === 'cloud' && passPhaseF >= halfFrames) {
+    // Held at peak — stop RAF, render cloud at full alpha, wait for next click
+    cRafId = null;
+    cRender(1.0, passAgIdx);
+    cUpdateStats();
+    return;
+  }
+
+  const autoApply = (cStepPhase !== 'cloud');
+
+  if (autoApply && pendingAbs && passPhaseF >= cloudFrames) {
+    antibodies  = pendingAbs;  pendingAbs = null;
+    if (pendingMem) { memorySet[pendingMem.agIdx] = pendingMem; memFlash[pendingMem.agIdx] = 1.0; pendingMem = null; }
+    passCloud   = [];  passSigRings = [];  passSelectedSet = new Set();
+    cSetEventApply(passAgIdx);
+  }
+
+  // Decay memFlash
+  for (let i = 0; i < memFlash.length; i++) {
+    if (memFlash[i] > 0) memFlash[i] = Math.max(0, memFlash[i] - 0.05);
+  }
+
+  const cloudAlpha = (pendingAbs && passPhaseF > 0)
+    ? Math.sin((Math.min(passPhaseF, cloudFrames) / cloudFrames) * Math.PI) : 0;
+
+  cRender(cloudAlpha, passAgIdx);
+  cUpdateStats();
+
+  if ((autoApply && pendingAbs) || cloudAlpha > 0) {
+    cRafId = requestAnimationFrame(cDrainCloud);
+  } else {
+    cRafId = null;
+    // Auto-apply finished — restore idle state
+    cStepPhase = 'idle';
+    passPhaseF = 9999;
+    cRender(0, passAgIdx);
+  }
+}
+
+// Step has two phases:
+//   Phase 1 (cStepPhase='idle'):  advance to next antigen, compute pass, show cloud
+//   Phase 2 (cStepPhase='cloud'): apply pending update, clear cloud
+// Clicking Step during Phase 1 animation skips to Phase 2 immediately.
+function cStepOnce() {
+
+  if (cStepPhase === 'idle') {
+    // ── Phase 1: compute pass, start cloud animation ──────────────
+    if (cRafId) { cancelAnimationFrame(cRafId); cRafId = null; }
+    passAgIdx  = (passAgIdx + 1) % pNAg;
+    if (passAgIdx === 0) generation++;
+    passPhaseF = 0;
+    cCloudFadeAlpha = 1.0;
+    runAgPass(passAgIdx);
+    cStepPhase = 'cloud';
+    cRender(0, passAgIdx);
+    cUpdateStats();
+    cRafId = requestAnimationFrame(cDrainCloud);
+
+  } else {
+    // ── Phase 2: apply update immediately (skip remainder of cloud) ──
+    if (cRafId) { cancelAnimationFrame(cRafId); cRafId = null; }
+    if (pendingAbs) {
+      antibodies = pendingAbs;  pendingAbs = null;
+      if (pendingMem) { memorySet[pendingMem.agIdx] = pendingMem; memFlash[pendingMem.agIdx] = 1.0; pendingMem = null; }
+      passSelectedSet = new Set();  // clear immediately so new cells render at normal opacity
+      for (let i = 0; i < memFlash.length; i++) memFlash[i] = Math.max(0, memFlash[i] - 0.15);
+      cSetEventApply(passAgIdx);
+    }
+    // Cloud dots stay visible; fade them out via a brief drain
+    cStepPhase = 'idle';
+    passPhaseF = 9999;
+    if (cRafId) cancelAnimationFrame(cRafId);
+    cRafId = requestAnimationFrame(cFadeCloud);
+    cUpdateStats();
+  }
+}
+
+/* ================================================================
+   CLONALG — RENDER
+================================================================ */
+function cRender(cloudAlpha, activeAgIdx) {
+  cCtx.clearRect(0, 0, CW, CH);
+
+  cCtx.fillStyle = '#FAF7F2';
+  cCtx.fillRect(0, 0, CW, CH);
+
+  // Grid
+  cCtx.strokeStyle = 'rgba(200,190,172,0.5)';
+  cCtx.lineWidth = 0.5;
+  for (let i = 0; i <= 10; i++) {
+    const xi = (i/10)*CW, yi = (i/10)*CH;
+    cCtx.beginPath(); cCtx.moveTo(xi,0); cCtx.lineTo(xi,CH); cCtx.stroke();
+    cCtx.beginPath(); cCtx.moveTo(0,yi); cCtx.lineTo(CW,yi); cCtx.stroke();
+  }
+
+
+  // Sigma rings (dashed, during cloud phase)
+  if (cShowSigma && cloudAlpha > 0) {
+    cCtx.setLineDash([1.5, 3]);  // short dots — clearly decorative, not a border
+    for (const sr of passSigRings) {
+      const rPx = cwr(sr.sigma);
+      if (rPx < 1.5) continue;
+      cCtx.beginPath();
+      cCtx.arc(cwx(sr.cx), cwy(sr.cy), rPx, 0, Math.PI*2);
+      cCtx.strokeStyle = agRgba(sr.colorIdx, cloudAlpha * 0.38);  // lighter
+      cCtx.lineWidth = 0.8;
+      cCtx.stroke();
+    }
+    cCtx.setLineDash([]);
+  }
+
+  // Test-point hit detection (against antibodies)
+  let testHitIdx = -1;
+  if (cTestPt) {
+    let bestAff = 0;
+    for (let i = 0; i < antibodies.length; i++) {
+      const ab = antibodies[i];
+      if (Math.hypot(cTestPt.x - ab.cx, cTestPt.y - ab.cy) <= ab.r &&
+          ab.affinityToActiveAg > bestAff) {
+        bestAff = ab.affinityToActiveAg; testHitIdx = i;
+      }
+    }
+    // Also test against memory set (M is the actual recognizer in deployment)
+    let bestMemHitIdx = -1, bestMemAff = 0;
+    for (let mi = 0; mi < memorySet.length; mi++) {
+      const m = memorySet[mi];
+      if (!m) continue;
+      const d = Math.hypot(cTestPt.x - m.cx, cTestPt.y - m.cy);
+      if (d <= m.r && m.affinityRaw > bestMemAff) {
+        bestMemAff = m.affinityRaw; bestMemHitIdx = mi;
+      }
+    }
+    if (bestMemHitIdx >= 0) {
+      cUpdateTestClassification(true, { nearestAgIdx: bestMemHitIdx,
+                                        affinityToActiveAg: bestMemAff });
+    } else if (!cTestPt) {
+      // nothing
+    } else {
+      cUpdateTestClassification(false, null);
+    }
+  }
+
+  // B-cell antibodies.
+  // During an active pass, cells that COVER the active antigen are
+  // rendered at full opacity; non-covering cells are dimmed — showing
+  // why they rank low in affinity and are unlikely to be selected.
+  const hasActiveAg = (activeAgIdx >= 0) && (activeAgIdx < antigens.length) && (passPhaseF < 9999 || pendingAbs !== null);
+  // inPass: true while a pass is actively running or its visuals are draining
+  const inPass = hasActiveAg || cloudAlpha > 0 || passSelectedSet.size > 0;
+
+  for (let i = 0; i < antibodies.length; i++) {
+    const ab = antibodies[i];
+    const isSelected = passSelectedSet.has(i) && cloudAlpha > 0;
+    const fr = ab.fresh || 0;
+    // Replacement cells (fresh injection) render in neutral gray regardless of antigen.
+    // They have no affinity history so coloring them by antigen would be misleading.
+    // The gray fades to normal as fresh → 0 (one pass later).
+    const isNewRandom = ab.isReplacement && fr > 0;
+
+    // Coverage check against the currently active antigen
+    const covers = hasActiveAg
+      ? affinityToAg(ab.cx, ab.cy, ab.r, activeAgIdx).covered
+      : true;
+    const dimFactor = hasActiveAg ? (covers ? 1.0 : 0.45) : 1.0;
+
+    // Color logic:
+    //   New random replacement → gray (fading in as fr drops)
+    //   At rest between passes → neutral warm gray
+    //   During pass → active antigen color (no per-cell allegiance)
+    //   New replacement → same fill, but NO border until it has survived a pass
+    const drawIdx = hasActiveAg ? activeAgIdx : 0;
+    let fillA, strokeA;
+    if (!inPass) {
+      fillA   = `rgba(120,110,95,${0.05 + fr * 0.04})`;
+      strokeA = `rgba(120,110,95,${0.28 + fr * 0.18})`;
+    } else {
+      fillA   = agRgba(drawIdx, (isSelected ? 0.18 : 0.05 + fr * 0.05) * dimFactor);
+      strokeA = agRgba(drawIdx, (isSelected ? 0.80 : 0.25 + fr * 0.20) * dimFactor);
+    }
+
+    cCtx.beginPath();
+    cCtx.arc(cwx(ab.cx), cwy(ab.cy), cwr(ab.r), 0, Math.PI*2);
+    cCtx.fillStyle = fillA;
+    cCtx.fill();
+    if (!isNewRandom) {
+      // Border only for cells that have been through at least one pass
+      cCtx.strokeStyle = strokeA;
+      cCtx.lineWidth   = isSelected ? 1.8 : 1.0;
+      cCtx.stroke();
+    }
+
+    const dotColor = !inPass
+      ? `rgba(120,110,95,${isSelected ? 0.85 : 0.38})`
+      : agRgba(drawIdx, (isSelected ? 0.85 : 0.40) * dimFactor);
+    cCtx.beginPath();
+    cCtx.arc(cwx(ab.cx), cwy(ab.cy), isSelected ? 3 : 2, 0, Math.PI*2);
+    cCtx.fillStyle = dotColor;
+    cCtx.fill();
+
+  }
+
+  // Clone cloud
+  if (cShowCloud && cloudAlpha > 0) {
+    for (const pt of passCloud) {
+      cCtx.beginPath();
+      cCtx.arc(cwx(pt.x), cwy(pt.y), 2.2, 0, Math.PI*2);
+      cCtx.fillStyle = agRgba(pt.colorIdx, cloudAlpha * 0.50);
+      cCtx.fill();
+    }
+  }
+
+  // Memory cells M (rendered above antibodies, below antigens)
+  cCtx.font = 'bold 7px "Outfit", sans-serif';
+  cCtx.textAlign = 'center';
+  cCtx.textBaseline = 'middle';
+  for (let mi = 0; mi < memorySet.length; mi++) {
+    const m = memorySet[mi];
+    if (!m) continue;
+    const cIdx = antigens[mi].colorIdx;
+    const fa = memFlash[mi] || 0;
+
+    // At rest: softer fill and thinner border; pulse-brightens briefly on update
+    const mRestOpacity = 0.55 + fa * 0.35;  // border 0.55 at rest, 0.90 on flash
+    cCtx.beginPath();
+    cCtx.arc(cwx(m.cx), cwy(m.cy), cwr(m.r), 0, Math.PI*2);
+    cCtx.fillStyle = agRgba(cIdx, 0.07 + fa * 0.14);
+    cCtx.fill();
+    cCtx.strokeStyle = agRgba(cIdx, mRestOpacity);
+    cCtx.lineWidth = fa > 0.05 ? 2.0 : 1.2;
+    cCtx.stroke();
+
+    // Center dot with M label
+    cCtx.beginPath();
+    cCtx.arc(cwx(m.cx), cwy(m.cy), 5, 0, Math.PI*2);
+    cCtx.fillStyle = agHex(cIdx);
+    cCtx.fill();
+    cCtx.strokeStyle = '#FAF7F2';
+    cCtx.lineWidth = 1.5;
+    cCtx.stroke();
+    cCtx.fillStyle = '#FAF7F2';
+    cCtx.fillText('M', cwx(m.cx), cwy(m.cy));
+  }
+
+  // Antigens (drawn on top)
+  // During an active pass: active antigen renders at full size/color;
+  // inactive antigens are grayed out so the active one is obvious at a glance.
+  cCtx.font = 'bold 9px "Outfit", sans-serif';
+  cCtx.textAlign = 'center';
+  cCtx.textBaseline = 'middle';
+  const anyActive = (activeAgIdx >= 0) && (passPhaseF < 9999 || pendingAbs !== null);
+  for (let i = 0; i < antigens.length; i++) {
+    const ag = antigens[i];
+    const px = cwx(ag.x), py = cwy(ag.y);
+    const isActive = anyActive && (i === activeAgIdx);
+    const isInactive = anyActive && !isActive;
+
+    // Active antigen: slightly larger glow
+    if (isActive) {
+      cCtx.beginPath();
+      cCtx.arc(px, py, 15, 0, Math.PI*2);
+      cCtx.fillStyle = agRgba(ag.colorIdx, 0.22);
+      cCtx.fill();
+    }
+
+    // Halo ring — full color when active, gray when inactive
+    cCtx.beginPath();
+    cCtx.arc(px, py, 10, 0, Math.PI*2);
+    if (isInactive) {
+      cCtx.fillStyle   = 'rgba(160,150,135,0.12)';
+      cCtx.fill();
+      cCtx.strokeStyle = 'rgba(140,130,115,0.40)';
+    } else {
+      cCtx.fillStyle   = agRgba(ag.colorIdx, 0.18);
+      cCtx.fill();
+      cCtx.strokeStyle = agRgba(ag.colorIdx, isActive ? 0.80 : 0.38);
+    }
+    cCtx.lineWidth = isActive ? 2.2 : 1;
+    cCtx.stroke();
+
+    // Solid dot — full color when active or idle, gray when inactive
+    cCtx.beginPath();
+    cCtx.arc(px, py, isActive ? 7.5 : 6.5, 0, Math.PI*2);
+    cCtx.fillStyle = isInactive ? 'rgba(150,140,125,0.65)' : agHex(ag.colorIdx);
+    cCtx.fill();
+    cCtx.strokeStyle = '#FAF7F2';
+    cCtx.lineWidth = 1.5;
+    cCtx.stroke();
+
+    // Label — white on active/idle, off-white on inactive
+    cCtx.fillStyle = isInactive ? 'rgba(255,255,255,0.55)' : '#FAF7F2';
+    cCtx.font = isActive ? 'bold 10px "Outfit", sans-serif' : 'bold 9px "Outfit", sans-serif';
+    cCtx.fillText(AG_NAMES[ag.colorIdx % AG_NAMES.length], px, py);
+  }
+  cCtx.font = 'bold 9px "Outfit", sans-serif';
+  cCtx.textAlign = 'left';
+  cCtx.textBaseline = 'alphabetic';
+
+  // Test point
+  if (cTestPt) {
+    // Re-check memory set hit for rendering color
+    let memHitAgIdx = -1, bestMAff = 0;
+    for (let mi = 0; mi < memorySet.length; mi++) {
+      const m = memorySet[mi];
+      if (!m) continue;
+      if (Math.hypot(cTestPt.x - m.cx, cTestPt.y - m.cy) <= m.r && m.affinityRaw > bestMAff) {
+        bestMAff = m.affinityRaw; memHitAgIdx = mi;
+      }
+    }
+    const hit = memHitAgIdx >= 0;
+    // Filled dot
+    cCtx.beginPath();
+    cCtx.arc(cwx(cTestPt.x), cwy(cTestPt.y), 8, 0, Math.PI*2);
+    cCtx.fillStyle = hit ? agHex(antigens[memHitAgIdx].colorIdx) : 'rgba(100,100,100,0.75)';
+    cCtx.fill();
+
+    // White X mark
+    const ctpx = cwx(cTestPt.x), ctpy = cwy(cTestPt.y), cxs = 4;
+    cCtx.strokeStyle = '#FAF7F2';
+    cCtx.lineWidth = 2;
+    cCtx.lineCap = 'round';
+    cCtx.beginPath(); cCtx.moveTo(ctpx-cxs, ctpy-cxs); cCtx.lineTo(ctpx+cxs, ctpy+cxs); cCtx.stroke();
+    cCtx.beginPath(); cCtx.moveTo(ctpx+cxs, ctpy-cxs); cCtx.lineTo(ctpx-cxs, ctpy+cxs); cCtx.stroke();
+    cCtx.lineCap = 'butt';
+  }
+}
+
+/* ================================================================
+   CLONALG — EVENT TEXT
+================================================================ */
+function cSetModeTag(text, cls) {
+  const t = document.getElementById('cModeTag');
+  t.textContent = text;
+  t.className = 'mode-tag' + (cls ? ' '+cls : '');
+  const hint = document.getElementById('cDragHint');
+  if (hint) hint.style.display = (text === 'DEPLOY TEST') ? 'inline' : 'none';
+}
+
+function cSetEventIdle() {
+  cSetModeTag('READY', '');
+  document.getElementById('cEventBody').innerHTML =
+    `Press <strong>▶ Run</strong> to begin. Each <strong>Step</strong> advances one antigen pass — watch the active antigen glow and the clone cloud form around the top-responding B cells. Drag a <strong>test point</strong> to classify against the memory set <strong>M</strong>.`;
+  cFlashCard('');
+}
+
+// Phase-1 event text: shown when clone cloud is generated
+let cLastNCulled    = 0;
+let cLastTotalClones = 0;
+function cSetEventGen(agIdx, selected, nReplaced, nCulled, totalClones) {
+  cLastNReplaced   = nReplaced;    // remember for phase-2
+  cLastNCulled     = nCulled    || 0;
+  cLastTotalClones = totalClones || 0;
+
+  const dom     = CDOMAINS[cGetDomain()];
+  const agName  = AG_NAMES[antigens[agIdx].colorIdx % AG_NAMES.length];
+  const k       = selected.length;
+  const affs    = selected.map(s => s.affinity);
+  const maxAff  = Math.max(...affs), minAff = Math.min(...affs);
+  const spreadFactor = maxAff / (minAff + 0.001);
+  const sigmaLo = (pSigBase * selected[0].dist).toFixed(3);
+  const sigmaHi = (pSigBase * selected[k-1].dist).toFixed(3);
+
+  const agColor1 = agHex(antigens[agIdx].colorIdx);
+  let html = `Gen <strong>${generation}</strong>, <strong>Phase&nbsp;1</strong>, antigen <strong><span style="color:${agColor1}">${agName}</span></strong>: `;
+  html += `top-<strong>${k}</strong> parents selected; `;
+  html += `<strong>${cLastTotalClones}</strong> clones generated rank-proportionally (&beta;&thinsp;=&thinsp;${pBeta.toFixed(2)})`;
+  if (spreadFactor > 1.6 && k > 1) {
+    html += `; &sigma; ranges <strong>${sigmaLo}&ndash;${sigmaHi}</strong>`;
+    html += ` (high-affinity: fine-tuning; low-affinity: broad search)`;
+  }
+  html += `. Phase&nbsp;2 will cull lowest-affinity cells and update B, M.`;
+
+  document.getElementById('cEventBody').innerHTML = html;
+  cFlashCard('gen-flash');
+}
+
+// Phase-2 event text: shown when pending update is applied
+function cSetEventApply(agIdx) {
+  const dom    = CDOMAINS[cGetDomain()];
+  const agName = AG_NAMES[antigens[agIdx].colorIdx % AG_NAMES.length];
+  const nReplaced = cLastNReplaced;
+
+  const agColor2 = agHex(antigens[agIdx].colorIdx);
+  let html = `Gen <strong>${generation}</strong>, <strong>Phase&nbsp;2</strong>, antigen <strong><span style="color:${agColor2}">${agName}</span></strong>: `;
+  html += `all clones enter B; `;
+  if (cLastNCulled > 0) {
+    html += `<strong>${cLastNCulled}</strong> lowest-affinity cells culled to maintain population at N<sub>ab</sub>&thinsp;=&thinsp;${pNAb}`;
+  } else {
+    html += `population within capacity (N<sub>ab</sub>&thinsp;=&thinsp;${pNAb})`;
+  }
+
+  const m = memorySet[agIdx];
+  if (m) {
+    html += `; M[<span style="color:${agColor2}">${agName}</span>] &rarr; affinity <strong>${m.affinityRaw.toFixed(1)}</strong>`;
+  }
+  html += '.';
+  if (nReplaced > 0) {
+    html += ` To maintain diversity, <span class="rep">${nReplaced} lowest-affinity B cell${nReplaced>1?'s':''} swapped for new random cell${nReplaced>1?'s':''}</span> (no border until validated in next pass).`;
+  }
+
+  document.getElementById('cEventBody').innerHTML = html;
+  cFlashCard(nReplaced > 0 ? 'rep-flash' : 'gen-flash');
+}
+
+function cUpdateTestClassification(hit, matchInfo) {
+  if (!cTestActive) return;
+  const dom = CDOMAINS[cGetDomain()];
+  cSetModeTag('DEPLOY TEST', 'test');
+  if (hit) {
+    const agIdx = matchInfo.nearestAgIdx;
+    const label = `${dom.agLabel} ${AG_NAMES[agIdx % AG_NAMES.length]}`;
+    document.getElementById('cEventBody').innerHTML =
+      `Memory set M recognizes test point &rarr; <span class="cls-match">${dom.agLabel.toUpperCase()} ${AG_NAMES[agIdx % AG_NAMES.length]}</span>. ` +
+      dom.matchDesc(label) +
+      ` M-cell affinity: <strong>${matchInfo.affinityToActiveAg.toFixed(1)}</strong>.`;
+  } else {
+    document.getElementById('cEventBody').innerHTML =
+      `Test point &rarr; <span class="cls-none">NO MATCH</span>. ${dom.noMatchDesc}`;
+  }
+  cFlashCard('test-flash');
+}
+
+let cFlashTO = null;
+function cFlashCard(cls) {
+  const card = document.getElementById('cEventCard');
+  card.className = 'event-card' + (cls ? ' '+cls : '');
+  if (cFlashTO) clearTimeout(cFlashTO);
+  if (cls) cFlashTO = setTimeout(() => { card.className = 'event-card'; }, 700);
+}
+
+/* ================================================================
+   CLONALG — STATS
+================================================================ */
+function cUpdateStats() {
+  document.getElementById('cSGen').textContent = generation;
+
+  // Active pass indicator: "ag A  (2/4)"
+  if (antigens.length > 0) {
+    const agName = AG_NAMES[antigens[passAgIdx % antigens.length].colorIdx % AG_NAMES.length];
+    document.getElementById('cSPass').textContent =
+      passPhaseF < 9999 ? `ag ${agName} (${(passAgIdx % pNAg)+1}/${pNAg})` : '—';
+  }
+
+  // Best memory affinity
+  const memAffs = memorySet.filter(Boolean).map(m => m.affinityRaw);
+  document.getElementById('cSBest').textContent = memAffs.length ? Math.max(...memAffs).toFixed(1) : '—';
+
+  // Memory cells filled
+  const filled = memorySet.filter(Boolean).length;
+  document.getElementById('cSCov').textContent = `${filled} / ${pNAg}`;
+}
+
+/* ================================================================
+   CLONALG — DOMAIN / LEGEND
+================================================================ */
+function cGetDomain() {
+  return document.getElementById('cDomSel').value;
+}
+
+function cUpdateDomain() {
+  const d = CDOMAINS[cGetDomain()];
+  document.getElementById('cInfoBox').innerHTML = d.info;
+  document.getElementById('cAxX').textContent = cShowAxes ? d.xLabel : '';
+  document.getElementById('cAxY').textContent = cShowAxes ? d.yLabel : '';
+}
+
+function cUpdateLegend() {
+  const dom = CDOMAINS[cGetDomain()];
+  let html = '';
+  for (let i = 0; i < Math.min(pNAg, AGC.length); i++) {
+    html += `<span class="leg">
+      <span class="leg-dot" style="background:${agHex(i)};border:1.5px solid #fff;"></span>
+      ${dom.agLabel} ${AG_NAMES[i]}
+    </span>`;
+  }
+  html += `<span class="leg"><span class="leg-ring" style="border-color:rgba(120,100,80,.40);background:rgba(120,100,80,.06);"></span>B cell (border = validated)</span>`;
+  html += `<span class="leg"><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:rgba(120,100,80,.06);border:none;flex-shrink:0;"></span>B cell (new / unvalidated)</span>`;
+  // Memory cell legend entry
+  html += `<span class="leg" style="align-items:center;">
+    <span style="position:relative;display:inline-block;width:14px;height:14px;flex-shrink:0;">
+      <span style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(100,100,100,0.65);background:rgba(100,100,100,0.10);"></span>
+      <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:6.5px;font-weight:700;font-family:Outfit,sans-serif;color:rgba(80,80,80,0.8);">M</span>
+    </span>
+    memory cell (M)
+  </span>`;
+  html += `<span class="leg"><span class="leg-dot" style="width:6px;height:6px;background:rgba(120,100,80,0.5);"></span>clone trial</span>`;
+  html += `<span class="leg"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#888;position:relative;flex-shrink:0;vertical-align:middle;"><svg viewBox="0 0 12 12" width="12" height="12" style="position:absolute;top:0;left:0;"><line x1="3.5" y1="3.5" x2="8.5" y2="8.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><line x1="8.5" y1="3.5" x2="3.5" y2="8.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></span>test point (color = zone)</span>`;
+  document.getElementById('cLegend').innerHTML = html;
+}
+
+/* ================================================================
+   CLONALG — TEST POINT
+================================================================ */
+function cGetWorld(e) {
+  const rect = cCvs.getBoundingClientRect();
+  return {
+    x: ((e.clientX ?? e.touches[0].clientX) - rect.left) / rect.width,
+    y: ((e.clientY ?? e.touches[0].clientY) - rect.top)  / rect.height
+  };
+}
+
+cCvs.addEventListener('mousedown', e => {
+  if (!cTestActive) return;
+  const pt = cGetWorld(e);
+  if (cTestPt && Math.hypot(pt.x - cTestPt.x, pt.y - cTestPt.y) < 0.06) {
+    cDragging = true; e.preventDefault();
+  }
+});
+cCvs.addEventListener('mousemove', e => {
+  if (!cTestActive || !cDragging) return;
+  cTestPt = { x: clamp01(cGetWorld(e).x), y: clamp01(cGetWorld(e).y) };
+  cRender(0, passAgIdx); cUpdateStats();
+});
+cCvs.addEventListener('mouseup',    () => { cDragging = false; });
+cCvs.addEventListener('mouseleave', () => { cDragging = false; });
+
+// Touch equivalents for tablet support
+cCvs.addEventListener('touchstart', e => {
+  if (!cTestActive) return;
+  const pt = cGetWorld(e);
+  if (cTestPt && Math.hypot(pt.x - cTestPt.x, pt.y - cTestPt.y) < 0.08) {
+    cDragging = true; e.preventDefault();
+  }
+}, { passive: false });
+cCvs.addEventListener('touchmove', e => {
+  if (!cTestActive || !cDragging) return;
+  e.preventDefault();
+  cTestPt = { x: clamp01(cGetWorld(e).x), y: clamp01(cGetWorld(e).y) };
+  cRender(0, passAgIdx); cUpdateStats();
+}, { passive: false });
+cCvs.addEventListener('touchend', () => { cDragging = false; });
+
+/* ================================================================
+   CLONALG — UI BINDINGS
+================================================================ */
+function cBindSlider(id, valId, decimals, scale, onChange) {
+  const el = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    const v = parseFloat(el.value) * scale;
+    vl.textContent = v.toFixed(decimals);
+    onChange(v);
+  });
+}
+
+cBindSlider('sNAb',     'vNAb',     0, 1,    v => { pNAb     = Math.round(v); cInit(); });
+cBindSlider('sNAg',     'vNAg',     0, 1,    v => { pNAg     = Math.round(v); cInit(); });
+cBindSlider('sTopK',    'vTopK',    0, 1,    v => { pTopK    = Math.round(v); });
+cBindSlider('sBeta',    'vBeta',    2, 0.05, v => { pBeta    = v; });
+cBindSlider('sNRand',   'vNRand',   0, 1,    v => { pNRand   = Math.round(v); });
+cBindSlider('sSigBase', 'vSigBase', 2, 0.01, v => { pSigBase = v; });
+
+// r_min and r_max for CLONALG — same push-along locking as NSA
+document.getElementById('cSRMin').addEventListener('input', () => {
+  const elMin = document.getElementById('cSRMin');
+  const elMax = document.getElementById('cSRMax');
+  if (parseInt(elMin.value) > parseInt(elMax.value)) {
+    elMax.value = elMin.value;
+    R_MAX_C = parseInt(elMax.value) * 0.01;
+    R_INIT_MAX_C = R_MAX_C * 0.78;
+    document.getElementById('cVRMax').textContent = R_MAX_C.toFixed(3);
+  }
+  R_MIN_C = parseInt(elMin.value) * 0.01;
+  document.getElementById('cVRMin').textContent = R_MIN_C.toFixed(3);
+});
+document.getElementById('cSRMax').addEventListener('input', () => {
+  const elMin = document.getElementById('cSRMin');
+  const elMax = document.getElementById('cSRMax');
+  if (parseInt(elMax.value) < parseInt(elMin.value)) {
+    elMin.value = elMax.value;
+    R_MIN_C = parseInt(elMin.value) * 0.01;
+    document.getElementById('cVRMin').textContent = R_MIN_C.toFixed(3);
+  }
+  R_MAX_C = parseInt(elMax.value) * 0.01;
+  R_INIT_MAX_C = R_MAX_C * 0.78;
+  document.getElementById('cVRMax').textContent = R_MAX_C.toFixed(3);
+});
+
+// Speed buttons — scoped to CLONALG speed row; now control frames-per-antigen-pass
+document.getElementById('cSpeedRow').querySelectorAll('.speed-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('cSpeedRow').querySelectorAll('.speed-btn')
+      .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    pAgFrames = parseInt(btn.dataset.gpf);
+  });
+});
+
+document.getElementById('cBtnRun').addEventListener('click', () => {
+  cStartStop();
+  if (!cRunning) cSetEventIdle();
+});
+document.getElementById('cBtnStep').addEventListener('click', () => {
+  if (cRunning) { cStartStop(); cSetModeTag('READY', ''); }  // pause → READY, then step
+  cStepOnce();
+});
+document.getElementById('cBtnReset').addEventListener('click', () => {
+  if (cRunning) cStartStop();
+  cInit();
+});
+document.getElementById('cBtnTest').addEventListener('click', () => {
+  cTestActive = !cTestActive;
+  const btn = document.getElementById('cBtnTest');
+  if (cTestActive) {
+    cTestPt = { x: 0.5, y: 0.5 };
+    btn.textContent = '× Remove Test Point';
+    btn.style.borderColor = 'var(--orange)';
+    btn.style.color = 'var(--orange)';
+    cSetModeTag('DEPLOY TEST', 'test');
+  } else {
+    cTestPt = null;
+    btn.textContent = '+ Add Test Point';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+    cSetModeTag(cRunning ? 'TRAINING' : 'READY', '');
+    if (!cRunning) cSetEventIdle();
+  }
+  cRender(0, passAgIdx); cUpdateStats();
+});
+
+document.getElementById('cTogSigma').addEventListener('change', e => { cShowSigma = e.target.checked; });
+document.getElementById('cTogEvolveR').addEventListener('change', e => { cEvolveR = e.target.checked; });
+document.getElementById('cTogCloud').addEventListener('change', e => { cShowCloud = e.target.checked; });
+document.getElementById('cTogAxes').addEventListener('change', e => {
+  cShowAxes = e.target.checked; cUpdateDomain();
+});
+document.getElementById('cDomSel').addEventListener('change', () => {
+  cUpdateDomain(); cUpdateLegend();
+});
+
+/* ================================================================
+/* ================================================================
+   TAB SWITCHING
+================================================================ */
+document.getElementById('tabNSA').addEventListener('click', () => {
+  document.getElementById('panelNSA').style.display    = '';
+  document.getElementById('panelCLONALG').style.display = 'none';
+  document.getElementById('tabNSA').classList.add('active');
+  document.getElementById('tabCLONALG').classList.remove('active');
+  if (cRunning) cStartStop();
+});
+
+document.getElementById('tabCLONALG').addEventListener('click', () => {
+  document.getElementById('panelNSA').style.display    = 'none';
+  document.getElementById('panelCLONALG').style.display = '';
+  document.getElementById('tabCLONALG').classList.add('active');
+  document.getElementById('tabNSA').classList.remove('active');
+  if (running) startStop();
+});
+
+/* ================================================================
+   BOOT
+================================================================ */
+updateDomain();
+init();
+cInit();
+
+// Scroll hint for pseudo-cards that overflow horizontally
+function updateScrollHints() {
+  document.querySelectorAll('.pseudo-card').forEach(card => {
+    // Ensure hint div exists
+    let hint = card.querySelector('.pseudo-card-scroll-hint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.className = 'pseudo-card-scroll-hint';
+      hint.textContent = '← scroll for more →';
+      card.insertBefore(hint, card.firstChild);
+    }
+    // Check if any child overflows the card width
+    const overflows = card.scrollWidth > card.clientWidth + 2;
+    card.classList.toggle('is-overflowing', overflows);
+  });
+}
+window.addEventListener('load', updateScrollHints);
+window.addEventListener('resize', updateScrollHints);
+// Also run after tab switches since hidden panels have 0 width
+document.querySelectorAll('.tab').forEach(t =>
+  t.addEventListener('click', () => setTimeout(updateScrollHints, 50))
+);
+</script>
+</body>
+</html>
