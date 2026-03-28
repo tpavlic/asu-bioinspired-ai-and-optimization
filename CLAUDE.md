@@ -118,6 +118,7 @@ Current sections and their placeholder comments:
 | Evolution Strategies | `<!-- Add more evolution strategies demos here -->` |
 | Evolutionary Programming &amp; Artificial Immune Systems | `<!-- Add more evolutionary programming and AIS demos here -->` |
 | Physics-Inspired Methods | `<!-- Add more physics-inspired demos here -->` |
+| Swarm Intelligence | `<!-- Add more swarm intelligence demos here -->` |
 | Neural Networks | `<!-- Add more neural network demos here -->` |
 | Cellular Automata | `<!-- Add more cellular automata demos here -->` |
 
@@ -170,6 +171,10 @@ Add a row to the appropriate table under `## Contents`:
 - `boltzmann_maxent/boltzmann_maxent_random_exchange.html`
 - `boltzmann_maxent/beta_spacings.html`
 
+### Swarm Intelligence
+
+- `bacterial_foraging_optimization/bfo_comm_and_chemotaxis.html` *(chemotaxis and communication components only; full BFO coming in a future demo)*
+
 ### Neural Networks
 
 - `radial_basis_function_nn/rbfnn_explorer.html`
@@ -193,7 +198,7 @@ course unit vocabulary so students can orient themselves.
 | Unit 3 | Multi-objective optimization, MOEA, Pareto ranking, niching | Genetic Algorithms |
 | Unit 4 | Multi-modal optimization, diversity/niching methods, distributed/parallel GAs | Genetic Algorithms |
 | Unit 5 | Simulated Annealing, MaxEnt, Gibbs/softmax, Metropolis–Hastings, MCMC | Physics-Inspired Methods |
-| Unit 6 | Ant Colony Optimization, Bacterial Foraging, Particle Swarm Optimization | *(no section yet — add "Swarm Intelligence")* |
+| Unit 6 | Ant Colony Optimization, Bacterial Foraging, Particle Swarm Optimization | Swarm Intelligence |
 | Unit 7 | Perceptrons, RNNs, Hebbian learning, STDP, spiking neural networks | Neural Networks |
 | Unit 8 *(if time)* | Cellular automata | Cellular Automata |
 | Unit 9 *(if time)* | Stochastic policies, multi-scale robotics | *(no section yet)* |
@@ -210,6 +215,7 @@ course unit vocabulary so students can orient themselves.
 - *"Physics-Inspired Methods"* — matches Unit 5 phrasing exactly; covers both the metaheuristic
   side (SA, PT) and the probabilistic/information-theoretic side (MaxEnt, Gibbs/softmax), all of
   which share roots in statistical mechanics and the Boltzmann distribution.
+- *"Swarm Intelligence"* — covers Unit 6: ACO, BFO (chemotaxis, communication, reproduction, elimination-dispersal), and PSO.
 - *"Neural Networks"* — straightforward; covers Unit 7 content.
 
 ## Shared conventions

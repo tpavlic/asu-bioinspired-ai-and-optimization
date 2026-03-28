@@ -52,6 +52,12 @@ as iframes.
 | [`boltzmann_maxent/`](boltzmann_maxent/) | Interactive simulation of N agents trading random amounts of a conserved quantity — any initial distribution relaxes to the Boltzmann (exponential) equilibrium |
 | [`boltzmann_maxent/beta_spacings.html`](boltzmann_maxent/beta_spacings.html) | Interactive Beta(α,β) distribution explorer: adjust α and β, draw N samples, and watch how order statistics and spacings connect uniform random variables to the Beta distribution |
 
+### Swarm Intelligence
+
+| Directory | Description |
+| --- | --- |
+| [`bacterial_foraging_optimization/bfo_comm_and_chemotaxis.html`](bacterial_foraging_optimization/bfo_comm_and_chemotaxis.html) | Interactive explorer for the chemotaxis and cell-to-cell communication components of BFO in isolation: bacteria swim/tumble toward nutrients while signaling neighbors via attractant/repellent molecules |
+
 ### Neural Networks
 
 | Directory | Description |
