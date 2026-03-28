@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BFO Communication &amp; Chemotaxis Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:          #f0ede5;
+  --surface:     #ffffff;
+  --surface-alt: #f8f6f0;
+  --border:      #d4cfc4;
+  --border-dark: #b8b2a6;
+  --green-dark:  #1d3c28;
+  --green-mid:   #2d6a4f;
+  --green-light: #52b788;
+  --green-pale:  #d8edde;
+  --orange:      #c85018;
+  --orange-pale: #fce8d8;
+  --text:        #1a1a1a;
+  --text-muted:  #5a5a5a;
+  --text-small:  #888;
+  --font-body:   'Outfit', sans-serif;
+  --font-mono:   'IBM Plex Mono', monospace;
+  --r:           8px;
+  --pill:        999px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+sub, sup { font-size: 0.75em; vertical-align: sub; }
+sup { vertical-align: super; }
+/* Real <sub> inside legend/status: stay in inline flow, nudge down without creating a box gap */
+.legend sub, .stat-lbl sub {
+  font-size: 0.73em;
+  vertical-align: baseline;
+  position: relative;
+  top: 0.20em;
+  line-height: 0;
+}
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* HEADER */
+.hdr {
+  background: var(--green-dark);
+  color: #fff;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 11px 20px;
+}
+.hdr-title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.hdr-copy  { font-size: 0.72rem; opacity: 0.65; white-space: nowrap; }
+.hdr-copy a { color: inherit; }
+
+/* TABBAR */
+.tabbar {
+  background: var(--green-dark);
+  display: flex;
+  padding: 0 20px;
+  border-bottom: 2px solid var(--border);
+  overflow-x: auto;
+}
+.tab-btn {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.tab-btn:hover:not(.disabled) { color: rgba(255,255,255,0.88); }
+.tab-btn.active {
+  color: var(--green-dark);
+  background: var(--bg);
+  border-bottom-color: var(--orange);
+  border-radius: var(--r) var(--r) 0 0;
+}
+.tab-btn.disabled { opacity: 0.32; cursor: not-allowed; }
+
+/* DESCRIPTION */
+.desc {
+  padding: 12px 20px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  line-height: 1.65;
+}
+.desc strong { color: var(--text); font-weight: 600; }
+.desc-lede { color: var(--orange); font-weight: 500; }
+.view2d-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  padding: 4px 2px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.vr-lbl {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.vr-lbl input[type=radio] { accent-color: var(--orange); cursor: pointer; margin-right: 4px; }
+.vr-lbl span { font-size: 0.78rem; color: var(--text-muted); }
+
+/* MAIN */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 275px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* CANVAS PANEL */
+.canvas-panel {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+.canvas-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.canvas-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.swim-badge {
+  font-family: var(--font-mono);
+  font-size: 0.69rem;
+  font-weight: 500;
+  padding: 3px 11px;
+  border-radius: var(--pill);
+  border: 1.5px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  min-width: 110px;
+  text-align: center;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.swim-badge.state-swim {
+  background: var(--green-pale);
+  color: var(--green-dark);
+  border-color: var(--green-light);
+}
+.swim-badge.state-tumble {
+  background: var(--orange-pale);
+  color: var(--orange);
+  border-color: #e8a880;
+}
+.swim-badge.state-converged {
+  background: #e8f4e8;
+  color: #2a6a2a;
+  border-color: #90c890;
+}
+
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 310px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+#mainCanvas { display: block; width: 100%; height: 100%; cursor: default; }
+.canvas-hint {
+  position: absolute;
+  bottom: 6px; right: 8px;
+  font-size: 0.64rem;
+  color: var(--text-small);
+  pointer-events: none;
+  font-family: var(--font-mono);
+}
+
+/* LEGEND */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 15px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.leg { display: flex; align-items: center; gap: 5px; }
+.leg-fill { width: 20px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+.leg-line { width: 20px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+.leg-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.leg-diamond {
+  width: 10px; height: 10px;
+  transform: rotate(45deg); border-radius: 1px; flex-shrink: 0;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--surface-alt);
+  padding: 14px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.sec { display: flex; flex-direction: column; gap: 7px; }
+.sec-label {
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.sl-row {
+  display: grid;
+  grid-template-columns: 68px 1fr 48px;
+  align-items: center;
+  gap: 6px;
+}
+.sl-label { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text); }
+.sl-val { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 500; color: var(--orange); text-align: right; }
+input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointer; }
+
+.tog-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; gap: 6px; }
+.toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.tog-track {
+  position: absolute; inset: 0;
+  background: var(--border-dark);
+  border-radius: var(--pill);
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.toggle input:checked + .tog-track { background: var(--green-dark); }
+.tog-track::after {
+  content: '';
+  position: absolute; left: 3px; top: 3px;
+  width: 14px; height: 14px;
+  background: #fff; border-radius: 50%;
+  transition: transform 0.18s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.toggle input:checked + .tog-track::after { transform: translateX(16px); }
+
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn {
+  font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+  border: none; border-radius: var(--pill); padding: 7px 15px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: filter 0.15s, opacity 0.15s;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.1); }
+.btn:active:not(:disabled) { filter: brightness(0.9); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary   { background: var(--green-dark); color: #fff; }
+.btn-secondary { background: transparent; border: 1.5px solid var(--green-dark); color: var(--green-dark); }
+
+.speed-row {
+  display: grid; grid-template-columns: 52px 1fr 50px;
+  align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--text-muted);
+}
+
+/* STATUS BAR */
+.status {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.stat { padding: 9px 16px; border-right: 1px solid var(--border); }
+.stat:last-child { border-right: none; }
+.stat-lbl {
+  font-size: 0.63rem; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--text-small); margin-bottom: 1px;
+}
+.stat-val { font-family: var(--font-mono); font-size: 0.94rem; font-weight: 500; color: var(--orange); }
+
+/* ALGO */
+.algo { padding: 18px 20px; border-bottom: 1px solid var(--border); }
+.algo-title {
+  font-size: 0.67rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 12px;
+}
+.algo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.algo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 15px;
+  display: flex; flex-direction: column; gap: 0;
+}
+.algo-card-title {
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--green-dark); margin-bottom: 9px;
+}
+.algo-code {
+  font-family: var(--font-mono); font-size: 0.695rem;
+  line-height: 1.80; color: var(--text);
+  white-space: pre; overflow-x: auto;
+}
+.kw  { color: var(--green-dark); font-weight: 500; }
+.sc  { color: var(--orange);     font-weight: 500; }
+.cm  { color: var(--text-small); font-style: italic; }
+.algo-fn {
+  margin-top: 10px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: 0.66rem;
+  color: var(--text-muted); line-height: 1.7;
+}
+
+/* FOOTER */
+.footer {
+  padding: 11px 20px; text-align: right;
+  font-size: 0.72rem; color: var(--text-small);
+}
+.footer a { color: inherit; }
+
+/* RESPONSIVE */
+@media (max-width: 700px) {
+  .main { grid-template-columns: 1fr; }
+  .canvas-panel { border-right: none; border-bottom: 1px solid var(--border); }
+  .canvas-wrap { height: 260px; }
+  .status { grid-template-columns: 1fr 1fr; }
+  .stat:nth-child(2) { border-right: none; }
+  .algo-grid { grid-template-columns: 1fr; }
+  .tabbar { padding: 0 12px; }
+  .hdr, .desc, .algo, .footer { padding-left: 14px; padding-right: 14px; }
+}
+@media (max-width: 440px) {
+  .algo-code { font-size: 0.60rem; }
+  .status { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <span class="hdr-title">BFO Communication &amp; Chemotaxis Explorer</span>
+  <span class="hdr-copy">
+    © 2026 Theodore P. Pavlic ·
+    <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
+  </span>
+</header>
+
+<nav class="tabbar">
+  <button class="tab-btn active" id="tabBtn1d">① 1-D Signal &amp; Chemotaxis</button>
+  <button class="tab-btn" id="tabBtn2d">② 2-D Landscape</button>
+</nav>
+
+<div id="tab1-content">
+
+<p class="desc">
+  <span class="desc-lede">This widget isolates <strong>cell-to-cell signaling</strong> and the <strong>chemotaxis phase</strong>
+  of Passino's (2002) Bacterial Foraging Optimization&nbsp;(BFO) — reproduction and elimination-dispersal
+  are not modeled here.</span>
+  Each bacterium emits an <strong>attractant J<sub>a</sub></strong>
+  (positive Gaussian, above axis) and a <strong>repellant J<sub>r</sub></strong>
+  (negative Gaussian, below axis). Their sum J<sub>cc</sub> creates a
+  <strong>ring of preferred separation</strong>: short-range repulsion fading to
+  moderate-range attraction. Drag the <strong>fixed bacteria</strong> (●) or the
+  <strong>mobile bacterium</strong> (◆ m). Enable the <strong>nutrient gradient</strong>
+  to add an environmental reward J<sub>env</sub>; toggle <strong>all mobile</strong>
+  to let every bacterium chemotax simultaneously. In <strong>all-mobile</strong> mode each
+  bacterium navigates its own personal J<sub>total</sub> (excluding its own self-signal),
+  so the stable configuration is a <strong>Nash equilibrium</strong>: no individual can improve
+  by moving given the others' positions. Enable <strong>all landscapes</strong> to see each
+  agent's private J<sub>total</sub> curve and observe why their peaks differ.
+</p>
+
+<div class="main">
+
+  <!-- CANVAS PANEL -->
+  <div class="canvas-panel">
+    <div class="canvas-row">
+      <span class="canvas-section-label">Signal Landscape &amp; Chemotaxis</span>
+      <span class="swim-badge" id="swimBadge">— idle —</span>
+    </div>
+
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="mainCanvas"></canvas>
+      <span class="canvas-hint">drag ● fixed · drag ◆ mobile</span>
+    </div>
+
+    <div class="legend">
+      <span class="leg"><span class="leg-dot" style="background:#2d6a4f"></span><span>Fixed bacteria</span></span>
+      <span class="leg"><span class="leg-diamond" style="background:var(--orange)"></span><span>Mobile (m)</span></span>
+      <span class="leg" id="leg-ja"><span class="leg-fill" style="background:rgba(44,106,79,0.30)"></span><span>J<sub>a</sub> (fixed)</span></span>
+      <span class="leg" id="leg-mob-ja"><span class="leg-fill" style="background:rgba(200,140,30,0.32)"></span><span>J<sub>a</sub> (mobile)</span></span>
+      <span class="leg" id="leg-jr"><span class="leg-fill" style="background:rgba(200,80,24,0.22)"></span><span>J<sub>r</sub> (fixed)</span></span>
+      <span class="leg" id="leg-mob-jr"><span class="leg-fill" style="background:rgba(140,20,40,0.25)"></span><span>J<sub>r</sub> (mobile)</span></span>
+      <span class="leg"><span class="leg-line" style="background:var(--orange)"></span><span>J<sub>cc</sub> (mobile)</span></span>
+      <span class="leg" id="leg-jtot" style="display:none"><span style="display:inline-block;width:20px;height:0;border-top:2.5px dashed rgba(60,80,170,0.82)"></span><span>J<sub>total</sub></span></span>
+      <span class="leg" id="leg-nutr" style="display:none"><span style="display:inline-block;width:20px;height:0;border-top:2px dashed #5a9a50"></span><span>J<sub>env</sub></span></span>
+      <span class="leg"><span class="leg-line" style="background:var(--orange);opacity:0.6"></span><span>Mobile trail</span></span>
+      <span class="leg" id="leg-ghosts" style="display:none">
+        <span style="display:inline-block;width:20px;height:0;border-top:2px dashed rgba(80,80,80,0.55)"></span>
+        <span>All landscapes (per agent)</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sec">
+      <div class="sec-label">Population</div>
+      <div class="sl-row">
+        <span class="sl-label">Fixed N</span>
+        <input type="range" id="sl-nbac" min="0" max="4" step="1" value="3">
+        <span class="sl-val" id="vl-nbac">3</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Attractant</div>
+      <div class="sl-row">
+        <span class="sl-label">h<sub>a</sub></span>
+        <input type="range" id="sl-ha" min="0.01" max="0.80" step="0.01" value="0.10">
+        <span class="sl-val" id="vl-ha">0.10</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">σ<sub>a</sub></span>
+        <input type="range" id="sl-sa" min="0.22" max="4.50" step="0.02" value="2.24">
+        <span class="sl-val" id="vl-sa">2.24</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Repellant</div>
+      <div class="sl-row">
+        <span class="sl-label">d<sub>r</sub></span>
+        <input type="range" id="sl-dr" min="0.01" max="0.80" step="0.01" value="0.10">
+        <span class="sl-val" id="vl-dr">0.10</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">σ<sub>r</sub></span>
+        <input type="range" id="sl-sr" min="0.05" max="4.50" step="0.05" value="0.32">
+        <span class="sl-val" id="vl-sr">0.32</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Chemotaxis</div>
+      <div class="sl-row">
+        <span class="sl-label">Step C</span>
+        <input type="range" id="sl-step" min="0.05" max="1.50" step="0.05" value="0.30">
+        <span class="sl-val" id="vl-step">0.30</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">Swim N<sub>s</sub></span>
+        <input type="range" id="sl-swim" min="1" max="20" step="1" value="4">
+        <span class="sl-val" id="vl-swim">4</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Display</div>
+      <div class="tog-row">
+        <span>Show J<sub>a</sub> / J<sub>r</sub> components</span>
+        <label class="toggle"><input type="checkbox" id="tog-comp" checked><span class="tog-track"></span></label>
+      </div>
+      <div class="tog-row">
+        <span>Nutrient gradient J<sub>env</sub></span>
+        <label class="toggle"><input type="checkbox" id="tog-nutr"><span class="tog-track"></span></label>
+      </div>
+      <div class="tog-row">
+        <span>All mobile</span>
+        <label class="toggle"><input type="checkbox" id="tog-all"><span class="tog-track"></span></label>
+      </div>
+      <div class="tog-row" id="row-ghosts" style="opacity:0.38;pointer-events:none">
+        <span>All landscapes <span style="font-size:0.78em;color:var(--text-small)">(per-agent J<sub>total</sub>)</span></span>
+        <label class="toggle"><input type="checkbox" id="tog-ghosts"><span class="tog-track"></span></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Chemotaxis Options</div>
+      <div class="tog-row">
+        <span>Include self in J<sub>cc</sub></span>
+        <label class="toggle"><input type="checkbox" id="tog-self"><span class="tog-track"></span></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Controls</div>
+      <div class="btn-row">
+        <button class="btn btn-primary"   id="btn-run">▶ Run</button>
+        <button class="btn btn-secondary" id="btn-step">Step</button>
+        <button class="btn btn-secondary" id="btn-reset">Reset</button>
+      </div>
+      <div class="speed-row">
+        <span>Speed</span>
+        <input type="range" id="sl-speed" min="1" max="20" step="1" value="3" style="accent-color:var(--green-mid)">
+        <span id="vl-speed">3 /s</span>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status">
+  <div class="stat">
+    <div class="stat-lbl">Mobile θ</div>
+    <div class="stat-val" id="st-pos">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">J<sub>cc</sub>(θ<sub>m</sub>)</div>
+    <div class="stat-val" id="st-jcc">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">J<sub>env</sub>(θ<sub>m</sub>)</div>
+    <div class="stat-val" id="st-jenv">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">J<sub>total</sub>(θ<sub>m</sub>)</div>
+    <div class="stat-val" id="st-jtot">—</div>
+  </div>
+</div>
+
+<!-- ALGORITHM REFERENCE -->
+<section class="algo">
+  <div class="algo-title">Algorithm Reference — BFO Cell-to-Cell Signaling &amp; Chemotaxis (Passino 2002)</div>
+  <div class="algo-grid">
+
+    <div class="algo-card">
+      <div class="algo-card-title">Cell-to-Cell Signal</div>
+      <div class="algo-code"><span class="kw">given</span>  bacteria positions {θ<sup>i</sup>},  i = 1…S
+       h<sub>a</sub>, σ<sub>a</sub>    <span class="cm">← attractant height &amp; width (std. dev.)</span>
+       d<sub>r</sub>, σ<sub>r</sub>    <span class="cm">← repellant depth &amp; width (std. dev.)</span>
+
+<span class="sc">▷ Per-bacterium contributions at test point θ:</span>
+J<sub>a</sub><sup>i</sup>(θ) ←  h<sub>a</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>a</sub>²)   <span class="cm">← J<sub>a</sub>: positive peak, above axis</span>
+J<sub>r</sub><sup>i</sup>(θ) ← −d<sub>r</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>r</sub>²)   <span class="cm">← J<sub>r</sub>: negative well, below axis</span>
+
+<span class="sc">▷ Total cell-to-cell reward at θ:</span>
+J<sub>cc</sub>(θ) ← Σ<sub>i=1</sub><sup>S</sup> [ J<sub>a</sub><sup>i</sup>(θ) + J<sub>r</sub><sup>i</sup>(θ) ]
+
+J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)    <span class="cm">← maximise</span>
+
+<span class="cm">  σ<sub>r</sub>² ≪ σ<sub>a</sub>²  →  narrow repellant, wide attraction
+  ⟹ moat of preferred separation d* exists
+  σ<sub>r</sub>² ≥ σ<sub>a</sub>²  →  repellant as wide as attractant
+  ⟹ moat collapses → pure repulsion everywhere</span></div>
+      <div class="algo-fn">Note: Passino (2002) uses d<sub>a</sub> (depth) and h<sub>r</sub> (height) under his cost-minimization convention where attractant subtracts from cost and repellant adds to it. Here the sign is flipped to maximization, so the attractant is a positive peak (height → h<sub>a</sub>) and the repellant is a negative well (depth → d<sub>r</sub>). Passino's w<sub>a</sub> = 1/σ<sub>a</sub>², w<sub>r</sub> = 1/σ<sub>r</sub>². Sliders use σ directly; the kernel squares it internally. Self-signaling: Passino's original formulation sums over all S bacteria including self. This widget excludes self by default, which can help stabilize trajectories, but inclusion can be toggled back on.</div>
+    </div>
+
+    <div class="algo-card">
+      <div class="algo-card-title">Chemotaxis Phase (1-D)</div>
+      <div class="algo-code"><span class="kw">given</span>  step size C,   swim length N<sub>s</sub>
+       J<sub>total</sub>(θ) = J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)
+                      <span class="cm">← higher J<sub>total</sub> = better position</span>
+
+<span class="sc">▷ Tumble:</span>
+Δ ← random direction (±1)         <span class="cm">← unit tumble in 1-D</span>
+θ<sub>new</sub> ← clamp(θ<sup>m</sup> + C · Δ,  domain)
+
+<span class="sc">▷ Swim (greedy ascent on J<sub>total</sub>):</span>
+<span class="kw">if</span> J<sub>total</sub>(θ<sub>new</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
+    θ<sup>m</sup> ← θ<sub>new</sub>               <span class="cm">← accept uphill step</span>
+    <span class="kw">for</span> s = 1 <span class="kw">to</span> N<sub>s</sub> <span class="kw">do</span>
+        θ<sub>nxt</sub> ← clamp(θ<sup>m</sup> + C · Δ)
+        <span class="kw">if</span> J<sub>total</sub>(θ<sub>nxt</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
+            θ<sup>m</sup> ← θ<sub>nxt</sub>        <span class="cm">← keep swimming ↑</span>
+        <span class="kw">else break</span>               <span class="cm">← downhill: stop</span>
+    <span class="kw">end for</span>
+<span class="kw">end if</span>                            <span class="cm">← else: tumble again next step</span></div>
+    </div>
+
+  </div>
+</section>
+
+</div><!-- #tab1-content -->
+
+<!-- ═══════════════════════════════════════════ TAB 2 ═══ -->
+<div id="tab2-content" style="display:none">
+
+<p class="desc">
+  <span class="desc-lede">Same cell-to-cell signaling and chemotaxis as Tab 1, now in a 2-D spatial environment.</span>
+  The heatmap shows a chosen signal quantity across the plane. Bacteria are draggable.
+  Signal parameters (h<sub>a</sub>, σ<sub>a</sub>, d<sub>r</sub>, σ<sub>r</sub>) and chemotaxis
+  parameters (C, N<sub>s</sub>) are <strong>shared with Tab 1</strong>.
+</p>
+
+<div class="main" id="main2d">
+
+  <!-- CANVAS PANEL -->
+  <div class="canvas-panel">
+    <div class="canvas-row">
+      <span class="canvas-section-label">2-D Signal Landscape</span>
+      <span class="swim-badge" id="swimBadge2d">— idle —</span>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap2d" style="height:380px">
+      <canvas id="canvas2d"></canvas>
+      <span class="canvas-hint">drag ● fixed · drag ◆ mobile</span>
+    </div>
+    <!-- View selector below canvas -->
+    <div class="view2d-row" id="view2dRow">
+      <span class="canvas-section-label" style="flex-shrink:0">VIEW</span>
+      <label class="vr-lbl"><input type="radio" name="v2d" value="jcc" checked> <span>J<sub>cc</sub>(m)</span></label>
+      <label class="vr-lbl"><input type="radio" name="v2d" value="ja"> <span>J<sub>a</sub></span></label>
+      <label class="vr-lbl"><input type="radio" name="v2d" value="jr"> <span>J<sub>r</sub></span></label>
+      <label class="vr-lbl"><input type="radio" name="v2d" value="env"> <span>J<sub>env</sub></span></label>
+      <label class="vr-lbl"><input type="radio" name="v2d" value="jtotal"> <span>J<sub>total</sub>(m)</span></label>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="sec">
+      <div class="sec-label">Nutrient J<sub>env</sub></div>
+      <div class="tog-row">
+        <span>Function</span>
+        <select id="sel-nutr2d" style="font-family:var(--font-body);font-size:0.80rem;padding:3px 6px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);cursor:pointer">
+          <option value="none">None</option>
+          <option value="gradient">Linear gradient</option>
+          <option value="peaks">Gaussian peaks (×2)</option>
+          <option value="rastrigin">Wavy (Rastrigin-like)</option>
+          <option value="easom">Needle (Easom-like)</option>
+        </select>
+      </div>
+      <!-- 3D thumbnail preview -->
+      <div id="wrap3d" style="display:none;width:100%;aspect-ratio:4/3;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:6px">
+        <canvas id="canvas3d" style="display:block;width:100%;height:100%"></canvas>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Population</div>
+      <div class="sl-row">
+        <span class="sl-label">Fixed N</span>
+        <input type="range" id="sl-nbac2d" min="0" max="4" step="1" value="3">
+        <span class="sl-val" id="vl-nbac2d">3</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Attractant <span style="font-size:0.65rem;color:var(--text-small);font-weight:400">(shared)</span></div>
+      <div class="sl-row">
+        <span class="sl-label">h<sub>a</sub></span>
+        <input type="range" id="sl-ha2d" min="0.01" max="0.80" step="0.01" value="0.10">
+        <span class="sl-val" id="vl-ha2d">0.10</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">σ<sub>a</sub></span>
+        <input type="range" id="sl-sa2d" min="0.22" max="4.50" step="0.02" value="2.24">
+        <span class="sl-val" id="vl-sa2d">2.24</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Repellant <span style="font-size:0.65rem;color:var(--text-small);font-weight:400">(shared)</span></div>
+      <div class="sl-row">
+        <span class="sl-label">d<sub>r</sub></span>
+        <input type="range" id="sl-dr2d" min="0.01" max="0.80" step="0.01" value="0.10">
+        <span class="sl-val" id="vl-dr2d">0.10</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">σ<sub>r</sub></span>
+        <input type="range" id="sl-sr2d" min="0.05" max="4.50" step="0.05" value="0.32">
+        <span class="sl-val" id="vl-sr2d">0.32</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Chemotaxis <span style="font-size:0.65rem;color:var(--text-small);font-weight:400">(shared)</span></div>
+      <div class="sl-row">
+        <span class="sl-label">Step C</span>
+        <input type="range" id="sl-step2d" min="0.05" max="1.50" step="0.05" value="0.30">
+        <span class="sl-val" id="vl-step2d">0.30</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">Swim N<sub>s</sub></span>
+        <input type="range" id="sl-swim2d" min="1" max="20" step="1" value="4">
+        <span class="sl-val" id="vl-swim2d">4</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Options</div>
+      <div class="tog-row">
+        <span>All mobile</span>
+        <label class="toggle"><input type="checkbox" id="tog-all2d"><span class="tog-track"></span></label>
+      </div>
+      <div class="tog-row">
+        <span>Include self in J<sub>cc</sub></span>
+        <label class="toggle"><input type="checkbox" id="tog-self2d"><span class="tog-track"></span></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Controls</div>
+      <div class="btn-row">
+        <button class="btn btn-primary"   id="btn-run2d">▶ Run</button>
+        <button class="btn btn-secondary" id="btn-step2d">Step</button>
+        <button class="btn btn-secondary" id="btn-reset2d">Reset</button>
+      </div>
+      <div class="speed-row">
+        <span>Speed</span>
+        <input type="range" id="sl-speed2d" min="1" max="20" step="1" value="3" style="accent-color:var(--green-mid)">
+        <span id="vl-speed2d">3 /s</span>
+      </div>
+    </div>
+
+  </aside>
+</div><!-- .main -->
+
+<!-- STATUS BAR -->
+<div class="status">
+  <div class="stat">
+    <div class="stat-lbl">Mobile (x, y)</div>
+    <div class="stat-val" id="st2d-pos">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">J<sub>cc</sub>(m)</div>
+    <div class="stat-val" id="st2d-jcc">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">J<sub>env</sub>(m)</div>
+    <div class="stat-val" id="st2d-jenv">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">J<sub>total</sub>(m)</div>
+    <div class="stat-val" id="st2d-jtot">—</div>
+  </div>
+</div>
+
+<!-- Algo reference (same cards as Tab 1, shared for reference) -->
+<section class="algo">
+  <div class="algo-title">Algorithm Reference — BFO Cell-to-Cell Signaling &amp; Chemotaxis (Passino 2002) — 2-D</div>
+  <div class="algo-grid">
+
+    <div class="algo-card">
+      <div class="algo-card-title">Cell-to-Cell Signal</div>
+      <div class="algo-code"><span class="kw">given</span>  bacteria {θ<sup>i</sup>} in ℝ²,  i = 1…S
+       h<sub>a</sub>, σ<sub>a</sub>    <span class="cm">← attractant height &amp; width</span>
+       d<sub>r</sub>, σ<sub>r</sub>    <span class="cm">← repellant depth &amp; width</span>
+
+<span class="sc">▷ Per-bacterium contributions at θ = (x,y):</span>
+J<sub>a</sub><sup>i</sup>(θ) ←  h<sub>a</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>a</sub>²)
+J<sub>r</sub><sup>i</sup>(θ) ← −d<sub>r</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>r</sub>²)
+
+<span class="sc">▷ Total cell-to-cell reward at θ:</span>
+J<sub>cc</sub>(θ) ← Σ<sub>i=1</sub><sup>S</sup> [ J<sub>a</sub><sup>i</sup>(θ) + J<sub>r</sub><sup>i</sup>(θ) ]
+J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)   <span class="cm">← maximise</span>
+
+<span class="cm">  σ<sub>r</sub>² ≪ σ<sub>a</sub>²  →  moat of preferred separation
+  σ<sub>r</sub>² ≥ σ<sub>a</sub>²  →  moat collapses</span></div>
+      <div class="algo-fn">Note: Passino (2002) uses d<sub>a</sub> (depth) and h<sub>r</sub> (height) under his cost-minimization convention where attractant subtracts from cost and repellant adds to it. Here the sign is flipped to maximization, so the attractant is a positive peak (height → h<sub>a</sub>) and the repellant is a negative well (depth → d<sub>r</sub>). Passino's w<sub>a</sub> = 1/σ<sub>a</sub>², w<sub>r</sub> = 1/σ<sub>r</sub>². Sliders use σ directly; the kernel squares it internally. Self-signaling: Passino's original formulation sums over all S bacteria including self. This widget excludes self by default, which can help stabilize trajectories, but inclusion can be toggled back on.</div>
+    </div>
+
+    <div class="algo-card">
+      <div class="algo-card-title">Chemotaxis Phase (2-D)</div>
+      <div class="algo-code"><span class="kw">given</span>  step size C,   swim length N<sub>s</sub>
+       J<sub>total</sub>(θ) = J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)
+
+<span class="sc">▷ Tumble:</span>
+φ ← uniform random angle in [0, 2π)  <span class="cm">← random direction</span>
+Δ ← (cos φ, sin φ)                   <span class="cm">← unit vector</span>
+θ<sub>new</sub> ← clamp(θ<sup>m</sup> + C·Δ,  domain)
+
+<span class="sc">▷ Swim (greedy ascent on J<sub>total</sub>):</span>
+<span class="kw">if</span> J<sub>total</sub>(θ<sub>new</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
+    θ<sup>m</sup> ← θ<sub>new</sub>               <span class="cm">← accept uphill step</span>
+    <span class="kw">for</span> s = 1 <span class="kw">to</span> N<sub>s</sub> <span class="kw">do</span>
+        θ<sub>nxt</sub> ← clamp(θ<sup>m</sup> + C·Δ)
+        <span class="kw">if</span> J<sub>total</sub>(θ<sub>nxt</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
+            θ<sup>m</sup> ← θ<sub>nxt</sub>        <span class="cm">← keep swimming ↑</span>
+        <span class="kw">else break</span>
+    <span class="kw">end for</span>
+<span class="kw">end if</span></div>
+    </div>
+
+  </div>
+</section>
+
+</div><!-- #tab2-content -->
+
+<footer class="footer">
+  © 2026 Theodore P. Pavlic ·
+  <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
+</footer>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════
+// PARAMETERS & STATE
+// ═══════════════════════════════════════════════
+const DOMAIN    = [-8, 8];
+const NPLOT     = 600;
+const TRAIL_MAX = 30;
+
+// Passino sign-flipped: J_a positive (attractant), J_r negative (repellant)
+// kernel: exp(-d² / σ²)  where σ² = 1/w_passino
+const P = {
+  ha:  0.10,  sa: 2.24,
+  dr:  0.10,  sr: 0.32,
+  C:   0.30,  Ns:  4,
+  showComp: true,
+  showNutr: false,
+  allMobile: false,
+  showGhosts: false,
+  includeSelf: false,
+  stepsPerSec: 3,
+  nBac: 3,
+};
+
+const COLS = ['#2d6a4f', '#1a5e8e', '#7d6608', '#7b3f8e'];
+const fixedBac = [
+  { x: -4.5, dx: -4.5, trail: [] },
+  { x: -1.5, dx: -1.5, trail: [] },
+  { x:  1.5, dx:  1.5, trail: [] },
+  { x:  4.5, dx:  4.5, trail: [] },
+];
+const DEFAULT_X = [-4.5, -1.5, 1.5, 4.5];
+const mob = { x: -6.5, dx: -6.5, trail: [] };
+
+let stepCount    = 0;
+let running      = false;
+let animId       = null;
+let lastStepT    = 0;
+let swimState    = 'idle';   // 'idle'|'swimming'|'tumbling'|'converged'
+let tumbleStreak = 0;
+const CONVERGE_N = 30;
+const LERP       = 0.16;   // display position glide factor per 60fps frame
+
+// ═══════════════════════════════════════════════
+// SIGNAL MATH
+// ═══════════════════════════════════════════════
+const sq   = d => d * d;
+const jAi  = (x, xi) =>  P.ha * Math.exp(-sq(x-xi) / sq(P.sa));
+const jRi  = (x, xi) => -P.dr * Math.exp(-sq(x-xi) / sq(P.sr));
+const jCCi = (x, xi) => jAi(x,xi) + jRi(x,xi);
+
+function activeBac() { return fixedBac.slice(0, P.nBac); }
+
+// J_total as perceived by bacterium at index i (excludes its own signal)
+function jTotalFor(x, bac, selfIdx) {
+  let s = 0;
+  for (let j = 0; j < bac.length; j++) {
+    if (j !== selfIdx) s += jCCi(x, bac[j].x);
+  }
+  return s + (P.showNutr ? jEnv(x) : 0);
+}
+
+function jCC(x, bac) {
+  let s = 0; for (const b of bac) s += jCCi(x, b.x); return s;
+}
+
+// Environmental nutrient: two Gaussian patches (positive = reward)
+const jEnv = (x) =>
+  0.28 * (Math.exp(-0.22*sq(x-4.5)) + Math.exp(-0.22*sq(x+4.5)));
+
+const jTotal = (x, bac) => jCC(x, bac) + (P.showNutr ? jEnv(x) : 0);
+
+const plotX = Array.from({length: NPLOT+1}, (_,i) =>
+  DOMAIN[0] + (DOMAIN[1]-DOMAIN[0]) * i / NPLOT);
+
+// ═══════════════════════════════════════════════
+// CHEMOTAXIS
+// ═══════════════════════════════════════════════
+const clampD = v => Math.max(DOMAIN[0]+0.05, Math.min(DOMAIN[1]-0.05, v));
+
+function chemotaxisStep(agent, bac) {
+  const j0  = jTotal(agent.x, bac);
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  const xT  = clampD(agent.x + P.C * dir);
+  let swam  = false;
+
+  if (jTotal(xT, bac) > j0) {
+    agent.x = xT; swam = true;
+    for (let s = 0; s < P.Ns; s++) {
+      const xN = clampD(agent.x + P.C * dir);
+      if (jTotal(xN, bac) > jTotal(agent.x, bac)) agent.x = xN;
+      else break;
+    }
+  }
+  agent.trail.push(agent.x);
+  if (agent.trail.length > TRAIL_MAX) agent.trail.shift();
+  return swam ? 'swimming' : 'tumbling';
+}
+
+function doStep() {
+  stepCount++;
+  const ab = activeBac();
+  let anySwam = false;
+  if (P.allMobile) {
+    const snap = [...ab.map(b => ({x: b.x})), {x: mob.x}];
+    ab.forEach((b, i) => {
+      // includeSelf: pass all agents; exclude self: filter own index out
+      const others = P.includeSelf ? snap : snap.filter((_,j) => j !== i);
+      const r = chemotaxisStep(b, others);
+      if (r === 'swimming') anySwam = true;
+    });
+    const mobOthers = P.includeSelf ? snap : snap.slice(0, ab.length);
+    const r = chemotaxisStep(mob, mobOthers);
+    if (r === 'swimming') anySwam = true;
+  } else {
+    // single mobile: "self" is mob, others are fixed ab
+    // if includeSelf, add mob's own signal too
+    const sensed = P.includeSelf ? [...ab, {x: mob.x}] : ab;
+    const r = chemotaxisStep(mob, sensed);
+    if (r === 'swimming') anySwam = true;
+  }
+
+  if (anySwam) {
+    tumbleStreak = 0;
+    swimState = 'swimming';
+  } else {
+    tumbleStreak++;
+    swimState = tumbleStreak >= CONVERGE_N ? 'converged' : 'tumbling';
+  }
+  updateStatus();
+}
+
+// ═══════════════════════════════════════════════
+// CANVAS
+// ═══════════════════════════════════════════════
+const canvas = document.getElementById('mainCanvas');
+const wrap   = document.getElementById('canvasWrap');
+let ctx, W, H;
+
+function syncCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const rc  = wrap.getBoundingClientRect();
+  W = rc.width; H = rc.height;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  canvas.style.width = W+'px'; canvas.style.height = H+'px';
+  ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+}
+
+const toCanvasX = v => (v - DOMAIN[0]) / (DOMAIN[1] - DOMAIN[0]) * W;
+const toWorldX  = c => DOMAIN[0] + (c / W) * (DOMAIN[1] - DOMAIN[0]);
+
+function yScale() {
+  const ab     = activeBac();
+  const abDx   = ab.map(b => ({x: b.dx}));
+  const allDx  = [...abDx, {x: mob.dx}];
+  const mobDx  = P.includeSelf ? allDx : abDx;
+  let mx = 1e-9;
+  for (const x of plotX) {
+    // Always include mobile's personal landscape and nutrient
+    mx = Math.max(mx, Math.abs(jCC(x, mobDx)));
+    if (P.showNutr) mx = Math.max(mx, Math.abs(jTotal(x, mobDx)));
+    mx = Math.max(mx, P.ha, P.dr);
+    // When ghost curves are visible, scan all agents' personal landscapes too
+    if (P.showGhosts) {
+      allDx.forEach((_, idx) => {
+        let jt = P.showNutr ? jEnv(x) : 0;
+        for (let j = 0; j < allDx.length; j++) {
+          if (P.includeSelf || j !== idx) jt += jCCi(x, allDx[j].x);
+        }
+        mx = Math.max(mx, Math.abs(jt));
+      });
+    }
+  }
+  return (H * 0.40) / mx;
+}
+
+function hexToRGB(h) {
+  return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+}
+
+function draw() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fafaf6';
+  ctx.fillRect(0, 0, W, H);
+
+  const axY = H * 0.48;
+  const ab  = activeBac();
+  const yS  = yScale();
+
+  // ── Nutrient background tint + dashed curve ──
+  if (P.showNutr) {
+    const bw = W / NPLOT + 1;
+    for (let i = 0; i <= NPLOT; i++) {
+      const t = Math.max(0, Math.min(1, jEnv(plotX[i]) / 0.28));
+      if (t > 0.01) {
+        ctx.fillStyle = `rgba(90,154,80,${t*0.13})`;
+        ctx.fillRect(toCanvasX(plotX[i])-bw/2, 0, bw, H);
+      }
+    }
+    ctx.save();
+    ctx.setLineDash([4,5]);
+    ctx.strokeStyle = '#5a9a50'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (let i = 0; i <= NPLOT; i++) {
+      const cx = toCanvasX(plotX[i]), cy = axY - jEnv(plotX[i])*yS;
+      i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── Per-bacterium component fills ──
+  if (P.showComp) {
+    ab.forEach((b, idx) => {
+      const [r,g,bl] = hexToRGB(COLS[idx]);
+
+      // J_a: positive, above axis — tinted with bacterium colour
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(plotX[0]), axY);
+      for (let i = 0; i <= NPLOT; i++)
+        ctx.lineTo(toCanvasX(plotX[i]), axY - jAi(plotX[i],b.dx)*yS);
+      ctx.lineTo(toCanvasX(plotX[NPLOT]), axY);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${r},${g},${bl},0.17)`; ctx.fill();
+      ctx.beginPath();
+      for (let i = 0; i <= NPLOT; i++) {
+        const cx=toCanvasX(plotX[i]), cy=axY-jAi(plotX[i],b.dx)*yS;
+        i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+      }
+      ctx.strokeStyle = `rgba(${r},${g},${bl},0.38)`; ctx.lineWidth=0.9; ctx.stroke();
+
+      // J_r: negative, below axis — consistent orange tint
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(plotX[0]), axY);
+      for (let i = 0; i <= NPLOT; i++)
+        ctx.lineTo(toCanvasX(plotX[i]), axY - jRi(plotX[i],b.dx)*yS);
+      ctx.lineTo(toCanvasX(plotX[NPLOT]), axY);
+      ctx.closePath();
+      ctx.fillStyle='rgba(200,80,24,0.14)'; ctx.fill();
+      ctx.beginPath();
+      for (let i = 0; i <= NPLOT; i++) {
+        const cx=toCanvasX(plotX[i]), cy=axY-jRi(plotX[i],b.dx)*yS;
+        i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+      }
+      ctx.strokeStyle='rgba(200,80,24,0.30)'; ctx.lineWidth=0.9; ctx.stroke();
+    });
+
+    // Mobile bacterium also emits J_a (amber) and J_r (crimson)
+    // J_a (positive, above axis) — amber
+    ctx.beginPath();
+    ctx.moveTo(toCanvasX(plotX[0]), axY);
+    for (let i = 0; i <= NPLOT; i++)
+      ctx.lineTo(toCanvasX(plotX[i]), axY - jAi(plotX[i], mob.dx)*yS);
+    ctx.lineTo(toCanvasX(plotX[NPLOT]), axY);
+    ctx.closePath();
+    ctx.fillStyle='rgba(200,140,30,0.20)'; ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i <= NPLOT; i++) {
+      const cx=toCanvasX(plotX[i]), cy=axY-jAi(plotX[i],mob.dx)*yS;
+      i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+    }
+    ctx.strokeStyle='rgba(200,140,30,0.45)'; ctx.lineWidth=0.9; ctx.stroke();
+
+    // J_r (negative, below axis) — deep crimson
+    ctx.beginPath();
+    ctx.moveTo(toCanvasX(plotX[0]), axY);
+    for (let i = 0; i <= NPLOT; i++)
+      ctx.lineTo(toCanvasX(plotX[i]), axY - jRi(plotX[i], mob.dx)*yS);
+    ctx.lineTo(toCanvasX(plotX[NPLOT]), axY);
+    ctx.closePath();
+    ctx.fillStyle='rgba(140,20,40,0.18)'; ctx.fill();
+    ctx.beginPath();
+    for (let i = 0; i <= NPLOT; i++) {
+      const cx=toCanvasX(plotX[i]), cy=axY-jRi(plotX[i],mob.dx)*yS;
+      i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+    }
+    ctx.strokeStyle='rgba(140,20,40,0.36)'; ctx.lineWidth=0.9; ctx.stroke();
+  }
+
+  // ── All landscapes: per-bacterium J_total (excluding self) ──
+  if (P.showGhosts) {
+    const allAgents = [...ab, mob];
+    const ghostCols = [...COLS.slice(0, ab.length), '#c85018'];
+    ctx.save();
+    ctx.setLineDash([5, 4]);
+
+    if (P.includeSelf) {
+      // All agents share the same landscape — draw once in dark gray
+      // Use dx so the shared curve animates with the bacteria
+      const agentsDx = allAgents.map(a => ({x: a.dx}));
+      ctx.beginPath();
+      for (let i = 0; i <= NPLOT; i++) {
+        const jt = jTotal(plotX[i], agentsDx);
+        const cx = toCanvasX(plotX[i]), cy = axY - jt * yS;
+        i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+      }
+      ctx.strokeStyle='rgba(80,80,80,0.40)'; ctx.lineWidth=1.4; ctx.stroke();
+    } else {
+      // Per-agent landscape in that agent's color — use dx for others' positions
+      allAgents.forEach((agent, idx) => {
+        const [r,g,bl] = hexToRGB(ghostCols[idx]);
+        ctx.beginPath();
+        for (let i = 0; i <= NPLOT; i++) {
+          let jt = P.showNutr ? jEnv(plotX[i]) : 0;
+          for (let j = 0; j < allAgents.length; j++) {
+            if (j !== idx) jt += jCCi(plotX[i], allAgents[j].dx);
+          }
+          const cx=toCanvasX(plotX[i]), cy=axY-jt*yS;
+          i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+        }
+        ctx.strokeStyle=`rgba(${r},${g},${bl},0.45)`; ctx.lineWidth=1.4; ctx.stroke();
+      });
+    }
+    ctx.restore();
+  }
+
+  // ── J_cc (mobile's view) — what the mobile bacterium actually navigates ──
+  // includeSelf OFF: fixed bacteria only (abDx)
+  // includeSelf ON:  all bacteria including mobile (allDx)
+  const abDx   = ab.map(b => ({x: b.dx}));
+  const allDx  = [...abDx, {x: mob.dx}];
+  const mobJccDx = P.includeSelf ? allDx : abDx;
+  ctx.beginPath();
+  for (let i = 0; i <= NPLOT; i++) {
+    const cx=toCanvasX(plotX[i]), cy=axY-jCC(plotX[i],mobJccDx)*yS;
+    i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+  }
+  ctx.strokeStyle='rgba(200,80,24,0.90)'; ctx.lineWidth=2.6; ctx.stroke();
+
+  // ── J_total line (only when nutrient on) ──
+  if (P.showNutr) {
+    ctx.save();
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    for (let i = 0; i <= NPLOT; i++) {
+      const cx=toCanvasX(plotX[i]), cy=axY-jTotal(plotX[i],mobJccDx)*yS;
+      i===0 ? ctx.moveTo(cx,cy) : ctx.lineTo(cx,cy);
+    }
+    ctx.strokeStyle='rgba(60,80,170,0.82)'; ctx.lineWidth=2.1; ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── J_total marker at mobile's position ──
+  {
+    const mCx = toCanvasX(mob.dx);
+    const mCy = axY - jTotal(mob.dx, mobJccDx) * yS;
+    ctx.save();
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(mCx, Math.min(mCy, axY-1));
+    ctx.lineTo(mCx, axY);
+    ctx.strokeStyle='rgba(120,120,120,0.32)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(mCx, mCy, 5.5, 0, Math.PI*2);
+    ctx.fillStyle='#c85018'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  // ── Axis ──
+  ctx.beginPath(); ctx.moveTo(0,axY); ctx.lineTo(W,axY);
+  ctx.strokeStyle='#c8c3b8'; ctx.lineWidth=1; ctx.stroke();
+
+  ctx.font='10px "IBM Plex Mono"';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  for (let tx=Math.ceil(DOMAIN[0]); tx<=DOMAIN[1]; tx+=2) {
+    const cx=toCanvasX(tx);
+    ctx.beginPath(); ctx.moveTo(cx,axY-3); ctx.lineTo(cx,axY+3);
+    ctx.strokeStyle='#bbb'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='#aaa'; ctx.fillText(tx, cx, axY+5);
+  }
+  ctx.textBaseline='alphabetic';
+
+  ctx.font='9px "IBM Plex Mono"'; ctx.fillStyle='#bbb'; ctx.textAlign='left';
+  ctx.fillText('J=0', 4, axY-4);
+  ctx.fillText('±'+(H*0.40/yS).toFixed(3), 4, 12);
+
+  // Step counter (bottom-left of canvas)
+  ctx.font='10px "IBM Plex Mono"'; ctx.fillStyle='#b0a898'; ctx.textAlign='left';
+  ctx.fillText('step '+stepCount, 6, H-7);
+
+  // ── Mobile trail (fading polyline) ──
+  if (mob.trail.length > 1) {
+    for (let i = 1; i < mob.trail.length; i++) {
+      const alpha = (i / mob.trail.length) * 0.70;
+      ctx.beginPath();
+      ctx.moveTo(toCanvasX(mob.trail[i-1]), axY);
+      ctx.lineTo(toCanvasX(mob.trail[i]),   axY);
+      ctx.strokeStyle = `rgba(200,80,24,${alpha})`;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }
+
+  // ── Fixed bacteria (active only) ──
+  ab.forEach((b, idx) => {
+    const cx  = toCanvasX(b.dx);
+    const col = COLS[idx];
+
+    // Ghost connector: dashed stem from bacterium up to its personal ghost curve
+    if (P.showGhosts) {
+      const allAgents = [...ab, mob];
+      let jt = P.showNutr ? jEnv(b.dx) : 0;
+      for (let j = 0; j < allAgents.length; j++) {
+        if (allAgents[j] !== b || P.includeSelf) jt += jCCi(b.dx, allAgents[j].x);
+      }
+      const ghostCy = axY - jt * yS;
+      const [r,g,bl] = hexToRGB(col);
+      ctx.save();
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(cx, axY - 11);          // start just above the circle
+      ctx.lineTo(cx, Math.min(ghostCy, axY - 12));
+      ctx.strokeStyle = `rgba(${r},${g},${bl},0.55)`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.restore();
+      // Small filled dot on ghost curve at this bacterium's x
+      ctx.beginPath();
+      ctx.arc(cx, ghostCy, 3.5, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${r},${g},${bl},0.75)`;
+      ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    ctx.beginPath(); ctx.moveTo(cx,axY-15); ctx.lineTo(cx,axY+15);
+    ctx.strokeStyle=col+'55'; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, axY, 10, 0, Math.PI*2);
+    ctx.fillStyle=col; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 10px "IBM Plex Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(idx+1), cx, axY);
+    ctx.textBaseline='alphabetic';
+  });
+
+  // ── Mobile bacterium (diamond) ──
+  {
+    const cx=toCanvasX(mob.dx), r=10;
+    ctx.beginPath();
+    ctx.moveTo(cx,axY-r); ctx.lineTo(cx+r,axY);
+    ctx.lineTo(cx,axY+r); ctx.lineTo(cx-r,axY);
+    ctx.closePath();
+    ctx.fillStyle='#c85018'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 9px "IBM Plex Mono"';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('m', cx, axY);
+    ctx.textBaseline='alphabetic';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// STATUS UPDATE
+// ═══════════════════════════════════════════════
+function updateStatus() {
+  const ab  = activeBac();
+  const sensed = P.includeSelf ? [...ab, {x: mob.x}] : ab;
+  const jcc  = jCC(mob.x, sensed);
+  const jenv = P.showNutr ? jEnv(mob.x) : 0;
+  document.getElementById('st-pos').textContent  = mob.x.toFixed(3);
+  document.getElementById('st-jcc').textContent  = jcc.toFixed(4);
+  document.getElementById('st-jenv').textContent = jenv.toFixed(4);
+  document.getElementById('st-jtot').textContent = (jcc+jenv).toFixed(4);
+
+  const badge = document.getElementById('swimBadge');
+  const dmL = '<span style="display:inline-block;width:11px;height:11px;background:#c85018;transform:rotate(45deg);border-radius:1px;margin-right:6px;vertical-align:middle"></span>';
+  if (swimState==='converged') {
+    badge.innerHTML = 'CONVERGED ✓';       badge.className='swim-badge state-converged';
+  } else if (swimState==='swimming') {
+    badge.innerHTML = dmL+'SWIMMING ↑';    badge.className='swim-badge state-swim';
+  } else if (swimState==='tumbling') {
+    badge.innerHTML = dmL+'TUMBLING ↻';    badge.className='swim-badge state-tumble';
+  } else {
+    badge.innerHTML = '— idle —';          badge.className='swim-badge';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER LOOP (always running — lerps dx, fires steps when running)
+// ═══════════════════════════════════════════════
+let renderLoopId = null;
+let needsRedraw  = false;   // set true to force one extra frame (e.g. after reset)
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function renderLoop(ts) {
+  // ── 1D lerp ──
+  let anyMoving = false;
+  for (const a of [...fixedBac, mob]) {
+    const dist = Math.abs(a.x - a.dx);
+    if (dist > 0.001) { a.dx = lerp(a.dx, a.x, LERP); anyMoving = true; }
+    else a.dx = a.x;
+  }
+  // ── 2D lerp ──
+  let anyMoving2D = false;
+  for (const a of [...fixedBac2D, mob2D]) {
+    const dx = Math.abs(a.x - a.dx), dy = Math.abs(a.y - a.dy);
+    if (dx > 0.001 || dy > 0.001) {
+      a.dx = lerp(a.dx, a.x, LERP2D);
+      a.dy = lerp(a.dy, a.y, LERP2D);
+      anyMoving2D = true;
+    } else { a.dx = a.x; a.dy = a.y; }
+  }
+
+  // ── 1D step ──
+  if (running && ts - lastStepT >= 1000 / P.stepsPerSec) {
+    doStep(); lastStepT = ts; anyMoving = true;
+  }
+  // ── 2D step ──
+  if (running2D && ts - lastStepT2D >= 1000 / P2.stepsPerSec) {
+    doStep2D(); lastStepT2D = ts; anyMoving2D = true;
+  }
+
+  // ── Draw active tab ──
+  if (activeTab === '1d') {
+    if (anyMoving || running || needsRedraw) { draw(); needsRedraw = false; }
+  } else {
+    if (anyMoving2D || running2D || needsRedraw2D) { draw2d(); needsRedraw2D = false; }
+  }
+
+  requestAnimationFrame(renderLoop);
+}
+
+// ═══════════════════════════════════════════════
+// DRAG HANDLING
+// ═══════════════════════════════════════════════
+let dragging = null;
+
+function evPt(e) {
+  const rc = canvas.getBoundingClientRect();
+  const s  = e.touches ? e.touches[0] : e;
+  return { cx: s.clientX-rc.left, cy: s.clientY-rc.top };
+}
+
+function hitTest(cx, cy) {
+  const axY=H*0.48, T=15;
+  if (Math.hypot(cx-toCanvasX(mob.dx), cy-axY) < T) return {type:'mob'};
+  for (let i=0; i<fixedBac.length; i++)
+    if (Math.hypot(cx-toCanvasX(fixedBac[i].dx), cy-axY) < T) return {type:'fix',i};
+  return null;
+}
+
+canvas.addEventListener('mousedown', e => {
+  const pt=evPt(e); dragging=hitTest(pt.cx,pt.cy);
+  if (dragging) { e.preventDefault(); canvas.style.cursor='grabbing'; }
+});
+canvas.addEventListener('mousemove', e => {
+  const pt=evPt(e);
+  if (dragging) {
+    const xw=clampD(toWorldX(pt.cx));
+    if (dragging.type==='mob') { mob.x=xw; mob.dx=xw; mob.trail=[]; }
+    else { fixedBac[dragging.i].x=xw; fixedBac[dragging.i].dx=xw; }
+    tumbleStreak=0;
+    if(swimState==='converged') swimState='idle';
+    updateStatus(); needsRedraw=true;
+  } else canvas.style.cursor=hitTest(pt.cx,pt.cy)?'grab':'default';
+});
+window.addEventListener('mouseup', ()=>{ dragging=null; canvas.style.cursor='default'; });
+canvas.addEventListener('touchstart', e=>{
+  const pt=evPt(e); dragging=hitTest(pt.cx,pt.cy);
+  if (dragging) e.preventDefault();
+},{passive:false});
+canvas.addEventListener('touchmove', e=>{
+  if (!dragging) return; e.preventDefault();
+  const xw=clampD(toWorldX(evPt(e).cx));
+  if (dragging.type==='mob') { mob.x=xw; mob.dx=xw; mob.trail=[]; }
+  else { fixedBac[dragging.i].x=xw; fixedBac[dragging.i].dx=xw; }
+  updateStatus();
+},{passive:false});
+canvas.addEventListener('touchend',()=>{ dragging=null; });
+
+// ═══════════════════════════════════════════════
+// CONTROL BINDINGS
+// ═══════════════════════════════════════════════
+const btnRun = document.getElementById('btn-run');
+
+btnRun.addEventListener('click', () => {
+  running=!running;
+  btnRun.innerHTML=running?'⏸ Pause':'▶ Run';
+  if (running) lastStepT = performance.now();
+});
+
+document.getElementById('btn-step').addEventListener('click', ()=>{
+  if (running) return;
+  doStep(); needsRedraw = true;
+});
+
+document.getElementById('btn-reset').addEventListener('click', ()=>{
+  running=false; btnRun.innerHTML='▶ Run';
+  mob.x=-6.5; mob.dx=-6.5; mob.trail=[];
+  fixedBac.forEach((b,i)=>{ b.x=DEFAULT_X[i]; b.dx=DEFAULT_X[i]; b.trail=[]; });
+  stepCount=0; swimState='idle'; tumbleStreak=0;
+  updateStatus(); needsRedraw = true;
+});
+
+document.getElementById('sl-speed').addEventListener('input', function(){
+  P.stepsPerSec=parseInt(this.value);
+  document.getElementById('vl-speed').textContent=P.stepsPerSec+' /s';
+});
+
+function bindSl(id,vlId,key,dec){
+  document.getElementById(id).addEventListener('input',function(){
+    P[key]=parseFloat(this.value);
+    document.getElementById(vlId).textContent=P[key].toFixed(dec);
+    tumbleStreak=0;
+    if(swimState==='converged') swimState='idle';
+    needsRedraw = true; updateStatus();
+  });
+}
+bindSl('sl-ha','vl-ha','ha',2);
+bindSl('sl-sa','vl-sa','sa',2);
+bindSl('sl-dr','vl-dr','dr',2);
+bindSl('sl-sr','vl-sr','sr',2);
+bindSl('sl-step','vl-step','C',2);
+bindSl('sl-swim','vl-swim','Ns',0);
+
+document.getElementById('sl-nbac').addEventListener('input', function(){
+  P.nBac = parseInt(this.value);
+  document.getElementById('vl-nbac').textContent = P.nBac;
+  tumbleStreak = 0;
+  if (swimState === 'converged') { swimState = 'idle'; }
+  needsRedraw = true; updateStatus();
+});
+
+document.getElementById('tog-comp').addEventListener('change',function(){
+  P.showComp=this.checked;
+  ['leg-ja','leg-jr','leg-mob-ja','leg-mob-jr'].forEach(id=>{
+    document.getElementById(id).style.opacity=this.checked?'1':'0.35';
+  });
+  needsRedraw=true;
+});
+document.getElementById('tog-nutr').addEventListener('change',function(){
+  P.showNutr=this.checked;
+  document.getElementById('leg-nutr').style.display=this.checked?'':'none';
+  document.getElementById('leg-jtot').style.display=this.checked?'':'none';
+  needsRedraw=true; updateStatus();
+});
+
+// Helper: sync ghost row enabled state based on allMobile AND includeSelf
+function syncGhostRow() {
+  const enabled = P.allMobile;
+  const ghostRow = document.getElementById('row-ghosts');
+  ghostRow.style.opacity = enabled ? '1' : '0.38';
+  ghostRow.style.pointerEvents = enabled ? '' : 'none';
+  if (!enabled) {
+    document.getElementById('tog-ghosts').checked = false;
+    P.showGhosts = false;
+    document.getElementById('leg-ghosts').style.display = 'none';
+  }
+}
+
+document.getElementById('tog-all').addEventListener('change',function(){
+  P.allMobile=this.checked;
+  syncGhostRow();
+  needsRedraw=true;
+});
+document.getElementById('tog-ghosts').addEventListener('change',function(){
+  P.showGhosts=this.checked;
+  document.getElementById('leg-ghosts').style.display=this.checked?'':'none';
+  needsRedraw=true;
+});
+document.getElementById('tog-self').addEventListener('change',function(){
+  P.includeSelf=this.checked;
+  syncGhostRow();
+  tumbleStreak=0;
+  if(swimState==='converged') swimState='idle';
+  needsRedraw=true; updateStatus();
+});
+
+// ═══════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════
+let activeTab = '1d';
+
+document.getElementById('tabBtn1d').addEventListener('click', () => {
+  if (activeTab === '1d') return;
+  activeTab = '1d';
+  document.getElementById('tabBtn1d').classList.add('active');
+  document.getElementById('tabBtn2d').classList.remove('active');
+  document.getElementById('tab1-content').style.display = '';
+  document.getElementById('tab2-content').style.display = 'none';
+  syncCanvas(); needsRedraw = true;
+});
+document.getElementById('tabBtn2d').addEventListener('click', () => {
+  if (activeTab === '2d') return;
+  activeTab = '2d';
+  document.getElementById('tabBtn2d').classList.add('active');
+  document.getElementById('tabBtn1d').classList.remove('active');
+  document.getElementById('tab1-content').style.display = 'none';
+  document.getElementById('tab2-content').style.display = '';
+  syncCanvas2d(); heatmapDirty2D = true; needsRedraw2D = true;
+});
+
+// ═══════════════════════════════════════════════
+// 2D STATE
+// ═══════════════════════════════════════════════
+const DOMAIN2D  = [-6, 6];
+const BUF_RES   = 90;   // heatmap buffer resolution (px)
+const TRAIL2D   = 30;
+const LERP2D    = 0.16;
+const CONVERGE2D = 30;
+
+const P2 = {
+  view:    'jcc',      // 'jcc'|'ja'|'jr'|'env'|'jtotal'
+  nutrient:'none',     // 'none'|'gradient'|'peaks'|'rastrigin'|'easom'
+  nBac:    3,
+  allMobile:   false,
+  includeSelf: false,
+  stepsPerSec: 3,
+};
+
+const DEFAULT_XY = [[-2.5, 2.0],[1.5,-2.0],[2.5, 1.5],[-2.0,-2.5]];
+const fixedBac2D = DEFAULT_XY.map(([x,y])=>({x,y,dx:x,dy:y,trail:[]}));
+const mob2D = {x:-4.5, y:0, dx:-4.5, dy:0, trail:[]};
+
+let stepCount2D   = 0;
+let swimState2D   = 'idle';
+let tumbleStreak2D = 0;
+let running2D     = false;
+let lastStepT2D   = 0;
+let animId2D      = null;
+let needsRedraw2D = true;
+let heatmapDirty2D = true;
+let heatmapBuf    = null;  // ImageData cache
+
+// ═══════════════════════════════════════════════
+// 2D SIGNAL MATH
+// ═══════════════════════════════════════════════
+const sq2 = (dx,dy) => dx*dx + dy*dy;
+const jAi2D  = (x,y,xi,yi) =>  P.ha * Math.exp(-sq2(x-xi,y-yi) / sq(P.sa));
+const jRi2D  = (x,y,xi,yi) => -P.dr * Math.exp(-sq2(x-xi,y-yi) / sq(P.sr));
+const jCCi2D = (x,y,xi,yi) => jAi2D(x,y,xi,yi)+jRi2D(x,y,xi,yi);
+
+function jCC2D(x,y,bac) {
+  let s=0; for(const b of bac) s+=jCCi2D(x,y,b.x,b.y); return s;
+}
+
+function jEnv2D(x,y) {
+  switch(P2.nutrient) {
+    case 'gradient': return 0.22*(x+y)/12;
+    case 'peaks':
+      return 0.28*(Math.exp(-sq2(x-2.5,y-2)/4)+Math.exp(-sq2(x+2,y+2.5)/3.5));
+    case 'rastrigin':
+      return 0.055*(Math.cos(1.6*x)+Math.cos(1.6*y));
+    case 'easom':
+      return 0.26*Math.exp(-sq2(x-Math.PI,y-Math.PI)/0.25);
+    default: return 0;
+  }
+}
+
+function jTotal2D(x,y,bac) {
+  return jCC2D(x,y,bac) + jEnv2D(x,y);
+}
+
+function activeBac2D() { return fixedBac2D.slice(0, P2.nBac); }
+
+// ═══════════════════════════════════════════════
+// 2D CHEMOTAXIS
+// ═══════════════════════════════════════════════
+const clamp2D = v => Math.max(DOMAIN2D[0]+0.1, Math.min(DOMAIN2D[1]-0.1, v));
+
+function chemStep2D(agent, bac) {
+  const j0    = jTotal2D(agent.x, agent.y, bac);
+  const angle = Math.random()*2*Math.PI;
+  const ddx   = Math.cos(angle), ddy = Math.sin(angle);
+  const nx    = clamp2D(agent.x + P.C*ddx);
+  const ny    = clamp2D(agent.y + P.C*ddy);
+  let swam    = false;
+  if (jTotal2D(nx,ny,bac) > j0) {
+    agent.x=nx; agent.y=ny; swam=true;
+    for(let s=0; s<P.Ns; s++){
+      const nx2=clamp2D(agent.x+P.C*ddx), ny2=clamp2D(agent.y+P.C*ddy);
+      if(jTotal2D(nx2,ny2,bac)>jTotal2D(agent.x,agent.y,bac)){agent.x=nx2;agent.y=ny2;}
+      else break;
+    }
+  }
+  agent.trail.push({x:agent.x, y:agent.y});
+  if(agent.trail.length>TRAIL2D) agent.trail.shift();
+  return swam?'swimming':'tumbling';
+}
+
+function doStep2D() {
+  stepCount2D++;
+  const ab = activeBac2D();
+  let anySwam = false;
+  if (P2.allMobile) {
+    const snap = [...ab.map(b=>({x:b.x,y:b.y})), {x:mob2D.x,y:mob2D.y}];
+    ab.forEach((b,i)=>{
+      const others = P2.includeSelf ? snap : snap.filter((_,j)=>j!==i);
+      if(chemStep2D(b,others)==='swimming') anySwam=true;
+    });
+    const mobOthers = P2.includeSelf ? snap : snap.slice(0,ab.length);
+    if(chemStep2D(mob2D,mobOthers)==='swimming') anySwam=true;
+  } else {
+    const sensed = P2.includeSelf ? [...ab,{x:mob2D.x,y:mob2D.y}] : ab;
+    if(chemStep2D(mob2D,sensed)==='swimming') anySwam=true;
+  }
+  if(anySwam){ tumbleStreak2D=0; swimState2D='swimming'; }
+  else { tumbleStreak2D++; swimState2D=tumbleStreak2D>=CONVERGE2D?'converged':'tumbling'; }
+  heatmapDirty2D = true;
+  updateStatus2D();
+}
+
+// ═══════════════════════════════════════════════
+// 2D CANVAS
+// ═══════════════════════════════════════════════
+const canvas2d  = document.getElementById('canvas2d');
+const wrap2d    = document.getElementById('canvasWrap2d');
+let ctx2d, W2d, H2d;
+
+function syncCanvas2d() {
+  const dpr  = window.devicePixelRatio||1;
+  const rc   = wrap2d.getBoundingClientRect();
+  W2d=rc.width; H2d=rc.height;
+  canvas2d.width=W2d*dpr; canvas2d.height=H2d*dpr;
+  canvas2d.style.width=W2d+'px'; canvas2d.style.height=H2d+'px';
+  ctx2d=canvas2d.getContext('2d');
+  ctx2d.scale(dpr,dpr);
+}
+
+const toC2x = (v)=>(v-DOMAIN2D[0])/(DOMAIN2D[1]-DOMAIN2D[0])*W2d;
+const toC2y = (v)=>(1-(v-DOMAIN2D[0])/(DOMAIN2D[1]-DOMAIN2D[0]))*H2d;
+const toW2x = (c)=>DOMAIN2D[0]+(c/W2d)*(DOMAIN2D[1]-DOMAIN2D[0]);
+const toW2y = (c)=>DOMAIN2D[1]-(c/H2d)*(DOMAIN2D[1]-DOMAIN2D[0]);
+
+// Color helpers
+function lerpRGB(a,b,t){ return a.map((v,i)=>Math.round(v+(b[i]-v)*t)); }
+function valToRGB(v, vmax, mode){
+  const cream=[248,246,240], dkG=[29,60,40], dkR=[160,35,20], amber=[160,95,15];
+  const blue=[30,80,170];
+  const t=Math.max(0,Math.min(1,Math.abs(v)/Math.max(vmax,1e-9)));
+  if(mode==='ja')  return lerpRGB(cream, dkG, t);
+  if(mode==='jr')  return lerpRGB(cream, dkR, t);
+  if(mode==='env') return lerpRGB(cream, amber, t);
+  // diverging (jcc, jtotal)
+  return v>=0 ? lerpRGB(cream, dkG, t) : lerpRGB(cream, dkR, t);
+}
+
+function computeHeatmap() {
+  const ab  = activeBac2D();
+  const sensed = P2.includeSelf ? [...ab,{x:mob2D.x,y:mob2D.y}] : ab;
+  const mode = P2.view;
+  const N  = BUF_RES;
+  const data= new Uint8ClampedArray(N*N*4);
+
+  // First pass: compute raw values and find range
+  const vals = new Float32Array(N*N);
+  let vmax = 1e-9;
+  for(let row=0;row<N;row++){
+    for(let col=0;col<N;col++){
+      const wx = DOMAIN2D[0]+(col+0.5)/N*(DOMAIN2D[1]-DOMAIN2D[0]);
+      const wy = DOMAIN2D[1]-(row+0.5)/N*(DOMAIN2D[1]-DOMAIN2D[0]);
+      let v;
+      if(mode==='ja')     v=ab.reduce((s,b)=>s+jAi2D(wx,wy,b.x,b.y),0)+(P2.includeSelf?jAi2D(wx,wy,mob2D.x,mob2D.y):0);
+      else if(mode==='jr')     v=-ab.reduce((s,b)=>s+jRi2D(wx,wy,b.x,b.y),0)-(P2.includeSelf?jRi2D(wx,wy,mob2D.x,mob2D.y):0);
+      else if(mode==='env')    v=jEnv2D(wx,wy);
+      else if(mode==='jtotal') v=jTotal2D(wx,wy,sensed);
+      else                     v=jCC2D(wx,wy,sensed);
+      vals[row*N+col]=v;
+      if(Math.abs(v)>vmax) vmax=Math.abs(v);
+    }
+  }
+
+  // Second pass: colorize
+  for(let i=0;i<N*N;i++){
+    const [r,g,b]=valToRGB(vals[i],vmax,mode);
+    data[i*4]=r; data[i*4+1]=g; data[i*4+2]=b; data[i*4+3]=255;
+  }
+  heatmapBuf = new ImageData(data, N, N);
+}
+
+function draw2d() {
+  if(!ctx2d||!W2d||!H2d) return;
+
+  // Recompute heatmap if positions changed
+  if(heatmapDirty2D){ computeHeatmap(); heatmapDirty2D=false; }
+
+  // Draw scaled heatmap
+  ctx2d.imageSmoothingEnabled=true;
+  ctx2d.imageSmoothingQuality='medium';
+  const tmpCanvas=document.createElement('canvas');
+  tmpCanvas.width=BUF_RES; tmpCanvas.height=BUF_RES;
+  tmpCanvas.getContext('2d').putImageData(heatmapBuf,0,0);
+  ctx2d.drawImage(tmpCanvas,0,0,W2d,H2d);
+
+  // Grid lines (subtle)
+  ctx2d.strokeStyle='rgba(180,175,165,0.25)'; ctx2d.lineWidth=1;
+  for(let v=Math.ceil(DOMAIN2D[0]);v<=DOMAIN2D[1];v+=2){
+    ctx2d.beginPath(); ctx2d.moveTo(toC2x(v),0); ctx2d.lineTo(toC2x(v),H2d); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.moveTo(0,toC2y(v)); ctx2d.lineTo(W2d,toC2y(v)); ctx2d.stroke();
+  }
+  // Axis lines
+  ctx2d.strokeStyle='rgba(120,115,108,0.45)'; ctx2d.lineWidth=1;
+  ctx2d.beginPath(); ctx2d.moveTo(toC2x(0),0); ctx2d.lineTo(toC2x(0),H2d); ctx2d.stroke();
+  ctx2d.beginPath(); ctx2d.moveTo(0,toC2y(0)); ctx2d.lineTo(W2d,toC2y(0)); ctx2d.stroke();
+
+  // Axis tick labels
+  ctx2d.font='9px "IBM Plex Mono"'; ctx2d.fillStyle='rgba(120,115,108,0.6)';
+  ctx2d.textAlign='center'; ctx2d.textBaseline='top';
+  for(let v=DOMAIN2D[0];v<=DOMAIN2D[1];v+=2){
+    if(v!==0) ctx2d.fillText(v, toC2x(v), toC2y(0)+3);
+  }
+  ctx2d.textAlign='right'; ctx2d.textBaseline='middle';
+  for(let v=DOMAIN2D[0];v<=DOMAIN2D[1];v+=2){
+    if(v!==0) ctx2d.fillText(v, toC2x(0)-3, toC2y(v));
+  }
+  ctx2d.textBaseline='alphabetic';
+
+  const ab = activeBac2D();
+
+  // Trails
+  if(mob2D.trail.length>1){
+    for(let i=1;i<mob2D.trail.length;i++){
+      const alpha=(i/mob2D.trail.length)*0.65;
+      ctx2d.beginPath();
+      ctx2d.moveTo(toC2x(mob2D.trail[i-1].x),toC2y(mob2D.trail[i-1].y));
+      ctx2d.lineTo(toC2x(mob2D.trail[i].x),toC2y(mob2D.trail[i].y));
+      ctx2d.strokeStyle=`rgba(200,80,24,${alpha})`; ctx2d.lineWidth=2; ctx2d.stroke();
+    }
+  }
+
+  // Fixed bacteria circles
+  ab.forEach((b,idx)=>{
+    const cx=toC2x(b.dx), cy=toC2y(b.dy), col=COLS[idx];
+    ctx2d.beginPath(); ctx2d.arc(cx,cy,10,0,Math.PI*2);
+    ctx2d.fillStyle=col; ctx2d.fill();
+    ctx2d.strokeStyle='rgba(255,255,255,0.85)'; ctx2d.lineWidth=2; ctx2d.stroke();
+    ctx2d.fillStyle='#fff'; ctx2d.font='bold 10px "IBM Plex Mono"';
+    ctx2d.textAlign='center'; ctx2d.textBaseline='middle';
+    ctx2d.fillText(String(idx+1),cx,cy);
+    ctx2d.textBaseline='alphabetic';
+  });
+
+  // Mobile diamond
+  {
+    const cx=toC2x(mob2D.dx), cy=toC2y(mob2D.dy), r=10;
+    ctx2d.beginPath();
+    ctx2d.moveTo(cx,cy-r); ctx2d.lineTo(cx+r,cy);
+    ctx2d.lineTo(cx,cy+r); ctx2d.lineTo(cx-r,cy);
+    ctx2d.closePath();
+    ctx2d.fillStyle='#c85018'; ctx2d.fill();
+    ctx2d.strokeStyle='rgba(255,255,255,0.85)'; ctx2d.lineWidth=2; ctx2d.stroke();
+    ctx2d.fillStyle='#fff'; ctx2d.font='bold 9px "IBM Plex Mono"';
+    ctx2d.textAlign='center'; ctx2d.textBaseline='middle';
+    ctx2d.fillText('m',cx,cy);
+    ctx2d.textBaseline='alphabetic';
+  }
+
+  // Step counter
+  ctx2d.font='10px "IBM Plex Mono"'; ctx2d.fillStyle='rgba(160,155,148,0.75)';
+  ctx2d.textAlign='left'; ctx2d.textBaseline='alphabetic';
+  ctx2d.fillText('step '+stepCount2D, 6, H2d-7);
+
+  // View label
+  const viewLabel={'jcc':'J_cc(m)','ja':'J_a','jr':'J_r','env':'J_env','jtotal':'J_total(m)'};
+  ctx2d.textAlign='right';
+  ctx2d.fillText(viewLabel[P2.view]||'', W2d-6, H2d-7);
+}
+
+// ═══════════════════════════════════════════════
+// 2D STATUS
+// ═══════════════════════════════════════════════
+function updateStatus2D() {
+  const ab = activeBac2D();
+  const sensed = P2.includeSelf ? [...ab,{x:mob2D.x,y:mob2D.y}] : ab;
+  const jcc  = jCC2D(mob2D.x, mob2D.y, sensed);
+  const jenv = jEnv2D(mob2D.x, mob2D.y);
+  document.getElementById('st2d-pos').textContent  = `(${mob2D.x.toFixed(2)}, ${mob2D.y.toFixed(2)})`;
+  document.getElementById('st2d-jcc').textContent  = jcc.toFixed(4);
+  document.getElementById('st2d-jenv').textContent = jenv.toFixed(4);
+  document.getElementById('st2d-jtot').textContent = (jcc+jenv).toFixed(4);
+
+  const badge=document.getElementById('swimBadge2d');
+  const dmL='<span style="display:inline-block;width:11px;height:11px;background:#c85018;transform:rotate(45deg);border-radius:1px;margin-right:6px;vertical-align:middle"></span>';
+  if(swimState2D==='converged')     { badge.innerHTML='CONVERGED ✓';     badge.className='swim-badge state-converged'; }
+  else if(swimState2D==='swimming') { badge.innerHTML=dmL+'SWIMMING ↑';  badge.className='swim-badge state-swim'; }
+  else if(swimState2D==='tumbling') { badge.innerHTML=dmL+'TUMBLING ↻';  badge.className='swim-badge state-tumble'; }
+  else                              { badge.innerHTML='— idle —';        badge.className='swim-badge'; }
+}
+
+// ═══════════════════════════════════════════════
+// 2D DRAG
+// ═══════════════════════════════════════════════
+let dragging2d = null;
+
+function evPt2d(e) {
+  const rc=canvas2d.getBoundingClientRect();
+  const s=e.touches?e.touches[0]:e;
+  return {cx:s.clientX-rc.left, cy:s.clientY-rc.top};
+}
+function hitTest2d(cx,cy) {
+  const T=16;
+  if(Math.hypot(cx-toC2x(mob2D.dx), cy-toC2y(mob2D.dy))<T) return {type:'mob'};
+  const ab=activeBac2D();
+  for(let i=0;i<ab.length;i++)
+    if(Math.hypot(cx-toC2x(ab[i].dx), cy-toC2y(ab[i].dy))<T) return {type:'fix',i};
+  return null;
+}
+function applyDrag2d(cx,cy) {
+  const xw=clamp2D(toW2x(cx)), yw=clamp2D(toW2y(cy));
+  if(dragging2d.type==='mob'){ mob2D.x=xw; mob2D.y=yw; mob2D.dx=xw; mob2D.dy=yw; mob2D.trail=[]; }
+  else { fixedBac2D[dragging2d.i].x=xw; fixedBac2D[dragging2d.i].y=yw;
+         fixedBac2D[dragging2d.i].dx=xw; fixedBac2D[dragging2d.i].dy=yw; }
+  tumbleStreak2D=0; if(swimState2D==='converged') swimState2D='idle';
+  heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
+}
+canvas2d.addEventListener('mousedown',e=>{
+  const pt=evPt2d(e); dragging2d=hitTest2d(pt.cx,pt.cy);
+  if(dragging2d){e.preventDefault();canvas2d.style.cursor='grabbing';}
+});
+canvas2d.addEventListener('mousemove',e=>{
+  const pt=evPt2d(e);
+  if(dragging2d) applyDrag2d(pt.cx,pt.cy);
+  else canvas2d.style.cursor=hitTest2d(pt.cx,pt.cy)?'grab':'crosshair';
+});
+window.addEventListener('mouseup',()=>{ dragging2d=null; canvas2d.style.cursor='crosshair'; });
+canvas2d.addEventListener('touchstart',e=>{
+  const pt=evPt2d(e); dragging2d=hitTest2d(pt.cx,pt.cy);
+  if(dragging2d) e.preventDefault();
+},{passive:false});
+canvas2d.addEventListener('touchmove',e=>{
+  if(!dragging2d) return; e.preventDefault();
+  const pt=evPt2d(e); applyDrag2d(pt.cx,pt.cy);
+},{passive:false});
+canvas2d.addEventListener('touchend',()=>{ dragging2d=null; });
+
+// ═══════════════════════════════════════════════
+// 2D CONTROLS
+// ═══════════════════════════════════════════════
+const btnRun2d=document.getElementById('btn-run2d');
+btnRun2d.addEventListener('click',()=>{
+  running2D=!running2D;
+  btnRun2d.innerHTML=running2D?'⏸ Pause':'▶ Run';
+  if(running2D) lastStepT2D=performance.now();
+});
+document.getElementById('btn-step2d').addEventListener('click',()=>{
+  if(running2D) return;
+  doStep2D(); needsRedraw2D=true;
+});
+document.getElementById('btn-reset2d').addEventListener('click',()=>{
+  running2D=false; btnRun2d.innerHTML='▶ Run';
+  DEFAULT_XY.forEach(([x,y],i)=>{ fixedBac2D[i].x=x; fixedBac2D[i].y=y;
+    fixedBac2D[i].dx=x; fixedBac2D[i].dy=y; fixedBac2D[i].trail=[]; });
+  mob2D.x=-4.5; mob2D.y=0; mob2D.dx=-4.5; mob2D.dy=0; mob2D.trail=[];
+  stepCount2D=0; swimState2D='idle'; tumbleStreak2D=0;
+  heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
+});
+document.getElementById('sl-speed2d').addEventListener('input',function(){
+  P2.stepsPerSec=parseInt(this.value);
+  document.getElementById('vl-speed2d').textContent=P2.stepsPerSec+' /s';
+});
+
+// Nutrient selector
+document.getElementById('sel-nutr2d').addEventListener('change',function(){
+  P2.nutrient=this.value;
+  heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
+});
+
+// N bacteria slider
+document.getElementById('sl-nbac2d').addEventListener('input',function(){
+  P2.nBac=parseInt(this.value);
+  document.getElementById('vl-nbac2d').textContent=P2.nBac;
+  tumbleStreak2D=0; if(swimState2D==='converged') swimState2D='idle';
+  heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
+});
+
+// View radio
+document.querySelectorAll('input[name="v2d"]').forEach(r=>{
+  r.addEventListener('change',function(){
+    if(!this.checked) return;
+    P2.view=this.value;
+    heatmapDirty2D=true; needsRedraw2D=true;
+  });
+});
+
+// Shared-parameter sliders for 2D (sync with P and trigger 1D redraw too)
+function bindShared(id2d, vlId2d, key, dec) {
+  document.getElementById(id2d).addEventListener('input',function(){
+    P[key]=parseFloat(this.value);
+    document.getElementById(vlId2d).textContent=P[key].toFixed(dec);
+    // Sync 1D slider value
+    const sl1d=document.getElementById(id2d.replace('2d',''));
+    if(sl1d) sl1d.value=P[key];
+    const vl1d=document.getElementById(vlId2d.replace('2d',''));
+    if(vl1d) vl1d.textContent=P[key].toFixed(dec);
+    tumbleStreak=0; tumbleStreak2D=0;
+    if(swimState==='converged') swimState='idle';
+    if(swimState2D==='converged') swimState2D='idle';
+    heatmapDirty2D=true; needsRedraw=true; needsRedraw2D=true; updateStatus2D();
+  });
+}
+bindShared('sl-ha2d','vl-ha2d','ha',2);
+bindShared('sl-sa2d','vl-sa2d','sa',2);
+bindShared('sl-dr2d','vl-dr2d','dr',2);
+bindShared('sl-sr2d','vl-sr2d','sr',2);
+bindShared('sl-step2d','vl-step2d','C',2);
+bindShared('sl-swim2d','vl-swim2d','Ns',0);
+
+// Sync 1D sliders → 2D when 1D slider moves
+['sl-ha','sl-sa','sl-dr','sl-sr','sl-step','sl-swim'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(!el) return;
+  const orig=el.oninput;
+  el.addEventListener('input',function(){
+    const id2d=id+'2d', key=id==='sl-step'?'C':id==='sl-swim'?'Ns':id.slice(3);
+    const el2d=document.getElementById(id2d);
+    if(el2d) el2d.value=P[key];
+    const vl2d=document.getElementById('vl-'+id.slice(3)+'2d');
+    if(vl2d) vl2d.textContent=P[key].toFixed(id==='sl-swim'?0:2);
+    heatmapDirty2D=true; needsRedraw2D=true;
+  });
+});
+
+// Toggles (2D-only)
+document.getElementById('tog-all2d').addEventListener('change',function(){
+  P2.allMobile=this.checked;
+  tumbleStreak2D=0; if(swimState2D==='converged') swimState2D='idle';
+  heatmapDirty2D=true; needsRedraw2D=true;
+});
+document.getElementById('tog-self2d').addEventListener('change',function(){
+  P2.includeSelf=this.checked;
+  tumbleStreak2D=0; if(swimState2D==='converged') swimState2D='idle';
+  heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
+});
+
+// ═══════════════════════════════════════════════
+// EXTEND RENDER LOOP FOR 2D
+// ═══════════════════════════════════════════════
+// 3D NUTRIENT PREVIEW
+// ═══════════════════════════════════════════════
+const canvas3d = document.getElementById('canvas3d');
+const wrap3d   = document.getElementById('wrap3d');
+
+function draw3d() {
+  if (!canvas3d || P2.nutrient === 'none') return;
+  const dpr  = window.devicePixelRatio || 1;
+  const W    = wrap3d.offsetWidth;
+  const H    = wrap3d.offsetHeight;
+  canvas3d.width  = W * dpr; canvas3d.height = H * dpr;
+  canvas3d.style.width  = W + 'px'; canvas3d.style.height = H + 'px';
+  const c = canvas3d.getContext('2d');
+  c.scale(dpr, dpr);
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = '#fafaf6'; c.fillRect(0, 0, W, H);
+
+  const GRID = 32;
+  const dom  = DOMAIN2D;
+  const step = (dom[1]-dom[0]) / GRID;
+
+  // Isometric projection — tuned for square thumbnail, steep top-down angle
+  const ox   = W * 0.50, oy = H * 0.68;
+  const sx    = W / (GRID * 2.4);
+  const sy    = H * 0.32;
+  const tilt  = 0.55;
+
+  function proj(gx, gy, gz) {
+    const px = (gx - gy) * sx;
+    const py = -(gx + gy) * sx * tilt - gz * sy;
+    return [ox + px, oy + py];
+  }
+
+  // Find value range
+  let vmin = Infinity, vmax = -Infinity;
+  for (let i = 0; i <= GRID; i++) {
+    for (let j = 0; j <= GRID; j++) {
+      const v = jEnv2D(dom[0]+i*step, dom[0]+j*step);
+      if (v < vmin) vmin = v; if (v > vmax) vmax = v;
+    }
+  }
+  const vrange = Math.max(vmax - vmin, 1e-9);
+
+  // Draw filled polygons back-to-front
+  for (let j = GRID-1; j >= 0; j--) {
+    for (let i = 0; i <= GRID-1; i++) {
+      const pts = [[i,j],[i+1,j],[i+1,j+1],[i,j+1]].map(([ci,cj]) => {
+        const v  = jEnv2D(dom[0]+ci*step, dom[0]+cj*step);
+        const gz = Math.max(0, (v-vmin)/vrange);
+        return [...proj(ci-GRID/2, cj-GRID/2, gz), gz];
+      });
+      const avgZ = pts.reduce((s,p)=>s+p[2],0)/4;
+      const t = Math.min(1, avgZ * 1.4);
+      const r  = Math.round(248 - t*88);
+      const g2 = Math.round(246 - t*156);
+      const b  = Math.round(240 - t*220);
+      c.beginPath();
+      c.moveTo(pts[0][0], pts[0][1]);
+      for (let k=1; k<pts.length; k++) c.lineTo(pts[k][0], pts[k][1]);
+      c.closePath();
+      c.fillStyle = `rgb(${r},${g2},${b})`; c.fill();
+      c.strokeStyle = `rgba(180,140,80,${0.10+t*0.08})`; c.lineWidth=0.4; c.stroke();
+    }
+  }
+
+}
+
+// Toggle 3D panel visibility and redraw when nutrient changes
+function update3dVisibility() {
+  const show = P2.nutrient !== 'none';
+  wrap3d.style.display = show ? '' : 'none';
+  if (show) draw3d();
+}
+
+// Extend nutrient selector to also toggle 3D
+const origNutrChange = document.getElementById('sel-nutr2d').oninput;
+document.getElementById('sel-nutr2d').addEventListener('change', () => update3dVisibility());
+const ro3d = new ResizeObserver(() => { if (P2.nutrient !== 'none') draw3d(); });
+ro3d.observe(wrap3d);
+
+// ═══════════════════════════════════════════════
+// RESIZE + INIT
+// ═══════════════════════════════════════════════
+const ro2d = new ResizeObserver(()=>{ if(activeTab==='2d'){syncCanvas2d();heatmapDirty2D=true;needsRedraw2D=true;} });
+ro2d.observe(wrap2d);
+const ro = new ResizeObserver(()=>{ if(activeTab==='1d'){syncCanvas();needsRedraw=true;} });
+ro.observe(wrap);
+syncCanvas(); updateStatus();
+syncCanvas2d(); updateStatus2D();
+requestAnimationFrame(renderLoop);
+</script>
+</body>
+</html>
