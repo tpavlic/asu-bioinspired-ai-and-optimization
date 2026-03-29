@@ -57,6 +57,7 @@ as iframes.
 | Directory | Description |
 | --- | --- |
 | [`bacterial_foraging_optimization/bfo_explorer.html`](bacterial_foraging_optimization/bfo_explorer.html) | Interactive explorer for the complete BFO algorithm (Passino 2002): cell-to-cell signaling and tumble-swim chemotaxis in 1-D and 2-D, plus the full nested loop with reproduction and elimination-dispersal |
+| [`particle_swarm_optimization/pso_explorer.html`](particle_swarm_optimization/pso_explorer.html) | Interactive explorer for PSO: step through the velocity-update rule with inertia, cognitive, and social components, then run a live swarm on a 2-D landscape |
 
 ### Neural Networks
 
