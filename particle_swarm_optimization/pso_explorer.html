@@ -395,7 +395,8 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 
 <p class="desc">
   <span class="desc-lede">PSO updates each particle's velocity as a weighted sum of three influences: its own momentum (<strong>inertia</strong>), attraction toward its personal best position (<strong>cognitive</strong>), and attraction toward the swarm's global best (<strong>social</strong>) — as introduced by Kennedy &amp; Eberhart (<a href="https://doi.org/10.1109/ICNN.1995.488968" target="_blank" rel="noopener">1995</a>), with the inertia weight refinement by Shi &amp; Eberhart (1998).</span>
-  The animation below cycles through the vector decomposition for a single particle. The right panel gives the update equations and a pseudocode sketch of the full algorithm.
+  The animation cycles through the velocity decomposition for a single particle with fixed parameters; the right panel gives the update equations and a pseudocode sketch of the full algorithm.
+  <span style="color:var(--green-mid);font-weight:600">For a fully interactive simulation with adjustable parameters and live fitness landscapes, see <em>Tab ② PSO Simulation</em>.</span>
 </p>
 
 <div class="theory-wrap">
