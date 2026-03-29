@@ -511,7 +511,7 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
   <div class="canvas-panel">
 
     <div class="canvas-row">
-      <span class="canvas-section-label">Particle headings</span>
+      <span class="canvas-section-label">Particle swarm</span>
       <span class="status-badge" id="simBadge">ready</span>
     </div>
 
@@ -766,11 +766,10 @@ function drawHeadingHistogram(particles){
 
   // filled bins
   for(let b=0;b<BINS;b++){
-    const a1=-Math.PI/2 + (b/BINS)*2*Math.PI;
-    const a2=-Math.PI/2 + ((b+1)/BINS)*2*Math.PI;
+    const a1=-Math.PI + (b/BINS)*2*Math.PI;
+    const a2=-Math.PI + ((b+1)/BINS)*2*Math.PI;
     const midAngle=a1+(a2-a1)/2;
-    const domTheta=midAngle+Math.PI/2;  // back to domain convention
-    const hue=((domTheta/(2*Math.PI)*360)+360)%360;
+    const hue=((midAngle/(2*Math.PI)*360)+360)%360;
     const frac=counts[b]/maxC;
     const outerR=ri+(ro-ri)*Math.max(frac,0.04);
     const alpha=0.35+0.65*frac;
@@ -826,11 +825,10 @@ function drawStaticHistogram(canvasId, kappa, mu=0){
   }
 
   for(let b=0;b<BINS;b++){
-    const a1=-Math.PI/2+(b/BINS)*2*Math.PI;
-    const a2=-Math.PI/2+((b+1)/BINS)*2*Math.PI;
+    const a1=-Math.PI+(b/BINS)*2*Math.PI;
+    const a2=-Math.PI+((b+1)/BINS)*2*Math.PI;
     const midAngle=a1+(a2-a1)/2;
-    const domTheta=midAngle+Math.PI/2;
-    const hue=((domTheta/(2*Math.PI)*360)+360)%360;
+    const hue=((midAngle/(2*Math.PI)*360)+360)%360;
     const frac=counts[b]/maxC;
     const outerR=ri+(ro-ri)*Math.max(frac,0.04);
     const alpha=0.35+0.65*frac;
