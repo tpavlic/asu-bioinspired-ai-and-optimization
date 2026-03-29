@@ -10,17 +10,17 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="BFO Communication &amp; Chemotaxis Explorer — interactive explainer">
 <meta property="og:description" content="Explore the chemotaxis and cell-to-cell communication components of Bacterial Foraging Optimization: watch bacteria swim and tumble toward nutrients while signaling neighbors via attractant/repellent molecules.">
-<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/bacterial_foraging_optimization/bfo_comm_and_chemotaxis-preview.png">
+<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/bacterial_foraging_optimization/bfo_explorer-preview.png">
 <meta property="og:image:width" content="1694">
 <meta property="og:image:height" content="794">
-<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/bacterial_foraging_optimization/bfo_comm_and_chemotaxis.html">
+<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/bacterial_foraging_optimization/bfo_explorer.html">
 <meta property="fb:app_id" content="2385695445236853">
 
 <!-- Twitter/X card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BFO Communication &amp; Chemotaxis Explorer — interactive explainer">
 <meta name="twitter:description" content="Explore the chemotaxis and cell-to-cell communication components of Bacterial Foraging Optimization: watch bacteria swim and tumble toward nutrients while signaling neighbors via attractant/repellent molecules.">
-<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/bacterial_foraging_optimization/bfo_comm_and_chemotaxis-preview.png">
+<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/bacterial_foraging_optimization/bfo_explorer-preview.png">
 
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
@@ -82,15 +82,18 @@ html, body {
 .tabbar {
   background: var(--green-dark);
   display: flex;
-  padding: 0 20px;
+  padding: 0 16px;
   border-bottom: 2px solid var(--border);
   overflow-x: auto;
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge */
 }
+.tabbar::-webkit-scrollbar { display: none; }  /* Chrome/Safari */
 .tab-btn {
   font-family: var(--font-body);
-  font-size: 0.82rem;
+  font-size: 0.79rem;
   font-weight: 500;
-  padding: 8px 18px;
+  padding: 8px 14px;
   border: none;
   background: transparent;
   color: rgba(255,255,255,0.55);
@@ -100,7 +103,8 @@ html, body {
   white-space: nowrap;
   transition: color 0.15s;
 }
-.tab-btn:hover:not(.disabled) { color: rgba(255,255,255,0.88); }
+.tab-btn:hover:not(.disabled):not(.active) { color: rgba(255,255,255,0.88); }
+.tab-btn.active:hover { color: var(--green-dark); opacity: 0.80; }
 .tab-btn.active {
   color: var(--green-dark);
   background: var(--bg);
@@ -359,6 +363,27 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 .footer a { color: inherit; }
 
 /* RESPONSIVE */
+/* TAB SELECT (narrow screens) */
+.tab-select-wrap {
+  display: none;
+  background: var(--green-dark);
+  padding: 6px 16px 8px;
+  border-bottom: 2px solid var(--border);
+}
+.tab-select {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: var(--r);
+  background: var(--green-dark);
+  color: #fff;
+  cursor: pointer;
+  appearance: auto;
+}
+
 @media (max-width: 700px) {
   .main { grid-template-columns: 1fr; }
   .canvas-panel { border-right: none; border-bottom: 1px solid var(--border); }
@@ -369,6 +394,10 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
   .tabbar { padding: 0 12px; }
   .hdr, .desc, .algo, .footer { padding-left: 14px; padding-right: 14px; }
 }
+@media (max-width: 520px) {
+  .tabbar { display: none; }
+  .tab-select-wrap { display: block; }
+}
 @media (max-width: 440px) {
   .algo-code { font-size: 0.60rem; }
   .status { grid-template-columns: 1fr 1fr; }
@@ -378,7 +407,7 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 <body>
 
 <header class="hdr">
-  <span class="hdr-title">BFO Communication &amp; Chemotaxis Explorer</span>
+  <span class="hdr-title">Bacterial Foraging Optimization (BFO) Explorer</span>
   <span class="hdr-copy">
     © 2026 Theodore P. Pavlic ·
     <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
@@ -387,20 +416,34 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 
 <nav class="tabbar">
   <button class="tab-btn active" id="tabBtn1d">① 1-D Signal &amp; Chemotaxis</button>
-  <button class="tab-btn" id="tabBtn2d">② 2-D Landscape</button>
+  <button class="tab-btn" id="tabBtn2d">② 2-D Signal &amp; Chemotaxis</button>
+  <button class="tab-btn" id="tabBtn3">③ Full BFO Algorithm</button>
 </nav>
+<div class="tab-select-wrap">
+  <select class="tab-select" id="tabSelect">
+    <option value="1d">① 1-D Signal &amp; Chemotaxis</option>
+    <option value="2d">② 2-D Signal &amp; Chemotaxis</option>
+    <option value="3">③ Full BFO Algorithm</option>
+  </select>
+</div>
 
 <div id="tab1-content">
 
 <p class="desc">
-  <span class="desc-lede">This widget isolates <strong>cell-to-cell signaling</strong> and the <strong>chemotaxis phase</strong>
-  of Passino's (2002) Bacterial Foraging Optimization&nbsp;(BFO) — reproduction and elimination-dispersal
-  are not modeled here.</span>
+  <span class="desc-lede">A layered exploration of Passino's (2002) Bacterial Foraging Optimization (BFO) — this tab isolates the <strong>cell-to-cell signaling</strong> and <strong>chemotaxis</strong> that drive each individual bacterium. Tab ② extends the same mechanics to 2-D. Tab ③ adds <strong>reproduction</strong> and <strong>elimination-dispersal</strong> to complete the full algorithm.</span>
+</p>
+<p class="desc">
+  Cell-to-cell communication is implemented with attractants and repellants that diffuse into the surrounding space.
   Each bacterium emits an <strong>attractant J<sub>a</sub></strong>
   (positive Gaussian, above axis) and a <strong>repellant J<sub>r</sub></strong>
   (negative Gaussian, below axis). Their sum J<sub>cc</sub> creates a
   <strong>ring of preferred separation</strong>: short-range repulsion fading to
-  moderate-range attraction. Drag the <strong>fixed bacteria</strong> (●) or the
+  moderate-range attraction. This emergent spacing is BFO's key ecological advantage over
+  algorithms like PSO — bacteria maintain population diversity automatically through mutual
+  repulsion, without a separate crowding or niching mechanism.
+</p>
+<p class="desc">
+  Drag the <strong>fixed bacteria</strong> (●) or the
   <strong>mobile bacterium</strong> (◆ m). Enable the <strong>nutrient gradient</strong>
   to add an environmental reward J<sub>env</sub>; toggle <strong>all mobile</strong>
   to let every bacterium chemotax simultaneously. In <strong>all-mobile</strong> mode each
@@ -415,13 +458,13 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
   <!-- CANVAS PANEL -->
   <div class="canvas-panel">
     <div class="canvas-row">
-      <span class="canvas-section-label">Signal Landscape &amp; Chemotaxis</span>
+      <span class="canvas-section-label">Bacteria on 1-D Landscape</span>
       <span class="swim-badge" id="swimBadge">— idle —</span>
     </div>
 
     <div class="canvas-wrap" id="canvasWrap">
       <canvas id="mainCanvas"></canvas>
-      <span class="canvas-hint">drag ● fixed · drag ◆ mobile</span>
+      
     </div>
 
     <div class="legend">
@@ -568,16 +611,16 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 
     <div class="algo-card">
       <div class="algo-card-title">Cell-to-Cell Signal</div>
-      <div class="algo-code"><span class="kw">given</span>  bacteria positions {θ<sup>i</sup>},  i = 1…S
+      <div class="algo-code"><span class="kw">given</span>  bacteria positions {θ<sub>i</sub>},  i = 1…S
        h<sub>a</sub>, σ<sub>a</sub>    <span class="cm">← attractant height &amp; width (std. dev.)</span>
        d<sub>r</sub>, σ<sub>r</sub>    <span class="cm">← repellant depth &amp; width (std. dev.)</span>
 
 <span class="sc">▷ Per-bacterium contributions at test point θ:</span>
-J<sub>a</sub><sup>i</sup>(θ) ←  h<sub>a</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>a</sub>²)   <span class="cm">← J<sub>a</sub>: positive peak, above axis</span>
-J<sub>r</sub><sup>i</sup>(θ) ← −d<sub>r</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>r</sub>²)   <span class="cm">← J<sub>r</sub>: negative well, below axis</span>
+J<sub>i</sub><sup>a</sup>(θ) ←  h<sub>a</sub> · exp(−‖θ−θ<sub>i</sub>‖² / σ<sub>a</sub>²)   <span class="cm">← positive peak, above axis</span>
+J<sub>i</sub><sup>r</sup>(θ) ← −d<sub>r</sub> · exp(−‖θ−θ<sub>i</sub>‖² / σ<sub>r</sub>²)   <span class="cm">← negative well, below axis</span>
 
 <span class="sc">▷ Total cell-to-cell reward at θ:</span>
-J<sub>cc</sub>(θ) ← Σ<sub>i=1</sub><sup>S</sup> [ J<sub>a</sub><sup>i</sup>(θ) + J<sub>r</sub><sup>i</sup>(θ) ]
+J<sub>cc</sub>(θ) ← Σ<sub>i=1</sub><sup>S</sup> [ J<sub>i</sub><sup>a</sup>(θ) + J<sub>i</sub><sup>r</sup>(θ) ]
 
 J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)    <span class="cm">← maximise</span>
 
@@ -591,20 +634,21 @@ J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)    <span clas
     <div class="algo-card">
       <div class="algo-card-title">Chemotaxis Phase (1-D)</div>
       <div class="algo-code"><span class="kw">given</span>  step size C,   swim length N<sub>s</sub>
+       θ<sub>mob</sub>  <span class="cm">← current position of the mobile bacterium</span>
        J<sub>total</sub>(θ) = J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)
                       <span class="cm">← higher J<sub>total</sub> = better position</span>
 
 <span class="sc">▷ Tumble:</span>
 Δ ← random direction (±1)         <span class="cm">← unit tumble in 1-D</span>
-θ<sub>new</sub> ← clamp(θ<sup>m</sup> + C · Δ,  domain)
+θ<sub>new</sub> ← clamp(θ<sub>mob</sub> + C · Δ,  domain)
 
 <span class="sc">▷ Swim (greedy ascent on J<sub>total</sub>):</span>
-<span class="kw">if</span> J<sub>total</sub>(θ<sub>new</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
-    θ<sup>m</sup> ← θ<sub>new</sub>               <span class="cm">← accept uphill step</span>
+<span class="kw">if</span> J<sub>total</sub>(θ<sub>new</sub>) > J<sub>total</sub>(θ<sub>mob</sub>) <span class="kw">then</span>
+    θ<sub>mob</sub> ← θ<sub>new</sub>               <span class="cm">← accept uphill step</span>
     <span class="kw">for</span> s = 1 <span class="kw">to</span> N<sub>s</sub> <span class="kw">do</span>
-        θ<sub>nxt</sub> ← clamp(θ<sup>m</sup> + C · Δ)
-        <span class="kw">if</span> J<sub>total</sub>(θ<sub>nxt</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
-            θ<sup>m</sup> ← θ<sub>nxt</sub>        <span class="cm">← keep swimming ↑</span>
+        θ<sub>nxt</sub> ← clamp(θ<sub>mob</sub> + C · Δ)
+        <span class="kw">if</span> J<sub>total</sub>(θ<sub>nxt</sub>) > J<sub>total</sub>(θ<sub>mob</sub>) <span class="kw">then</span>
+            θ<sub>mob</sub> ← θ<sub>nxt</sub>        <span class="cm">← keep swimming ↑</span>
         <span class="kw">else break</span>               <span class="cm">← downhill: stop</span>
     <span class="kw">end for</span>
 <span class="kw">end if</span>                            <span class="cm">← else: tumble again next step</span></div>
@@ -630,21 +674,31 @@ J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)    <span clas
   <!-- CANVAS PANEL -->
   <div class="canvas-panel">
     <div class="canvas-row">
-      <span class="canvas-section-label">2-D Signal Landscape</span>
+      <span class="canvas-section-label">Bacteria in 2-D Landscape</span>
       <span class="swim-badge" id="swimBadge2d">— idle —</span>
     </div>
     <div class="canvas-wrap" id="canvasWrap2d" style="height:380px">
       <canvas id="canvas2d"></canvas>
-      <span class="canvas-hint">drag ● fixed · drag ◆ mobile</span>
+      
     </div>
     <!-- View selector below canvas -->
-    <div class="view2d-row" id="view2dRow">
-      <span class="canvas-section-label" style="flex-shrink:0">VIEW</span>
-      <label class="vr-lbl"><input type="radio" name="v2d" value="jcc" checked> <span>J<sub>cc</sub>(m)</span></label>
-      <label class="vr-lbl"><input type="radio" name="v2d" value="ja"> <span>J<sub>a</sub></span></label>
-      <label class="vr-lbl"><input type="radio" name="v2d" value="jr"> <span>J<sub>r</sub></span></label>
-      <label class="vr-lbl"><input type="radio" name="v2d" value="env"> <span>J<sub>env</sub></span></label>
-      <label class="vr-lbl"><input type="radio" name="v2d" value="jtotal"> <span>J<sub>total</sub>(m)</span></label>
+    <div class="view2d-row" id="view2dRow" style="justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="canvas-section-label" style="flex-shrink:0">VIEW</span>
+        <label class="vr-lbl"><input type="radio" name="v2d" value="jcc" checked> <span>J<sub>cc</sub>(m)</span></label>
+        <label class="vr-lbl"><input type="radio" name="v2d" value="ja"> <span>J<sub>a</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v2d" value="jr"> <span>J<sub>r</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v2d" value="env"> <span>J<sub>env</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v2d" value="jtotal"> <span>J<sub>total</sub>(m)</span></label>
+      </div>
+      <span style="font-size:0.69rem;color:var(--text-small);font-style:italic;white-space:nowrap;flex-shrink:0">bars show locally sensed J<sub>total</sub> as % of max</span>
+    </div>
+    <!-- Fitness history (Tab 2) -->
+    <div id="fitWrap2d" style="display:none;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:4px">
+      <div id="fitTitle2d" style="padding:4px 8px 2px;font-size:0.65rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border)">
+        J<sub>env</sub> per mobile bacterium &thinsp;·&thinsp; <span style="font-weight:400;text-transform:none;letter-spacing:0">each tick = one chemotaxis step</span>
+      </div>
+      <canvas id="fitCanvas2d" style="display:block;width:100%;height:120px"></canvas>
     </div>
   </div>
 
@@ -776,16 +830,16 @@ J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)    <span clas
 
     <div class="algo-card">
       <div class="algo-card-title">Cell-to-Cell Signal</div>
-      <div class="algo-code"><span class="kw">given</span>  bacteria {θ<sup>i</sup>} in ℝ²,  i = 1…S
+      <div class="algo-code"><span class="kw">given</span>  bacteria {θ<sub>i</sub>} in ℝ²,  i = 1…S
        h<sub>a</sub>, σ<sub>a</sub>    <span class="cm">← attractant height &amp; width</span>
        d<sub>r</sub>, σ<sub>r</sub>    <span class="cm">← repellant depth &amp; width</span>
 
 <span class="sc">▷ Per-bacterium contributions at θ = (x,y):</span>
-J<sub>a</sub><sup>i</sup>(θ) ←  h<sub>a</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>a</sub>²)
-J<sub>r</sub><sup>i</sup>(θ) ← −d<sub>r</sub> · exp(−‖θ−θ<sup>i</sup>‖² / σ<sub>r</sub>²)
+J<sub>i</sub><sup>a</sup>(θ) ←  h<sub>a</sub> · exp(−‖θ−θ<sub>i</sub>‖² / σ<sub>a</sub>²)
+J<sub>i</sub><sup>r</sup>(θ) ← −d<sub>r</sub> · exp(−‖θ−θ<sub>i</sub>‖² / σ<sub>r</sub>²)
 
 <span class="sc">▷ Total cell-to-cell reward at θ:</span>
-J<sub>cc</sub>(θ) ← Σ<sub>i=1</sub><sup>S</sup> [ J<sub>a</sub><sup>i</sup>(θ) + J<sub>r</sub><sup>i</sup>(θ) ]
+J<sub>cc</sub>(θ) ← Σ<sub>i=1</sub><sup>S</sup> [ J<sub>i</sub><sup>a</sup>(θ) + J<sub>i</sub><sup>r</sup>(θ) ]
 J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)   <span class="cm">← maximise</span>
 
 <span class="cm">  σ<sub>r</sub>² ≪ σ<sub>a</sub>²  →  moat of preferred separation
@@ -796,20 +850,21 @@ J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)   <span class
     <div class="algo-card">
       <div class="algo-card-title">Chemotaxis Phase (2-D)</div>
       <div class="algo-code"><span class="kw">given</span>  step size C,   swim length N<sub>s</sub>
+       θ<sub>mob</sub>  <span class="cm">← current position of the mobile bacterium</span>
        J<sub>total</sub>(θ) = J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)
 
 <span class="sc">▷ Tumble:</span>
 φ ← uniform random angle in [0, 2π)  <span class="cm">← random direction</span>
 Δ ← (cos φ, sin φ)                   <span class="cm">← unit vector</span>
-θ<sub>new</sub> ← clamp(θ<sup>m</sup> + C·Δ,  domain)
+θ<sub>new</sub> ← clamp(θ<sub>mob</sub> + C·Δ,  domain)
 
 <span class="sc">▷ Swim (greedy ascent on J<sub>total</sub>):</span>
-<span class="kw">if</span> J<sub>total</sub>(θ<sub>new</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
-    θ<sup>m</sup> ← θ<sub>new</sub>               <span class="cm">← accept uphill step</span>
+<span class="kw">if</span> J<sub>total</sub>(θ<sub>new</sub>) > J<sub>total</sub>(θ<sub>mob</sub>) <span class="kw">then</span>
+    θ<sub>mob</sub> ← θ<sub>new</sub>               <span class="cm">← accept uphill step</span>
     <span class="kw">for</span> s = 1 <span class="kw">to</span> N<sub>s</sub> <span class="kw">do</span>
-        θ<sub>nxt</sub> ← clamp(θ<sup>m</sup> + C·Δ)
-        <span class="kw">if</span> J<sub>total</sub>(θ<sub>nxt</sub>) > J<sub>total</sub>(θ<sup>m</sup>) <span class="kw">then</span>
-            θ<sup>m</sup> ← θ<sub>nxt</sub>        <span class="cm">← keep swimming ↑</span>
+        θ<sub>nxt</sub> ← clamp(θ<sub>mob</sub> + C·Δ)
+        <span class="kw">if</span> J<sub>total</sub>(θ<sub>nxt</sub>) > J<sub>total</sub>(θ<sub>mob</sub>) <span class="kw">then</span>
+            θ<sub>mob</sub> ← θ<sub>nxt</sub>        <span class="cm">← keep swimming ↑</span>
         <span class="kw">else break</span>
     <span class="kw">end for</span>
 <span class="kw">end if</span></div>
@@ -819,6 +874,239 @@ J<sub>total</sub>(θ) ← J<sub>cc</sub>(θ) + J<sub>env</sub>(θ)   <span class
 </section>
 
 </div><!-- #tab2-content -->
+
+<!-- ═══════════════════════════════════════════ TAB 3 ═══ -->
+<div id="tab3-content" style="display:none">
+
+<p class="desc">
+  <span class="desc-lede">Full Bacterial Foraging Optimization&nbsp;(BFO) — all three nested loops running on a shared 2-D landscape.</span>
+  Signal parameters are <strong>shared with Tabs 1 &amp; 2</strong>. All S bacteria are equal agents;
+  none is privileged as "mobile." Toggle <strong>Reproduction</strong> and
+  <strong>Elimination-Dispersal</strong> on/off to observe each loop's contribution layer by layer.
+  Bacteria remain draggable during a run to manually perturb the population.
+</p>
+
+<div class="main" id="main3">
+  <div class="canvas-panel">
+    <div class="canvas-row">
+      <span class="canvas-section-label">Bacteria in 2-D Landscape</span>
+      <span class="swim-badge" id="phaseBadge">— idle —</span>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap3" style="height:360px">
+      <canvas id="canvas3"></canvas>
+      
+    </div>
+    <div class="view2d-row" style="justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="canvas-section-label" style="flex-shrink:0">VIEW</span>
+        <label class="vr-lbl"><input type="radio" name="v3" value="jcc"> <span>J<sub>cc</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v3" value="ja"> <span>J<sub>a</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v3" value="jr"> <span>J<sub>r</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v3" value="env" checked> <span>J<sub>env</sub></span></label>
+        <label class="vr-lbl"><input type="radio" name="v3" value="jtotal"> <span>J<sub>total</sub></span></label>
+      </div>
+      <span style="font-size:0.69rem;color:var(--text-small);font-style:italic;white-space:nowrap;flex-shrink:0">bars show locally sensed J<sub>total</sub> as % of max</span>
+    </div>
+    <!-- Fitness history (Tab 3) -->
+    <div id="fitWrap3" style="display:none;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:4px">
+      <div style="padding:4px 8px 2px;font-size:0.65rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);border-bottom:1px solid var(--border)">
+        J<sub>env</sub> per bacterium &thinsp;·&thinsp; <span style="font-weight:400;text-transform:none;letter-spacing:0">each tick = any change</span>
+      </div>
+      <canvas id="fitCanvas3" style="display:block;width:100%;height:120px"></canvas>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sec">
+      <div class="sec-label">Algorithm Loops</div>
+      <div class="sl-row" id="row-ned">
+        <span class="sl-label">N<sub>ed</sub></span>
+        <input type="range" id="sl-ned" min="1" max="10" step="1" value="3">
+        <span class="sl-val" id="vl-ned">3</span>
+      </div>
+      <div class="sl-row" id="row-nre">
+        <span class="sl-label">N<sub>re</sub></span>
+        <input type="range" id="sl-nre" min="1" max="10" step="1" value="4">
+        <span class="sl-val" id="vl-nre">4</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">N<sub>c</sub></span>
+        <input type="range" id="sl-nc" min="2" max="20" step="1" value="8">
+        <span class="sl-val" id="vl-nc">8</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Toggles</div>
+      <div class="tog-row">
+        <span>Reproduction</span>
+        <label class="toggle"><input type="checkbox" id="tog-repro" checked><span class="tog-track"></span></label>
+      </div>
+      <div class="tog-row">
+        <span>Elimination-Dispersal</span>
+        <label class="toggle"><input type="checkbox" id="tog-ed" checked><span class="tog-track"></span></label>
+      </div>
+      <div class="sl-row" id="row-ped">
+        <span class="sl-label">p<sub>ed</sub></span>
+        <input type="range" id="sl-ped" min="0.00" max="1.00" step="0.05" value="0.25">
+        <span class="sl-val" id="vl-ped">0.25</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Nutrient J<sub>env</sub></div>
+      <div class="tog-row">
+        <span>Function</span>
+        <select id="sel-nutr3" style="font-family:var(--font-body);font-size:0.80rem;padding:3px 6px;border:1.5px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);cursor:pointer">
+          <option value="none">None</option>
+          <option value="gradient">Linear gradient</option>
+          <option value="peaks" selected>Gaussian peaks (×2)</option>
+          <option value="rastrigin">Wavy (Rastrigin-like)</option>
+          <option value="easom">Needle (Easom-like)</option>
+        </select>
+      </div>
+      <div id="wrap3d-tab3" style="display:none;width:100%;aspect-ratio:4/3;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:6px">
+        <canvas id="canvas3d-tab3" style="display:block;width:100%;height:100%"></canvas>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Population</div>
+      <div class="sl-row">
+        <span class="sl-label">Size S</span>
+        <input type="range" id="sl-s3" min="2" max="12" step="2" value="6">
+        <span class="sl-val" id="vl-s3">6</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Chemotaxis <span style="font-size:0.65rem;color:var(--text-small);font-weight:400">(shared)</span></div>
+      <div class="sl-row">
+        <span class="sl-label">Step C</span>
+        <input type="range" id="sl-step3" min="0.05" max="1.50" step="0.05" value="0.30">
+        <span class="sl-val" id="vl-step3">0.30</span>
+      </div>
+      <div class="sl-row">
+        <span class="sl-label">Swim N<sub>s</sub></span>
+        <input type="range" id="sl-swim3" min="1" max="20" step="1" value="4">
+        <span class="sl-val" id="vl-swim3">4</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Options</div>
+      <div class="tog-row">
+        <span>Include self in J<sub>cc</sub></span>
+        <label class="toggle"><input type="checkbox" id="tog-self3"><span class="tog-track"></span></label>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Controls</div>
+      <div class="btn-row">
+        <button class="btn btn-primary"   id="btn-run3">▶ Run</button>
+        <button class="btn btn-secondary" id="btn-step3">Step</button>
+        <button class="btn btn-secondary" id="btn-reset3">Reset</button>
+      </div>
+      <div class="speed-row">
+        <span>Speed</span>
+        <input type="range" id="sl-speed3" min="1" max="20" step="1" value="5" style="accent-color:var(--green-mid)">
+        <span id="vl-speed3">5 /s</span>
+      </div>
+      <!-- Progress bar -->
+      <div style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--text-small);margin-bottom:3px">
+          <span id="prog-label">Ready</span>
+          <span id="prog-pct">0%</span>
+        </div>
+        <div style="height:6px;background:var(--border);border-radius:var(--pill);overflow:hidden">
+          <div id="prog-bar" style="height:100%;width:0%;background:var(--green-mid);border-radius:var(--pill);transition:width 0.2s"></div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+</div><!-- .main -->
+
+<!-- STATUS BAR -->
+<div class="status">
+  <div class="stat">
+    <div class="stat-lbl">Phase</div>
+    <div class="stat-val" id="st3-phase">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">i<sub>ed</sub> / N<sub>ed</sub></div>
+    <div class="stat-val" id="st3-l">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">i<sub>re</sub> / N<sub>re</sub></div>
+    <div class="stat-val" id="st3-k">—</div>
+  </div>
+  <div class="stat">
+    <div class="stat-lbl">i<sub>c</sub> / N<sub>c</sub></div>
+    <div class="stat-val" id="st3-j">—</div>
+  </div>
+</div>
+
+<!-- ALGO REFERENCE -->
+<section class="algo">
+  <div class="algo-title">Algorithm Reference — Full BFO (Passino 2002) — Nested Loop Structure</div>
+  <div class="algo-grid">
+
+    <div class="algo-card">
+      <div class="algo-card-title">Outer Loops</div>
+      <div class="algo-code"><span class="kw">given</span>  S bacteria {θ<sub>i</sub>}, N<sub>ed</sub>, N<sub>re</sub>, N<sub>c</sub>, p<sub>ed</sub>
+
+<span class="kw">for</span> i<sub>ed</sub> = 1 <span class="kw">to</span> N<sub>ed</sub> <span class="kw">do</span>              <span class="cm">← E-D loop</span>
+    <span class="kw">for</span> i<sub>re</sub> = 1 <span class="kw">to</span> N<sub>re</sub> <span class="kw">do</span>          <span class="cm">← reproduction loop</span>
+        <span class="kw">for</span> i<sub>c</sub> = 1 <span class="kw">to</span> N<sub>c</sub> <span class="kw">do</span>       <span class="cm">← chemotaxis loop</span>
+            <span class="kw">for</span> i = 1 <span class="kw">to</span> S <span class="kw">do</span>   <span class="cm">← each bacterium</span>
+                tumble / swim         <span class="cm">← see Tab ①</span>
+                J<sub>i</sub><sup>health</sup> += J<sub>total</sub>(θ<sub>i</sub>)
+            <span class="kw">end for</span>
+        <span class="kw">end for</span>
+        <span class="sc">▷ Reproduction event  [see right →]</span>
+        <span class="cm">  rank {θ<sub>i</sub>} by J<sub>i</sub><sup>health</sup>;  kill bottom ½, clone top ½</span>
+        <span class="cm">  reset J<sub>i</sub><sup>health</sup> ← 0 for all i</span>
+    <span class="kw">end for</span>
+    <span class="sc">▷ Elimination-Dispersal event  [see right →]</span>
+    <span class="cm">  each θ<sub>i</sub> scattered randomly with prob p<sub>ed</sub></span>
+<span class="kw">end for</span></div>
+    </div>
+
+    <div class="algo-card">
+      <div class="algo-card-title">Reproduction &amp; Elimination-Dispersal (detail)</div>
+      <div class="algo-code"><span class="sc">▷ Reproduction</span>  <span class="cm">← fires after inner i<sub>c</sub> loop ends</span>
+<span class="cm">  J<sub>i</sub><sup>health</sup> = cumulative J<sub>total</sub>(θ<sub>i</sub>) over N<sub>c</sub> steps</span>
+
+sort i = 1…S by J<sub>i</sub><sup>health</sup> (descending)
+<span class="kw">for</span> i = ⌈S/2⌉+1 <span class="kw">to</span> S <span class="kw">do</span>
+    θ<sub>i</sub> ← θ<sub>S+1−i</sub>      <span class="cm">← copy top half onto bottom half</span>
+    J<sub>i</sub><sup>health</sup> ← 0
+<span class="kw">end for</span>
+
+<span class="cm">  Fitter bacteria survive and reproduce;
+  unfit bacteria are replaced by copies of
+  their healthier counterparts.</span>
+
+<span class="sc">▷ Elimination-Dispersal</span>  <span class="cm">← fires after i<sub>re</sub> loop ends</span>
+<span class="kw">for</span> i = 1 <span class="kw">to</span> S <span class="kw">do</span>
+    r ~ Uniform(0, 1)
+    <span class="kw">if</span> r &lt; p<sub>ed</sub> <span class="kw">then</span>
+        θ<sub>i</sub> ← random point in domain
+        J<sub>i</sub><sup>health</sup> ← 0          <span class="cm">← reset health on dispersal</span>
+    <span class="kw">end if</span>
+<span class="kw">end for</span>
+
+<span class="cm">  Prevents stagnation on local optima.
+  Higher p<sub>ed</sub> → more exploration, less exploitation.</span></div>
+    </div>
+
+  </div>
+</section>
+
+</div><!-- #tab3-content -->
 
 <footer class="footer">
   © 2026 Theodore P. Pavlic ·
@@ -1201,13 +1489,40 @@ function draw() {
   }
   ctx.textBaseline='alphabetic';
 
-  ctx.font='9px "IBM Plex Mono"'; ctx.fillStyle='#bbb'; ctx.textAlign='left';
-  ctx.fillText('J=0', 4, axY-4);
-  ctx.fillText('±'+(H*0.40/yS).toFixed(3), 4, 12);
+  // Scale indicator — hidden on very narrow canvas
+  if (W > 300) {
+    ctx.font='9px "IBM Plex Mono"'; ctx.fillStyle='#bbb'; ctx.textAlign='left';
+    ctx.fillText('J=0', 4, axY-4);
+    ctx.fillText('±'+(H*0.40/yS).toFixed(3), 4, 12);
+  }
 
-  // Step counter (bottom-left of canvas)
-  ctx.font='10px "IBM Plex Mono"'; ctx.fillStyle='#b0a898'; ctx.textAlign='left';
-  ctx.fillText('step '+stepCount, 6, H-7);
+  // Step counter — bottom-left pill
+  {
+    const step = 'step '+stepCount;
+    ctx.font='10px "IBM Plex Mono"';
+    const tw=ctx.measureText(step).width;
+    const px=6, rx=4;
+    ctx.fillStyle='rgba(255,253,248,0.80)';
+    ctx.beginPath(); ctx.roundRect(4,H-20,tw+px*2,16,rx); ctx.fill();
+    ctx.fillStyle='rgba(80,75,70,0.90)';
+    ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+    ctx.fillText(step, 4+px, H-7);
+  }
+
+  // Drag hint — top-right pill (static instruction)
+  {
+    const hint='drag ● fixed · drag ◆ mobile';
+    ctx.font='10px "IBM Plex Mono"';
+    const tw=ctx.measureText(hint).width;
+    const px=8, rx=4;
+    const bx=W-tw-px*2-6, by=6;
+    ctx.fillStyle='rgba(255,253,248,0.80)';
+    ctx.beginPath(); ctx.roundRect(bx,by,tw+px*2,16,rx); ctx.fill();
+    ctx.fillStyle='rgba(80,75,70,0.90)';
+    ctx.textAlign='right'; ctx.textBaseline='top';
+    ctx.fillText(hint, W-6-px, by+3);
+    ctx.textBaseline='alphabetic';
+  }
 
   // ── Mobile trail (fading polyline) ──
   if (mob.trail.length > 1) {
@@ -1315,38 +1630,46 @@ let needsRedraw  = false;   // set true to force one extra frame (e.g. after res
 function lerp(a, b, t) { return a + (b - a) * t; }
 
 function renderLoop(ts) {
-  // ── 1D lerp ──
+  // 1D lerp
   let anyMoving = false;
   for (const a of [...fixedBac, mob]) {
-    const dist = Math.abs(a.x - a.dx);
-    if (dist > 0.001) { a.dx = lerp(a.dx, a.x, LERP); anyMoving = true; }
-    else a.dx = a.x;
+    if (Math.abs(a.x-a.dx)>0.001){a.dx=lerp(a.dx,a.x,LERP);anyMoving=true;}
+    else a.dx=a.x;
   }
-  // ── 2D lerp ──
+  // 2D lerp
   let anyMoving2D = false;
   for (const a of [...fixedBac2D, mob2D]) {
-    const dx = Math.abs(a.x - a.dx), dy = Math.abs(a.y - a.dy);
-    if (dx > 0.001 || dy > 0.001) {
-      a.dx = lerp(a.dx, a.x, LERP2D);
-      a.dy = lerp(a.dy, a.y, LERP2D);
-      anyMoving2D = true;
-    } else { a.dx = a.x; a.dy = a.y; }
+    const dx=Math.abs(a.x-a.dx), dy=Math.abs(a.y-a.dy);
+    if(dx>0.001||dy>0.001){a.dx=lerp(a.dx,a.x,LERP2D);a.dy=lerp(a.dy,a.y,LERP2D);anyMoving2D=true;}
+    else{a.dx=a.x;a.dy=a.y;}
+  }
+  // 3D lerp
+  let anyMoving3 = false;
+  for (const b of bac3) {
+    const dx=Math.abs(b.x-b.dx), dy=Math.abs(b.y-b.dy);
+    if(dx>0.001||dy>0.001){b.dx=lerp(b.dx,b.x,LERP3);b.dy=lerp(b.dy,b.y,LERP3);anyMoving3=true;}
+    else{b.dx=b.x;b.dy=b.y;}
   }
 
-  // ── 1D step ──
-  if (running && ts - lastStepT >= 1000 / P.stepsPerSec) {
-    doStep(); lastStepT = ts; anyMoving = true;
+  // Steps
+  if (running && ts-lastStepT >= 1000/P.stepsPerSec) { doStep(); lastStepT=ts; anyMoving=true; }
+  if (running2D && ts-lastStepT2D >= 1000/P2.stepsPerSec) {
+    doStep2D(); recordFit2d(); lastStepT2D=ts; anyMoving2D=true;
   }
-  // ── 2D step ──
-  if (running2D && ts - lastStepT2D >= 1000 / P2.stepsPerSec) {
-    doStep2D(); lastStepT2D = ts; anyMoving2D = true;
+  if (running3 && algoPhase!=='done' && ts-lastStepT3 >= 1000/P3.stepsPerSec) {
+    const prevPhase = algoPhase;
+    doAlgoStep3(); lastStepT3=ts; anyMoving3=true;
+    recordFitSnapshot3();  // record on every step for live x-axis
+    if (algoPhase==='done') { running3=false; btnRun3.innerHTML='▶ Run'; }
   }
 
-  // ── Draw active tab ──
-  if (activeTab === '1d') {
-    if (anyMoving || running || needsRedraw) { draw(); needsRedraw = false; }
+  // Draw active tab
+  if (activeTab==='1d') {
+    if(anyMoving||running||needsRedraw){draw();needsRedraw=false;}
+  } else if (activeTab==='2d') {
+    if(anyMoving2D||running2D||needsRedraw2D){draw2d(); drawFit2d(); needsRedraw2D=false;}
   } else {
-    if (anyMoving2D || running2D || needsRedraw2D) { draw2d(); needsRedraw2D = false; }
+    if(anyMoving3||running3||needsRedraw3||eventFlash>0){draw3(); drawFit3(); needsRedraw3=false;}
   }
 
   requestAnimationFrame(renderLoop);
@@ -1386,7 +1709,32 @@ canvas.addEventListener('mousemove', e => {
     updateStatus(); needsRedraw=true;
   } else canvas.style.cursor=hitTest(pt.cx,pt.cy)?'grab':'default';
 });
-window.addEventListener('mouseup', ()=>{ dragging=null; canvas.style.cursor='default'; });
+// ── Unified window mouseup — handles all three tabs ──
+window.addEventListener('mouseup', () => {
+  // Tab 1
+  if (dragging !== null) { dragging = null; canvas.style.cursor = 'default'; }
+  // Tab 2 — release: update last snapshot in-place only (never append when paused)
+  if (dragging2d !== null) {
+    if (P2.nutrient !== 'none') {
+      // Always update the last entry in-place; append only if sim is running
+      const snap = getSnap2d();
+      if (fitHistory2d.length === 0) fitHistory2d.push(snap);
+      else fitHistory2d[fitHistory2d.length-1] = snap;
+      drawFit2d();
+    }
+    dragging2d = null; canvas2d.style.cursor = 'crosshair';
+  }
+  // Tab 3 — same: update last in-place, never append when paused
+  if (dragging3 >= 0) {
+    if (P3.nutrient !== 'none') {
+      const snap = bac3.map(b => jEnv3(b.x, b.y));
+      if (fitHistory3.length === 0) fitHistory3.push(snap);
+      else fitHistory3[fitHistory3.length-1] = snap;
+      drawFit3();
+    }
+    dragging3 = -1; canvas3el.style.cursor = 'crosshair';
+  }
+});
 canvas.addEventListener('touchstart', e=>{
   const pt=evPt(e); dragging=hitTest(pt.cx,pt.cy);
   if (dragging) e.preventDefault();
@@ -1503,23 +1851,60 @@ document.getElementById('tog-self').addEventListener('change',function(){
 // ═══════════════════════════════════════════════
 let activeTab = '1d';
 
+// Helper: sync dropdown to active tab
+function syncTabSelect(tab) {
+  const sel = document.getElementById('tabSelect');
+  if (sel) sel.value = tab;
+}
+
+// Tab select dropdown
+document.getElementById('tabSelect').addEventListener('change', function() {
+  const val = this.value;
+  if (val === '1d') document.getElementById('tabBtn1d').click();
+  else if (val === '2d') document.getElementById('tabBtn2d').click();
+  else document.getElementById('tabBtn3').click();
+});
+
+// Helper: pause whichever tab is currently running
+function pauseAll() {
+  if (running)   { running=false;   document.getElementById('btn-run').innerHTML='▶ Run'; }
+  if (running2D) { running2D=false; document.getElementById('btn-run2d').innerHTML='▶ Run'; }
+  if (running3)  { running3=false;  btnRun3.innerHTML='▶ Run'; }
+}
+
 document.getElementById('tabBtn1d').addEventListener('click', () => {
   if (activeTab === '1d') return;
-  activeTab = '1d';
+  pauseAll(); activeTab = '1d'; syncTabSelect('1d');
   document.getElementById('tabBtn1d').classList.add('active');
   document.getElementById('tabBtn2d').classList.remove('active');
+  document.getElementById('tabBtn3').classList.remove('active');
   document.getElementById('tab1-content').style.display = '';
   document.getElementById('tab2-content').style.display = 'none';
+  document.getElementById('tab3-content').style.display = 'none';
   syncCanvas(); needsRedraw = true;
 });
 document.getElementById('tabBtn2d').addEventListener('click', () => {
   if (activeTab === '2d') return;
-  activeTab = '2d';
+  pauseAll(); activeTab = '2d'; syncTabSelect('2d');
   document.getElementById('tabBtn2d').classList.add('active');
   document.getElementById('tabBtn1d').classList.remove('active');
+  document.getElementById('tabBtn3').classList.remove('active');
   document.getElementById('tab1-content').style.display = 'none';
   document.getElementById('tab2-content').style.display = '';
+  document.getElementById('tab3-content').style.display = 'none';
   syncCanvas2d(); heatmapDirty2D = true; needsRedraw2D = true;
+});
+document.getElementById('tabBtn3').addEventListener('click', () => {
+  if (activeTab === '3') return;
+  pauseAll(); activeTab = '3'; syncTabSelect('3');
+  document.getElementById('tabBtn3').classList.add('active');
+  document.getElementById('tabBtn1d').classList.remove('active');
+  document.getElementById('tabBtn2d').classList.remove('active');
+  document.getElementById('tab1-content').style.display = 'none';
+  document.getElementById('tab2-content').style.display = 'none';
+  document.getElementById('tab3-content').style.display = '';
+  syncCanvas3(); heatDirty3 = true; needsRedraw3 = true;
+  draw3dTab3();
 });
 
 // ═══════════════════════════════════════════════
@@ -1738,6 +2123,22 @@ function draw2d() {
   ctx2d.textBaseline='alphabetic';
 
   const ab = activeBac2D();
+  // Pre-compute J_total at each agent's display position for fitness bars
+  const sensed2d = P2.includeSelf
+    ? [...ab.map(b=>({x:b.dx,y:b.dy})), {x:mob2D.dx,y:mob2D.dy}]
+    : ab.map(b=>({x:b.dx,y:b.dy}));
+  const allAgents2d = [...ab.map((b,i)=>({dx:b.dx,dy:b.dy,isFixed:true,idx:i})),
+                       {dx:mob2D.dx,dy:mob2D.dy,isFixed:false,idx:-1}];
+  const fitVals2d = allAgents2d.map(a=>{
+    let others;
+    if(P2.includeSelf) others=sensed2d;
+    else others=a.isFixed
+      ? [...ab.filter((_,i)=>i!==a.idx).map(b=>({x:b.dx,y:b.dy})), {x:mob2D.dx,y:mob2D.dy}]
+      : ab.map(b=>({x:b.dx,y:b.dy}));
+    return jCC2D(a.dx,a.dy,others.map(o=>({x:o.x??o.dx,y:o.y??o.dy})))+jEnv2D(a.dx,a.dy);
+  });
+  const fMin2d=Math.min(...fitVals2d), fMax2d=Math.max(...fitVals2d);
+  const fRange2d=Math.max(fMax2d-fMin2d,1e-9);
 
   // Trails
   if(mob2D.trail.length>1){
@@ -1750,9 +2151,15 @@ function draw2d() {
     }
   }
 
-  // Fixed bacteria circles
+  // Fixed bacteria circles + bars
   ab.forEach((b,idx)=>{
     const cx=toC2x(b.dx), cy=toC2y(b.dy), col=COLS[idx];
+    const hfrac=Math.min(1,Math.max(0,(fitVals2d[idx]-fMin2d)/fRange2d));
+    const bw=18;
+    ctx2d.fillStyle='rgba(200,200,200,0.4)';
+    ctx2d.fillRect(cx-bw/2,cy-16,bw,3);
+    ctx2d.fillStyle=hfrac>0.65?'#2d6a4f':hfrac>0.35?'#c85018':'#8e3a1a';
+    ctx2d.fillRect(cx-bw/2,cy-16,bw*hfrac,3);
     ctx2d.beginPath(); ctx2d.arc(cx,cy,10,0,Math.PI*2);
     ctx2d.fillStyle=col; ctx2d.fill();
     ctx2d.strokeStyle='rgba(255,255,255,0.85)'; ctx2d.lineWidth=2; ctx2d.stroke();
@@ -1762,9 +2169,15 @@ function draw2d() {
     ctx2d.textBaseline='alphabetic';
   });
 
-  // Mobile diamond
+  // Mobile diamond + bar
   {
     const cx=toC2x(mob2D.dx), cy=toC2y(mob2D.dy), r=10;
+    const hfrac=Math.min(1,Math.max(0,(fitVals2d[ab.length]-fMin2d)/fRange2d));
+    const bw=18;
+    ctx2d.fillStyle='rgba(200,200,200,0.4)';
+    ctx2d.fillRect(cx-bw/2,cy-16,bw,3);
+    ctx2d.fillStyle=hfrac>0.65?'#2d6a4f':hfrac>0.35?'#c85018':'#8e3a1a';
+    ctx2d.fillRect(cx-bw/2,cy-16,bw*hfrac,3);
     ctx2d.beginPath();
     ctx2d.moveTo(cx,cy-r); ctx2d.lineTo(cx+r,cy);
     ctx2d.lineTo(cx,cy+r); ctx2d.lineTo(cx-r,cy);
@@ -1777,15 +2190,33 @@ function draw2d() {
     ctx2d.textBaseline='alphabetic';
   }
 
-  // Step counter
-  ctx2d.font='10px "IBM Plex Mono"'; ctx2d.fillStyle='rgba(160,155,148,0.75)';
-  ctx2d.textAlign='left'; ctx2d.textBaseline='alphabetic';
-  ctx2d.fillText('step '+stepCount2D, 6, H2d-7);
+  // Step counter with pill background
+  {
+    const step='step '+stepCount2D;
+    ctx2d.font='10px "IBM Plex Mono"';
+    const tw=ctx2d.measureText(step).width;
+    const px=6, rx=4;
+    ctx2d.fillStyle='rgba(255,253,248,0.80)';
+    ctx2d.beginPath(); ctx2d.roundRect(4,H2d-20,tw+px*2,16,rx); ctx2d.fill();
+    ctx2d.fillStyle='rgba(80,75,70,0.90)';
+    ctx2d.textAlign='left'; ctx2d.textBaseline='alphabetic';
+    ctx2d.fillText(step, 4+px, H2d-7);
+  }
 
-  // View label
-  const viewLabel={'jcc':'J_cc(m)','ja':'J_a','jr':'J_r','env':'J_env','jtotal':'J_total(m)'};
-  ctx2d.textAlign='right';
-  ctx2d.fillText(viewLabel[P2.view]||'', W2d-6, H2d-7);
+  // Hint text — top right (static instruction)
+  {
+    const hint='drag ● fixed · drag ◆ mobile';
+    ctx2d.font='10px "IBM Plex Mono"';
+    const tw=ctx2d.measureText(hint).width;
+    const px=8, rx=4;
+    const bx=W2d-tw-px*2-6, by=6;
+    ctx2d.fillStyle='rgba(255,253,248,0.80)';
+    ctx2d.beginPath(); ctx2d.roundRect(bx,by,tw+px*2,16,rx); ctx2d.fill();
+    ctx2d.fillStyle='rgba(80,75,70,0.90)';
+    ctx2d.textAlign='right'; ctx2d.textBaseline='top';
+    ctx2d.fillText(hint, W2d-6-px, by+3);
+    ctx2d.textBaseline='alphabetic';
+  }
 }
 
 // ═══════════════════════════════════════════════
@@ -1835,25 +2266,45 @@ function applyDrag2d(cx,cy) {
   tumbleStreak2D=0; if(swimState2D==='converged') swimState2D='idle';
   heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
 }
+function recordFit2dInPlace() {
+  // Update the last snapshot in-place while dragging, append on release
+  if (P2.nutrient === 'none') return;
+  const snap = getSnap2d();
+  if (fitHistory2d.length === 0) fitHistory2d.push(snap);
+  else fitHistory2d[fitHistory2d.length-1] = snap;
+}
+function getSnap2d() {
+  const ab = activeBac2D();
+  const vals = [jEnv2D(mob2D.x, mob2D.y)];
+  if (P2.allMobile) ab.forEach(b=>vals.push(jEnv2D(b.x,b.y)));
+  return vals;
+}
 canvas2d.addEventListener('mousedown',e=>{
   const pt=evPt2d(e); dragging2d=hitTest2d(pt.cx,pt.cy);
   if(dragging2d){e.preventDefault();canvas2d.style.cursor='grabbing';}
 });
 canvas2d.addEventListener('mousemove',e=>{
   const pt=evPt2d(e);
-  if(dragging2d) applyDrag2d(pt.cx,pt.cy);
+  if(dragging2d){ applyDrag2d(pt.cx,pt.cy); recordFit2dInPlace(); drawFit2d(); }
   else canvas2d.style.cursor=hitTest2d(pt.cx,pt.cy)?'grab':'crosshair';
 });
-window.addEventListener('mouseup',()=>{ dragging2d=null; canvas2d.style.cursor='crosshair'; });
 canvas2d.addEventListener('touchstart',e=>{
   const pt=evPt2d(e); dragging2d=hitTest2d(pt.cx,pt.cy);
   if(dragging2d) e.preventDefault();
 },{passive:false});
 canvas2d.addEventListener('touchmove',e=>{
   if(!dragging2d) return; e.preventDefault();
-  const pt=evPt2d(e); applyDrag2d(pt.cx,pt.cy);
+  const pt=evPt2d(e); applyDrag2d(pt.cx,pt.cy); recordFit2dInPlace(); drawFit2d();
 },{passive:false});
-canvas2d.addEventListener('touchend',()=>{ dragging2d=null; });
+canvas2d.addEventListener('touchend',()=>{
+  if(dragging2d && P2.nutrient!=='none'){
+    const snap=getSnap2d();
+    if(fitHistory2d.length===0) fitHistory2d.push(snap);
+    else fitHistory2d[fitHistory2d.length-1]=snap;
+    drawFit2d();
+  }
+  dragging2d=null;
+});
 
 // ═══════════════════════════════════════════════
 // 2D CONTROLS
@@ -1866,7 +2317,7 @@ btnRun2d.addEventListener('click',()=>{
 });
 document.getElementById('btn-step2d').addEventListener('click',()=>{
   if(running2D) return;
-  doStep2D(); needsRedraw2D=true;
+  doStep2D(); recordFit2d(); drawFit2d(); needsRedraw2D=true;
 });
 document.getElementById('btn-reset2d').addEventListener('click',()=>{
   running2D=false; btnRun2d.innerHTML='▶ Run';
@@ -1874,6 +2325,7 @@ document.getElementById('btn-reset2d').addEventListener('click',()=>{
     fixedBac2D[i].dx=x; fixedBac2D[i].dy=y; fixedBac2D[i].trail=[]; });
   mob2D.x=-4.5; mob2D.y=0; mob2D.dx=-4.5; mob2D.dy=0; mob2D.trail=[];
   stepCount2D=0; swimState2D='idle'; tumbleStreak2D=0;
+  fitHistory2d.length=0;
   heatmapDirty2D=true; needsRedraw2D=true; updateStatus2D();
 });
 document.getElementById('sl-speed2d').addEventListener('input',function(){
@@ -1946,6 +2398,11 @@ bindShared('sl-swim2d','vl-swim2d','Ns',0);
 document.getElementById('tog-all2d').addEventListener('change',function(){
   P2.allMobile=this.checked;
   tumbleStreak2D=0; if(swimState2D==='converged') swimState2D='idle';
+  // Update fitness chart title
+  const t=document.getElementById('fitTitle2d');
+  if(t) t.innerHTML=`J<sub>env</sub> per ${P2.allMobile?'bacterium':'mobile bacterium'} &thinsp;·&thinsp; <span style="font-weight:400;text-transform:none;letter-spacing:0">each tick = one chemotaxis step</span>`;
+  // Immediately update fitness chart to reflect new set of tracked bacteria
+  if(P2.nutrient!=='none'){ recordFit2d(); drawFit2d(); }
   heatmapDirty2D=true; needsRedraw2D=true;
 });
 document.getElementById('tog-self2d').addEventListener('change',function(){
@@ -2033,9 +2490,742 @@ function update3dVisibility() {
 
 // Extend nutrient selector to also toggle 3D
 const origNutrChange = document.getElementById('sel-nutr2d').oninput;
-document.getElementById('sel-nutr2d').addEventListener('change', () => update3dVisibility());
+document.getElementById('sel-nutr2d').addEventListener('change', () => {
+  update3dVisibility();
+  updateFitVisibility2d();
+  if (P2.nutrient !== 'none') { recordFit2d(); drawFit2d(); }
+});
 const ro3d = new ResizeObserver(() => { if (P2.nutrient !== 'none') draw3d(); });
 ro3d.observe(wrap3d);
+
+// ═══════════════════════════════════════════════
+// TAB 3 — FULL BFO STATE
+// ═══════════════════════════════════════════════
+const P3 = {
+  Ned: 3, Nre: 4, Nc: 8,
+  ped: 0.25,
+  useRepro: true, useED: true, includeSelf: false,
+  S: 6, view: 'env', nutrient: 'peaks',
+  stepsPerSec: 5,
+};
+
+const DOMAIN3 = [-6, 6];
+const LERP3   = 0.18;
+const COLS3   = ['#2d6a4f','#1a5e8e','#7d6608','#7b3f8e','#8e3a1a','#2a6a8e','#5a6a1a','#6a1a5a','#1a5a6a','#6a5a1a','#3a1a6a','#1a6a3a'];
+
+let bac3 = []; // { x, y, dx, dy, jHealth, trail, event }
+
+function initBac3() {
+  bac3 = [];
+  const S = P3.S;
+  for (let i = 0; i < S; i++) {
+    const angle = (2 * Math.PI * i) / S;
+    const r = 3.0 + (Math.random() - 0.5) * 1.5;
+    const x = Math.max(-5.5, Math.min(5.5, r * Math.cos(angle)));
+    const y = Math.max(-5.5, Math.min(5.5, r * Math.sin(angle)));
+    bac3.push({ x, y, dx: x, dy: y, jHealth: 0, trail: [], event: null });
+  }
+}
+
+// Algorithm loop indices
+let algoL = 0, algoK = 0, algoJ = 0; // 1-based when running
+let algoPhase  = 'idle';   // 'idle'|'chemotaxis'|'reproducing'|'dispersing'|'done'
+let algoRunning3 = false;
+let lastStepT3   = 0;
+let needsRedraw3 = true;
+let heatDirty3   = true;
+let heatBuf3     = null;
+let running3     = false;
+let eventFlash   = 0;  // countdown for flash display (frames)
+
+function totalChemoSteps3() {
+  const ned = P3.useED ? P3.Ned : 1;
+  const nre = P3.useRepro ? P3.Nre : 1;
+  return ned * nre * P3.Nc;
+}
+function currentChemoStep3() {
+  const nre = P3.useRepro ? P3.Nre : 1;
+  return (algoL-1)*nre*P3.Nc + (algoK-1)*P3.Nc + algoJ;
+}
+
+function resetAlgo3() {
+  algoL = 1; algoK = 1; algoJ = 0;
+  algoPhase = 'ready';
+  bac3.forEach(b => { b.jHealth = 0; b.trail = []; b.event = null; });
+  updateStatus3();
+}
+
+// ─ signal math (reuses P from Tab 1, domain3 ─
+const clamp3 = v => Math.max(DOMAIN3[0]+0.1, Math.min(DOMAIN3[1]-0.1, v));
+function jCC3(x, y, bac, selfIdx) {
+  let s = 0;
+  for (let i = 0; i < bac.length; i++) {
+    if (!P3.includeSelf && i === selfIdx) continue;
+    s += jCCi2D(x, y, bac[i].x, bac[i].y);
+  }
+  return s;
+}
+function jEnv3(x, y) {
+  switch (P3.nutrient) {
+    case 'gradient':  return 0.22*(x+y)/12;
+    case 'peaks':     return 0.28*(Math.exp(-sq2(x-2.5,y-2)/4)+Math.exp(-sq2(x+2,y+2.5)/3.5));
+    case 'rastrigin': return 0.055*(Math.cos(1.6*x)+Math.cos(1.6*y));
+    case 'easom':     return 0.26*Math.exp(-sq2(x-Math.PI,y-Math.PI)/0.25);
+    default: return 0;
+  }
+}
+function jTot3(x, y, bac, selfIdx) { return jCC3(x,y,bac,selfIdx) + jEnv3(x,y); }
+
+// ─ chemotaxis step for one bacterium ─
+function chemStep3(b, idx) {
+  const j0    = jTot3(b.x, b.y, bac3, idx);
+  const angle = Math.random() * 2 * Math.PI;
+  const ddx = Math.cos(angle), ddy = Math.sin(angle);
+  const nx = clamp3(b.x + P.C*ddx), ny = clamp3(b.y + P.C*ddy);
+  if (jTot3(nx, ny, bac3, idx) > j0) {
+    b.x = nx; b.y = ny;
+    for (let s = 0; s < P.Ns; s++) {
+      const nx2=clamp3(b.x+P.C*ddx), ny2=clamp3(b.y+P.C*ddy);
+      if (jTot3(nx2,ny2,bac3,idx) > jTot3(b.x,b.y,bac3,idx)) { b.x=nx2; b.y=ny2; }
+      else break;
+    }
+  }
+  b.jHealth += jTot3(b.x, b.y, bac3, idx);
+  b.trail.push({x:b.x, y:b.y});
+  if (b.trail.length > 25) b.trail.shift();
+  b.event = null;
+}
+
+// ─ reproduction ─
+function doRepro3() {
+  algoPhase = 'reproducing';
+  const sorted = [...bac3].sort((a,b) => b.jHealth - a.jHealth);
+  const half   = Math.floor(P3.S / 2);
+  for (let i = 0; i < half; i++) {
+    const src = sorted[i];
+    const dst = sorted[P3.S - 1 - i];
+    dst.x = src.x + (Math.random()-0.5)*0.3;
+    dst.y = src.y + (Math.random()-0.5)*0.3;
+    dst.dx = dst.x; dst.dy = dst.y;
+    dst.jHealth = 0;
+    dst.trail   = [];
+    dst.event   = 'born';
+    src.event   = 'survived';
+  }
+  bac3.forEach(b => { if (!b.event) b.event = 'survived'; });
+  eventFlash = 18;
+}
+
+// ─ elimination-dispersal ─
+function doED3() {
+  algoPhase = 'dispersing';
+  bac3.forEach(b => {
+    if (Math.random() < P3.ped) {
+      b.x  = DOMAIN3[0]+0.5 + Math.random()*(DOMAIN3[1]-DOMAIN3[0]-1);
+      b.y  = DOMAIN3[0]+0.5 + Math.random()*(DOMAIN3[1]-DOMAIN3[0]-1);
+      b.dx = b.x; b.dy = b.y;
+      b.jHealth = 0; b.trail = []; b.event = 'dispersed';
+    } else { b.event = null; }
+  });
+  eventFlash = 18;
+}
+
+// ─ advance one chemotaxis step ─
+function doAlgoStep3() {
+  if (algoPhase === 'idle' || algoPhase === 'done') return;
+
+  // advance j
+  algoJ++;
+  algoPhase = 'chemotaxis';
+  bac3.forEach((b, i) => chemStep3(b, i));
+  heatDirty3 = true;
+
+  // end of chemotaxis loop
+  if (algoJ >= P3.Nc) {
+    algoJ = 0;
+    if (P3.useRepro) {
+      doRepro3();
+      bac3.forEach(b => { b.jHealth = 0; });
+    }
+    algoK++;
+
+    // end of reproduction loop
+    const nre = P3.useRepro ? P3.Nre : 1;
+    if (algoK > nre) {
+      algoK = 1;
+      if (P3.useED) doED3();
+      algoL++;
+
+      // end of E-D loop
+      const ned = P3.useED ? P3.Ned : 1;
+      if (algoL > ned) {
+        algoPhase = 'done';
+        algoL = ned; algoK = nre; algoJ = P3.Nc;
+      }
+    }
+  }
+  updateStatus3();
+}
+
+// ─ canvas ─
+const canvas3el = document.getElementById('canvas3');
+const wrap3el   = document.getElementById('canvasWrap3');
+let ctx3, W3, H3;
+
+function syncCanvas3() {
+  const dpr = window.devicePixelRatio||1;
+  const rc  = wrap3el.getBoundingClientRect();
+  W3=rc.width; H3=rc.height;
+  canvas3el.width=W3*dpr; canvas3el.height=H3*dpr;
+  canvas3el.style.width=W3+'px'; canvas3el.style.height=H3+'px';
+  ctx3=canvas3el.getContext('2d');
+  ctx3.scale(dpr,dpr);
+}
+const toC3x = v => (v-DOMAIN3[0])/(DOMAIN3[1]-DOMAIN3[0])*W3;
+const toC3y = v => (1-(v-DOMAIN3[0])/(DOMAIN3[1]-DOMAIN3[0]))*H3;
+const toW3x = c => DOMAIN3[0]+(c/W3)*(DOMAIN3[1]-DOMAIN3[0]);
+const toW3y = c => DOMAIN3[1]-(c/H3)*(DOMAIN3[1]-DOMAIN3[0]);
+
+function computeHeat3() {
+  const N = 90;
+  const data = new Uint8ClampedArray(N*N*4);
+  const vals = new Float32Array(N*N);
+  let vmax = 1e-9;
+  const step = (DOMAIN3[1]-DOMAIN3[0])/N;
+  for (let row=0;row<N;row++) {
+    for (let col=0;col<N;col++) {
+      const wx=DOMAIN3[0]+(col+0.5)*step, wy=DOMAIN3[1]-(row+0.5)*step;
+      let v;
+      const avgBac = {x:wx, y:wy}; // dummy for self-check irrelevant here
+      if (P3.view==='ja')     v = bac3.reduce((s,b)=>s+jAi2D(wx,wy,b.x,b.y),0);
+      else if (P3.view==='jr') v = -bac3.reduce((s,b)=>s+jRi2D(wx,wy,b.x,b.y),0);
+      else if (P3.view==='env') v = jEnv3(wx,wy);
+      else if (P3.view==='jtotal') v = jCC3(wx,wy,bac3,-1)+jEnv3(wx,wy);
+      else v = jCC3(wx,wy,bac3,-1);
+      vals[row*N+col]=v; if(Math.abs(v)>vmax) vmax=Math.abs(v);
+    }
+  }
+  for (let i=0;i<N*N;i++) {
+    const [r,g,b]=valToRGB(vals[i],vmax,P3.view==='ja'?'ja':P3.view==='jr'?'jr':P3.view==='env'?'env':'');
+    data[i*4]=r;data[i*4+1]=g;data[i*4+2]=b;data[i*4+3]=255;
+  }
+  heatBuf3 = new ImageData(data,90,90);
+  heatDirty3 = false;
+}
+
+function draw3() {
+  if(!ctx3||!W3||!H3) return;
+  if(heatDirty3) computeHeat3();
+
+  // Heatmap
+  const tmp=document.createElement('canvas'); tmp.width=90; tmp.height=90;
+  tmp.getContext('2d').putImageData(heatBuf3,0,0);
+  ctx3.imageSmoothingEnabled=true; ctx3.imageSmoothingQuality='medium';
+  ctx3.drawImage(tmp,0,0,W3,H3);
+
+  // Grid lines
+  ctx3.strokeStyle='rgba(180,175,165,0.22)'; ctx3.lineWidth=1;
+  for(let v=Math.ceil(DOMAIN3[0]);v<=DOMAIN3[1];v+=2){
+    ctx3.beginPath();ctx3.moveTo(toC3x(v),0);ctx3.lineTo(toC3x(v),H3);ctx3.stroke();
+    ctx3.beginPath();ctx3.moveTo(0,toC3y(v));ctx3.lineTo(W3,toC3y(v));ctx3.stroke();
+  }
+  // Axes
+  ctx3.strokeStyle='rgba(100,95,88,0.40)'; ctx3.lineWidth=1;
+  ctx3.beginPath();ctx3.moveTo(toC3x(0),0);ctx3.lineTo(toC3x(0),H3);ctx3.stroke();
+  ctx3.beginPath();ctx3.moveTo(0,toC3y(0));ctx3.lineTo(W3,toC3y(0));ctx3.stroke();
+
+  // Tick labels
+  ctx3.font='9px "IBM Plex Mono"'; ctx3.fillStyle='rgba(120,115,108,0.55)';
+  ctx3.textAlign='center'; ctx3.textBaseline='top';
+  for(let v=DOMAIN3[0];v<=DOMAIN3[1];v+=2){
+    if(v!==0) ctx3.fillText(v,toC3x(v),toC3y(0)+3);
+  }
+  ctx3.textAlign='right'; ctx3.textBaseline='middle';
+  for(let v=DOMAIN3[0];v<=DOMAIN3[1];v+=2){
+    if(v!==0) ctx3.fillText(v,toC3x(0)-3,toC3y(v));
+  }
+  ctx3.textBaseline='alphabetic';
+
+  // Trails
+  bac3.forEach(b=>{
+    if(b.trail.length<2) return;
+    const col=COLS3[bac3.indexOf(b)%COLS3.length];
+    const [r,g,bl]=hexToRGB(col);
+    for(let i=1;i<b.trail.length;i++){
+      const alpha=(i/b.trail.length)*0.50;
+      ctx3.beginPath();
+      ctx3.moveTo(toC3x(b.trail[i-1].x),toC3y(b.trail[i-1].y));
+      ctx3.lineTo(toC3x(b.trail[i].x),toC3y(b.trail[i].y));
+      ctx3.strokeStyle=`rgba(${r},${g},${bl},${alpha})`; ctx3.lineWidth=1.8; ctx3.stroke();
+    }
+  });
+
+  // Bacteria circles
+  bac3.forEach((b,idx)=>{
+    const cx=toC3x(b.dx), cy=toC3y(b.dy);
+    const col=COLS3[idx%COLS3.length];
+
+    // Event flash ring — only for dispersal (meaningful spatial event)
+    if(eventFlash>0 && b.event==='dispersed') {
+      const t = eventFlash/18;
+      ctx3.beginPath(); ctx3.arc(cx,cy,14+6*(1-t),0,Math.PI*2);
+      ctx3.strokeStyle=`rgba(60,80,170,${t*0.7})`; ctx3.lineWidth=2+2*t; ctx3.stroke();
+    }
+
+    ctx3.beginPath(); ctx3.arc(cx,cy,9,0,Math.PI*2);
+    ctx3.fillStyle=col; ctx3.fill();
+    ctx3.strokeStyle='rgba(255,255,255,0.85)'; ctx3.lineWidth=2; ctx3.stroke();
+
+    // Fitness bar above bacterium: J_total at current position
+    const fitVals = bac3.map((b,i) => jTot3(b.dx, b.dy, bac3, P3.includeSelf ? -1 : i));
+    const fitMin = Math.min(...fitVals), fitMax = Math.max(...fitVals);
+    const fitRange = Math.max(fitMax - fitMin, 1e-9);
+    const hfrac = Math.min(1, Math.max(0, (fitVals[idx] - fitMin) / fitRange));
+    const bw = 18;
+    ctx3.fillStyle='rgba(200,200,200,0.4)';
+    ctx3.fillRect(cx-bw/2, cy-16, bw, 3);
+    ctx3.fillStyle = hfrac > 0.65 ? '#2d6a4f' : hfrac > 0.35 ? '#c85018' : '#8e3a1a';
+    ctx3.fillRect(cx-bw/2, cy-16, bw*hfrac, 3);
+
+    ctx3.fillStyle='#fff'; ctx3.font='bold 9px "IBM Plex Mono"';
+    ctx3.textAlign='center'; ctx3.textBaseline='middle';
+    ctx3.fillText(String(idx+1),cx,cy);
+    ctx3.textBaseline='alphabetic';
+  });
+  if(eventFlash>0) eventFlash--;
+
+  // Step counter with pill background
+  {
+    const step='step '+currentChemoStep3()+' / '+totalChemoSteps3();
+    ctx3.font='10px "IBM Plex Mono"';
+    const tw=ctx3.measureText(step).width;
+    const px=6, rx=4;
+    ctx3.fillStyle='rgba(255,253,248,0.80)';
+    ctx3.beginPath(); ctx3.roundRect(4,H3-20,tw+px*2,16,rx); ctx3.fill();
+    ctx3.fillStyle='rgba(80,75,70,0.90)';
+    ctx3.textAlign='left'; ctx3.textBaseline='alphabetic';
+    ctx3.fillText(step, 4+px, H3-7);
+  }
+
+  // Hint text — top right (static instruction)
+  {
+    const hint='drag any bacterium to perturb';
+    ctx3.font='10px "IBM Plex Mono"';
+    const tw=ctx3.measureText(hint).width;
+    const px=8, rx=4;
+    const bx=W3-tw-px*2-6, by=6;
+    ctx3.fillStyle='rgba(255,253,248,0.80)';
+    ctx3.beginPath(); ctx3.roundRect(bx,by,tw+px*2,16,rx); ctx3.fill();
+    ctx3.fillStyle='rgba(80,75,70,0.90)';
+    ctx3.textAlign='right'; ctx3.textBaseline='top';
+    ctx3.fillText(hint, W3-6-px, by+3);
+    ctx3.textBaseline='alphabetic';
+  }
+}
+
+// ─ status ─
+function updateStatus3() {
+  const ned  = P3.useED ? P3.Ned : 1;
+  const nre  = P3.useRepro ? P3.Nre : 1;
+  const total = totalChemoSteps3();
+  const done  = algoPhase==='done';
+  const cur   = done ? total : Math.max(0, currentChemoStep3());
+  const pct   = total > 0 ? Math.round(cur/total*100) : 0;
+
+  document.getElementById('prog-bar').style.width = pct+'%';
+  document.getElementById('prog-pct').textContent  = pct+'%';
+  document.getElementById('prog-label').innerHTML =
+    algoPhase==='idle'?'Ready':
+    algoPhase==='done'?'Complete — Run again to restart':
+    algoPhase==='reproducing'?'Reproducing…':
+    algoPhase==='dispersing'?'Dispersing…':
+    `i<sub>ed</sub>=${algoL}, i<sub>re</sub>=${algoK}, i<sub>c</sub>=${algoJ}`;
+
+  document.getElementById('st3-phase').textContent = algoPhase;
+  document.getElementById('st3-l').textContent  = algoPhase==='idle'?'—':`${Math.min(algoL,ned)} / ${ned}`;
+  document.getElementById('st3-k').textContent  = algoPhase==='idle'?'—':`${Math.min(algoK,nre)} / ${nre}`;
+  document.getElementById('st3-j').textContent  = algoPhase==='idle'?'—':`${algoJ} / ${P3.Nc}`;
+
+  const badge = document.getElementById('phaseBadge');
+  if(algoPhase==='done')        { badge.textContent='✓ COMPLETE';      badge.className='swim-badge state-converged'; }
+  else if(algoPhase==='reproducing') { badge.textContent='✂ REPRODUCING'; badge.className='swim-badge state-swim'; }
+  else if(algoPhase==='dispersing')  { badge.textContent='⤢ DISPERSING'; badge.className='swim-badge state-tumble'; }
+  else if(algoPhase==='chemotaxis')  { badge.textContent='↑ CHEMOTAXIS'; badge.className='swim-badge state-swim'; }
+  else { badge.textContent='— idle —'; badge.className='swim-badge'; }
+}
+
+// ─ drag ─
+let dragging3 = null;
+function evPt3(e) {
+  const rc=canvas3el.getBoundingClientRect();
+  const s=e.touches?e.touches[0]:e;
+  return {cx:s.clientX-rc.left, cy:s.clientY-rc.top};
+}
+function hitTest3(cx,cy) {
+  const T=14;
+  for(let i=0;i<bac3.length;i++)
+    if(Math.hypot(cx-toC3x(bac3[i].dx),cy-toC3y(bac3[i].dy))<T) return i;
+  return -1;
+}
+canvas3el.addEventListener('mousedown',e=>{
+  const pt=evPt3(e); const i=hitTest3(pt.cx,pt.cy);
+  if(i>=0){dragging3=i;e.preventDefault();canvas3el.style.cursor='grabbing';}
+});
+canvas3el.addEventListener('mousemove',e=>{
+  const pt=evPt3(e);
+  if(dragging3>=0){
+    const xw=clamp3(toW3x(pt.cx)), yw=clamp3(toW3y(pt.cy));
+    bac3[dragging3].x=xw; bac3[dragging3].y=yw;
+    bac3[dragging3].dx=xw; bac3[dragging3].dy=yw;
+    bac3[dragging3].trail=[];
+    // Update last fitness snapshot in-place during drag
+    if(P3.nutrient!=='none'){
+      const snap=bac3.map(b=>jEnv3(b.x,b.y));
+      if(fitHistory3.length===0) fitHistory3.push(snap);
+      else fitHistory3[fitHistory3.length-1]=snap;
+    }
+    heatDirty3=true; needsRedraw3=true;
+  } else canvas3el.style.cursor=hitTest3(pt.cx,pt.cy)>=0?'grab':'crosshair';
+});
+canvas3el.addEventListener('touchstart',e=>{
+  const pt=evPt3(e); dragging3=hitTest3(pt.cx,pt.cy);
+  if(dragging3>=0) e.preventDefault();
+},{passive:false});
+canvas3el.addEventListener('touchmove',e=>{
+  if(dragging3<0) return; e.preventDefault();
+  const pt=evPt3(e);
+  const xw=clamp3(toW3x(pt.cx)), yw=clamp3(toW3y(pt.cy));
+  bac3[dragging3].x=xw; bac3[dragging3].y=yw;
+  bac3[dragging3].dx=xw; bac3[dragging3].dy=yw;
+  bac3[dragging3].trail=[];
+  heatDirty3=true; needsRedraw3=true;
+},{passive:false});
+canvas3el.addEventListener('touchend',()=>{dragging3=-1;});
+
+// ─ controls ─
+const btnRun3=document.getElementById('btn-run3');
+btnRun3.addEventListener('click',()=>{
+  if(algoPhase==='done'||algoPhase==='idle'){
+    // restart
+    initBac3(); resetAlgo3();
+    running3=true; btnRun3.innerHTML='⏸ Pause';
+    algoPhase='chemotaxis'; algoJ=0;
+    lastStepT3=performance.now();
+  } else {
+    running3=!running3;
+    btnRun3.innerHTML=running3?'⏸ Pause':'▶ Run';
+    if(running3) lastStepT3=performance.now();
+  }
+  needsRedraw3=true;
+});
+document.getElementById('btn-step3').addEventListener('click',()=>{
+  if(running3) return;
+  if(algoPhase==='idle'||algoPhase==='done'){initBac3();resetAlgo3();algoPhase='chemotaxis';}
+  doAlgoStep3(); recordFitSnapshot3(); heatDirty3=true; needsRedraw3=true; drawFit3();
+});
+document.getElementById('btn-reset3').addEventListener('click',()=>{
+  running3=false; btnRun3.innerHTML='▶ Run';
+  initBac3(); algoPhase='idle'; algoL=1; algoK=1; algoJ=0;
+  bac3.forEach(b=>{b.jHealth=0;b.trail=[];b.event=null;});
+  fitHistory3.length=0;
+  eventFlash=0; heatDirty3=true; needsRedraw3=true; updateStatus3();
+  recordFitSnapshot3(); drawFit3();
+});
+document.getElementById('sl-speed3').addEventListener('input',function(){
+  P3.stepsPerSec=parseInt(this.value);
+  document.getElementById('vl-speed3').textContent=P3.stepsPerSec+' /s';
+});
+
+// Loop sliders
+['ned','nre','nc'].forEach(key=>{
+  document.getElementById('sl-'+key).addEventListener('input',function(){
+    const k2 = key==='ned'?'Ned':key==='nre'?'Nre':'Nc';
+    P3[k2]=parseInt(this.value);
+    document.getElementById('vl-'+key).textContent=P3[k2];
+    needsRedraw3=true; updateStatus3();
+  });
+});
+document.getElementById('sl-ped').addEventListener('input',function(){
+  P3.ped=parseFloat(this.value);
+  document.getElementById('vl-ped').textContent=P3.ped.toFixed(2);
+});
+document.getElementById('sl-s3').addEventListener('input',function(){
+  P3.S=parseInt(this.value);
+  document.getElementById('vl-s3').textContent=P3.S;
+  initBac3(); algoPhase='idle'; algoL=1;algoK=1;algoJ=0;
+  heatDirty3=true; needsRedraw3=true; updateStatus3();
+});
+
+// Toggles
+document.getElementById('tog-repro').addEventListener('change',function(){
+  P3.useRepro=this.checked;
+  const row=document.getElementById('row-nre');
+  row.style.opacity=this.checked?'1':'0.38'; row.style.pointerEvents=this.checked?'':'none';
+  needsRedraw3=true; updateStatus3();
+});
+document.getElementById('tog-ed').addEventListener('change',function(){
+  P3.useED=this.checked;
+  const rowPed=document.getElementById('row-ped');
+  rowPed.style.opacity=this.checked?'1':'0.38'; rowPed.style.pointerEvents=this.checked?'':'none';
+  const rowNed=document.getElementById('row-ned');
+  rowNed.style.opacity=this.checked?'1':'0.38'; rowNed.style.pointerEvents=this.checked?'':'none';
+  needsRedraw3=true; updateStatus3();
+});
+document.getElementById('tog-self3').addEventListener('change',function(){
+  P3.includeSelf=this.checked; heatDirty3=true; needsRedraw3=true;
+});
+
+// Nutrient
+document.getElementById('sel-nutr3').addEventListener('change',function(){
+  P3.nutrient=this.value;
+  const show=P3.nutrient!=='none';
+  document.getElementById('wrap3d-tab3').style.display=show?'':'none';
+  if(show) draw3dTab3();
+  updateFitVisibility3();
+  heatDirty3=true; needsRedraw3=true;
+});
+
+// View
+document.querySelectorAll('input[name="v3"]').forEach(r=>{
+  r.addEventListener('change',function(){
+    if(!this.checked) return;
+    P3.view=this.value; heatDirty3=true; needsRedraw3=true;
+  });
+});
+
+// Shared chemotaxis sliders sync
+['step','swim'].forEach(key=>{
+  const id='sl-'+key+'3';
+  document.getElementById(id).addEventListener('input',function(){
+    const k2=key==='step'?'C':'Ns';
+    P[k2]=parseFloat(this.value);
+    document.getElementById('vl-'+key+'3').textContent=P[k2].toFixed(key==='swim'?0:2);
+    // sync tab 1 and 2
+    ['','2d'].forEach(sfx=>{
+      const el=document.getElementById('sl-'+key+sfx);
+      if(el) el.value=P[k2];
+      const vl=document.getElementById('vl-'+key+sfx);
+      if(vl) vl.textContent=P[k2].toFixed(key==='swim'?0:2);
+    });
+    needsRedraw3=true;
+  });
+});
+
+// 3D thumbnail for tab3
+const canvas3dTab3 = document.getElementById('canvas3d-tab3');
+const wrap3dTab3   = document.getElementById('wrap3d-tab3');
+function draw3dTab3() {
+  if(!canvas3dTab3||P3.nutrient==='none') return;
+  const dpr=window.devicePixelRatio||1;
+  const W=wrap3dTab3.offsetWidth, H=wrap3dTab3.offsetHeight;
+  canvas3dTab3.width=W*dpr; canvas3dTab3.height=H*dpr;
+  canvas3dTab3.style.width=W+'px'; canvas3dTab3.style.height=H+'px';
+  const c=canvas3dTab3.getContext('2d');
+  c.scale(dpr,dpr);
+  c.fillStyle='#fafaf6'; c.fillRect(0,0,W,H);
+  const GRID=32, dom=DOMAIN3, step=(dom[1]-dom[0])/GRID;
+  const ox=W*0.50, oy=H*0.68, sx=W/(GRID*2.4), sy=H*0.32, tilt=0.55;
+  const proj=(gx,gy,gz)=>{
+    const px=(gx-gy)*sx, py=-(gx+gy)*sx*tilt-gz*sy;
+    return [ox+px, oy+py];
+  };
+  let vmin=Infinity, vmax=-Infinity;
+  for(let i=0;i<=GRID;i++) for(let j=0;j<=GRID;j++){
+    const v=jEnv3(dom[0]+i*step,dom[0]+j*step);
+    if(v<vmin)vmin=v; if(v>vmax)vmax=v;
+  }
+  const vrange=Math.max(vmax-vmin,1e-9);
+  for(let j=GRID-1;j>=0;j--){
+    for(let i=0;i<GRID;i++){
+      const pts=[[i,j],[i+1,j],[i+1,j+1],[i,j+1]].map(([ci,cj])=>{
+        const v=jEnv3(dom[0]+ci*step,dom[0]+cj*step);
+        const gz=Math.max(0,(v-vmin)/vrange);
+        return [...proj(ci-GRID/2,cj-GRID/2,gz),gz];
+      });
+      const avgZ=pts.reduce((s,p)=>s+p[2],0)/4;
+      const t=Math.min(1,avgZ*1.4);
+      const r=Math.round(248-t*88),g2=Math.round(246-t*156),b=Math.round(240-t*220);
+      c.beginPath(); c.moveTo(pts[0][0],pts[0][1]);
+      for(let k=1;k<pts.length;k++) c.lineTo(pts[k][0],pts[k][1]);
+      c.closePath();
+      c.fillStyle=`rgb(${r},${g2},${b})`; c.fill();
+      c.strokeStyle=`rgba(180,140,80,${0.10+t*0.08})`; c.lineWidth=0.4; c.stroke();
+    }
+  }
+}
+// Initialize with default peaks visible
+document.getElementById('wrap3d-tab3').style.display='';
+
+// ─ Tab 3 resize observer ─
+const ro3el = new ResizeObserver(()=>{ if(activeTab==='3'){syncCanvas3();heatDirty3=true;needsRedraw3=true;} });
+ro3el.observe(wrap3el);
+
+// ═══════════════════════════════════════════════
+// FITNESS HISTORY
+// ═══════════════════════════════════════════════
+
+// Tab 2: track J_env of mobile per step (+ all fixed when all-mobile)
+const fitHistory2d = [];  // each entry: [jenv_mob, ...jenv_fixed_active]
+const FIT_MAX_PTS  = 80;
+
+function recordFit2d() {
+  if (P2.nutrient === 'none') return;
+  fitHistory2d.push(getSnap2d());
+  if (fitHistory2d.length > FIT_MAX_PTS) fitHistory2d.shift();
+}
+
+function drawFit2d() {
+  const wrap = document.getElementById('fitWrap2d');
+  const fc   = document.getElementById('fitCanvas2d');
+  if (!fc || P2.nutrient === 'none') { wrap.style.display='none'; return; }
+  wrap.style.display = '';
+  const dpr = window.devicePixelRatio||1;
+  const W = wrap.offsetWidth || 200, H = 120;
+  fc.width=W*dpr; fc.height=H*dpr; fc.style.width=W+'px'; fc.style.height=H+'px';
+  const c = fc.getContext('2d'); c.scale(dpr,dpr);
+  drawFitCanvas(c, W, H, fitHistory2d, 'tab2d');
+}
+
+// Tab 3: track J_env of all bacteria per reproduction event
+const fitHistory3 = [];  // each entry: array of J_env values (length S)
+
+function recordFit3() {
+  if (P3.nutrient === 'none') return;
+  fitHistory3.push(bac3.map(b => jEnv3(b.x, b.y)));
+  if (fitHistory3.length > FIT_MAX_PTS) fitHistory3.shift();
+}
+
+// Snapshot current positions without requiring sim to be running
+function recordFitSnapshot3() { recordFit3(); }
+
+function drawFit3() {
+  const wrap = document.getElementById('fitWrap3');
+  const fc   = document.getElementById('fitCanvas3');
+  if (!fc || P3.nutrient === 'none') { wrap.style.display='none'; return; }
+  wrap.style.display = '';
+  const dpr = window.devicePixelRatio||1;
+  const W = wrap.offsetWidth || 200, H = 120;
+  fc.width=W*dpr; fc.height=H*dpr; fc.style.width=W+'px'; fc.style.height=H+'px';
+  const c = fc.getContext('2d'); c.scale(dpr,dpr);
+  drawFitCanvas(c, W, H, fitHistory3, 'tab3');
+}
+
+// Shared renderer — color-coded dots per bacterium, centered when few points
+function drawFitCanvas(c, W, H, history, tabId) {
+  c.fillStyle='#fafaf6'; c.fillRect(0,0,W,H);
+
+  const cols = tabId==='tab3' ? COLS3 : ['#c85018',...COLS];  // Tab2: mob first, then fixed
+
+  const pad = {l:24,r:6,t:4,b:18};
+  const cW  = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+
+  if (history.length === 0) {
+    return; // nothing to show yet
+  }
+
+  // Find global range
+  let vmin=Infinity, vmax=-Infinity;
+  history.forEach(snap=>snap.forEach(v=>{if(v<vmin)vmin=v;if(v>vmax)vmax=v;}));
+  // Theoretical max J_env
+  const dom = tabId==='tab3' ? DOMAIN3 : DOMAIN2D;
+  let maxJ=-Infinity;
+  for(let i=0;i<40;i++) for(let j=0;j<40;j++){
+    const wx=dom[0]+(dom[1]-dom[0])*i/39, wy=dom[0]+(dom[1]-dom[0])*j/39;
+    const v=tabId==='tab3'?jEnv3(wx,wy):jEnv2D(wx,wy);
+    if(v>maxJ)maxJ=v;
+  }
+  // Pad range slightly
+  vmax = Math.max(vmax, maxJ > -Infinity ? maxJ : vmax, vmin + 1e-6);
+  const vrange = Math.max(vmax-vmin, 1e-9);
+
+  const ty = v => pad.t + cH - Math.max(0,Math.min(1,(v-vmin)/vrange))*cH;
+
+  // X positions: center when few, fill when many
+  const N = history.length;
+  const step = cW / Math.max(FIT_MAX_PTS - 1, 1);
+  const startX = N >= FIT_MAX_PTS
+    ? pad.l
+    : pad.l + (cW - (N-1)*step) / 2;
+  const tx = idx => startX + idx * step;
+
+  // Axes
+  c.strokeStyle='#ddd'; c.lineWidth=0.5;
+  c.beginPath(); c.moveTo(pad.l,pad.t); c.lineTo(pad.l,H-pad.b); c.stroke();
+  c.beginPath(); c.moveTo(pad.l,H-pad.b); c.lineTo(W-pad.r,H-pad.b); c.stroke();
+
+  // Max J_env dashed reference line
+  if (maxJ > -Infinity) {
+    c.save(); c.setLineDash([3,4]);
+    c.beginPath(); c.moveTo(pad.l,ty(maxJ)); c.lineTo(W-pad.r,ty(maxJ));
+    c.strokeStyle='rgba(90,154,80,0.60)'; c.lineWidth=1; c.stroke();
+    c.restore();
+  }
+
+  // Per-time-tick: vertical range line + per-bacterium dots
+  for (let idx=0; idx<N; idx++) {
+    const snap = history[idx];
+    const x    = tx(idx);
+    const mn   = Math.min(...snap), mx = Math.max(...snap);
+    // Thin vertical connecting line (range)
+    c.beginPath(); c.moveTo(x,ty(mn)); c.lineTo(x,ty(mx));
+    c.strokeStyle='rgba(29,60,40,0.20)'; c.lineWidth=1; c.stroke();
+    // Dots per bacterium
+    snap.forEach((v, bi) => {
+      const col = cols[bi % cols.length];
+      const [r,g,bl] = hexToRGB(col);
+      c.beginPath(); c.arc(x, ty(v), idx===N-1?3:1.5, 0, Math.PI*2);
+      c.fillStyle = `rgba(${r},${g},${bl},${idx===N-1?0.90:0.55})`; c.fill();
+    });
+  }
+
+  // Y-axis labels
+  c.font='7px "IBM Plex Mono"'; c.fillStyle='#aaa'; c.textAlign='right';
+  [vmin, vmax].forEach(v=>{
+    c.textBaseline='middle'; c.fillText(v.toFixed(2), pad.l-2, ty(v));
+  });
+
+  // Legend row at bottom — bacterium color swatches + dashed line key
+  const legY = H - 2;
+  const nDots = Math.min(cols.length, history.length > 0 ? history[history.length-1].length : 0);
+  let legX = pad.l + 2;
+  c.font = '7px "IBM Plex Mono"'; c.textBaseline = 'bottom';
+  for (let bi = 0; bi < nDots; bi++) {
+    const col = cols[bi % cols.length];
+    const [r,g,bl] = hexToRGB(col);
+    c.beginPath(); c.arc(legX + 3, legY - 3, 3, 0, Math.PI*2);
+    c.fillStyle = `rgba(${r},${g},${bl},0.85)`; c.fill();
+    c.fillStyle = '#aaa';
+    c.textAlign = 'left';
+    c.fillText(bi === 0 && tabId !== 'tab3' ? 'm' : String(bi + (tabId !== 'tab3' ? 0 : 1)), legX + 8, legY);
+    legX += 22;
+  }
+  // Dashed line key
+  if (maxJ > -Infinity) {
+    const kx = W - pad.r - 64;
+    c.save(); c.setLineDash([3,3]);
+    c.beginPath(); c.moveTo(kx, legY-3); c.lineTo(kx+12, legY-3);
+    c.strokeStyle='rgba(90,154,80,0.70)'; c.lineWidth=1; c.stroke(); c.restore();
+    c.fillStyle='#aaa'; c.textAlign='left'; c.textBaseline='bottom';
+    // Draw "max J" then subscript "env" manually
+    c.font='7px "IBM Plex Mono"';
+    const prefW = c.measureText('max J').width;
+    c.fillText('max J', kx+15, legY);
+    c.font='5.5px "IBM Plex Mono"';
+    c.fillText('env', kx+15+prefW, legY+0.5);
+  }
+}
+
+// Hook into existing step functions to record fitness
+// (recording happens in renderLoop directly)
+
+// ─ Tab 2: update fit visibility when nutrient changes ─
+function updateFitVisibility2d() {
+  document.getElementById('fitWrap2d').style.display = P2.nutrient!=='none' ? '' : 'none';
+}
+// ─ Tab 3: update fit visibility when nutrient changes ─
+function updateFitVisibility3() {
+  document.getElementById('fitWrap3').style.display = P3.nutrient!=='none' ? '' : 'none';
+}
 
 // ═══════════════════════════════════════════════
 // RESIZE + INIT
@@ -2045,7 +3235,11 @@ ro2d.observe(wrap2d);
 const ro = new ResizeObserver(()=>{ if(activeTab==='1d'){syncCanvas();needsRedraw=true;} });
 ro.observe(wrap);
 syncCanvas(); updateStatus();
-syncCanvas2d(); updateStatus2D();
+syncCanvas2d(); updateStatus2D(); updateFitVisibility2d();
+initBac3(); algoPhase='idle'; updateStatus3(); updateFitVisibility3();
+recordFitSnapshot3();
+syncCanvas3();
+draw3dTab3();
 requestAnimationFrame(renderLoop);
 </script>
 <footer style="margin-top:0;padding:0.75rem 20px;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;">

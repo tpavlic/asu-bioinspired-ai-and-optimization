@@ -173,7 +173,7 @@ Add a row to the appropriate table under `## Contents`:
 
 ### Swarm Intelligence
 
-- `bacterial_foraging_optimization/bfo_comm_and_chemotaxis.html` *(chemotaxis and communication components only; full BFO coming in a future demo)*
+- `bacterial_foraging_optimization/bfo_explorer.html` *(chemotaxis and communication components only; full BFO coming in a future demo)*
 
 ### Neural Networks
 
