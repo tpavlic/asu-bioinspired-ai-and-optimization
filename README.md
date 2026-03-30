@@ -58,9 +58,9 @@ as iframes.
 | --- | --- |
 | [`collective_motion/boids_explorer.html`](collective_motion/boids_explorer.html) | Interactive Boids explorer: tune separation, alignment, and cohesion weights to watch emergent flocking arise from Reynolds' three local rules — a classic inspiration for PSO |
 | [`collective_motion/vicsek_explorer.html`](collective_motion/vicsek_explorer.html) | Interactive Vicsek model explorer: adjust noise and interaction radius to watch self-propelled particles transition between disordered and coherent collective motion |
-| [`ant_colony_optimization/aco_explorer.html`](ant_colony_optimization/aco_explorer.html) | Interactive ACO / Ant System explorer: pheromone-guided ants solve a layered combinatorial problem and a TSP — adjust evaporation rate and exploitation bias to see stigmergic reinforcement in action |
 | [`particle_swarm_optimization/pso_explorer.html`](particle_swarm_optimization/pso_explorer.html) | Interactive explorer for PSO: step through the velocity-update rule with inertia, cognitive, and social components, then run a live swarm on a 2-D landscape |
 | [`bacterial_foraging_optimization/bfo_explorer.html`](bacterial_foraging_optimization/bfo_explorer.html) | Interactive explorer for the complete BFO algorithm (Passino 2002): cell-to-cell signaling and tumble-swim chemotaxis in 1-D and 2-D, plus the full nested loop with reproduction and elimination-dispersal |
+| [`ant_colony_optimization/aco_explorer.html`](ant_colony_optimization/aco_explorer.html) | Interactive ACO / Ant System explorer: pheromone-guided ants solve a layered combinatorial problem and a TSP — adjust evaporation rate and exploitation bias to see stigmergic reinforcement in action |
 
 ### Neural Networks
 
