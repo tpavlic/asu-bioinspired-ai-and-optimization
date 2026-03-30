@@ -11,8 +11,8 @@
 <meta property="og:title" content="Vicsek Model Explorer — interactive explainer">
 <meta property="og:description" content="Explore the Vicsek model of collective motion: adjust noise and interaction radius to watch self-propelled particles transition between disordered flocking and coherent swarm behavior.">
 <meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/collective_motion/vicsek_explorer-preview.png">
-<meta property="og:image:width" content="2284">
-<meta property="og:image:height" content="1144">
+<meta property="og:image:width" content="3540">
+<meta property="og:image:height" content="1764">
 <meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/collective_motion/vicsek_explorer.html">
 <meta property="fb:app_id" content="2385695445236853">
 
@@ -236,7 +236,16 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
   white-space: nowrap; text-align: center;
 }
 .btn-preset:hover { background: var(--green-pale); border-color: var(--green-light); color: var(--green-dark); }
-.btn-preset.active { background: var(--green-pale); border-color: var(--green-dark); color: var(--green-dark); font-weight: 700; }
+.btn-preset.active { border-width: 2px; font-weight: 700; }
+/* Phase colors matching diagram */
+.btn-preset[data-preset="disorder"] { background:#fde4e0; border-color:#c09080; color:#a03020; }
+.btn-preset[data-preset="critical"]  { background:#fef6d8; border-color:#c8b060; color:#806010; }
+.btn-preset[data-preset="flock"]     { background:#fef6d8; border-color:#c8b060; color:#806010; }
+.btn-preset[data-preset="dense"]     { background:#c8e8c8; border-color:#50a050; color:#145020; }
+.btn-preset[data-preset="disorder"].active { border-color:#a03020; background:#fcc8c0; }
+.btn-preset[data-preset="critical"].active  { border-color:#a08020; background:#fce8a0; }
+.btn-preset[data-preset="flock"].active     { border-color:#a08020; background:#fce8a0; }
+.btn-preset[data-preset="dense"].active     { border-color:#145020; background:#90c890; }
 
 /* STATUS BAR */
 .status-bar {
@@ -547,7 +556,7 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 
     <!-- Presets -->
     <div class="sec">
-      <div class="sec-label">Presets</div>
+      <div class="sec-label">Presets <span style="font-size:0.60rem;font-weight:400;text-transform:none;letter-spacing:0">(colored by phase)</span></div>
       <div class="btn-row" style="flex-wrap:wrap">
         <button class="btn-preset" data-preset="disorder">Disordered</button>
         <button class="btn-preset" data-preset="critical">Near-critical</button>
@@ -1459,7 +1468,7 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     pc.fillText('Disordered', PL+pw-4, PT+ph-4);
     pc.fillStyle='rgba(100,80,10,0.6)';
     pc.textAlign='center'; pc.textBaseline='middle';
-    pc.fillText('≈ coexistence', PL+pw*0.45, PT+ph*0.52);
+    pc.fillText('Coexistence', PL+pw*0.45, PT+ph*0.52);
 
     // ── Axes
     pc.save();
