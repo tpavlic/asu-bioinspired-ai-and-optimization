@@ -512,7 +512,7 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 
 <p class="desc">
   <span class="desc-lede">Particles are colored by heading angle — a uniform color means alignment, a rainbow means disorder.</span>
-  Adjust &eta; (noise) and density to explore the three regimes: <strong>disordered</strong>, <strong>near-critical</strong>, and <strong>flocking</strong>. Use the presets to jump to each regime, then explore parameter space around them.
+  Adjust &eta; (noise) and density to explore the three collective regimes. Use the presets to jump between them, then explore the parameter space around each.
 </p>
 
 <div class="main">
@@ -560,9 +560,10 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
       <div class="btn-row" style="flex-wrap:wrap">
         <button class="btn-preset" data-preset="disorder">Disordered</button>
         <button class="btn-preset" data-preset="critical">Near-critical</button>
-        <button class="btn-preset" data-preset="flock">Flocking</button>
-        <button class="btn-preset" data-preset="dense">Dense flock</button>
+        <button class="btn-preset" data-preset="flock">Band flock</button>
+        <button class="btn-preset" data-preset="dense">Global flock</button>
       </div>
+      <div id="presetDesc" style="font-size:0.72rem;color:var(--text-muted);line-height:1.55;height:4.4em;overflow:hidden">&nbsp;</div>
     </div>
 
     <!-- Controls -->
@@ -576,7 +577,7 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
       <div class="sl-row" style="margin-top:4px">
         <span class="sl-label" style="font-size:0.70rem">speed</span>
         <input type="range" id="sl_speed" min="0" max="4" step="1" value="2">
-        <span class="sl-val" id="vl_speed">1&times;</span>
+        <span class="sl-val" id="vl_speed">1×</span>
       </div>
     </div>
 
@@ -1088,7 +1089,7 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
   let iter=0;
   let phi=0, meanHeading=0, avgNbrs=0;
   let histPhi=[];
-  let stepMs=100, lastStepTime=0;
+  let stepMs=25, lastStepTime=0;
   let needsRedraw=true;
 
   /* ── canvas / dpr ── */
@@ -1289,17 +1290,25 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
 
   /* ── presets ── */
   const PRESETS={
-    disorder: { noise:2.0, N:200, v0:0.05, r:1.0, label:'Disordered' },
-    critical:  { noise:0.45,N:200, v0:0.05, r:1.0, label:'Near-critical' },
-    flock:     { noise:0.1, N:200, v0:0.05, r:1.0, label:'Flocking' },
-    dense:     { noise:0.05,N:300, v0:0.03, r:1.5, label:'Dense flock' },
+    disorder: { noise:2.0,  noiseG:1.0,  N:200, v0:0.05, r:1.0, label:'Disordered'   },
+    critical:  { noise:0.42, noiseG:0.11, N:200, v0:0.05, r:1.0, label:'Near-critical' },
+    flock:     { noise:0.25, noiseG:0.07, N:200, v0:0.05, r:1.0, label:'Band flock'    },
+    dense:     { noise:0.05, noiseG:0.03, N:300, v0:0.03, r:1.5, label:'Global flock'  },
+  };
+
+  const PRESET_DESC={
+    disorder: 'Noise dominates — headings randomize faster than neighbors can align them. No collective order.',
+    critical:  'Near the phase boundary — large fluctuations and intermittent clusters.',
+    flock:     'Band flock: heterogeneous traveling clusters near the boundary, visible as dense moving bands.',
+    dense:     'Global flock: deeply ordered, single coherent direction across the whole domain.',
   };
 
   function applyPreset(key){
     const p=PRESETS[key];
-    noiseAmp=p.noise; N=p.N; v0=p.v0; r=p.r;
-    document.getElementById('sl_noise').value=p.noise;
-    document.getElementById('vl_noise').textContent=p.noise.toFixed(2);
+    const noiseVal=noiseGaussian?(p.noiseG||p.noise/Math.sqrt(12)):p.noise;
+    noiseAmp=noiseVal; N=p.N; v0=p.v0; r=p.r;
+    document.getElementById('sl_noise').value=noiseVal;
+    document.getElementById('vl_noise').textContent=noiseVal.toFixed(2);
     document.getElementById('sl_N').value=p.N;
     document.getElementById('vl_N').textContent=p.N;
     document.getElementById('sl_v0').value=p.v0;
@@ -1307,11 +1316,16 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     document.getElementById('sl_r').value=p.r;
     document.getElementById('vl_r').textContent=p.r.toFixed(1);
     document.querySelectorAll('.btn-preset').forEach(b=>b.classList.toggle('active',b.dataset.preset===key));
+    const descEl=document.getElementById('presetDesc');
+    if(descEl) descEl.textContent=PRESET_DESC[key]||'';
     initParticles(); state='ready'; updateBadge(); needsRedraw=true;
   }
-  document.querySelectorAll('.btn-preset').forEach(b=>{
-    b.addEventListener('click',()=>applyPreset(b.dataset.preset));
-  });
+  function clearPreset(){
+    document.querySelectorAll('.btn-preset').forEach(b=>b.classList.remove('active'));
+    const descEl=document.getElementById('presetDesc');
+    if(descEl) descEl.innerHTML='&nbsp;';
+  }
+  document.querySelectorAll('.btn-preset').forEach(b=>{ b.addEventListener('click',()=>applyPreset(b.dataset.preset)); });
 
   /* ── controls ── */
   document.getElementById('btnRun').addEventListener('click',()=>{
@@ -1335,7 +1349,7 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     sl.addEventListener('input',()=>{
       const v=parseFloat(sl.value); setter(v);
       document.getElementById(valId).textContent=fmt(v);
-      needsRedraw=true;
+      clearPreset(); needsRedraw=true;
     });
   }
   bindSlider('sl_noise','vl_noise',v=>{noiseAmp=v;});
@@ -1346,7 +1360,7 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
   bindSlider('sl_v0','vl_v0',v=>{v0=v;});
   bindSlider('sl_r','vl_r',v=>{r=v;},v=>v.toFixed(1));
 
-  const SPEED_STOPS=[{ms:500,label:'0.2×'},{ms:200,label:'0.5×'},{ms:100,label:'1×'},{ms:50,label:'2×'},{ms:25,label:'4×'}];
+  const SPEED_STOPS=[{ms:125,label:'0.2×'},{ms:50,label:'0.5×'},{ms:25,label:'1×'},{ms:12,label:'2×'},{ms:6,label:'4×'}];
   document.getElementById('sl_speed').addEventListener('input',function(){
     const s=SPEED_STOPS[parseInt(this.value)];
     stepMs=s.ms; document.getElementById('vl_speed').textContent=s.label;
@@ -1420,9 +1434,11 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
       for(let px=0;px<iw;px++){
         const eta=(px/iw)*ETA_MAX;
         const rho=(1-py/ih)*RHO_MAX;
-        const etaC=0.45*Math.sqrt(rho/(2*Math.PI));
+        const etaC0=0.45*Math.sqrt(rho/(2*Math.PI));
+        const etaC=noiseGaussian?etaC0/Math.sqrt(12):etaC0;
+        const transWidth=noiseGaussian?0.06:0.25;
         const dist=(eta-etaC)/ETA_MAX;
-        const t=clamp(dist/0.25*0.5+0.5,0,1);
+        const t=clamp(dist/transWidth*0.5+0.5,0,1);
         const idx=(py*iw+px)*4;
         if(t<0.1){
           d[idx]=Math.round(220+t*150); d[idx+1]=Math.round(240+t*10); d[idx+2]=Math.round(220+t*10);
@@ -1450,7 +1466,8 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     let started=false;
     for(let i=0;i<=120;i++){
       const rho=(i/120)*RHO_MAX;
-      const etaC=0.45*Math.sqrt(rho/(2*Math.PI));
+      const etaC0=0.45*Math.sqrt(rho/(2*Math.PI));
+      const etaC=noiseGaussian?etaC0/Math.sqrt(12):etaC0;
       if(etaC>ETA_MAX) { if(started) break; continue; }
       const x=ex(etaC), y=ry(rho);
       started ? pc.lineTo(x,y) : (pc.moveTo(x,y), started=true);
@@ -1466,9 +1483,25 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     pc.fillStyle='rgba(160,20,20,0.65)';
     pc.textAlign='right'; pc.textBaseline='bottom';
     pc.fillText('Disordered', PL+pw-4, PT+ph-4);
-    pc.fillStyle='rgba(100,80,10,0.6)';
+    // Coexistence label: centered on the dashed boundary at ρ=0.55*RHO_MAX, dynamic per noise type
+    pc.save();
+    pc.font=`600 ${Math.round(PW/30)}px 'Outfit',sans-serif`;
+    const coeW=pc.measureText('Coexistence').width;
+    const coeFH=Math.round(PW/30), coePad=5;
+    const coeRho=RHO_MAX*0.55;
+    const coeEtaC0=0.45*Math.sqrt(coeRho/(2*Math.PI));
+    const coeEtaC=noiseGaussian?coeEtaC0/Math.sqrt(12):coeEtaC0;
+    const coeX=ex(Math.min(coeEtaC, ETA_MAX*0.85));
+    const coeY=ry(coeRho);
+    pc.fillStyle='rgba(248,246,228,0.88)';
+    pc.beginPath();
+    if(pc.roundRect){ pc.roundRect(coeX-coeW/2-coePad, coeY-coeFH/2-3, coeW+coePad*2, coeFH+6, 4); }
+    else { pc.rect(coeX-coeW/2-coePad, coeY-coeFH/2-3, coeW+coePad*2, coeFH+6); }
+    pc.fill();
+    pc.fillStyle='rgba(110,120,20,0.90)';
     pc.textAlign='center'; pc.textBaseline='middle';
-    pc.fillText('Coexistence', PL+pw*0.45, PT+ph*0.52);
+    pc.fillText('Coexistence', coeX, coeY);
+    pc.restore();
 
     // ── Axes
     pc.save();
@@ -1478,7 +1511,7 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     pc.restore();
 
     // X axis: noise ticks (range differs by noise type)
-    pc.font=`400 ${Math.round(PW/38)}px 'IBM Plex Mono',monospace`;
+    pc.font=`400 ${Math.round(PW/33)}px 'IBM Plex Mono',monospace`;
     pc.fillStyle='rgba(0,0,0,0.45)';
     const xTicks = noiseGaussian ? [0.25,0.5,0.75,1.0,1.25,1.5] : [0.5,1.0,1.5,2.0,2.5];
     xTicks.forEach(e=>{
@@ -1491,13 +1524,13 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     });
 
     // X label
-    pc.font=`500 ${Math.round(PW/32)}px 'IBM Plex Mono',monospace`;
+    pc.font=`500 ${Math.round(PW/27)}px 'IBM Plex Mono',monospace`;
     pc.fillStyle='rgba(0,0,0,0.5)';
     pc.textAlign='center'; pc.textBaseline='bottom';
-    pc.fillText((noiseGaussian?'\u03C3':'\u03B7')+' (noise)',PL+pw/2,PH-2);
+    pc.fillText((noiseGaussian?'\u03C3':'\u03B7')+' (noise)',PL+pw/2,PH-7);
 
     // Y axis: ρ_eff ticks
-    pc.font=`400 ${Math.round(PW/38)}px 'IBM Plex Mono',monospace`;
+    pc.font=`400 ${Math.round(PW/33)}px 'IBM Plex Mono',monospace`;
     pc.fillStyle='rgba(0,0,0,0.45)';
     [5,10,15,20].forEach(r=>{
       const y=ry(r);
@@ -1512,7 +1545,7 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
     pc.translate(10, PT+ph/2);
     pc.rotate(-Math.PI/2);
     pc.fillStyle='rgba(0,0,0,0.5)';
-    const fSz=Math.round(PW/34), subSz=Math.round(PW/34*0.70);
+    const fSz=Math.round(PW/27), subSz=Math.round(PW/27*0.70);
     pc.font=`500 ${fSz}px 'IBM Plex Mono',monospace`;
     const rhoW=pc.measureText('\u03C1').width;
     const restW=pc.measureText(' (density)').width;
