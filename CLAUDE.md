@@ -183,6 +183,7 @@ Add a row to the appropriate table under `## Contents`:
 - `particle_swarm_optimization/pso_explorer.html`
 - `bacterial_foraging_optimization/bfo_explorer.html` *(full BFO: 1-D and 2-D chemotaxis with cell-to-cell signaling, plus reproduction and elimination-dispersal)*
 - `ant_colony_optimization/aco_explorer.html`
+- `collective_behavior/ant_foraging_explorer.html`
 
 ### Neural Networks
 

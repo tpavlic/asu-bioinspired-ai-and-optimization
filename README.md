@@ -61,6 +61,7 @@ as iframes.
 | [`particle_swarm_optimization/pso_explorer.html`](particle_swarm_optimization/pso_explorer.html) | Interactive explorer for PSO: step through the velocity-update rule with inertia, cognitive, and social components, then run a live swarm on a 2-D landscape |
 | [`bacterial_foraging_optimization/bfo_explorer.html`](bacterial_foraging_optimization/bfo_explorer.html) | Interactive explorer for the complete BFO algorithm (Passino 2002): cell-to-cell signaling and tumble-swim chemotaxis in 1-D and 2-D, plus the full nested loop with reproduction and elimination-dispersal |
 | [`ant_colony_optimization/aco_explorer.html`](ant_colony_optimization/aco_explorer.html) | Interactive ACO / Ant System explorer: pheromone-guided ants solve a layered combinatorial problem and a TSP — adjust evaporation rate and exploitation bias to see stigmergic reinforcement in action |
+| [`collective_behavior/ant_foraging_explorer.html`](collective_behavior/ant_foraging_explorer.html) | Interactive ant foraging dynamics explorer: experiment with trail noise and Y-maze decision-making to see how pheromone stigmergy and recruitment linearity drive collective path selection |
 
 ### Neural Networks
 
