@@ -388,8 +388,7 @@ input[type=range]::-webkit-slider-thumb {
 
 footer {
   padding: 10px 20px; border-top: 1px solid var(--border);
-  font-size: 0.78rem; color: var(--tiny);
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  font-size: 0.78rem; color: var(--tiny); text-align: right;
 }
 footer a { color: var(--green-mid); text-decoration: none; }
 
@@ -1062,7 +1061,6 @@ footer a { color: var(--green-mid); text-decoration: none; }
 </div><!-- tab2 -->
 
 <footer>
-  <a href="../">← All course visualizations</a>
   <span style="white-space:nowrap">© 2026 Theodore P. Pavlic &nbsp;·&nbsp; <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></span>
 </footer>
 </div><!-- page -->
@@ -2261,13 +2259,6 @@ const DPR = window.devicePixelRatio || 1;
 initAnts();
 syncSliders();
 renderLoop();
-
-// When embedded in an iframe, hide the back-navigation link but keep
-// the copyright line visible in the bottom-right.
-if (window.self !== window.top) {
-  const backLink = document.querySelector('footer a:first-child');
-  if (backLink) backLink.style.visibility = 'hidden';
-}
 </script>
 </body>
 </html>
