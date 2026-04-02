@@ -493,7 +493,16 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
     <div class="sec">
       <div class="sec-label">Convergence guarantee</div>
       <div style="font-size:0.78rem; color:var(--text-muted); line-height:1.6;">
-        For guaranteed convergence, Clerc &amp; Kennedy (2002) recommend the <strong>constriction factor</strong> &chi; = 2/(|2&minus;&phi;&minus;&radic;(&phi;<sup>2</sup>&minus;4&phi;)|) with &phi; = &phi;<sub>p</sub>+&phi;<sub>g</sub> &gt; 4. The inertia-weight form used here is equivalent when &omega; &asymp; 0.729, &phi;<sub>p</sub> = &phi;<sub>g</sub> &asymp; 1.494.
+        Clerc &amp; Kennedy (2002) analyzed convergence by writing the update as
+        <span style="font-family:var(--font-mono);font-size:0.75rem">v(t+1) = &chi;&thinsp;[v(t) + &phi;<sub>p</sub>&thinsp;r<sub>p</sub>(p&minus;x) + &phi;<sub>g</sub>&thinsp;r<sub>g</sub>(g&minus;x)]</span>,
+        where &chi; is the <strong>constriction factor</strong>. Convergence can be guaranteed under the conditions
+        <span style="font-family:var(--font-mono);font-size:0.75rem">&chi; = 2&thinsp;/&thinsp;|2&minus;&phi;&minus;&radic;(&phi;<sup>2</sup>&minus;4&phi;)|</span>
+        where &phi;&thinsp;&#8796;&thinsp;&phi;<sub>p</sub>&thinsp;+&thinsp;&phi;<sub>g</sub> and &phi;<sub>p</sub>&thinsp;+&thinsp;&phi;<sub>g</sub>&nbsp;&gt;&nbsp;4
+        (which ensures &chi; is real and less than 1).
+        The canonical choice &phi;<sub>p</sub> = &phi;<sub>g</sub> = 2.05 gives &phi; = 4.1 and &chi;&nbsp;&asymp;&nbsp;0.729 in this constriction-factor form.
+        Distributing &chi; into the bracket recovers the inertia-weight form used here,
+        with &omega; = &chi;&nbsp;&asymp;&nbsp;0.729 and effective coefficients &chi;&phi;<sub>p</sub> = &chi;&phi;<sub>g</sub>&nbsp;&asymp;&nbsp;1.494.
+        The displayed &phi;<sub>p</sub>, &phi;<sub>g</sub> sliders on Tab&nbsp;&#9313; control these distributed effective coefficients (which sum to &gt;&nbsp;4&chi;).
       </div>
     </div>
 
@@ -511,7 +520,7 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
   <span class="desc-lede">Watch the swarm navigate a 2-D fitness landscape in real time.</span>
   Each particle shows its <strong>velocity arrow</strong> and a hollow ghost at its <strong>personal best</strong>.
   The global best is marked with a <strong>&#10022;</strong>.
-  Adjust &omega;, &phi;<sub>p</sub>, &phi;<sub>g</sub>, and swarm size, then hit <em>Run</em> (or <em>Resume</em> after pausing).
+  Adjust &omega;, &phi;<sub>p</sub>, &phi;<sub>g</sub>, swarm size (N), and maximum speed (v<sub>max</sub>), then hit <em>Run</em> (or <em>Resume</em> after pausing).
 </p>
 
 <div class="main">
@@ -671,6 +680,17 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 </div>
 
 </div><!-- tab-sim -->
+
+<div style="border-top:1px solid var(--border);padding:12px 20px;background:var(--surface-alt)">
+  <span style="font-size:0.67rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-right:8px">Convergence</span>
+  <span style="font-size:0.78rem;color:var(--text-muted);line-height:1.6">
+    The &phi;<sub>p</sub>, &phi;<sub>g</sub> sliders above control the <em>distributed</em> effective coefficients &chi;&phi;<sub>p</sub>, &chi;&phi;<sub>g</sub>,
+    where &omega;&thinsp;=&thinsp;&chi;&thinsp;&asymp;&thinsp;0.729 is the constriction factor (Clerc &amp; Kennedy, 2002).
+    Convergence is guaranteed when the raw coefficients satisfy &phi;<sub>p</sub>&thinsp;+&thinsp;&phi;<sub>g</sub>&thinsp;&gt;&thinsp;4 in the constriction-factor form —
+    equivalent to &omega;&thinsp;&asymp;&thinsp;0.729 with the default slider values of 1.49.
+    See Tab&nbsp;&#9312; for the full derivation.
+  </span>
+</div>
 
 <footer class="footer">
   &copy; 2026 Theodore P. Pavlic &middot;
