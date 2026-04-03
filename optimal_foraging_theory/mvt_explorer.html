@@ -152,12 +152,42 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
       <div class="ib">
         <strong>Marginal Value Theorem:</strong> Maximize R<sup>*</sup>&thinsp;=&thinsp;g(h<sup>*</sup>)&thinsp;/&thinsp;(s&thinsp;+&thinsp;h<sup>*</sup>) by equating marginal gain to opportunity cost.
       </div>
+      <!-- ── Renewal-process cycle diagram ── -->
+      <svg id="d1" viewBox="0 0 460 104" width="100%"
+           style="display:block;margin:6px 0 0;font-family:'Outfit',sans-serif;overflow:visible">
+        <defs>
+          <marker id="d1mp" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#6e3ea8"/>
+          </marker>
+          <marker id="d1mb" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#1b5fa8"/>
+          </marker>
+        </defs>
+        <!-- SEARCH node -->
+        <rect x="4" y="10" width="100" height="52" rx="13" fill="#ede8f5" stroke="#6e3ea8" stroke-width="1.5"/>
+        <text x="54" y="31" text-anchor="middle" font-size="11" font-weight="600" fill="#4a2f7a">SEARCH</text>
+        <text x="54" y="46" text-anchor="middle" font-size="8.5" fill="#6e3ea8" font-family="IBM Plex Mono,monospace">avg. s = <tspan id="d1s">5.0</tspan></text>
+        <!-- PATCH node -->
+        <rect x="356" y="10" width="100" height="52" rx="13" fill="#e6eff8" stroke="#1b5fa8" stroke-width="1.5"/>
+        <text x="406" y="30" text-anchor="middle" font-size="11" font-weight="600" fill="#1b3a6a">PATCH</text>
+        <text x="406" y="43" text-anchor="middle" font-size="8.5" fill="#1b5fa8" font-family="IBM Plex Mono,monospace">h<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d1h">—</tspan></text>
+        <text x="406" y="56" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g(h<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d1g">—</tspan></text>
+        <!-- R* rate badge centered between nodes -->
+        <rect x="174" y="28" width="112" height="18" rx="5" fill="rgba(200,87,31,0.09)" stroke="rgba(200,87,31,0.30)" stroke-width="0.8"/>
+        <text x="230" y="40" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">&#x21BA; R<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d1R">—</tspan></text>
+        <!-- Forward arrow: SEARCH → PATCH along top of boxes -->
+        <path d="M104,24 L356,24" stroke="#6e3ea8" stroke-width="1.3" fill="none" marker-end="url(#d1mp)"/>
+        <text x="230" y="19" text-anchor="middle" font-size="9" fill="#6e3ea8" font-style="italic">encounter  (avg. search time s)</text>
+        <!-- Return path: rectangular, dashed. Bottom of PATCH → down → left → bottom of SEARCH -->
+        <path d="M406,62 V82 H54 V62" stroke="#1b5fa8" stroke-width="1.3" stroke-dasharray="4,2" fill="none" marker-end="url(#d1mb)"/>
+        <text x="230" y="98" text-anchor="middle" font-size="8.5" fill="#5d6e62">depart at <tspan font-weight="600" fill="#1b5fa8">h<tspan baseline-shift="super" font-size="6.5">*</tspan></tspan> · collect reward <tspan font-weight="600" fill="#c8571f">g(h<tspan baseline-shift="super" font-size="6.5">*</tspan>)</tspan></text>
+      </svg>
     </div>
   </div>
   <div class="cpanel">
     <div class="dhint">
       <b>↔</b> drag <b>●</b> on graph &middot; adjust <em>s</em><br>
-      <b>↕</b> drag <b>curve</b> &middot; adjust richness G<sub>max</sub>
+      <b>↕</b> drag <b>curve</b> &middot; adjust G<sub>max</sub> &nbsp;·&nbsp; <b>↔</b> drag <b>curve</b> &middot; adjust τ
     </div>
     <div>
       <div class="cl">Inter-patch Search Time</div>
@@ -175,7 +205,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
         <div class="sc"><div class="sn">Habitat Rate R<sup>*</sup></div><div class="sv2" id="st-R">—</div></div>
         <div class="sc"><div class="sn">Gain g(h<sup>*</sup>)</div><div class="sv2" id="st-g">—</div></div>
         <div class="sc"><div class="sn">Slope g&prime;(h<sup>*</sup>)</div><div class="sv2" id="st-dg">—</div></div>
-        <div class="sc full"><div class="sn">Patch Quality G<sub>max</sub></div><div class="sv2" id="st-gmax">12.0</div></div>
+        <div class="sc"><div class="sn">Patch Quality G<sub>max</sub></div><div class="sv2" id="st-gmax">12.0</div></div>
+        <div class="sc"><div class="sn">Rise Time τ</div><div class="sv2" id="st-tau">6.0</div></div>
       </div>
     </div>
   </div>
@@ -207,12 +238,77 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
       <div class="ib">
         <strong>Equimarginal Principle:</strong> Richer patch → longer h<sub>i</sub><sup>*</sup>. Sparser habitat (↑&thinsp;<em>s</em>) → all h<sub>i</sub><sup>*</sup> increase, R<sup>*</sup> decreases. Rarer patch type (↓&thinsp;p<sub>i</sub>) → R<sup>*</sup> shifts toward other patches.
       </div>
+      <!-- ── Renewal-process cycle diagram (multi-patch) ── -->
+      <svg id="d2" viewBox="0 0 460 212" width="100%"
+           style="display:block;margin:6px 0 0;font-family:'Outfit',sans-serif;overflow:visible">
+        <defs>
+          <marker id="d2m1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#1d6fa4"/>
+          </marker>
+          <marker id="d2m2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#2a8c5e"/>
+          </marker>
+          <marker id="d2m3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#8c6e2a"/>
+          </marker>
+          <marker id="d2mr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#5d6e62"/>
+          </marker>
+        </defs>
+
+        <!-- SEARCH node: x=4 y=68 w=100 h=42, center y=89, right=104, bottom=110 -->
+        <rect x="4" y="68" width="100" height="42" rx="13" fill="#ede8f5" stroke="#6e3ea8" stroke-width="1.5"/>
+        <text x="54" y="86" text-anchor="middle" font-size="11" font-weight="600" fill="#4a2f7a">SEARCH</text>
+        <text x="54" y="100" text-anchor="middle" font-size="8.5" fill="#6e3ea8" font-family="IBM Plex Mono,monospace">avg. s = <tspan id="d2s">5.0</tspan></text>
+
+        <!-- PATCH 1 (blue): x=290 y=6 w=130 h=42, center x=355 y=27, right=420 bottom=48 -->
+        <rect x="290" y="6" width="130" height="42" rx="12" fill="#e6eff8" stroke="#1d6fa4" stroke-width="1.5"/>
+        <text x="355" y="20" text-anchor="middle" font-size="9" font-weight="600" fill="#1b3a6a">PATCH 1 <tspan font-size="8" fill="#1d6fa4" id="d2role0">(Richest)</tspan></text>
+        <text x="355" y="32" text-anchor="middle" font-size="8.5" fill="#1d6fa4" font-family="IBM Plex Mono,monospace">h₁<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2h0">—</tspan></text>
+        <text x="355" y="43" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g₁(h₁<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d2g0">—</tspan></text>
+
+        <!-- PATCH 2 (green): x=290 y=68 w=130 h=42, center x=355 y=89 -->
+        <rect x="290" y="68" width="130" height="42" rx="12" fill="#e8f4ee" stroke="#2a8c5e" stroke-width="1.5"/>
+        <text x="355" y="82" text-anchor="middle" font-size="9" font-weight="600" fill="#1a3d2a">PATCH 2 <tspan font-size="8" fill="#2a8c5e" id="d2role1">(OK)</tspan></text>
+        <text x="355" y="94" text-anchor="middle" font-size="8.5" fill="#2a8c5e" font-family="IBM Plex Mono,monospace">h₂<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2h1">—</tspan></text>
+        <text x="355" y="105" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g₂(h₂<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d2g1">—</tspan></text>
+
+        <!-- PATCH 3 (brown): x=290 y=130 w=130 h=42, center x=355 y=151, bottom=172 -->
+        <rect x="290" y="130" width="130" height="42" rx="12" fill="#f5f0e4" stroke="#8c6e2a" stroke-width="1.5"/>
+        <text x="355" y="144" text-anchor="middle" font-size="9" font-weight="600" fill="#3d2e10">PATCH 3 <tspan font-size="8" fill="#8c6e2a" id="d2role2">(Poor)</tspan></text>
+        <text x="355" y="156" text-anchor="middle" font-size="8.5" fill="#8c6e2a" font-family="IBM Plex Mono,monospace">h₃<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2h2">—</tspan></text>
+        <text x="355" y="167" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g₃(h₃<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d2g2">—</tspan></text>
+
+        <!-- Forward arrows: horizontal departure from SEARCH to fork x=152, then straight to patch.
+             Labels sit in a column at x=200, where the lines have spread enough to give each label
+             clear vertical space close to its own line. -->
+        <path d="M104,89 H152 L290,27" stroke="#1d6fa4" stroke-width="1.4" fill="none" marker-end="url(#d2m1)"/>
+        <text x="200" y="52" text-anchor="middle" font-size="9" fill="#1d6fa4" font-family="IBM Plex Mono,monospace">p₁=<tspan id="d2p0">0.33</tspan></text>
+        <path d="M104,89 L290,89" stroke="#2a8c5e" stroke-width="1.4" fill="none" marker-end="url(#d2m2)"/>
+        <text x="200" y="83" text-anchor="middle" font-size="9" fill="#2a8c5e" font-family="IBM Plex Mono,monospace">p₂=<tspan id="d2p1">0.33</tspan></text>
+        <path d="M104,89 H152 L290,151" stroke="#8c6e2a" stroke-width="1.4" fill="none" marker-end="url(#d2m3)"/>
+        <text x="200" y="130" text-anchor="middle" font-size="9" fill="#8c6e2a" font-family="IBM Plex Mono,monospace">p₃=<tspan id="d2p2">0.33</tspan></text>
+
+        <!-- Return bus: short H-legs from each patch right edge to bus at x=442 -->
+        <path d="M420,27 H442" stroke="#5d6e62" stroke-width="1.2" stroke-dasharray="3,2" fill="none"/>
+        <path d="M420,89 H442" stroke="#5d6e62" stroke-width="1.2" stroke-dasharray="3,2" fill="none"/>
+        <path d="M420,151 H442" stroke="#5d6e62" stroke-width="1.2" stroke-dasharray="3,2" fill="none"/>
+        <!-- Bus + rectangular return: down from x=442, left along bottom, up into SEARCH -->
+        <path d="M442,27 V192 H54 V110" stroke="#5d6e62" stroke-width="1.3" stroke-dasharray="4,2" fill="none" marker-end="url(#d2mr)"/>
+
+        <!-- "depart" label: below the patch stack (right side), above return bottom line -->
+        <text x="355" y="182" text-anchor="middle" font-size="8" fill="#5d6e62">depart at h<tspan baseline-shift="sub" font-size="6">i</tspan><tspan baseline-shift="super" font-size="6.5">*</tspan> · collect g<tspan baseline-shift="sub" font-size="6">i</tspan>(h<tspan baseline-shift="sub" font-size="6">i</tspan><tspan baseline-shift="super" font-size="6.5">*</tspan>)</text>
+
+        <!-- R* badge: bottom-left corner, where return line goes up into SEARCH -->
+        <rect x="4" y="194" width="122" height="17" rx="4" fill="rgba(200,87,31,0.09)" stroke="rgba(200,87,31,0.30)" stroke-width="0.8"/>
+        <text x="65" y="205.5" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">&#x21BA; R<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2R">—</tspan></text>
+      </svg>
     </div>
   </div>
   <div class="cpanel">
     <div class="dhint">
-      <b>↕</b> drag any <b>curve</b> &middot; adjust richness<br>
-      Slider or drag ternary point &middot; adjust <em>s</em> / p<sub>i</sub>
+      <b>↕</b> drag any <b>curve</b> &middot; adjust G<sub>max</sub><br>
+      <b>↔</b> drag any <b>curve</b> &middot; adjust rise time τ
     </div>
     <div>
       <div class="cl">Inter-patch Search Time</div>
@@ -261,15 +357,18 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
       <div class="cl">Patch Types</div>
       <div class="lgd">
         <div class="li"><div class="lsw" style="background:#1d6fa4"></div>
-          <span><span id="lbl0">Richest</span>&ensp;G<sub>max</sub>=<span id="lgm0">14.5</span></span></div>
+          <span><span id="lbl0">Richest</span>&ensp;G<sub>max</sub>=<span id="lgm0">14.5</span>&ensp;τ=<span id="ltau0">8.0</span></span></div>
         <div class="li"><div class="lsw" style="background:#2a8c5e"></div>
-          <span><span id="lbl1">OK</span>&ensp;G<sub>max</sub>=<span id="lgm1">11.0</span></span></div>
+          <span><span id="lbl1">OK</span>&ensp;G<sub>max</sub>=<span id="lgm1">11.0</span>&ensp;τ=<span id="ltau1">5.0</span></span></div>
         <div class="li"><div class="lsw" style="background:#8c6e2a"></div>
-          <span><span id="lbl2">Poor</span>&ensp;G<sub>max</sub>=<span id="lgm2">8.5</span></span></div>
+          <span><span id="lbl2">Poor</span>&ensp;G<sub>max</sub>=<span id="lgm2">8.5</span>&ensp;τ=<span id="ltau2">3.0</span></span></div>
         <div class="li" style="margin-top:2px">
           <div class="lsw" style="background:#6e3ea8"></div>
           <span style="color:#6e3ea8;font-style:italic;font-size:.74rem">Tangent slope = R<sup>*</sup> (all equal)</span>
         </div>
+      </div>
+      <div style="font-size:.67rem;color:var(--muted);margin-top:5px;line-height:1.5">
+        τ = depletion time constant &nbsp;·&nbsp; small τ → step-like (fast reward); large τ → ramp-like (slow depletion)
       </div>
     </div>
   </div>
@@ -286,19 +385,17 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
 //  CONSTANTS & STATE
 // ══════════════════════════════════════════
 
-const SINGLE_TAU = 6;
-const PAT_TAUS   = [8, 5, 3];
 const PAT_COLORS = ['#1d6fa4','#2a8c5e','#8c6e2a'];
 const PURPLE = '#6e3ea8';
 const PA     = 'rgba(110,62,168,';
 const BLUE   = '#1b5fa8';
 
-let s1=5, gMax1=12;
-let s2=5, gMaxes2=[14.5,11,8.5];
+let s1=5, gMax1=12, tau1=6;
+let s2=5, gMaxes2=[14.5,11,8.5], taus2=[8,5,3];
 let props2=[1/3,1/3,1/3];
 
-let drag1=null, d1_sPy=0, d1_sG=12, d1_sc=1;
-let drag2=null, d2_sPy=0, d2_sGs=[14.5,11,8.5], d2_sc=1, d2_ci=-1;
+let drag1=null, d1_sPy=0, d1_sPx=0, d1_sG=12, d1_sTau=6, d1_sHg=1, d1_sc=1, d1_dir=null;
+let drag2=null, d2_sPy=0, d2_sPx=0, d2_sGs=[14.5,11,8.5], d2_sTaus=[8,5,3], d2_sHg=1, d2_sc=1, d2_ci=-1, d2_dir=null;
 let triDrag=false;
 
 // ══════════════════════════════════════════
@@ -341,7 +438,7 @@ function getRoles(gArr){
   return r;
 }
 function currentPats2(){
-  return PAT_TAUS.map((tau,i)=>({Gmax:gMaxes2[i],tau,c:PAT_COLORS[i]}));
+  return taus2.map((tau,i)=>({Gmax:gMaxes2[i],tau,c:PAT_COLORS[i]}));
 }
 
 // ══════════════════════════════════════════
@@ -685,7 +782,7 @@ function drawRDial(pl,R){
 // ══════════════════════════════════════════
 
 function renderSingle(){
-  const s=s1,gMax=gMax1,p={Gmax:gMax,tau:SINGLE_TAU};
+  const s=s1,gMax=gMax1,p={Gmax:gMax,tau:tau1};
   plotS._yMax=Math.max(17,gMax*1.18);
   plotS.resize();plotS.clear();plotS.axes();
   const hs=hStar(p,s),gs=gF(hs,p),R=gs/(s+hs);
@@ -703,17 +800,17 @@ function renderSingle(){
   c.save();c.fillStyle=BLUE;c.font=`600 11px 'Outfit',sans-serif`;c.textAlign='right';
   c.fillText('g(h)',plotS.tx(hL)-3,plotS.ty(gF(hL,p))-10);c.restore();
 
-  const hE=Math.max(0.3,hs*.20),hLt=Math.min(21,hs*1.8);
-  c.save();c.globalAlpha=.3;
-  drawTangentSeg(plotS,hE,gF(hE,p),gPr(hE,p),BLUE,.9);
-  drawTangentSeg(plotS,hLt,gF(hLt,p),gPr(hLt,p),BLUE,.9);
-  c.restore();
-
   document.getElementById('st-hs').textContent=hs.toFixed(2);
   document.getElementById('st-R').textContent=R.toFixed(3);
   document.getElementById('st-g').textContent=gs.toFixed(2);
   document.getElementById('st-dg').textContent=gPr(hs,p).toFixed(3);
   document.getElementById('st-gmax').textContent=gMax.toFixed(1);
+  document.getElementById('st-tau').textContent=tau1.toFixed(1);
+  // Renewal-cycle diagram
+  document.getElementById('d1s').textContent=s.toFixed(1);
+  document.getElementById('d1h').textContent=hs.toFixed(2);
+  document.getElementById('d1g').textContent=gs.toFixed(2);
+  document.getElementById('d1R').textContent=R.toFixed(3);
 }
 
 // ══════════════════════════════════════════
@@ -786,7 +883,18 @@ function renderPortfolio(){
   for(let i=0;i<3;i++){
     document.getElementById('lbl'+i).textContent=roleArr[i];
     document.getElementById('lgm'+i).textContent=gMaxes2[i].toFixed(1);
+    document.getElementById('ltau'+i).textContent=taus2[i].toFixed(1);
     document.getElementById('tp'+i).textContent=props2[i].toFixed(2);
+  }
+  // Renewal-cycle diagram
+  document.getElementById('d2s').textContent=s.toFixed(1);
+  document.getElementById('d2R').textContent=R.toFixed(3);
+  for(let i=0;i<3;i++){
+    document.getElementById('d2h'+i).textContent=hStars[i].toFixed(2);
+    document.getElementById('d2g'+i).textContent=gStars[i].toFixed(2);
+    document.getElementById('d2p'+i).textContent=props2[i].toFixed(2);
+    const roleLabel=roleArr[i];
+    document.getElementById('d2role'+i).textContent='('+roleLabel+')';
   }
 }
 
@@ -805,19 +913,18 @@ function hitTest1(px,py){
   if(Math.hypot(px-ax,py-ay)<24)return'anchor';
   const dx=plotS.invX(px);
   if(dx>=0&&dx<=21){
-    const cy=plotS.ty(gF(dx,{Gmax:gMax1,tau:SINGLE_TAU}));
+    const cy=plotS.ty(gF(dx,{Gmax:gMax1,tau:tau1}));
     if(Math.abs(py-cy)<22)return'curve';
   }
   return null;
 }
 
 function hitTest2(px,py){
-  // No anchor hit for Tab 2; only curve drags
   const dx=plotP.invX(px);
   if(dx>=0&&dx<=21){
     let best=null,bestD=22;
     for(let i=0;i<3;i++){
-      const p={Gmax:gMaxes2[i],tau:PAT_TAUS[i]};
+      const p={Gmax:gMaxes2[i],tau:taus2[i]};
       const d=Math.abs(py-plotP.ty(gF(dx,p)));
       if(d<bestD){bestD=d;best='c'+i;}
     }
@@ -837,16 +944,41 @@ function applyDrag1(px,py){
     document.getElementById('slSv').textContent=s1.toFixed(1);
     renderSingle();
   }else if(drag1==='curve'){
-    const delta=(d1_sPy-py)*d1_sc;
-    gMax1=Math.max(3,Math.min(22,d1_sG+delta));
+    // Determine gesture direction on first significant movement
+    if(d1_dir===null){
+      const dx=Math.abs(px-d1_sPx),dy=Math.abs(py-d1_sPy);
+      if(dx>4||dy>4){
+        d1_dir=dx>dy?'tau':'gmax';
+        document.body.style.cursor=d1_dir==='tau'?'ew-resize':'ns-resize';
+      }
+    }
+    if(d1_dir==='gmax'){
+      const delta=(d1_sPy-py)*d1_sc;
+      gMax1=Math.max(3,Math.min(22,d1_sG+delta));
+    }else if(d1_dir==='tau'){
+      const hc=Math.max(0.2,plotS.invX(px));
+      tau1=Math.max(0.3,Math.min(25,d1_sTau*(hc/d1_sHg)));
+    }
     renderSingle();
   }
 }
 
 function applyDrag2(px,py){
   if(drag2&&drag2[0]==='c'){
-    const delta=(d2_sPy-py)*d2_sc;
-    gMaxes2[d2_ci]=Math.max(2,Math.min(22,d2_sGs[d2_ci]+delta));
+    if(d2_dir===null){
+      const dx=Math.abs(px-d2_sPx),dy=Math.abs(py-d2_sPy);
+      if(dx>4||dy>4){
+        d2_dir=dx>dy?'tau':'gmax';
+        document.body.style.cursor=d2_dir==='tau'?'ew-resize':'ns-resize';
+      }
+    }
+    if(d2_dir==='gmax'){
+      const delta=(d2_sPy-py)*d2_sc;
+      gMaxes2[d2_ci]=Math.max(2,Math.min(22,d2_sGs[d2_ci]+delta));
+    }else if(d2_dir==='tau'){
+      const hc=Math.max(0.2,plotP.invX(px));
+      taus2[d2_ci]=Math.max(0.3,Math.min(25,d2_sTaus[d2_ci]*(hc/d2_sHg)));
+    }
     renderPortfolio();
   }
 }
@@ -862,12 +994,20 @@ const triC=document.getElementById('triCvs');
 cvs1.addEventListener('mousedown',e=>{
   if(!document.getElementById('pane-single').classList.contains('active'))return;
   const{x,y}=evtPos(e,cvs1); drag1=hitTest1(x,y);
-  if(drag1==='curve'){d1_sPy=y;d1_sG=gMax1;d1_sc=(plotS._yMax-plotS._yMin)/plotS.pH;}
-  if(drag1){e.preventDefault();document.body.style.cursor=drag1==='anchor'?'ew-resize':'ns-resize';}
+  if(drag1==='curve'){
+    d1_sPy=y; d1_sPx=x; d1_sG=gMax1; d1_sTau=tau1; d1_dir=null;
+    d1_sHg=Math.max(0.5,plotS.invX(x));
+    d1_sc=(plotS._yMax-plotS._yMin)/plotS.pH;
+  }
+  if(drag1){e.preventDefault();document.body.style.cursor=drag1==='anchor'?'ew-resize':'grab';}
 });
 cvs1.addEventListener('touchstart',e=>{
   const{x,y}=evtPos(e,cvs1); drag1=hitTest1(x,y);
-  if(drag1==='curve'){d1_sPy=y;d1_sG=gMax1;d1_sc=(plotS._yMax-plotS._yMin)/plotS.pH;}
+  if(drag1==='curve'){
+    d1_sPy=y; d1_sPx=x; d1_sG=gMax1; d1_sTau=tau1; d1_dir=null;
+    d1_sHg=Math.max(0.5,plotS.invX(x));
+    d1_sc=(plotS._yMax-plotS._yMin)/plotS.pH;
+  }
   if(drag1)e.preventDefault();
 },{passive:false});
 cvs1.addEventListener('touchmove',e=>{
@@ -878,12 +1018,22 @@ cvs1.addEventListener('touchend',()=>{drag1=null;});
 cvs2.addEventListener('mousedown',e=>{
   if(!document.getElementById('pane-portfolio').classList.contains('active'))return;
   const{x,y}=evtPos(e,cvs2); drag2=hitTest2(x,y);
-  if(drag2&&drag2[0]==='c'){d2_ci=parseInt(drag2[1]);d2_sPy=y;d2_sGs=[...gMaxes2];d2_sc=(plotP._yMax-plotP._yMin)/plotP.pH;}
-  if(drag2){e.preventDefault();document.body.style.cursor='ns-resize';}
+  if(drag2&&drag2[0]==='c'){
+    d2_ci=parseInt(drag2[1]); d2_sPy=y; d2_sPx=x;
+    d2_sGs=[...gMaxes2]; d2_sTaus=[...taus2]; d2_dir=null;
+    d2_sHg=Math.max(0.5,plotP.invX(x));
+    d2_sc=(plotP._yMax-plotP._yMin)/plotP.pH;
+  }
+  if(drag2){e.preventDefault();document.body.style.cursor='grab';}
 });
 cvs2.addEventListener('touchstart',e=>{
   const{x,y}=evtPos(e,cvs2); drag2=hitTest2(x,y);
-  if(drag2&&drag2[0]==='c'){d2_ci=parseInt(drag2[1]);d2_sPy=y;d2_sGs=[...gMaxes2];d2_sc=(plotP._yMax-plotP._yMin)/plotP.pH;}
+  if(drag2&&drag2[0]==='c'){
+    d2_ci=parseInt(drag2[1]); d2_sPy=y; d2_sPx=x;
+    d2_sGs=[...gMaxes2]; d2_sTaus=[...taus2]; d2_dir=null;
+    d2_sHg=Math.max(0.5,plotP.invX(x));
+    d2_sc=(plotP._yMax-plotP._yMin)/plotP.pH;
+  }
   if(drag2)e.preventDefault();
 },{passive:false});
 cvs2.addEventListener('touchmove',e=>{
@@ -906,19 +1056,19 @@ window.addEventListener('mousemove',e=>{
   if(drag2){
     const r=cvs2.getBoundingClientRect();applyDrag2(e.clientX-r.left,e.clientY-r.top);return;
   }
-  // Hover cursors
+  // Hover cursors — curves show 'move' since drag direction (τ vs G_max) isn't known until gesture starts
   if(document.getElementById('pane-single').classList.contains('active')){
     const r=cvs1.getBoundingClientRect();
     if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
       const h=hitTest1(e.clientX-r.left,e.clientY-r.top);
-      cvs1.style.cursor=h==='anchor'?'ew-resize':h==='curve'?'ns-resize':'default';
+      cvs1.style.cursor=h==='anchor'?'ew-resize':h==='curve'?'move':'default';
     }else cvs1.style.cursor='default';
   }
   if(document.getElementById('pane-portfolio').classList.contains('active')){
     const r=cvs2.getBoundingClientRect();
     if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
       const h=hitTest2(e.clientX-r.left,e.clientY-r.top);
-      cvs2.style.cursor=h?'ns-resize':'default';
+      cvs2.style.cursor=h?'move':'default';
     }else cvs2.style.cursor='default';
   }
 });
