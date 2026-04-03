@@ -293,7 +293,7 @@ const FUNCS = {
 };
 
 // ── State ───────────────────────────────────────────────
-let piExps = [], mcExps = {}, piAnimId = null, mcExpTimer = null, mcExpStep = 0;
+let piExps = [], mcExps = {}, piAnimId = null, mcAnimId = null, mcExpTimer = null, mcExpStep = 0;
 let expInitialized = false;
 const MC_EXP_STEPS = [4, 8, 16, 32, 64, 128];
 let curFn = 'sin';
@@ -436,6 +436,7 @@ function drawPiExp(){
 function mcFnChange(){
   curFn=document.getElementById('mc-fn').value;
   document.getElementById('mc-bridge').style.display=curFn==='semi'?'block':'none';
+  if(mcAnimId){cancelAnimationFrame(mcAnimId);mcAnimId=null;}
   mcDrawBase([]);resetMCStats();renderMCHist();
 }
 function resetMCStats(){
@@ -452,10 +453,14 @@ function mcDrawBase(samples){
 // pT=16  pL=40  pR=12  pB=70   cH = 302-16-70 = 216
 // x-axis labels at cH+pT+16 = 248
 // annotation span  at cH+pT+32 = 264  ticks ±4  text at +46 = 278  ✓ < 302
-function drawMCPlot(ctx,W,H,fn,samples){
+// totalM: if provided, use it for rect-width/annotation instead of samples.length
+// This keeps geometry stable during incremental animation.
+function drawMCPlot(ctx,W,H,fn,samples,totalM){
   const pL=40,pR=12,pT=16,pB=70;
   const cW=W-pL-pR, cH=H-pT-pB;
-  const {a,b,f,name}=fn, L=b-a, M=samples.length;
+  const {a,b,f,name}=fn, L=b-a;
+  const M=samples.length;       // how many rects to actually draw
+  const TM=totalM||M;           // basis for width + annotation
   let yMax=0;
   for(let i=0;i<=200;i++) yMax=Math.max(yMax,f(a+i/200*L));
   yMax*=1.13;
@@ -470,7 +475,7 @@ function drawMCPlot(ctx,W,H,fn,samples){
     ctx.fillStyle='rgba(26,61,43,.06)';ctx.fill();
   }
   if(M>0){
-    const rWpx=cW/M;
+    const rWpx=cW/TM;  // width based on TM for stable anim
     samples.forEach(({x,y})=>{
       const px=xP(x)-rWpx/2, py=yP(y), ph=Math.max(yP(0)-py,1);
       ctx.fillStyle=C.orangePale;ctx.fillRect(px,py,rWpx,ph);
@@ -497,9 +502,9 @@ function drawMCPlot(ctx,W,H,fn,samples){
   // Width annotation — always shown, drafting-style for any M
   // visW = max(actual_px_width, 3) so ticks are always visible
   // text centred below span line regardless of indicator size
-  if(M>0&&samples.length>0){
+  if(TM>0&&samples.length>0){
     const midS=samples[Math.floor(M/2)];
-    const bx=xP(midS.x), rWpx=cW/M, visW=Math.max(rWpx,3);
+    const bx=xP(midS.x), rWpx=cW/TM, visW=Math.max(rWpx,3);
     const ay=pT+cH+32, tkH=4;
     ctx.strokeStyle=C.orange;ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(bx-visW/2,ay);ctx.lineTo(bx+visW/2,ay);ctx.stroke();
@@ -509,7 +514,7 @@ function drawMCPlot(ctx,W,H,fn,samples){
     ctx.stroke();
     const Lstr=fn.b===Math.PI?'π':fn.b===Math.PI/2?'π/2':L.toFixed(2);
     ctx.fillStyle=C.orange;ctx.font=`${rWpx<28?8.5:9.5}px ${FF_MONO}`;ctx.textAlign='center';
-    ctx.fillText(`L/M = ${Lstr}/${M}`, bx, ay+14);
+    ctx.fillText(`L/M = ${Lstr}/${TM}`, bx, ay+14);
   }
 }
 
@@ -518,7 +523,10 @@ function runMC(){
   const fkey=document.getElementById('mc-fn').value;
   const fn=FUNCS[fkey], btn=document.getElementById('mc-run');
   btn.disabled=true;
+  if(mcAnimId){cancelAnimationFrame(mcAnimId);mcAnimId=null;}
   const {a,b,f,trueVal}=fn, L=b-a;
+
+  // Generate all samples upfront — stats are exact from the start
   const samples=[]; let sum=0,sumSq=0;
   for(let i=0;i<M;i++){const x=a+Math.random()*L,y=f(x);samples.push({x,y});sum+=y;sumSq+=y*y;}
   const mean=sum/M, variance=Math.max(0,sumSq/M-mean*mean), se=Math.sqrt(variance/M);
@@ -526,18 +534,40 @@ function runMC(){
   if(!mcExps[fkey])mcExps[fkey]=[];
   mcExps[fkey].push({M,est,ciLow:L*(mean-1.96*se),ciHigh:L*(mean+1.96*se)});
   curFn=fkey;
-  const cv=document.getElementById('mc-cv');
-  const {ctx,W,H}=getCtx(cv);
-  drawMCPlot(ctx,W,H,fn,samples);
+
+  // Update stat cards and history immediately (before animation finishes)
   setText('mc-sm',M.toLocaleString());
   setText('mc-sl',L===Math.PI?`π ≈ ${L.toFixed(4)}`:L===Math.PI/2?`π/2 ≈ ${L.toFixed(4)}`:L.toFixed(4));
   setText('mc-sw',(L/M).toFixed(6));setText('mc-se',est.toFixed(6));setText('mc-st',fn.trueStr);
   const errEl=document.getElementById('mc-serr');
   errEl.textContent=(relErr*100).toFixed(3)+'%';
   errEl.style.color=relErr<.05?C.green2:relErr<.2?C.orange:'#c0392b';
-  renderMCHist();btn.disabled=false;
+  renderMCHist();
+
+  // Animate rectangles one-by-one (batched so total frames ≈ 45)
+  const cv=document.getElementById('mc-cv');
+  let drawn=0;
+  const batch=Math.max(1,Math.ceil(M/45));
+
+  function frame(){
+    const end=Math.min(drawn+batch,M);
+    // Full redraw each frame: clear → rects so far → curve+axes on top
+    // Canvas is fast enough; this keeps the curve always above the rects.
+    const {ctx,W,H}=getCtx(cv);
+    drawMCPlot(ctx,W,H,fn,samples.slice(0,end),M);
+    drawn=end;
+    if(drawn<M){
+      mcAnimId=requestAnimationFrame(frame);
+    } else {
+      mcAnimId=null;
+      btn.disabled=false;
+    }
+  }
+  mcAnimId=requestAnimationFrame(frame);
 }
 function clearMC(){
+  if(mcAnimId){cancelAnimationFrame(mcAnimId);mcAnimId=null;}
+  document.getElementById('mc-run').disabled=false;
   const fkey=document.getElementById('mc-fn').value;
   mcExps[fkey]=[];mcDrawBase([]);resetMCStats();renderMCHist();
 }
