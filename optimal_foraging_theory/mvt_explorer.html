@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interactive explorer for Charnov's Marginal Value Theorem (MVT) — optimal patch residence time in foraging ecology. The long-term habitat rate R* is the opportunity cost of time and acts as a temporal discount rate: foragers leave a patch when marginal returns fall to R*, exactly as a Bellman-optimal agent discounts future rewards. Relevant to reinforcement learning (discount rates, opportunity costs, explore–exploit tradeoffs) and to animal behavior / behavioral ecology courses.">
+<meta name="keywords" content="Marginal Value Theorem, foraging ecology, optimal foraging, opportunity cost, temporal discount rate, reinforcement learning, equimarginal principle, patch residence time, behavioral ecology">
+<title>MVT Explorer — Marginal Value Theorem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+/* ── Key fix: sub/sup must use position:relative so they work in flex rows ── */
+sub,sup{font-size:.72em;line-height:0;position:relative;vertical-align:baseline}
+sub{top:.36em}
+sup{top:-.48em}
+:root{
+  --bg:#f4f0e8;--srf:#fff;--srf2:#f8f5ef;
+  --gdp:#1b3a2e;--grn:#234a35;--gbtn:#1e4030;--gltgrn:#e2ede7;
+  --org:#c8571f;--txt:#1a2918;--muted:#5d6e62;--bdr:#ccc9be;
+  --r:6px;
+  --sans:'Outfit',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:100vh;padding:12px}
+.widget{max-width:1120px;margin:0 auto;background:var(--srf);border:1px solid var(--bdr);
+        border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.09);overflow:hidden}
+.wh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    padding:14px 20px 10px;border-bottom:1px solid var(--bdr)}
+.wh h1{font-size:1.2rem;font-weight:700;color:var(--gdp);letter-spacing:-.015em;line-height:1.2}
+.wh p{font-size:.77rem;color:var(--muted);margin-top:2px}
+.wh-copy{font-size:.67rem;color:var(--muted);text-align:right;white-space:nowrap;flex-shrink:0;padding-top:3px}
+.wh-copy a{color:var(--org);text-decoration:none}.wh-copy a:hover{text-decoration:underline}
+.tab-bar{display:flex;border-bottom:2px solid var(--bdr);padding:0 18px;background:var(--srf2)}
+.tb{font-family:var(--sans);font-size:.82rem;font-weight:500;background:none;border:none;
+    border-bottom:3px solid transparent;margin-bottom:-2px;padding:9px 16px;cursor:pointer;
+    color:var(--muted);transition:color .15s,border-color .15s;white-space:nowrap}
+.tb:hover{color:var(--gdp)}.tb.active{color:var(--gdp);border-bottom-color:var(--gdp);font-weight:600}
+.tc{display:none}.tc.active{display:block}
+.layout{display:grid;grid-template-columns:1fr 272px;align-items:stretch}
+.cv-col{border-right:1px solid var(--bdr);display:flex;flex-direction:column;background:var(--srf)}
+.cv-wrap{position:relative;background:var(--srf);height:395px;flex-shrink:0}
+.cv-wrap canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block;
+                user-select:none;-webkit-user-select:none;touch-action:none}
+.fsec{background:var(--srf2);border-top:1px solid var(--bdr);padding:14px 16px;
+      display:flex;flex-direction:column;gap:10px;flex:1}
+.fcard{background:var(--srf);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 16px}
+.ftitle{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+        color:var(--muted);margin-bottom:10px}
+.fexpr{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 10px;padding:4px 0 6px}
+.fm{font-family:var(--mono);font-size:1.05rem;color:var(--gdp);font-style:italic}
+.feq{font-family:var(--mono);font-size:1rem;color:var(--muted)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;font-family:var(--mono);
+      font-size:.95rem;color:var(--gdp);font-style:italic;vertical-align:middle}
+.fn{border-bottom:1.5px solid var(--gdp);padding:0 4px 2px;white-space:nowrap}
+.fd{padding:2px 4px 0;white-space:nowrap}
+.fnote{font-size:.72rem;color:var(--muted);text-align:center;margin-top:2px}
+.ib{background:var(--gltgrn);border:1px solid #b4d0c0;border-radius:var(--r);
+    padding:10px 12px;font-size:.77rem;line-height:1.56;color:#1c3e2a}
+.ib strong{font-weight:600}.ib em{font-style:italic}
+.cpanel{padding:14px 13px;display:flex;flex-direction:column;gap:12px;background:var(--srf2);overflow-y:auto}
+.cl{font-size:.67rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.srow{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.srow label{font-family:var(--mono);font-size:.8rem;min-width:28px;color:var(--txt)}
+.srow input[type=range]{flex:1;-webkit-appearance:none;height:3px;background:var(--bdr);border-radius:2px;outline:none;cursor:pointer}
+.srow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--gbtn);cursor:pointer}
+.srow input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--gbtn);cursor:pointer;border:none}
+.sv{font-family:var(--mono);font-size:.82rem;color:var(--org);min-width:34px;text-align:right;font-weight:500}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sc{background:var(--srf);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 10px}
+.sc.full{grid-column:1/-1}
+.sn{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.sv2{font-family:var(--mono);font-size:1rem;font-weight:500;color:var(--org);margin-top:2px}
+.sv2b{font-family:var(--mono);font-size:.77rem;color:#7a3010;margin-top:3px}
+.dhint{font-size:.7rem;color:#4a2f7a;line-height:1.55;padding:6px 9px;
+       background:rgba(110,62,168,.07);border-radius:var(--r);border:1px solid rgba(110,62,168,.2)}
+.dhint b{font-weight:700;color:#3a2068}
+.lgd{display:flex;flex-direction:column;gap:5px}
+.li{display:flex;align-items:center;gap:7px;font-size:.76rem}
+.lsw{height:3px;width:20px;border-radius:2px;flex-shrink:0}
+/* Ternary: border is on the wrapper, NOT the canvas, to avoid clientWidth shrink bug */
+.triBox{border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;display:inline-block;line-height:0}
+#triCvs{display:block;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}
+.triWrap{display:flex;flex-direction:column;align-items:center;gap:5px}
+.triPvals{display:flex;justify-content:space-between;width:100%;padding:0 4px;
+          font-family:var(--mono);font-size:.7rem}
+.wf{border-top:1px solid var(--bdr);padding:6px 20px;display:flex;justify-content:flex-end;background:var(--srf2)}
+.wf-c{font-size:.67rem;color:var(--muted)}
+.wf-c a{color:var(--org);text-decoration:none}.wf-c a:hover{text-decoration:underline}
+@media(max-width:700px){
+  body{padding:6px}
+  .layout{grid-template-columns:1fr}
+  .cv-col{border-right:none;border-bottom:1px solid var(--bdr)}
+  .cv-wrap{height:300px}
+  .wh{flex-wrap:wrap}.wh-copy{text-align:left}
+}
+@media(max-width:420px){.wh h1{font-size:1rem}.tb{padding:8px 10px;font-size:.78rem}}
+</style>
+</head>
+<body>
+<div class="widget">
+<header class="wh">
+  <div>
+    <h1>MVT Explorer — Marginal Value Theorem</h1>
+    <p>Optimal patch residence time &amp; the equimarginal principle in foraging ecology</p>
+  </div>
+  <div class="wh-copy">© 2026 Theodore P. Pavlic · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a></div>
+</header>
+<div class="tab-bar">
+  <button class="tb active" onclick="switchTab('single',this)">① Single Patch</button>
+  <button class="tb"        onclick="switchTab('portfolio',this)">② Patch Portfolio</button>
+</div>
+
+<!-- ═══ TAB 1 ═══ -->
+<div id="pane-single" class="tc active">
+<div class="layout">
+  <div class="cv-col">
+    <div class="cv-wrap"><canvas id="cvs"></canvas></div>
+    <div class="fsec">
+      <div class="fcard">
+        <div class="ftitle">Optimal Patch Departure — Single Patch Type</div>
+        <div class="fexpr">
+          <span class="fm">g&prime;(h<sup>*</sup>)</span>
+          <span class="feq">=</span>
+          <span class="fm">R<sup>*</sup></span>
+          <span class="feq">=</span>
+          <span class="frac">
+            <span class="fn">g(h<sup>*</sup>)</span>
+            <span class="fd">s&thinsp;+&thinsp;h<sup>*</sup></span>
+          </span>
+        </div>
+        <div class="fnote">Leave when instantaneous gain rate equals the long-term habitat rate &nbsp;·&nbsp; <em>h</em> = Time in Patch</div>
+        <div class="fnote" style="margin-top:5px;color:#7a8a80"><em>R<sup>*</sup> acts as an <strong>opportunity cost of time</strong>: each additional moment in the patch must justify itself against the habitat's long-run return rate. This is structurally identical to a <strong>temporal discount rate</strong> in sequential decision-making — foragers implicitly discount future patch opportunities by R<sup>*</sup>.</em></div>
+      </div>
+      <div class="ib">
+        <strong>Marginal Value Theorem:</strong> Maximize R<sup>*</sup>&thinsp;=&thinsp;g(h<sup>*</sup>)&thinsp;/&thinsp;(s&thinsp;+&thinsp;h<sup>*</sup>) by equating marginal gain to opportunity cost.
+      </div>
+    </div>
+  </div>
+  <div class="cpanel">
+    <div class="dhint">
+      <b>↔</b> drag <b>●</b> on graph &middot; adjust <em>s</em><br>
+      <b>↕</b> drag <b>curve</b> &middot; adjust richness G<sub>max</sub>
+    </div>
+    <div>
+      <div class="cl">Inter-patch Search Time</div>
+      <div class="srow">
+        <label>s =</label>
+        <input type="range" id="slS" min="0.5" max="14" step="0.1" value="5">
+        <span class="sv" id="slSv">5.0</span>
+      </div>
+      <div style="font-size:.71rem;color:var(--muted)">Average time between patch encounters</div>
+    </div>
+    <div>
+      <div class="cl">Statistics</div>
+      <div class="sgrid">
+        <div class="sc"><div class="sn">Opt. Residence h<sup>*</sup></div><div class="sv2" id="st-hs">—</div></div>
+        <div class="sc"><div class="sn">Habitat Rate R<sup>*</sup></div><div class="sv2" id="st-R">—</div></div>
+        <div class="sc"><div class="sn">Gain g(h<sup>*</sup>)</div><div class="sv2" id="st-g">—</div></div>
+        <div class="sc"><div class="sn">Slope g&prime;(h<sup>*</sup>)</div><div class="sv2" id="st-dg">—</div></div>
+        <div class="sc full"><div class="sn">Patch Quality G<sub>max</sub></div><div class="sv2" id="st-gmax">12.0</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══ TAB 2 ═══ -->
+<div id="pane-portfolio" class="tc">
+<div class="layout">
+  <div class="cv-col">
+    <div class="cv-wrap"><canvas id="cvp"></canvas></div>
+    <div class="fsec">
+      <div class="fcard">
+        <div class="ftitle">Multi-Patch Equimarginal Condition</div>
+        <div class="fexpr">
+          <span class="fm">g&prime;<sub>1</sub>(h<sub>1</sub><sup>*</sup>)</span>
+          <span class="feq">=</span>
+          <span class="fm">g&prime;<sub>2</sub>(h<sub>2</sub><sup>*</sup>)</span>
+          <span class="feq">=</span>
+          <span class="fm">&ctdot;</span>
+          <span class="feq">=</span>
+          <span class="fm">g&prime;<sub>m</sub>(h<sub>m</sub><sup>*</sup>)</span>
+          <span class="feq">=</span>
+          <span class="fm">R<sup>*</sup></span>
+        </div>
+        <div class="fnote">Optimal times h<sub>i</sub><sup>*</sup> equalize marginal returns across all patch types &nbsp;·&nbsp; <em>h</em> = Time in Patch</div>
+        <div class="fnote" style="margin-top:5px;color:#7a8a80"><em>The equimarginal R<sup>*</sup> is the shared <strong>opportunity cost of time</strong> across all patch types. No patch can offer a better marginal return at the optimum — analogous to a <strong>common discount rate</strong> at which all options become equally attractive at the margin, mirroring value-function convergence in reinforcement learning.</em></div>
+      </div>
+      <div class="ib">
+        <strong>Equimarginal Principle:</strong> Richer patch → longer h<sub>i</sub><sup>*</sup>. Sparser habitat (↑&thinsp;<em>s</em>) → all h<sub>i</sub><sup>*</sup> increase, R<sup>*</sup> decreases. Rarer patch type (↓&thinsp;p<sub>i</sub>) → R<sup>*</sup> shifts toward other patches.
+      </div>
+    </div>
+  </div>
+  <div class="cpanel">
+    <div class="dhint">
+      <b>↕</b> drag any <b>curve</b> &middot; adjust richness<br>
+      Slider or drag ternary point &middot; adjust <em>s</em> / p<sub>i</sub>
+    </div>
+    <div>
+      <div class="cl">Inter-patch Search Time</div>
+      <div class="srow">
+        <label>s =</label>
+        <input type="range" id="slS2" min="0.5" max="14" step="0.1" value="5">
+        <span class="sv" id="slS2v">5.0</span>
+      </div>
+      <div style="font-size:.71rem;color:var(--muted)">Common search time across all patches</div>
+    </div>
+    <div>
+      <div class="cl">Portfolio Statistics</div>
+      <div class="sgrid">
+        <div class="sc full"><div class="sn">Habitat Rate R<sup>*</sup> (equimarginal)</div><div class="sv2" id="pt-R">—</div></div>
+        <div class="sc">
+          <div class="sn">Residence h<sub>1</sub><sup>*</sup></div>
+          <div class="sv2" id="pt-h0">—</div>
+          <div class="sv2b" id="pt-g0">g<sub>1</sub>(h<sub>1</sub><sup>*</sup>)=&thinsp;—</div>
+        </div>
+        <div class="sc">
+          <div class="sn">Residence h<sub>2</sub><sup>*</sup></div>
+          <div class="sv2" id="pt-h1">—</div>
+          <div class="sv2b" id="pt-g1">g<sub>2</sub>(h<sub>2</sub><sup>*</sup>)=&thinsp;—</div>
+        </div>
+        <div class="sc">
+          <div class="sn">Residence h<sub>3</sub><sup>*</sup></div>
+          <div class="sv2" id="pt-h2">—</div>
+          <div class="sv2b" id="pt-g2">g<sub>3</sub>(h<sub>3</sub><sup>*</sup>)=&thinsp;—</div>
+        </div>
+        <div class="sc"><div class="sn">Spread h<sub>1</sub><sup>*</sup>&minus;h<sub>3</sub><sup>*</sup></div><div class="sv2" id="pt-spr">—</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="cl">Encounter Proportions</div>
+      <div class="triWrap">
+        <div class="triBox"><canvas id="triCvs"></canvas></div>
+        <div class="triPvals">
+          <span style="color:#1d6fa4">p<sub>1</sub>=<span id="tp0">0.33</span></span>
+          <span style="color:#2a8c5e">p<sub>2</sub>=<span id="tp1">0.33</span></span>
+          <span style="color:#8c6e2a">p<sub>3</sub>=<span id="tp2">0.33</span></span>
+        </div>
+        <div style="font-size:.67rem;color:var(--muted);text-align:center">drag to adjust relative encounter rates</div>
+      </div>
+    </div>
+    <div>
+      <div class="cl">Patch Types</div>
+      <div class="lgd">
+        <div class="li"><div class="lsw" style="background:#1d6fa4"></div>
+          <span><span id="lbl0">Richest</span>&ensp;G<sub>max</sub>=<span id="lgm0">14.5</span></span></div>
+        <div class="li"><div class="lsw" style="background:#2a8c5e"></div>
+          <span><span id="lbl1">OK</span>&ensp;G<sub>max</sub>=<span id="lgm1">11.0</span></span></div>
+        <div class="li"><div class="lsw" style="background:#8c6e2a"></div>
+          <span><span id="lbl2">Poor</span>&ensp;G<sub>max</sub>=<span id="lgm2">8.5</span></span></div>
+        <div class="li" style="margin-top:2px">
+          <div class="lsw" style="background:#6e3ea8"></div>
+          <span style="color:#6e3ea8;font-style:italic;font-size:.74rem">Tangent slope = R<sup>*</sup> (all equal)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<footer class="wf">
+  <div class="wf-c">© 2026 Theodore P. Pavlic · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a></div>
+</footer>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONSTANTS & STATE
+// ══════════════════════════════════════════
+
+const SINGLE_TAU = 6;
+const PAT_TAUS   = [8, 5, 3];
+const PAT_COLORS = ['#1d6fa4','#2a8c5e','#8c6e2a'];
+const PURPLE = '#6e3ea8';
+const PA     = 'rgba(110,62,168,';
+const BLUE   = '#1b5fa8';
+
+let s1=5, gMax1=12;
+let s2=5, gMaxes2=[14.5,11,8.5];
+let props2=[1/3,1/3,1/3];
+
+let drag1=null, d1_sPy=0, d1_sG=12, d1_sc=1;
+let drag2=null, d2_sPy=0, d2_sGs=[14.5,11,8.5], d2_sc=1, d2_ci=-1;
+let triDrag=false;
+
+// ══════════════════════════════════════════
+//  MATH
+// ══════════════════════════════════════════
+
+const gF  = (h,p) => p.Gmax*(1-Math.exp(-h/p.tau));
+const gPr = (h,p) => (p.Gmax/p.tau)*Math.exp(-h/p.tau);
+
+function hStar(p,s){
+  let lo=0.01,hi=40;
+  for(let i=0;i<250;i++){
+    const m1=lo+(hi-lo)/3,m2=hi-(hi-lo)/3;
+    gF(m1,p)/(s+m1)<gF(m2,p)/(s+m2)?lo=m1:hi=m2;
+  }
+  return(lo+hi)/2;
+}
+
+function portfolioR(pats,s,ps){
+  function ar(R){
+    let tg=0,th=0,tw=0;
+    for(let i=0;i<pats.length;i++){
+      const p=pats[i],pi=ps[i];
+      if(pi<=0||R*p.tau>=p.Gmax)continue;
+      const h=p.tau*Math.log(p.Gmax/(R*p.tau));
+      tg+=pi*(p.Gmax-R*p.tau); th+=pi*h; tw+=pi;
+    }
+    const d=tw*s+th; return d>0?tg/d:0;
+  }
+  let lo=0.005,hi=5;
+  if(ar(hi)>hi)return hi;
+  for(let i=0;i<300;i++){const m=(lo+hi)/2;ar(m)>m?lo=m:hi=m;}
+  return(lo+hi)/2;
+}
+
+function getRoles(gArr){
+  const idx=[0,1,2].sort((a,b)=>gArr[b]-gArr[a]);
+  const r=['','',''];
+  r[idx[0]]='Richest';r[idx[1]]='OK';r[idx[2]]='Poor';
+  return r;
+}
+function currentPats2(){
+  return PAT_TAUS.map((tau,i)=>({Gmax:gMaxes2[i],tau,c:PAT_COLORS[i]}));
+}
+
+// ══════════════════════════════════════════
+//  TERNARY DIAGRAM  (one-time init, no resize)
+// ══════════════════════════════════════════
+
+// Triangle vertices in CSS-pixel coordinates for a 226×196 canvas
+// Vertex order: [0]=bottom-left (p1/blue), [1]=top-center (p2/green), [2]=bottom-right (p3/brown)
+const TW=226,TH=196;
+const TV=[[24,178],[113,26],[202,178]];
+
+let triReady=false;
+function ensureTri(){
+  if(triReady)return;
+  const cvs=document.getElementById('triCvs');
+  if(!cvs)return;
+  const dpr=window.devicePixelRatio||1;
+  cvs.width=TW*dpr; cvs.height=TH*dpr;
+  cvs.style.width=TW+'px'; cvs.style.height=TH+'px';
+  cvs.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
+  triReady=true;
+}
+
+function baryCoord(px,py){
+  const[v0,v1,v2]=TV;
+  const d=(v1[1]-v2[1])*(v0[0]-v2[0])+(v2[0]-v1[0])*(v0[1]-v2[1]);
+  const l0=((v1[1]-v2[1])*(px-v2[0])+(v2[0]-v1[0])*(py-v2[1]))/d;
+  const l1=((v2[1]-v0[1])*(px-v2[0])+(v0[0]-v2[0])*(py-v2[1]))/d;
+  const l2=1-l0-l1;
+  const a=Math.max(0,l0),b=Math.max(0,l1),c2=Math.max(0,l2);
+  const s=a+b+c2; return s<1e-8?[1/3,1/3,1/3]:[a/s,b/s,c2/s];
+}
+function baryToXY(l0,l1,l2){
+  const[v0,v1,v2]=TV;
+  return[l0*v0[0]+l1*v1[0]+l2*v2[0],l0*v0[1]+l1*v1[1]+l2*v2[1]];
+}
+function lerp2(a,b,t){return[a[0]*(1-t)+b[0]*t,a[1]*(1-t)+b[1]*t];}
+
+function drawTri(){
+  ensureTri();
+  const cvs=document.getElementById('triCvs'); if(!cvs)return;
+  const c=cvs.getContext('2d');
+  c.clearRect(0,0,TW,TH);
+
+  // Triangle fill
+  c.fillStyle='rgba(234,230,220,0.9)';
+  c.strokeStyle='#ccc9be'; c.lineWidth=1.5;
+  c.beginPath(); c.moveTo(TV[0][0],TV[0][1]); c.lineTo(TV[1][0],TV[1][1]);
+  c.lineTo(TV[2][0],TV[2][1]); c.closePath(); c.fill(); c.stroke();
+
+  // Grid lines at 0.25, 0.5, 0.75
+  c.strokeStyle='rgba(160,155,140,0.45)'; c.lineWidth=0.8;
+  for(const t of[0.25,0.5,0.75]){
+    const p01=lerp2(TV[0],TV[1],t),p02=lerp2(TV[0],TV[2],t);
+    const p10=lerp2(TV[1],TV[0],t),p12=lerp2(TV[1],TV[2],t);
+    const p20=lerp2(TV[2],TV[0],t),p21=lerp2(TV[2],TV[1],t);
+    c.beginPath();c.moveTo(p01[0],p01[1]);c.lineTo(p02[0],p02[1]);c.stroke();
+    c.beginPath();c.moveTo(p10[0],p10[1]);c.lineTo(p12[0],p12[1]);c.stroke();
+    c.beginPath();c.moveTo(p20[0],p20[1]);c.lineTo(p21[0],p21[1]);c.stroke();
+  }
+
+  // Vertex colored dots + labels; offsets place labels outside the triangle edges
+  // [0] bottom-left: label left; [1] top: label above; [2] bottom-right: label right
+  const vOff=[[-15,10],[0,-12],[15,10]];
+  c.font=`bold 10px 'Outfit',sans-serif`; c.textAlign='center';
+  for(let i=0;i<3;i++){
+    c.fillStyle=PAT_COLORS[i];
+    c.beginPath();c.arc(TV[i][0],TV[i][1],4,0,2*Math.PI);c.fill();
+    c.fillText(i+1,TV[i][0]+vOff[i][0],TV[i][1]+vOff[i][1]);
+  }
+
+  // Draggable dot at barycentric position
+  const[dx,dy]=baryToXY(...props2);
+  c.fillStyle=PURPLE;
+  c.beginPath();c.arc(dx,dy,7,0,2*Math.PI);c.fill();
+  c.strokeStyle='#fff';c.lineWidth=1.5;c.stroke();
+}
+
+function onTriEvent(e){
+  ensureTri();
+  const cvs=document.getElementById('triCvs'); if(!cvs)return;
+  const rect=cvs.getBoundingClientRect();
+  const src=e.touches?e.touches[0]:(e.changedTouches?e.changedTouches[0]:e);
+  const px=src.clientX-rect.left, py=src.clientY-rect.top;
+  props2=baryCoord(px,py);
+  drawTri();
+  renderPortfolio();
+  for(let i=0;i<3;i++)
+    document.getElementById('tp'+i).textContent=props2[i].toFixed(2);
+}
+
+// ══════════════════════════════════════════
+//  PLOT CLASS
+//  xMin parameter: -15 for Tab1 (to show s), -1 for Tab2
+// ══════════════════════════════════════════
+
+class Plot{
+  constructor(id,mB=58,xMin=-15){
+    this.el=document.getElementById(id);
+    this.ctx=this.el.getContext('2d');
+    this.dpr=window.devicePixelRatio||1;
+    this._xMin=xMin; this._xMax=22; this._yMin=0; this._yMax=17;
+    this.mL=58; this.mR=20; this.mT=26; this.mB=mB;
+  }
+  resize(){
+    const W=this.el.parentElement.clientWidth||600;
+    const H=this.el.parentElement.clientHeight||395;
+    this.W=W;this.H=H;
+    this.el.width=W*this.dpr; this.el.height=H*this.dpr;
+    this.el.style.width=W+'px'; this.el.style.height=H+'px';
+    this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
+    this.pW=W-this.mL-this.mR; this.pH=H-this.mT-this.mB;
+  }
+  tx(x){return this.mL+(x-this._xMin)/(this._xMax-this._xMin)*this.pW;}
+  ty(y){return this.mT+this.pH-(y-this._yMin)/(this._yMax-this._yMin)*this.pH;}
+  invX(px){return this._xMin+(px-this.mL)/this.pW*(this._xMax-this._xMin);}
+  invY(py){return this._yMin+(this.mT+this.pH-py)/this.pH*(this._yMax-this._yMin);}
+  clip(){this.ctx.beginPath();this.ctx.rect(this.mL,this.mT,this.pW,this.pH);this.ctx.clip();}
+
+  clear(){
+    const c=this.ctx;
+    c.clearRect(0,0,this.W,this.H);
+    c.fillStyle='#faf8f3'; c.fillRect(0,0,this.W,this.H);
+    c.fillStyle='#fff'; c.fillRect(this.mL,this.mT,this.pW,this.pH);
+    c.strokeStyle='#ece8de'; c.lineWidth=1;
+    for(let y=5;y<this._yMax*0.98;y+=5){
+      c.beginPath();c.moveTo(this.mL,this.ty(y));c.lineTo(this.mL+this.pW,this.ty(y));c.stroke();
+    }
+    [5,10,15,20].forEach(x=>{
+      if(x>=this._xMax-.5)return;
+      c.beginPath();c.moveTo(this.tx(x),this.mT);c.lineTo(this.tx(x),this.mT+this.pH);c.stroke();
+    });
+  }
+
+  axes(){
+    const c=this.ctx, y0=this.ty(0), x0=this.tx(0);
+    c.save();
+    c.strokeStyle='#a09890'; c.lineWidth=1;
+    c.beginPath();c.moveTo(this.mL,y0);c.lineTo(this.mL+this.pW,y0);c.stroke();
+    c.beginPath();c.moveTo(x0,this.mT);c.lineTo(x0,this.mT+this.pH);c.stroke();
+    c.fillStyle='#8a8278'; c.font=`11px 'IBM Plex Mono',monospace`;
+    c.textAlign='center';
+    [5,10,15,20].forEach(x=>{
+      if(x>=this._xMax-.5)return;
+      const px=this.tx(x);
+      c.beginPath();c.moveTo(px,y0);c.lineTo(px,y0+5);c.stroke();
+      c.fillText(x,px,y0+17);
+    });
+    c.textAlign='right';
+    for(let y=5;y<this._yMax*0.98;y+=5){
+      const py=this.ty(y);
+      c.beginPath();c.moveTo(this.mL-5,py);c.lineTo(this.mL,py);c.stroke();
+      c.fillText(y,this.mL-8,py+4);
+    }
+    c.fillStyle='#5d6e62';
+    c.font=`italic 13px 'Outfit',sans-serif`; c.textAlign='left';
+    c.fillText('h',this.mL+this.pW+4,y0+5);
+    c.textAlign='center'; c.font=`12px 'Outfit',sans-serif`;
+    c.fillText('Time in Patch  (h)',this.mL+this.pW/2,this.H-9);
+    c.save();
+    c.translate(17,this.mT+this.pH/2);c.rotate(-Math.PI/2);
+    c.textAlign='center'; c.font=`12px 'Outfit',sans-serif`;
+    c.fillText('Average Gain',0,0);
+    c.restore();
+    c.restore();
+  }
+}
+
+const plotS=new Plot('cvs',58,-15);
+const plotP=new Plot('cvp',58,-1); // Tab 2 starts near h=0
+
+// ══════════════════════════════════════════
+//  DRAWING HELPERS
+// ══════════════════════════════════════════
+
+function arrowHead(c,x,y,dir,col,sz=5){
+  c.fillStyle=col; c.beginPath();
+  dir==='left'?(c.moveTo(x,y),c.lineTo(x+sz,y-sz*.55),c.lineTo(x+sz,y+sz*.55))
+              :(c.moveTo(x,y),c.lineTo(x-sz,y-sz*.55),c.lineTo(x-sz,y+sz*.55));
+  c.closePath(); c.fill();
+}
+
+function drawCurve(pl,p,col,lw=2.5){
+  const c=pl.ctx; c.save(); pl.clip();
+  c.strokeStyle=col; c.lineWidth=lw; c.lineJoin='round';
+  c.beginPath(); let first=true;
+  for(let h=0;h<=21.2;h+=0.05){
+    const px=pl.tx(h),py=pl.ty(gF(h,p));
+    first?(c.moveTo(px,py),first=false):c.lineTo(px,py);
+  }
+  c.stroke(); c.restore();
+}
+
+function drawSearchRegion(pl,s){
+  const c=pl.ctx,xs=pl.tx(-s),x0=pl.tx(0);
+  c.save(); pl.clip();
+  c.fillStyle=PA+'0.07)'; c.fillRect(xs,pl.mT,x0-xs,pl.pH);
+  c.strokeStyle=PURPLE; c.lineWidth=1; c.setLineDash([4,3]);
+  c.beginPath();c.moveTo(xs,pl.mT);c.lineTo(xs,pl.mT+pl.pH);c.stroke();
+  c.setLineDash([]); c.restore();
+}
+
+function drawAnchorDot(pl,s){
+  const c=pl.ctx,ax=pl.tx(-s),ay=pl.ty(0);
+  c.save();
+  c.fillStyle=PURPLE; c.beginPath();c.arc(ax,ay,6,0,2*Math.PI);c.fill();
+  c.strokeStyle='#fff'; c.lineWidth=1.8; c.stroke();
+  c.restore();
+}
+
+function drawSArrow(pl,s){
+  const c=pl.ctx,xs=pl.tx(-s),x0=pl.tx(0),y0=pl.ty(0);
+  if(x0-xs<26)return;
+  const ay=y0+22,asz=5,lY=y0+38;
+  c.save();
+  c.strokeStyle=PURPLE; c.lineWidth=1.3; c.fillStyle=PURPLE;
+  c.beginPath();c.moveTo(xs+8,ay);c.lineTo(x0-8,ay);c.stroke();
+  arrowHead(c,xs+8,ay,'left',PURPLE,asz); arrowHead(c,x0-8,ay,'right',PURPLE,asz);
+  c.font=`italic 13px 'Outfit',sans-serif`; c.textAlign='center';
+  c.fillText('s',(xs+x0)/2,lY); c.restore();
+}
+
+function drawTangentLine(pl,s,hs,p){
+  const R=gF(hs,p)/(s+hs),hEnd=Math.min(hs+5,pl._xMax-.5);
+  const c=pl.ctx; c.save(); pl.clip();
+  c.strokeStyle=PURPLE; c.lineWidth=1.9;
+  c.beginPath();c.moveTo(pl.tx(-s),pl.ty(0));c.lineTo(pl.tx(hEnd),pl.ty(R*(hEnd+s)));
+  c.stroke(); c.restore();
+  return R;
+}
+
+function labelRStar(pl,s,hs,p){
+  const R=gF(hs,p)/(s+hs);
+  const hM=hs*(s>7?.38:.50);
+  const dxPx=pl.pW/(pl._xMax-pl._xMin);
+  const dyPx=-R*pl.pH/(pl._yMax-pl._yMin);
+  const len=Math.hypot(dxPx,dyPx);
+  const off=16,nx=dyPx/len*off,ny=-dxPx/len*off;
+  const lx=pl.tx(hM)+nx,ly=pl.ty(R*(hM+s))+ny;
+  const c=pl.ctx; c.save(); c.fillStyle=PURPLE;
+  c.font=`italic 13px 'Outfit',sans-serif`;
+  const rw=c.measureText('R').width;
+  c.fillText('R',lx,ly);
+  c.font=`italic 8px 'Outfit',sans-serif`;
+  c.fillText('*',lx+rw+0.5,ly-5);
+  c.restore();
+}
+
+function drawOptPoint(pl,hs,p,col,label,lY){
+  const gs=gF(hs,p),c=pl.ctx;
+  const px=pl.tx(hs),py=pl.ty(gs),y0=pl.ty(0);
+  c.save();
+  c.strokeStyle=col; c.lineWidth=1.1; c.setLineDash([3,3]);
+  c.beginPath();c.moveTo(px,py);c.lineTo(px,y0);c.stroke();
+  c.beginPath();c.moveTo(pl.mL,py);c.lineTo(px,py);c.stroke();
+  c.setLineDash([]);
+  c.fillStyle=col; c.beginPath();c.arc(px,py,5,0,2*Math.PI);c.fill();
+  c.strokeStyle='#fff'; c.lineWidth=1.5; c.stroke();
+  if(label){
+    c.fillStyle=col; c.font=`italic bold 10px 'Outfit',sans-serif`;
+    c.textAlign='center'; c.fillText(label,px,lY||y0+22);
+  }
+  c.restore();
+}
+
+// Longer tangent segments (dh=2.8) so they're clearly visible
+function drawTangentSeg(pl,hs,gs,R,col,dh=2.8){
+  const c=pl.ctx; c.save(); pl.clip();
+  c.strokeStyle=col; c.lineWidth=2.4;
+  c.beginPath();
+  c.moveTo(pl.tx(hs-dh),pl.ty(gs-R*dh));
+  c.lineTo(pl.tx(hs+dh),pl.ty(gs+R*dh));
+  c.stroke(); c.restore();
+}
+
+// Rotary dial: top-left of plot, needle points in direction of R*, arrow on tip
+function drawRDial(pl,R){
+  const cx=pl.mL+65,cy=pl.mT+44,r=28;
+  const c=pl.ctx;
+  c.save();
+
+  // Shadow circle
+  c.shadowColor='rgba(0,0,0,0.15)'; c.shadowBlur=7;
+  c.fillStyle='rgba(255,255,255,0.95)';
+  c.strokeStyle=PURPLE; c.lineWidth=1.5;
+  c.beginPath();c.arc(cx,cy,r,0,2*Math.PI);c.fill();c.stroke();
+  c.shadowBlur=0;
+
+  // Tick marks
+  c.strokeStyle=PA+'0.25)'; c.lineWidth=0.9;
+  for(let deg=0;deg<360;deg+=30){
+    const a=deg*Math.PI/180;
+    c.beginPath();
+    c.moveTo(cx+Math.cos(a)*(r-4),cy+Math.sin(a)*(r-4));
+    c.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);
+    c.stroke();
+  }
+
+  // Compute needle angle from R in canvas-pixel space
+  const dxPx = pl.pW/(pl._xMax-pl._xMin);
+  const dyPx = -R*pl.pH/(pl._yMax-pl._yMin);
+  const ang = Math.atan2(dyPx,dxPx);
+
+  // Needle — stops 0.75r from center
+  const needleEnd = r*0.75;
+  const nx = cx+Math.cos(ang)*needleEnd;
+  const ny = cy+Math.sin(ang)*needleEnd;
+
+  c.strokeStyle=PURPLE; c.lineWidth=2.4; c.lineCap='round';
+  c.beginPath();
+  c.moveTo(cx-Math.cos(ang)*r*0.18, cy-Math.sin(ang)*r*0.18);
+  c.lineTo(nx,ny);
+  c.stroke();
+
+  // Arrowhead at needle tip
+  const aL=8, aW=3.5;
+  const tipX=nx+Math.cos(ang)*aL;
+  const tipY=ny+Math.sin(ang)*aL;
+  c.fillStyle=PURPLE; c.beginPath();
+  c.moveTo(tipX,tipY);
+  c.lineTo(nx+Math.cos(ang+Math.PI/2)*aW, ny+Math.sin(ang+Math.PI/2)*aW);
+  c.lineTo(nx+Math.cos(ang-Math.PI/2)*aW, ny+Math.sin(ang-Math.PI/2)*aW);
+  c.closePath(); c.fill();
+
+  // Center pip
+  c.fillStyle=PURPLE; c.beginPath();c.arc(cx,cy,2.5,0,2*Math.PI);c.fill();
+
+  // R* label below dial
+  c.fillStyle=PURPLE; c.textAlign='center';
+  c.font=`italic 12px 'Outfit',sans-serif`;
+  const rw=c.measureText('R').width;
+  c.fillText('R',cx,cy+r+13);
+  c.font=`italic 7px 'Outfit',sans-serif`;
+  c.fillText('*',cx+rw/2+0.5,cy+r+8);
+
+  c.restore();
+}
+
+// ══════════════════════════════════════════
+//  RENDER: SINGLE PATCH
+// ══════════════════════════════════════════
+
+function renderSingle(){
+  const s=s1,gMax=gMax1,p={Gmax:gMax,tau:SINGLE_TAU};
+  plotS._yMax=Math.max(17,gMax*1.18);
+  plotS.resize();plotS.clear();plotS.axes();
+  const hs=hStar(p,s),gs=gF(hs,p),R=gs/(s+hs);
+  const y0=plotS.ty(0),lY=y0+38;
+
+  drawSearchRegion(plotS,s);
+  drawTangentLine(plotS,s,hs,p);
+  drawCurve(plotS,p,BLUE,2.6);
+  drawOptPoint(plotS,hs,p,'#c8571f','h*',lY);
+  drawAnchorDot(plotS,s);
+  drawSArrow(plotS,s);
+  labelRStar(plotS,s,hs,p);
+
+  const c=plotS.ctx,hL=19;
+  c.save();c.fillStyle=BLUE;c.font=`600 11px 'Outfit',sans-serif`;c.textAlign='right';
+  c.fillText('g(h)',plotS.tx(hL)-3,plotS.ty(gF(hL,p))-10);c.restore();
+
+  const hE=Math.max(0.3,hs*.20),hLt=Math.min(21,hs*1.8);
+  c.save();c.globalAlpha=.3;
+  drawTangentSeg(plotS,hE,gF(hE,p),gPr(hE,p),BLUE,.9);
+  drawTangentSeg(plotS,hLt,gF(hLt,p),gPr(hLt,p),BLUE,.9);
+  c.restore();
+
+  document.getElementById('st-hs').textContent=hs.toFixed(2);
+  document.getElementById('st-R').textContent=R.toFixed(3);
+  document.getElementById('st-g').textContent=gs.toFixed(2);
+  document.getElementById('st-dg').textContent=gPr(hs,p).toFixed(3);
+  document.getElementById('st-gmax').textContent=gMax.toFixed(1);
+}
+
+// ══════════════════════════════════════════
+//  RENDER: PATCH PORTFOLIO (no negative region)
+// ══════════════════════════════════════════
+
+function renderPortfolio(){
+  const s=s2,pats=currentPats2();
+  plotP._yMax=Math.max(17,Math.max(...gMaxes2)*1.15);
+  plotP.resize();plotP.clear();plotP.axes();
+
+  const R=portfolioR(pats,s,props2);
+  const hStars=pats.map(p=>{
+    if(R*p.tau>=p.Gmax)return 0.05;
+    return Math.max(0.05,p.tau*Math.log(p.Gmax/(R*p.tau)));
+  });
+  const gStars=pats.map((p,i)=>gF(hStars[i],p));
+  const y0=plotP.ty(0),lY=y0+28;
+
+  // Curves (poor→OK→richest so richest on top)
+  for(let i=pats.length-1;i>=0;i--)drawCurve(plotP,pats[i],pats[i].c,2.5);
+
+  // Tangent segments at each optimal point
+  const c=plotP.ctx;
+  for(let i=0;i<pats.length;i++){
+    const hs=hStars[i],gs=gStars[i];
+    drawTangentSeg(plotP,hs,gs,R,PURPLE,2.8);
+    c.save();
+    c.strokeStyle=pats[i].c;c.lineWidth=1.1;c.setLineDash([3,3]);
+    c.beginPath();c.moveTo(plotP.tx(hs),plotP.ty(gs));c.lineTo(plotP.tx(hs),y0);c.stroke();
+    c.setLineDash([]);
+    c.fillStyle=pats[i].c;c.beginPath();c.arc(plotP.tx(hs),plotP.ty(gs),5,0,2*Math.PI);c.fill();
+    c.strokeStyle='#fff';c.lineWidth=1.5;c.stroke();
+    c.restore();
+  }
+
+  // h_i* labels at consistent lY
+  c.save();c.font=`italic bold 10px 'Outfit',sans-serif`;c.textAlign='center';
+  for(let i=0;i<3;i++){
+    c.fillStyle=pats[i].c;
+    c.fillText(['h₁*','h₂*','h₃*'][i],plotP.tx(hStars[i]),lY);
+  }
+  c.restore();
+
+  // Curve labels auto-positioned to avoid overlap
+  const roles=getRoles(gMaxes2);
+  const hLbl=19.5;
+  const entries=pats.map((p,i)=>({y:plotP.ty(gF(hLbl,p)),label:roles[i],col:pats[i].c}))
+    .sort((a,b)=>a.y-b.y);
+  for(let k=1;k<entries.length;k++)
+    if(entries[k].y-entries[k-1].y<13)entries[k].y=entries[k-1].y+13;
+  c.save();c.font=`600 11px 'Outfit',sans-serif`;c.textAlign='right';
+  for(const e of entries){c.fillStyle=e.col;c.fillText(e.label,plotP.tx(hLbl)-3,e.y-5);}
+  c.restore();
+
+  // Rotary dial — top-left of plot, close to where curves start
+  drawRDial(plotP,R);
+
+  // Update stats
+  document.getElementById('pt-R').textContent=R.toFixed(3);
+  for(let i=0;i<3;i++){
+    document.getElementById('pt-h'+i).textContent=hStars[i].toFixed(2);
+    document.getElementById('pt-g'+i).textContent=
+      `g${['₁','₂','₃'][i]}(h${['₁','₂','₃'][i]}*)=\u2009${gStars[i].toFixed(2)}`;
+  }
+  document.getElementById('pt-spr').textContent=(hStars[0]-hStars[2]).toFixed(2);
+
+  // Legend
+  const roleArr=getRoles(gMaxes2);
+  for(let i=0;i<3;i++){
+    document.getElementById('lbl'+i).textContent=roleArr[i];
+    document.getElementById('lgm'+i).textContent=gMaxes2[i].toFixed(1);
+    document.getElementById('tp'+i).textContent=props2[i].toFixed(2);
+  }
+}
+
+// ══════════════════════════════════════════
+//  HIT TESTS
+// ══════════════════════════════════════════
+
+function evtPos(e,canvas){
+  const rect=canvas.getBoundingClientRect();
+  const src=e.touches?e.touches[0]:(e.changedTouches?e.changedTouches[0]:e);
+  return{x:src.clientX-rect.left,y:src.clientY-rect.top};
+}
+
+function hitTest1(px,py){
+  const ax=plotS.tx(-s1),ay=plotS.ty(0);
+  if(Math.hypot(px-ax,py-ay)<24)return'anchor';
+  const dx=plotS.invX(px);
+  if(dx>=0&&dx<=21){
+    const cy=plotS.ty(gF(dx,{Gmax:gMax1,tau:SINGLE_TAU}));
+    if(Math.abs(py-cy)<22)return'curve';
+  }
+  return null;
+}
+
+function hitTest2(px,py){
+  // No anchor hit for Tab 2; only curve drags
+  const dx=plotP.invX(px);
+  if(dx>=0&&dx<=21){
+    let best=null,bestD=22;
+    for(let i=0;i<3;i++){
+      const p={Gmax:gMaxes2[i],tau:PAT_TAUS[i]};
+      const d=Math.abs(py-plotP.ty(gF(dx,p)));
+      if(d<bestD){bestD=d;best='c'+i;}
+    }
+    if(best)return best;
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════
+//  DRAG APPLICATION
+// ══════════════════════════════════════════
+
+function applyDrag1(px,py){
+  if(drag1==='anchor'){
+    s1=Math.max(0.5,Math.min(14,-plotS.invX(px)));
+    document.getElementById('slS').value=s1;
+    document.getElementById('slSv').textContent=s1.toFixed(1);
+    renderSingle();
+  }else if(drag1==='curve'){
+    const delta=(d1_sPy-py)*d1_sc;
+    gMax1=Math.max(3,Math.min(22,d1_sG+delta));
+    renderSingle();
+  }
+}
+
+function applyDrag2(px,py){
+  if(drag2&&drag2[0]==='c'){
+    const delta=(d2_sPy-py)*d2_sc;
+    gMaxes2[d2_ci]=Math.max(2,Math.min(22,d2_sGs[d2_ci]+delta));
+    renderPortfolio();
+  }
+}
+
+// ══════════════════════════════════════════
+//  EVENT LISTENERS
+// ══════════════════════════════════════════
+
+const cvs1=document.getElementById('cvs');
+const cvs2=document.getElementById('cvp');
+const triC=document.getElementById('triCvs');
+
+cvs1.addEventListener('mousedown',e=>{
+  if(!document.getElementById('pane-single').classList.contains('active'))return;
+  const{x,y}=evtPos(e,cvs1); drag1=hitTest1(x,y);
+  if(drag1==='curve'){d1_sPy=y;d1_sG=gMax1;d1_sc=(plotS._yMax-plotS._yMin)/plotS.pH;}
+  if(drag1){e.preventDefault();document.body.style.cursor=drag1==='anchor'?'ew-resize':'ns-resize';}
+});
+cvs1.addEventListener('touchstart',e=>{
+  const{x,y}=evtPos(e,cvs1); drag1=hitTest1(x,y);
+  if(drag1==='curve'){d1_sPy=y;d1_sG=gMax1;d1_sc=(plotS._yMax-plotS._yMin)/plotS.pH;}
+  if(drag1)e.preventDefault();
+},{passive:false});
+cvs1.addEventListener('touchmove',e=>{
+  if(!drag1)return;const{x,y}=evtPos(e,cvs1);applyDrag1(x,y);e.preventDefault();
+},{passive:false});
+cvs1.addEventListener('touchend',()=>{drag1=null;});
+
+cvs2.addEventListener('mousedown',e=>{
+  if(!document.getElementById('pane-portfolio').classList.contains('active'))return;
+  const{x,y}=evtPos(e,cvs2); drag2=hitTest2(x,y);
+  if(drag2&&drag2[0]==='c'){d2_ci=parseInt(drag2[1]);d2_sPy=y;d2_sGs=[...gMaxes2];d2_sc=(plotP._yMax-plotP._yMin)/plotP.pH;}
+  if(drag2){e.preventDefault();document.body.style.cursor='ns-resize';}
+});
+cvs2.addEventListener('touchstart',e=>{
+  const{x,y}=evtPos(e,cvs2); drag2=hitTest2(x,y);
+  if(drag2&&drag2[0]==='c'){d2_ci=parseInt(drag2[1]);d2_sPy=y;d2_sGs=[...gMaxes2];d2_sc=(plotP._yMax-plotP._yMin)/plotP.pH;}
+  if(drag2)e.preventDefault();
+},{passive:false});
+cvs2.addEventListener('touchmove',e=>{
+  if(!drag2)return;const{x,y}=evtPos(e,cvs2);applyDrag2(x,y);e.preventDefault();
+},{passive:false});
+cvs2.addEventListener('touchend',()=>{drag2=null;});
+
+// Ternary canvas events
+triC.addEventListener('mousedown',e=>{triDrag=true;onTriEvent(e);e.preventDefault();});
+triC.addEventListener('touchstart',e=>{triDrag=true;onTriEvent(e);e.preventDefault();},{passive:false});
+triC.addEventListener('touchmove',e=>{if(triDrag){onTriEvent(e);e.preventDefault();}},{passive:false});
+triC.addEventListener('touchend',()=>{triDrag=false;});
+
+// Global mouse move + up
+window.addEventListener('mousemove',e=>{
+  if(triDrag){onTriEvent(e);return;}
+  if(drag1){
+    const r=cvs1.getBoundingClientRect();applyDrag1(e.clientX-r.left,e.clientY-r.top);return;
+  }
+  if(drag2){
+    const r=cvs2.getBoundingClientRect();applyDrag2(e.clientX-r.left,e.clientY-r.top);return;
+  }
+  // Hover cursors
+  if(document.getElementById('pane-single').classList.contains('active')){
+    const r=cvs1.getBoundingClientRect();
+    if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+      const h=hitTest1(e.clientX-r.left,e.clientY-r.top);
+      cvs1.style.cursor=h==='anchor'?'ew-resize':h==='curve'?'ns-resize':'default';
+    }else cvs1.style.cursor='default';
+  }
+  if(document.getElementById('pane-portfolio').classList.contains('active')){
+    const r=cvs2.getBoundingClientRect();
+    if(e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom){
+      const h=hitTest2(e.clientX-r.left,e.clientY-r.top);
+      cvs2.style.cursor=h?'ns-resize':'default';
+    }else cvs2.style.cursor='default';
+  }
+});
+window.addEventListener('mouseup',()=>{
+  drag1=null;drag2=null;triDrag=false;document.body.style.cursor='';
+});
+
+// ══════════════════════════════════════════
+//  TAB SWITCHING & SLIDERS
+// ══════════════════════════════════════════
+
+let activeTab='single';
+function switchTab(tab,btn){
+  activeTab=tab;
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tc').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pane-'+tab).classList.add('active');
+  requestAnimationFrame(()=>{
+    if(tab==='single')renderSingle();
+    else{ensureTri();drawTri();renderPortfolio();}
+  });
+}
+
+document.getElementById('slS').addEventListener('input',()=>{
+  s1=parseFloat(document.getElementById('slS').value);
+  document.getElementById('slSv').textContent=s1.toFixed(1);
+  renderSingle();
+});
+document.getElementById('slS2').addEventListener('input',()=>{
+  s2=parseFloat(document.getElementById('slS2').value);
+  document.getElementById('slS2v').textContent=s2.toFixed(1);
+  renderPortfolio();
+});
+
+// ══════════════════════════════════════════
+//  RESIZE & INIT
+// ══════════════════════════════════════════
+
+const ro=new ResizeObserver(()=>{
+  requestAnimationFrame(()=>{
+    if(activeTab==='single')renderSingle();
+    else renderPortfolio();
+  });
+});
+document.querySelectorAll('.cv-wrap').forEach(el=>ro.observe(el));
+
+requestAnimationFrame(()=>{
+  renderSingle();
+  ensureTri();drawTri();
+});
+</script>
+</body>
+</html>
