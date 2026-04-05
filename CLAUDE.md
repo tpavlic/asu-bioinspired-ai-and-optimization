@@ -191,6 +191,7 @@ Add a row to the appropriate table under `## Contents`:
 - `single_layer_perceptron/slp_explainer.html`
 - `radial_basis_function_nn/rbfnn_explorer.html`
 - `optimal_foraging_theory/mvt_explorer.html`
+- `reservoir_computing/esn_explorer.html`
 
 ### Cellular Automata
 

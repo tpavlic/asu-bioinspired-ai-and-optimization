@@ -71,6 +71,7 @@ as iframes.
 | [`single_layer_perceptron/slp_explainer.html`](single_layer_perceptron/slp_explainer.html) | Animated explainer linking the biological neuron to the linear classifier: adjust synaptic weights and inputs to watch the decision boundary shift in real time |
 | [`radial_basis_function_nn/`](radial_basis_function_nn/) | Interactive explorer for RBF neural networks: centers, widths, weights, and the kernel-trick connection to SVMs |
 | [`optimal_foraging_theory/mvt_explorer.html`](optimal_foraging_theory/mvt_explorer.html) | Interactive MVT explorer: drag the tangent line to find optimal patch residence times under Charnov's Marginal Value Theorem — R* as opportunity cost mirrors the temporal discount rate in the reinforcement learning Bellman equation |
+| [`reservoir_computing/esn_explorer.html`](reservoir_computing/esn_explorer.html) | Interactive reservoir computing explorer using Echo State Networks: adjust spectral radius, sparsity, and input scaling to watch a fixed random reservoir project inputs into separable high-dimensional dynamics |
 
 ### Cellular Automata
 
