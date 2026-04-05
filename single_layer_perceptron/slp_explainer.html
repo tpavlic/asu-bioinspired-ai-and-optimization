@@ -4,6 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Single-Layer Perceptron — Neuron &amp; Lever Explainer</title>
+<meta name="description" content="Animated explainer linking the biological neuron to the linear classifier: adjust synaptic weights and inputs to watch the decision boundary shift in real time.">
+
+<!-- Open Graph (Facebook, LinkedIn, Slack, iMessage, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Single-Layer Perceptron — Neuron &amp; Lever Explainer">
+<meta property="og:description" content="Animated explainer linking the biological neuron to the linear classifier: adjust synaptic weights and inputs to watch the decision boundary shift in real time.">
+<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/single_layer_perceptron/slp_explainer-preview.png">
+<meta property="og:image:width" content="1904">
+<meta property="og:image:height" content="828">
+<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/single_layer_perceptron/slp_explainer.html">
+<meta property="fb:app_id" content="2385695445236853">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Single-Layer Perceptron — Neuron &amp; Lever Explainer">
+<meta name="twitter:description" content="Animated explainer linking the biological neuron to the linear classifier: adjust synaptic weights and inputs to watch the decision boundary shift in real time.">
+<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/single_layer_perceptron/slp_explainer-preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
@@ -1758,6 +1775,12 @@ function tick(ts){
 
 /* ═════ INIT ══════════════════════════════════════════════════════ */
 buildControls();buildNeuron();buildLever();addNeuronInteractions();addLeverInteractions();buildBellCrank();addBellCrankInteractions();buildF2DFeature();buildF2DLever();addF2DInteractions();addF2DLeverInteractions();refreshEqBar();requestAnimationFrame(tick);
+</script>
+<footer id="course-nav-footer" style="margin-top:0;padding-top:0.75rem;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;text-align:left;justify-content:flex-start;">
+  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+</footer>
+<script>
+if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 </body>
 </html>
