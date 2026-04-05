@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ferroelectric Memristor Synapses &amp; Crossbar Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fdf8f0;--bg2:#f5eddc;--bg3:#ece3ce;
+  --green:#2d5a1b;--gm:#4a7c32;--gl:#7ab55a;
+  --org:#e07b39;--blue:#3050a0;--red:#c04020;
+  --txt:#1a2e0a;--txt2:#3a5a2a;--txt3:#6a8a5a;
+  --brd:#c8d8b8;--shad:rgba(45,90,27,.09);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Outfit',sans-serif;color:var(--txt);min-height:100vh;}
+.widget{max-width:960px;margin:0 auto;padding:16px 16px 28px;}
+
+/* header */
+.hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.hdr-left{flex:1 1 auto;min-width:0;}
+.hdr-title{font-size:1.3rem;font-weight:700;color:var(--green);letter-spacing:-.02em;line-height:1.2;}
+.hdr-sub{font-size:.78rem;color:var(--txt3);font-style:italic;margin-top:3px;}
+.hdr-sub a{color:var(--org);text-decoration:none;} .hdr-sub a:hover{text-decoration:underline;}
+.hdr-copy{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:baseline;
+  font-size:.66rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);flex-shrink:0;max-width:280px;}
+.hdr-copy .cn,.hdr-copy .cs,.hdr-copy .cl{white-space:nowrap;}
+.hdr-copy a,.footer a{color:var(--org);text-decoration:none;}
+.hdr-copy a:hover,.footer a:hover{text-decoration:underline;}
+
+/* tabs */
+.tab-bar{display:flex;border-bottom:2px solid var(--brd);margin-bottom:14px;gap:2px;}
+.tbtn{font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;color:var(--txt3);
+  background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;
+  padding:7px 16px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;}
+.tbtn:hover{color:var(--green);} .tbtn.on{color:var(--green);border-bottom-color:var(--org);}
+.tab{display:none;} .tab.on{display:block;}
+
+/* panel */
+.panel{background:#fff;border:1px solid var(--brd);border-radius:8px;padding:12px 14px 14px;
+  box-shadow:0 2px 8px var(--shad);margin-bottom:12px;}
+.ptitle{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--txt3);margin-bottom:9px;}
+
+/* info text */
+.info{font-size:.79rem;color:var(--txt2);line-height:1.65;margin-bottom:13px;}
+.info strong{color:var(--green);font-weight:600;} .info em{font-style:normal;color:var(--org);font-weight:500;}
+
+/* sliders */
+.slwrap{margin:8px 0 4px;}
+.sllbl{display:flex;justify-content:space-between;font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);margin-bottom:5px;}
+.slval{color:var(--green);font-weight:500;}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:var(--bg2);border-radius:3px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:5px;background:var(--thumb-color,var(--org));cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.22);}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;background:var(--thumb-color,var(--org));cursor:pointer;border:none;box-shadow:0 1px 3px rgba(0,0,0,.22);}
+
+/* ΔG box */
+.dgbox{text-align:center;padding:7px 10px;border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:.86rem;font-weight:500;border:1px solid var(--brd);transition:background .2s,color .2s,border-color .2s;margin-top:8px;}
+.dgbox.pos{background:#eaf4e2;color:var(--green);border-color:var(--gl);}
+.dgbox.neg{background:#fde8e2;color:var(--red);border-color:#e08868;}
+.dgbox.zer{background:var(--bg2);color:var(--txt3);}
+
+/* STDP layout */
+.stdp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
+.stdp-top{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+@media(max-width:580px){.stdp-grid{grid-template-columns:1fr;}.stdp-top{grid-template-columns:1fr;}}
+.stdp-right{display:flex;flex-direction:column;gap:12px;}
+.wleg{font-size:.67rem;display:flex;gap:12px;flex-wrap:wrap;margin-top:5px;color:var(--txt3);}
+.wleg>span{display:flex;align-items:center;gap:4px;}
+
+/* Network — pattern cells */
+.pat-row{display:flex;gap:14px;flex-wrap:wrap;}
+.pat-item{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.pat-name{font-size:.72rem;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+.pat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;}
+.pat-cell{width:22px;height:22px;border-radius:3px;background:var(--bg2);position:relative;}
+.pat-cell.on{background:var(--green);}
+.pcell-lbl{position:absolute;bottom:1px;right:2px;font-size:7px;font-family:'IBM Plex Mono',monospace;color:rgba(26,46,10,.4);line-height:1;}
+.pat-cell.on .pcell-lbl{color:rgba(255,255,255,.65);}
+
+/* Network — crossbar wrapper */
+.xbar-wrap{display:flex;gap:10px;align-items:flex-start;}
+.xbar-side{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.xbar-main{flex:1;min-width:0;}
+
+/* Network — RF row */
+.rf-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+.rf-item{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.rf-lbl{font-size:.67rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);}
+
+/* Network — bottom 2-col grid */
+.net-bottom{display:grid;grid-template-columns:fit-content(410px) 1fr;gap:12px;margin-bottom:12px;}
+@media(max-width:600px){.net-bottom{grid-template-columns:1fr;}}
+.net-bottom .panel{margin-bottom:0;}
+
+/* controls */
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.cgrp{display:flex;align-items:center;gap:5px;}
+.cgrp label{font-size:.76rem;color:var(--txt2);white-space:nowrap;}
+.cgrp input[type=range]{width:80px;}
+.cval{font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);min-width:28px;}
+.spacer{flex:1;}
+.btn{padding:6px 12px;font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:600;border:none;border-radius:5px;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.btn-p{background:var(--green);color:#fff;} .btn-p:hover{background:var(--gm);}
+.btn-s{background:var(--bg2);color:var(--txt);border:1px solid var(--brd);} .btn-s:hover{background:var(--bg3);}
+.btn-s:disabled{opacity:.45;cursor:default;}
+.chip{font-size:.7rem;font-family:'IBM Plex Mono',monospace;padding:3px 9px;border-radius:10px;background:var(--bg2);color:var(--txt3);transition:all .2s;white-space:nowrap;}
+.chip.run{background:#def0d4;color:var(--green);} .chip.done{background:#fde8cc;color:#804010;}
+
+/* footer */
+.footer{margin-top:18px;text-align:right;font-size:.66rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);}
+
+/* ── RESPONSIVE: crossbar reflow ── */
+@media(max-width:560px){
+  /* Stack Now Presenting above the crossbar canvas */
+  .xbar-wrap{flex-direction:column;gap:8px;}
+  .xbar-side{
+    flex-direction:row;
+    justify-content:center;
+    align-items:flex-start;
+    gap:12px;
+    width:100%;
+  }
+  /* net-bottom: put histogram before RF on narrow screens */
+  .net-bottom{
+    display:flex !important;
+    flex-direction:column;
+  }
+  .net-hist{order:-1;}
+}
+</style>
+</head>
+<body>
+<div class="widget">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-title">Ferroelectric Memristor Synapses &amp; Crossbar Learning</div>
+    <div class="hdr-sub">Hardware-emergent unsupervised learning via STDP &middot;
+      <a href="https://doi.org/10.1038/ncomms14736" target="_blank">Boyn et al. (2017), <em>Nat. Commun.</em> 8&thinsp;:&thinsp;14736</a>
+    </div>
+  </div>
+  <div class="hdr-copy">
+    <span class="cn">&#169; 2026 Theodore P. Pavlic</span><span class="cs">&nbsp;&middot;&nbsp;</span><a class="cl" href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <button class="tbtn on" id="tbtn-s" onclick="gotoTab('s')">&#9312; STDP Synapse</button>
+  <button class="tbtn"    id="tbtn-n" onclick="gotoTab('n')">&#9313; Crossbar Network</button>
+</div>
+
+<!-- ═══════════ TAB 1: STDP ═══════════ -->
+<div class="tab on" id="tab-s">
+  <p class="info">
+    A <strong>ferroelectric tunnel junction (FTJ)</strong> acts as a memristor: its conductance (synaptic strength)
+    changes based on the <em>relative timing</em> (Δt) of spikes from connected neurons. When a synapse
+    fires on a neuron <strong>just before</strong> that neuron fires, the superimposed voltages briefly exceed the
+    switching threshold, <em>strengthening</em> the synapse. A synapse firing in the reverse order — just after
+    the neuron has already fired — <em>weakens</em> it.
+    This <strong>Spike-Timing-Dependent Plasticity (STDP)</strong> emerges from ferroelectric domain physics —
+    no explicit learning rule, no external controller.
+  </p>
+
+  <!-- TOP ROW: static crossbar overview (left) + geometry detail (right) -->
+  <div class="stdp-top">
+    <div class="panel" style="display:flex;flex-direction:column;">
+      <div class="ptitle">FTJ Crossbar Array — full structure</div>
+      <div style="flex:1;min-height:10px;"></div>
+      <canvas id="cvXStatic" style="width:100%;display:block;"></canvas>
+      <div style="flex:1;min-height:10px;"></div>
+      <div style="font-size:.68rem;color:var(--txt2);line-height:1.65;">
+        A crossbar array places FTJ memristors at every column–row intersection.
+        <strong>Columns</strong> carry pre-synaptic spike inputs (one per pixel);
+        <strong>rows</strong> are the output neurons — each neuron fires when the
+        sum of currents through its row's FTJ synapses reaches threshold, producing a
+        spike output to the right. Each FTJ junction is one synapse —
+        45 synapses total in the 9×5 array of Tab&nbsp;2.
+      </div>
+      <div style="flex:1;min-height:0;"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">One FTJ Junction — where STDP acts</div>
+      <canvas id="cvCtx" style="width:100%;display:block;"></canvas>
+      <div style="font-size:.68rem;color:var(--txt2);margin-top:7px;line-height:1.65;">
+        The highlighted FTJ is the synapse through which the input on that column reaches
+        <strong>the neuron on the highlighted row</strong>. When enough current
+        accumulates along the row, that neuron fires — producing an output spike to the right.
+        The FTJ conductance G controls how much that particular input contributes to the
+        neuron's activation (its synaptic <em>weight</em>). G changes by <strong>ΔG</strong>
+        based on timing: <strong>ΔG&nbsp;&gt;&nbsp;0</strong> if the input spike arrives
+        <em>before</em> the neuron fires (that input helped trigger it — potentiation),
+        and <strong>ΔG&nbsp;&lt;&nbsp;0</strong> if the neuron had already fired when
+        the input spike arrives shortly after (the input was too late to contribute — depression).
+        These changes make the neuron more or less sensitive to that input in the future.
+        The lateral inhibition that prevents different row neurons from converging on the
+        same input pattern requires additional circuitry not shown in this simple array.
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW: synapse diagram + STDP curve + waveforms -->
+  <div class="stdp-grid">
+    <div class="panel">
+      <div class="ptitle">Synapse Diagram</div>
+      <canvas id="cvN" style="width:100%;display:block;"></canvas>
+      <div class="slwrap">
+        <div class="sllbl">
+          <span>output first (Δt &lt; 0)</span>
+          <span class="slval" id="dtLbl">Δt = +200 ns</span>
+          <span>input first (Δt &gt; 0)</span>
+        </div>
+      <div style="position:relative;">
+        <input type="range" id="slDt" min="-480" max="480" value="200" step="10" oninput="onDt()" style="position:relative;z-index:0;">
+        <div id="dtThumb" style="position:absolute;top:50%;transform:translate(-50%,-50%);pointer-events:none;font-size:11px;line-height:1;font-family:'IBM Plex Mono',monospace;font-weight:700;color:#fff;z-index:1;white-space:nowrap;left:calc(80% + -5.2px);">Δt</div>
+      </div>
+      </div>
+      <div style="font-size:.65rem;color:var(--txt3);text-align:center;margin:5px 0 3px;">↓ resulting change in FTJ conductance (ΔG):</div>
+      <div class="dgbox pos" id="dgbox">ΔG = +1.29 µS — Synapse Strengthened</div>
+      <div style="font-size:.68rem;color:var(--txt3);text-align:center;margin-top:6px;">Drag slider to explore how timing determines synaptic change</div>
+    </div>
+    <div class="stdp-right">
+      <div class="panel">
+        <div class="ptitle">STDP Learning Curve &nbsp;(after Boyn et al. 2017)</div>
+        <canvas id="cvC" style="width:100%;display:block;"></canvas>
+      </div>
+      <div class="panel">
+        <div class="ptitle">Voltage Waveforms at FTJ Junction</div>
+        <canvas id="cvW" style="width:100%;display:block;"></canvas>
+        <div class="wleg">
+          <span><span style="display:inline-block;width:14px;height:2px;background:var(--green);border-radius:1px;"></span><span>V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">input</span></span></span>
+          <span><span id="voutLegSwatch" style="display:inline-block;width:14px;height:2px;background:var(--blue);border-radius:1px;"></span><span>V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">output</span></span></span>
+          <span><span style="display:inline-block;width:14px;height:2px;background:var(--org);border-radius:1px;"></span><span style="white-space:nowrap;">V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">FTJ</span> = V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">input</span>&minus;V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">output</span></span></span>
+          <span style="color:var(--txt3);"><span style="white-space:nowrap;">&thinsp;·&thinsp;·&thinsp;±V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">th</span></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tab" id="tab-n">
+  <p class="info">
+    A <strong>9×5 crossbar</strong> of FTJ memristors connects 9 input neurons (one per pixel, labeled 1–9
+    in reading order) to 5 output neurons. Repeated presentation of noisy versions of 3 patterns drives
+    STDP weight updates. Combined with winner-take-all <em>lateral inhibition</em>, different outputs
+    spontaneously specialize for different input patterns —
+    <strong>unsupervised clustering emerging entirely from hardware physics</strong>.
+    With 5 output neurons but only 3 patterns, the competitive dynamics cause 3 neurons to specialize
+    (one per pattern) while the remaining 2 either duplicate a specialization or stay unspecialized,
+    replicating Fig. 4b of <a href="https://doi.org/10.1038/ncomms14736" target="_blank" style="color:var(--org);">Boyn et al. (2017)</a>.
+  </p>
+
+  <!-- Reference patterns -->
+  <div class="panel">
+    <div class="ptitle">Three Input Patterns to Learn &nbsp;&mdash;&nbsp; pixel labels 1–9 mark reading-order position in the 3×3 image</div>
+    <div class="pat-row" id="patRow"></div>
+    <div style="font-size:.7rem;color:var(--txt3);margin-top:8px;line-height:1.65;">
+      The 9 labeled pixels are <em>unrolled</em> row-by-row (reading order) into the 9 input columns of
+      the crossbar below. Pixel&nbsp;<strong>1</strong>&nbsp;(top-left) → column&nbsp;1;&ensp;…&ensp;pixel&nbsp;<strong>9</strong>&nbsp;(bottom-right) → column&nbsp;9.
+      The same labels appear above the crossbar columns and inside the learned weight images so you can
+      track exactly which pixel each weight corresponds to.
+    </div>
+  </div>
+
+  <!-- Crossbar panel -->
+  <div class="panel">
+    <div class="ptitle">Crossbar Array &nbsp;&mdash;&nbsp; 9 input columns × 5 output rows = 45 FTJ memristors &nbsp;&middot;&nbsp; output activity bars aligned right</div>
+    <div class="xbar-wrap">
+      <!-- Now Presenting: 3×3 with values -->
+      <div class="xbar-side">
+        <div style="font-size:.64rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);text-align:center;line-height:1.4;">Now<br>Presenting</div>
+        <canvas id="cvIn" width="90" height="90" style="width:90px;height:90px;display:block;border-radius:4px;border:1px solid var(--brd);"></canvas>
+        <div id="nowPatLbl" style="font-size:.72rem;font-family:'IBM Plex Mono',monospace;font-weight:700;text-align:center;min-height:14px;letter-spacing:.03em;"></div>
+        <div style="font-size:.61rem;color:var(--txt3);text-align:center;line-height:1.5;margin-top:3px;">
+          pixels 1–9<br>reading order<br><span style="font-size:.68rem;">→ columns below</span>
+        </div>
+      </div>
+      <!-- Crossbar canvas: column headers + dots + output bars, all in one canvas -->
+      <div class="xbar-main">
+        <canvas id="cvX" style="width:100%;display:block;"></canvas>
+      </div>
+    </div>
+    <div style="font-size:.65rem;color:var(--txt3);margin-top:6px;display:flex;gap:16px;flex-wrap:wrap;">
+      <span>&#9679;&nbsp;darker circle = higher FTJ conductance (stronger synaptic weight)</span>
+      <span>&#9679;&nbsp;arc color = winning output neuron — matches current input pattern (lateral inhibition)</span>
+    </div>
+  </div>
+
+  <!-- RF + histogram -->
+  <div class="net-bottom">
+    <div class="panel">
+      <div class="ptitle">Learned Receptive Fields &nbsp;&mdash;&nbsp; weight image per output neuron</div>
+      <div class="rf-row" id="rfRow"></div>
+      <div style="font-size:.65rem;color:var(--txt3);margin-top:7px;line-height:1.65;">
+        Each panel shows the 9 synaptic weights of one output neuron as a 3×3 image (pixel labels match
+        the column labels above). Dark = strong connection. As training converges, each panel should
+        resemble one of the 3 input patterns. With 5 neurons and only 3 patterns, 2 neurons are
+        "surplus" — they may duplicate a pattern or remain unspecialized, which is exactly the
+        competitive equilibrium reported in Fig. 4b of <a href="https://doi.org/10.1038/ncomms14736" target="_blank" style="color:var(--org);">Boyn et al. (2017)</a>.
+      </div>
+    </div>
+    <div class="panel net-hist">
+      <div class="ptitle">Pattern Specialization &nbsp;&mdash;&nbsp; cumulative wins per output neuron, by input pattern presented</div>
+      <canvas id="cvH" style="width:100%;display:block;"></canvas>
+      <div style="font-size:.65rem;color:var(--txt3);margin-top:5px;line-height:1.65;">
+        Each column of bars shows how often that output neuron fired when each pattern was presented.
+        Early training: all three colors mixed (no specialization). At convergence: one color dominates
+        per column, and the pattern letter appears below it.
+      </div>
+    </div>
+  </div>
+
+  <!-- Recognition rate -->
+  <div class="panel">
+    <div class="ptitle">Recognition Rate Over Training</div>
+    <canvas id="cvR" style="width:100%;display:block;"></canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="panel" style="margin-bottom:0;">
+    <div class="ctrl-row">
+      <button class="btn btn-p" id="btnRun" onclick="toggleRun()">&#9654; Start</button>
+      <button class="btn btn-s" id="btnStep" onclick="stepOnce()">&#x23ED; Step</button>
+      <button class="btn btn-s" onclick="resetNet()">&#x21BA; Reset</button>
+      <div class="cgrp">
+        <label>Speed:</label>
+        <input type="range" id="slSp" min="1" max="10" value="5" step="1" oninput="onSpeed()">
+        <span class="cval" id="spLbl">&times;5</span>
+      </div>
+      <div class="cgrp">
+        <label>Noise:</label>
+        <input type="range" id="slNo" min="0" max="0.9" value="0.35" step="0.05" oninput="onNoise()">
+        <span class="cval" id="noLbl">0.35</span>
+      </div>
+      <span class="chip" id="chipSt">Stopped</span>
+      <span class="spacer"></span>
+      <span style="font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);" id="cntLbl">0 presentations</span>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  &#169; 2026 Theodore P. Pavlic &nbsp;&middot;&nbsp;
+  <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════
+const CG='#2d5a1b',CGM='#4a7c32',CGL='#7ab55a';
+const CO='#e07b39',CB='#3050a0',CR='#c04020';
+const CT='#1a2e0a',CT2='#3a5a2a',CT3='#6a8a5a';
+const CBRD='#c8d8b8',CBG='#fdf8f0',CBG2='#f5eddc';
+
+// STDP / waveform
+const AP=2.0,AM=1.5,STAU=160;
+const SP_A=0.70,SP_W=180,SP_TAU=250,VTH=0.80;
+
+// Network
+const NI=9,NO=5;
+const PATS=[[0,0,0,1,1,1,0,0,0],[1,0,0,0,1,0,0,0,1],[0,1,0,0,1,0,0,1,0]];
+const PNAMES=['A','B','C'],PCOLORS=[CG,CO,CB];
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let dtNs=200;
+let W=[],winHist=[],cnt=0,hist=[];
+let cInput=null,cActs=null,cWin=-1;
+let running=false,tmr=null,cPi=-1;
+let p=[];  // conscience: per-neuron win-frequency EMA (DeSieno 1988)
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+const c01=x=>Math.min(1,Math.max(0,x));
+
+// Draw text with inline subscripts, centred at cx.
+// parts: [{t:'text',sub:bool}]  baseFs: base font size px
+function mixedText(ctx,parts,cx,y,baseFs,col){
+  const sf=Math.round(baseFs*.7), ff='IBM Plex Mono';
+  if(col)ctx.fillStyle=col;
+  ctx.textAlign='left';
+  const ws=parts.map(p=>{ctx.font=`${p.sub?sf:baseFs}px ${ff}`;return ctx.measureText(p.t).width;});
+  let x=cx-ws.reduce((a,b)=>a+b,0)/2;
+  parts.forEach((p,i)=>{
+    ctx.font=`${p.sub?sf:baseFs}px ${ff}`;ctx.textBaseline='alphabetic';
+    ctx.fillText(p.t,x,y+(p.sub?Math.round(baseFs*.28):0));x+=ws[i];
+  });
+}
+function gc(id,hpx){
+  const cv=document.getElementById(id);if(!cv)return null;
+  const dpr=window.devicePixelRatio||1;
+  const w=cv.clientWidth||0;if(w<8)return null;
+  cv.width=Math.round(w*dpr);cv.height=Math.round(hpx*dpr);
+  cv.style.height=hpx+'px';
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  return{ctx,w,h:hpx};
+}
+
+function rrect(ctx,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+// ═══════════════════════════════════════
+// STDP MODEL
+// ═══════════════════════════════════════
+function stdpDG(dt){if(dt>0)return AP*Math.exp(-dt/STAU);if(dt<0)return-AM*Math.exp(dt/STAU);return 0;}
+function spikeV(t){if(t<0)return-SP_A*Math.exp(t/SP_TAU);if(t<=SP_W)return SP_A;return SP_A*Math.exp(-(t-SP_W)/SP_TAU);}
+const Vpre=t=>spikeV(t);
+const Vpost=(t,dt)=>spikeV(t-dt);
+const Vjunc=(t,dt)=>Vpre(t)-Vpost(t,dt);
+
+// ═══════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════
+function gotoTab(id){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(p=>p.classList.remove('on'));
+  document.getElementById('tbtn-'+id).classList.add('on');
+  document.getElementById('tab-'+id).classList.add('on');
+  if(id==='s')setTimeout(drawSTDP,15);
+  if(id==='n')setTimeout(drawNet,15);
+}
+
+// ═══════════════════════════════════════
+// TAB 1: STDP DRAWING
+// ═══════════════════════════════════════
+function onDt(){
+  dtNs=parseInt(document.getElementById('slDt').value);
+  const dg=stdpDG(dtNs);
+  document.getElementById('dtLbl').textContent=`Δt = ${dtNs>0?'+':''}${dtNs} ns`;
+  const dtLblEl=document.getElementById('dtLbl');
+  if(dtLblEl)dtLblEl.style.color=dg>0.05?'var(--green)':dg<-0.05?'var(--red)':'var(--txt3)';
+  const box=document.getElementById('dgbox');
+  if(dg>0.05){box.textContent=`ΔG = +${dg.toFixed(2)} µS — Synapse Strengthened`;box.className='dgbox pos';}
+  else if(dg<-0.05){box.textContent=`ΔG = ${dg.toFixed(2)} µS — Synapse Weakened`;box.className='dgbox neg';}
+  else{box.textContent='ΔG ≈ 0 µS — No Change';box.className='dgbox zer';}
+  // Sync slider thumb colour and Δt overlay position with current timing
+  const slEl=document.getElementById('slDt');
+  const thumbLbl=document.getElementById('dtThumb');
+  const thumbCol=dg>0.05?'var(--green)':dg<-0.05?'var(--red)':'var(--txt3)';
+  if(slEl){slEl.style.setProperty('--thumb-color',thumbCol);}
+  if(thumbLbl&&slEl){
+    const pct=(dtNs-parseFloat(slEl.min))/(parseFloat(slEl.max)-parseFloat(slEl.min));
+    const tw=26; // thumb width px (matches CSS)
+    thumbLbl.style.left=`calc(${pct*100}% + ${(0.5-pct)*tw}px)`;
+    thumbLbl.style.color='#fff';
+  }
+  const sw=document.getElementById('voutLegSwatch');
+  if(sw)sw.style.background=dtNs>25?'var(--gm)':dtNs<-25?'var(--red)':'var(--blue)';
+  drawSTDP();
+}
+function drawSTDP(){drawNeurDiag();drawCurve();drawXStatic();drawCrossbarCtx();drawWave();}
+
+// Static crossbar overview (Tab 1 top-left): introduces the full array structure.
+function drawXStatic(){
+  const H=175;
+  const r=gc('cvXStatic',H);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+
+  const NI=5,NO=5;
+  const pl=36,pr=14,pt=64,pb=26;
+  const gw=w-pl-pr,gh=h-pt-pb;
+  if(gw<10||gh<10)return;
+  const cw=gw/NI,rh=gh/NO;
+
+  // ── PRE-SYNAPTIC header ──
+  ctx.fillStyle=CG;ctx.font='600 9.5px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText('Pre-synaptic inputs (spike trains ↓)',pl+gw/2,10);
+  ctx.fillStyle=CT3;ctx.font='7px IBM Plex Mono';
+  ctx.fillText('one column per input pixel',pl+gw/2,20);
+
+  // Input columns — downward-pointing arrowhead at the grid ENTRY (tip near grid top)
+  for(let c=0;c<NI;c++){
+    const x=pl+(c+.5)*cw;
+    // short stem above the grid — starts at y=36, well below the subtitle text
+    ctx.strokeStyle=CG;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x,36);ctx.lineTo(x,pt+gh);ctx.stroke();
+    // ▼ arrowhead at grid entry — tip at pt-4, wings above (pointing DOWN)
+    ctx.beginPath();
+    ctx.moveTo(x,pt-4);ctx.lineTo(x-3.5,pt-13);
+    ctx.moveTo(x,pt-4);ctx.lineTo(x+3.5,pt-13);
+    ctx.stroke();
+    // pixel number label — sits between subtitle and arrowhead
+    ctx.fillStyle=CG;ctx.font='8.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText(String(c+1),x,34);
+  }
+
+  // Grid lines
+  ctx.strokeStyle='rgba(200,216,184,.3)';ctx.lineWidth=.4;
+  for(let c=0;c<=NI;c++){const x=pl+c*cw;ctx.beginPath();ctx.moveTo(x,pt);ctx.lineTo(x,pt+gh);ctx.stroke();}
+  for(let r=0;r<=NO;r++){const y=pt+r*rh;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+gw,y);ctx.stroke();}
+
+  // Output rows with ► rightward arrows and labels
+  for(let r=0;r<NO;r++){
+    const y=pt+(r+.5)*rh;
+    ctx.strokeStyle=CB;ctx.lineWidth=1.8;
+    ctx.beginPath();ctx.moveTo(pl-3,y);ctx.lineTo(pl+gw,y);ctx.stroke();
+    // ► arrowhead at grid exit (tip at pl+gw+5, wings left)
+    ctx.beginPath();ctx.moveTo(pl+gw+5,y);ctx.lineTo(pl+gw-3,y-3.5);ctx.moveTo(pl+gw+5,y);ctx.lineTo(pl+gw-3,y+3.5);ctx.stroke();
+    ctx.fillStyle=CB;ctx.font='700 9px IBM Plex Mono';ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(`N${r+1}`,pl-7,y);
+  }
+
+  // FTJ dots
+  for(let r=0;r<NO;r++){
+    for(let c=0;c<NI;c++){
+      const x=pl+(c+.5)*cw,y=pt+(r+.5)*rh;
+      ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);
+      ctx.fillStyle=CBG2;ctx.fill();ctx.strokeStyle=CBRD;ctx.lineWidth=.7;ctx.stroke();
+    }
+  }
+
+  // Footer legend: row symbol + text, then FTJ dot + text
+  const fy=pt+gh+6;
+  // Blue row segment → "output neurons (rows)"
+  ctx.strokeStyle=CB;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pl,fy+5);ctx.lineTo(pl+16,fy+5);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pl+16,fy+5);ctx.lineTo(pl+10,fy+2);ctx.moveTo(pl+16,fy+5);ctx.lineTo(pl+10,fy+8);ctx.stroke();
+  ctx.fillStyle=CT3;ctx.font='8px Outfit';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText('output neurons (rows)',pl+20,fy+5);
+  // FTJ dot → "FTJ synapses at each junction"
+  const dotX=pl+20+ctx.measureText('output neurons (rows)').width+16;
+  ctx.beginPath();ctx.arc(dotX+4,fy+5,4,0,Math.PI*2);
+  ctx.fillStyle=CBG2;ctx.fill();ctx.strokeStyle=CBRD;ctx.lineWidth=.7;ctx.stroke();
+  ctx.fillStyle=CT3;ctx.font='8px Outfit';ctx.textAlign='left';
+  ctx.fillText('FTJ synapse at each junction',dotX+12,fy+5);
+}
+
+// Crossbar geometry detail (Tab 1 top-right): zoomed view of one junction with STDP annotations.
+function drawCrossbarCtx(){
+  const H=188;
+  const r=gc('cvCtx',H);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+
+  const NR=2,NC=3;
+  const pl=56,pr=22,pt=74,pb=26;
+  const gw=w-pl-pr,gh=h-pt-pb;
+  if(gw<10||gh<10)return;
+  const cw=gw/NC,rh=gh/NR;
+  const HC=1,HR=0;
+  const hx=pl+(HC+.5)*cw, hy=pt+(HR+.5)*rh;
+
+  // ── PRE-SYNAPTIC header ──
+  ctx.fillStyle=CG;ctx.font='600 7.5px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText('pre-synaptic inputs → spike in ↓',pl+gw/2,9);
+
+  // Spike waveform above highlighted column (pushed down to clear the header text)
+  const sy=42;
+  ctx.strokeStyle=CG;ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(hx-18,sy);ctx.lineTo(hx-7,sy);ctx.lineTo(hx-5,sy-9);ctx.lineTo(hx,sy+5);ctx.lineTo(hx+5,sy);ctx.lineTo(hx+18,sy);ctx.stroke();
+  mixedText(ctx,[{t:'t'},{t:'pre',sub:true}],hx,sy-12,6.5,CG);
+
+  // Input columns with downward arrows
+  for(let c=0;c<NC;c++){
+    const x=pl+(c+.5)*cw, isH=c===HC;
+    ctx.strokeStyle=isH?CG:'rgba(45,90,27,.28)';ctx.lineWidth=isH?1.8:0.9;
+    ctx.beginPath();ctx.moveTo(x,isH?sy+4:pt-6);ctx.lineTo(x,pt+gh);ctx.stroke();
+    if(isH){
+      ctx.beginPath();ctx.moveTo(x,pt-5);ctx.lineTo(x-3,pt-12);ctx.moveTo(x,pt-5);ctx.lineTo(x+3,pt-12);ctx.stroke();
+    }
+  }
+
+  // Output rows (left to right, with label on the left)
+  for(let ro=0;ro<NR;ro++){
+    const y=pt+(ro+.5)*rh, isH=ro===HR;
+    ctx.strokeStyle=isH?CB:'rgba(48,80,160,.28)';ctx.lineWidth=isH?1.8:0.9;
+    ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+gw,y);ctx.stroke();
+    // left label — row labels sit in the pl margin
+    ctx.fillStyle=isH?CB:CT3;ctx.font=`${isH?'600':'400'} 7px Outfit`;
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(isH?'row neuron':'neuron',pl-4,ro===HR?y-5:y);
+    if(isH){ctx.fillText('(fires →)',pl-4,y+6);}
+  }
+
+  // Right-arrow for highlighted row
+  ctx.strokeStyle=CB;ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(pl+gw+4,hy);ctx.lineTo(pl+gw-3,hy-3);ctx.moveTo(pl+gw+4,hy);ctx.lineTo(pl+gw-3,hy+3);ctx.stroke();
+  // "spike out →" label (right margin, semi-transparent bg)
+  const outLbl='→ spike out';
+  ctx.font='600 6.5px IBM Plex Mono';
+  const outW=ctx.measureText(outLbl).width;
+  ctx.fillStyle='rgba(255,255,255,.82)';ctx.fillRect(pl+gw+7,hy-6,outW+2,11);
+  ctx.fillStyle=CB;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(outLbl,pl+gw+8,hy);
+
+  // Junction dots
+  for(let ro=0;ro<NR;ro++){
+    for(let c=0;c<NC;c++){
+      const x=pl+(c+.5)*cw,y=pt+(ro+.5)*rh,isH=ro===HR&&c===HC;
+      ctx.beginPath();ctx.arc(x,y,isH?9:4.5,0,Math.PI*2);
+      ctx.fillStyle=isH?CO:CBG2;ctx.fill();
+      ctx.strokeStyle=isH?CO:CBRD;ctx.lineWidth=isH?1.5:.6;ctx.stroke();
+      if(isH){
+        ctx.fillStyle='#fff';ctx.font='600 6.5px IBM Plex Mono';
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('FTJ',x,y);
+      }
+    }
+  }
+
+  // ΔG label — semi-transparent background so it reads over the row line
+  const dgLbl='← ΔG';
+  ctx.font='700 8.5px IBM Plex Mono';
+  const dgW=ctx.measureText(dgLbl).width;
+  ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(hx+11,hy-7,dgW+4,13);
+  ctx.fillStyle=CO;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(dgLbl,hx+13,hy);
+
+  // Δt annotation below the two waveform positions
+  ctx.fillStyle=CT3;
+  mixedText(ctx,[{t:'Δt = '},{t:'t'},{t:'post',sub:true},{t:' − '},{t:'t'},{t:'pre',sub:true},{t:'   →   sign of Δt determines sign of ΔG  (see STDP curve)'}],pl+gw/2,pt+gh+10,7,CT3);
+}
+function drawNeurDiag(){
+  const H=205;
+  const r=gc('cvN',H);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+
+  // L-shaped layout: Pre neuron feeds DOWN a column arm into FTJ, which fires RIGHT along a row arm to Post.
+  const colX=Math.max(62,w*0.27); // x of the column arm
+  const rowY=148;                  // y of the row arm
+  const preR=22, postR=22;
+  const preCY=50;                  // pre neuron centre y
+  const ftjW=46,ftjH=28;
+  const postX=Math.min(w-40,Math.max(colX+90,w*0.70)); // post neuron centre x
+
+  const dg=stdpDG(dtNs),caus=dtNs>25,anti=dtNs<-25;
+  // str = fraction of max possible |ΔG|: 0 when ΔG≈0, 1 at peak — so the bar is empty at Δt≈0 and full at small |Δt|
+  const str=caus?c01(dg/AP):anti?c01(-dg/AM):0;
+  const bc=caus?CGM:anti?CR:CBRD;
+
+  // Arm segment coordinates
+  const vTop=preCY+preR+2, vBot=rowY-ftjH/2-2; // vertical arm (column)
+  const hLeft=colX+ftjW/2+2, hRight=postX-postR-2; // horizontal arm (row)
+
+  // ── ARM LABELS ──
+  ctx.fillStyle=CT3;ctx.font='7.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText('column (input ↓)',colX,9);
+  ctx.fillStyle=CT3;ctx.font='7.5px IBM Plex Mono';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText('→ row (output)',postX+postR+6,rowY);
+
+  // ── VERTICAL ARM (Pre → FTJ) ──
+  ctx.strokeStyle=caus?CGM:CBRD;ctx.lineWidth=caus?2:1.5;
+  ctx.beginPath();ctx.moveTo(colX,vTop);ctx.lineTo(colX,vBot);ctx.stroke();
+  // ▼ arrowhead at bottom — tip pointing INTO FTJ
+  ctx.beginPath();ctx.moveTo(colX,vBot);ctx.lineTo(colX-4,vBot-9);ctx.moveTo(colX,vBot);ctx.lineTo(colX+4,vBot-9);ctx.stroke();
+
+  // ── HORIZONTAL ARM (FTJ → Post) ──
+  ctx.strokeStyle=anti?CR:CBRD;ctx.lineWidth=anti?2:1.5;
+  ctx.beginPath();ctx.moveTo(hLeft,rowY);ctx.lineTo(hRight,rowY);ctx.stroke();
+  // ► arrowhead at right end — tip pointing INTO Post
+  ctx.beginPath();ctx.moveTo(hRight,rowY);ctx.lineTo(hRight-9,rowY-4);ctx.moveTo(hRight,rowY);ctx.lineTo(hRight-9,rowY+4);ctx.stroke();
+
+  // ── FTJ BOX (corner of L) ──
+  const ftjFillC=caus?`rgba(74,124,50,${.15+.65*str})`:anti?`rgba(192,64,32,${.15+.65*str})`:CBG2;
+  rrect(ctx,colX-ftjW/2,rowY-ftjH/2,ftjW,ftjH,5);
+  ctx.fillStyle=CBG2;ctx.fill();ctx.strokeStyle=bc;ctx.lineWidth=2;ctx.stroke();
+  const fw=(ftjW-6)*str;
+  if(fw>0.5){rrect(ctx,colX-ftjW/2+3,rowY-ftjH/2+3,fw,ftjH-6,3);ctx.fillStyle=ftjFillC;ctx.fill();}
+  ctx.fillStyle=bc;ctx.font='600 8.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('FTJ',colX,rowY);
+
+  // ── INPUT NEURON ──
+  ctx.shadowColor=caus?CGM:'transparent';ctx.shadowBlur=caus?10:0;
+  rrect(ctx,colX-preR,preCY-preR,preR*2,preR*2,preR);
+  ctx.fillStyle=caus?'#eaf5e2':'#fff';ctx.fill();
+  ctx.strokeStyle=caus?CGM:CBRD;ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;
+  ctx.fillStyle=caus?CGM:CT3;ctx.font='600 11px Outfit';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('Input',colX,preCY);
+
+  // ── OUTPUT NEURON ──
+  ctx.shadowColor=anti?CR:'transparent';ctx.shadowBlur=anti?10:0;
+  rrect(ctx,postX-postR,rowY-postR,postR*2,postR*2,postR);
+  ctx.fillStyle=anti?'#fde8e0':'#fff';ctx.fill();
+  ctx.strokeStyle=anti?CR:CBRD;ctx.lineWidth=2;ctx.stroke();ctx.shadowBlur=0;
+  ctx.fillStyle=anti?CR:CT3;ctx.font='600 11px Outfit';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('Output',postX,rowY);
+
+  // ── TIMING ANNOTATIONS (Fires first / Fires second — no arrows) ──
+  const midX=(colX+postX)/2;
+  const lfs='600 8.5px Outfit';
+  if(caus){
+    ctx.font=lfs;ctx.textBaseline='middle';
+    ctx.fillStyle=CGM;ctx.textAlign='left';ctx.fillText('Fires first',colX+preR+7,preCY);
+    ctx.fillStyle=CT3;ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText('Fires second',postX,rowY-postR-6);
+    ctx.fillStyle=CT3;ctx.font='9px Outfit';ctx.fillText('causal',midX,h-30);
+    ctx.fillStyle=CG;ctx.font='700 10px Outfit';ctx.fillText('→ STRENGTHEN',midX,h-16);
+  }else if(anti){
+    ctx.font=lfs;ctx.textBaseline='middle';
+    ctx.fillStyle=CT3;ctx.textAlign='left';ctx.fillText('Fires second',colX+preR+7,preCY);
+    ctx.fillStyle=CR;ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText('Fires first',postX,rowY-postR-6);
+    ctx.fillStyle=CT3;ctx.font='9px Outfit';ctx.fillText('anti-causal',midX,h-30);
+    ctx.fillStyle=CR;ctx.font='700 10px Outfit';ctx.fillText('→ WEAKEN',midX,h-16);
+  }else{
+    ctx.fillStyle=CT3;ctx.font='9px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText('simultaneous — no net change',midX,h-16);
+  }
+
+  ctx.fillStyle=caus?CG:anti?CR:CT3;
+  mixedText(ctx,[{t:'Δt = '},{t:'t'},{t:'post',sub:true},{t:' − '},{t:'t'},{t:'pre',sub:true},{t:` = ${dtNs>0?'+':''}${dtNs} ns`}],w/2,h-3,8,caus?CG:anti?CR:CT3);
+}
+function drawCurve(){
+  const r=gc('cvC',185);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const pl=40,pr=14,pt=14,pb=30,cw=w-pl-pr,ch=h-pt-pb;
+  const DTL=-520,DTR=520,DGL=-2.3,DGH=2.7;
+  const tx=dt=>pl+(dt-DTL)/(DTR-DTL)*cw;
+  const ty=dg=>pt+(1-(dg-DGL)/(DGH-DGL))*ch;
+  ctx.fillStyle='rgba(192,64,32,.05)';ctx.fillRect(pl,pt,cw/2,ch);
+  ctx.fillStyle='rgba(74,124,50,.05)';ctx.fillRect(pl+cw/2,pt,cw/2,ch);
+  ctx.strokeStyle=CBRD;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(tx(0),pt);ctx.lineTo(tx(0),pt+ch);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pl,ty(0));ctx.lineTo(pl+cw,ty(0));ctx.stroke();
+  ctx.beginPath();
+  for(let px=0;px<=cw;px++){const dt=DTL+(px/cw)*(DTR-DTL);px===0?ctx.moveTo(pl+px,ty(stdpDG(dt))):ctx.lineTo(pl+px,ty(stdpDG(dt)));}
+  ctx.strokeStyle=CG;ctx.lineWidth=2.5;ctx.stroke();
+  const dg=stdpDG(dtNs);
+  ctx.beginPath();ctx.arc(tx(dtNs),ty(dg),6,0,Math.PI*2);ctx.fillStyle=CO;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle=CT3;ctx.font='9px IBM Plex Mono';ctx.textAlign='center';ctx.fillText('Δt (ns)',pl+cw/2,h-3);
+  ctx.save();ctx.translate(11,pt+ch/2);ctx.rotate(-Math.PI/2);ctx.fillText('ΔG (µS)',0,0);ctx.restore();
+  ctx.font='8px IBM Plex Mono';ctx.textAlign='center';
+  [-400,-200,0,200,400].forEach(dt=>{ctx.fillStyle=CT3;ctx.fillText(dt===0?'0':(dt>0?'+':'')+dt,tx(dt),pt+ch+14);});
+  ctx.textAlign='right';[-1.5,-1,0,1,2].forEach(dg=>ctx.fillText(dg.toFixed(1),pl-3,ty(dg)+3));
+  ctx.font='8px Outfit';ctx.textAlign='center';
+  ctx.fillStyle=CR;ctx.fillText('weaken',pl+cw/4,pt+9);ctx.fillStyle=CGM;ctx.fillText('strengthen',pl+3*cw/4,pt+9);
+}
+
+function drawWave(){
+  const r=gc('cvW',150);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const pl=42,pr=32,pt=5,pb=18,cw=w-pl-pr,ch=h-pt-pb;
+  const TL=-580,TR=820,VR=1.6,RH=ch/3;
+  const tx=t=>pl+(t-TL)/(TR-TL)*cw;
+  const ty=(v,ri)=>(pt+(ri+.5)*RH)-v/VR*(RH/2-1);
+  const caus=dtNs>25,anti=dtNs<-25;
+  const voutCol=anti?CR:caus?CGM:CB;
+  const rows=[{fn:t=>Vpre(t),base:'V',sub:'input',col:CG},{fn:t=>Vpost(t,dtNs),base:'V',sub:'output',col:voutCol},{fn:t=>Vjunc(t,dtNs),base:'V',sub:'FTJ',col:CO}];
+  // Helper: draw "V" + subscript right-aligned at (x, y)
+  function vLbl(base,sub,x,y,col){
+    ctx.fillStyle=col;
+    ctx.font='500 9px IBM Plex Mono';ctx.textAlign='left';
+    const bw=ctx.measureText(base).width;
+    ctx.font='500 6px IBM Plex Mono';
+    const sw=ctx.measureText(sub).width;
+    const startX=x-bw-sw-1;
+    ctx.font='500 9px IBM Plex Mono';ctx.textBaseline='middle';
+    ctx.fillText(base,startX,y-1);
+    ctx.font='500 6px IBM Plex Mono';
+    ctx.fillText(sub,startX+bw,y+2);
+  }
+  rows.forEach((row,ri)=>{
+    if(ri%2===0){ctx.fillStyle='rgba(245,237,220,.3)';ctx.fillRect(pl,pt+ri*RH,cw,RH);}
+    ctx.strokeStyle=CBRD;ctx.lineWidth=.5;ctx.setLineDash([2,2]);
+    ctx.beginPath();ctx.moveTo(pl,ty(0,ri));ctx.lineTo(pl+cw,ty(0,ri));ctx.stroke();ctx.setLineDash([]);
+    if(ri===2){
+      [VTH,-VTH].forEach(v=>{
+        ctx.strokeStyle=v>0?'rgba(74,124,50,.5)':'rgba(192,64,32,.5)';ctx.lineWidth=.8;ctx.setLineDash([3,2]);
+        ctx.beginPath();ctx.moveTo(pl,ty(v,ri));ctx.lineTo(pl+cw,ty(v,ri));ctx.stroke();ctx.setLineDash([]);
+        ctx.font='7px IBM Plex Mono';ctx.fillStyle=v>0?CGM:CR;ctx.textAlign='left';
+        ctx.fillText(v>0?'+Vth → ΔG>0':'−Vth → ΔG<0',pl+cw+2,ty(v,ri)+3);
+      });
+      let ins=false;ctx.beginPath();
+      for(let px=0;px<=cw;px++){const t=TL+(px/cw)*(TR-TL),v=Vjunc(t,dtNs),x=pl+px;if(v>VTH){if(!ins){ctx.moveTo(x,ty(VTH,ri));ins=true;}ctx.lineTo(x,ty(v,ri));}else if(ins){ctx.lineTo(x,ty(VTH,ri));ins=false;}}
+      ctx.fillStyle='rgba(74,124,50,.22)';ctx.fill();
+      ins=false;ctx.beginPath();
+      for(let px=0;px<=cw;px++){const t=TL+(px/cw)*(TR-TL),v=Vjunc(t,dtNs),x=pl+px;if(v<-VTH){if(!ins){ctx.moveTo(x,ty(-VTH,ri));ins=true;}ctx.lineTo(x,ty(v,ri));}else if(ins){ctx.lineTo(x,ty(-VTH,ri));ins=false;}}
+      ctx.fillStyle='rgba(192,64,32,.2)';ctx.fill();
+    }
+    ctx.beginPath();
+    for(let px=0;px<=cw;px++){const t=TL+(px/cw)*(TR-TL),v=row.fn(t),x=pl+px,y=ty(v,ri);px===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.strokeStyle=row.col;ctx.lineWidth=1.5;ctx.stroke();
+    vLbl(row.base,row.sub,pl-3,ty(0,ri),row.col);ctx.textBaseline='alphabetic';
+  });
+  ctx.fillStyle=CT3;ctx.font='7.5px IBM Plex Mono';ctx.textAlign='center';
+  [-400,-200,0,200,400,600].forEach(t=>ctx.fillText((t>0?'+':'')+t,tx(t),h-3));
+  ctx.fillText('time (ns)',pl+cw/2,h);
+}
+
+// ═══════════════════════════════════════
+// TAB 2: NETWORK
+// ═══════════════════════════════════════
+function initW(){
+  W=Array.from({length:NO},()=>Array.from({length:NI},()=>.2+Math.random()*.6));
+  winHist=Array.from({length:NO},()=>Array(PATS.length).fill(0));
+  cnt=0;hist=[];cInput=null;cActs=null;cWin=-1;cPi=-1;
+  p=Array(NO).fill(1/NO);  // conscience: start at uniform usage
+}
+
+function resetNet(){
+  if(tmr)clearTimeout(tmr);tmr=null;running=false;
+  document.getElementById('btnRun').textContent='▶ Start';
+  document.getElementById('chipSt').textContent='Stopped';
+  document.getElementById('chipSt').className='chip';
+  document.getElementById('btnStep').disabled=false;
+  initW();buildPats();buildRF();drawNet();
+}
+
+function toggleRun(){
+  if(running){
+    clearTimeout(tmr);tmr=null;running=false;
+    document.getElementById('btnRun').textContent='▶ Start';
+    document.getElementById('chipSt').textContent='Paused';
+    document.getElementById('chipSt').className='chip';
+    document.getElementById('btnStep').disabled=false;
+  }else{
+    running=true;
+    document.getElementById('btnRun').textContent='⏸ Pause';
+    document.getElementById('chipSt').textContent='Running';
+    document.getElementById('chipSt').className='chip run';
+    document.getElementById('btnStep').disabled=true;
+    step();
+  }
+}
+
+function stepOnce(){
+  if(running)return;
+  const res=trainStep(parseFloat(document.getElementById('slNo').value));
+  cInput=res.inp;cActs=res.acts;cWin=res.win;cPi=res.pi;
+  document.getElementById('cntLbl').textContent=`${cnt} presentations`;
+  hist.push({n:cnt,rate:evalRecog()});
+  drawNet();
+}
+
+function getSpeed(){return parseInt(document.getElementById('slSp').value);}
+function getNoise(){return parseFloat(document.getElementById('slNo').value);}
+function onSpeed(){document.getElementById('spLbl').textContent=`×${getSpeed()}`;}
+function onNoise(){document.getElementById('noLbl').textContent=getNoise().toFixed(2);}
+
+function step(){
+  if(!running)return;
+  const noise=getNoise(),speed=getSpeed();
+  let last;
+  for(let s=0;s<speed;s++)last=trainStep(noise);
+  cInput=last.inp;cActs=last.acts;cWin=last.win;cPi=last.pi;
+  document.getElementById('cntLbl').textContent=`${cnt} presentations`;
+  if(cnt%Math.max(1,speed)===0){
+    const rate=evalRecog();hist.push({n:cnt,rate});
+    if(rate>.91&&cnt>40){document.getElementById('chipSt').textContent='Learned!';document.getElementById('chipSt').className='chip done';}
+  }
+  drawNet();
+  tmr=setTimeout(step,Math.max(25,450-speed*42));
+}
+
+function trainStep(noise){
+  const pi=Math.floor(Math.random()*PATS.length);
+  const inp=PATS[pi].map(p=>c01(p+(Math.random()-.5)*noise*2));
+  const acts=W.map(row=>row.reduce((s,w,i)=>s+w*inp[i],0));
+  // Conscience bias (DeSieno): boost neurons that win less than their fair share.
+  // Prevents one neuron from monopolising two patterns and causing the 33% ceiling.
+  const gamma=0.35;
+  const biased=acts.map((a,j)=>a+gamma*(1/NO-p[j]));
+  const win=biased.indexOf(Math.max(...biased));
+  // Update per-neuron win-frequency EMA
+  const alpha=0.004;
+  for(let j=0;j<NO;j++)p[j]=(1-alpha)*p[j]+alpha*(j===win?1:0);
+  const lr=Math.max(.004,.07*Math.exp(-cnt/1200));
+  for(let i=0;i<NI;i++)W[win][i]=c01(W[win][i]+lr*(inp[i]-W[win][i]));
+  for(let j=0;j<NO;j++){if(j===win)continue;for(let i=0;i<NI;i++)if(inp[i]>.4)W[j][i]=c01(W[j][i]-lr*.18);}
+  winHist[win][pi]++;cnt++;
+  return{inp,acts,win,pi};
+}
+
+function evalRecog(){
+  const pref=PATS.map(pat=>{const a=W.map(row=>row.reduce((s,w,i)=>s+w*pat[i],0));return a.indexOf(Math.max(...a));});
+  if(new Set(pref).size<PATS.length)return 1/PATS.length;
+  let ok=0;const N=60;
+  for(let t=0;t<N;t++){
+    const pi=t%PATS.length;
+    const inp=PATS[pi].map(p=>c01(p+(Math.random()-.5)*.8));
+    const a=W.map(row=>row.reduce((s,w,i)=>s+w*inp[i],0));
+    if(a.indexOf(Math.max(...a))===pref[pi])ok++;
+  }
+  return ok/N;
+}
+
+// ── Build HTML ──
+function buildPats(){
+  const c=document.getElementById('patRow');if(!c)return;c.innerHTML='';
+  PATS.forEach((pat,pi)=>{
+    const div=document.createElement('div');div.className='pat-item';
+    const lbl=document.createElement('div');lbl.className='pat-name';
+    lbl.textContent='Pattern '+PNAMES[pi];lbl.style.color=PCOLORS[pi];
+    const grid=document.createElement('div');grid.className='pat-grid';
+    pat.forEach((v,idx)=>{
+      const cell=document.createElement('div');
+      cell.className='pat-cell'+(v>.5?' on':'');
+      if(v>.5)cell.style.background=PCOLORS[pi];
+      const num=document.createElement('span');num.className='pcell-lbl';num.textContent=String(idx+1);
+      cell.appendChild(num);grid.appendChild(cell);
+    });
+    div.appendChild(lbl);div.appendChild(grid);c.appendChild(div);
+  });
+}
+
+function buildRF(){
+  const c=document.getElementById('rfRow');if(!c)return;c.innerHTML='';
+  for(let j=0;j<NO;j++){
+    const item=document.createElement('div');item.className='rf-item';
+    const lbl=document.createElement('div');lbl.className='rf-lbl';lbl.textContent=`N${j+1}`;
+    const cv=document.createElement('canvas');cv.id=`rf${j}`;
+    cv.width=66;cv.height=66;
+    cv.style.cssText='width:66px;height:66px;display:block;border-radius:4px;border:1px solid '+CBRD;
+    item.appendChild(lbl);item.appendChild(cv);c.appendChild(item);
+  }
+}
+
+// ── Draw ──
+function drawNet(){drawInput();updatePatLbl();drawXbar();drawRFAll();drawHistogram();drawRate();}
+
+function updatePatLbl(){
+  const el=document.getElementById('nowPatLbl');if(!el)return;
+  if(cPi>=0){el.textContent=`Pattern ${PNAMES[cPi]}`;el.style.color=PCOLORS[cPi];}
+  else{el.textContent='';}
+}
+
+// Now Presenting: 3×3 grid with pixel values + pixel numbers
+function drawInput(){
+  const cv=document.getElementById('cvIn');if(!cv)return;
+  const s=90,dpr=window.devicePixelRatio||1;
+  cv.width=s*dpr;cv.height=s*dpr;
+  const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+  const cs=s/3;ctx.fillStyle=CBG2;ctx.fillRect(0,0,s,s);
+  const pat=cInput||Array(NI).fill(0);
+  pat.forEach((v,idx)=>{
+    const col=idx%3,row=Math.floor(idx/3),t=c01(v);
+    const rr=Math.round(245-200*t),gg=Math.round(237-147*t),bb=Math.round(220-193*t);
+    ctx.fillStyle=`rgb(${rr},${gg},${bb})`;ctx.fillRect(col*cs+1,row*cs+1,cs-2,cs-2);
+    // pixel value
+    ctx.fillStyle=t>.55?'rgba(255,255,255,.82)':'rgba(26,46,10,.55)';
+    ctx.font='500 9px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(v.toFixed(1),col*cs+cs/2,row*cs+cs/2);
+    // pixel number top-right
+    ctx.fillStyle=t>.55?'rgba(255,255,255,.55)':'rgba(26,46,10,.35)';
+    ctx.font='6px IBM Plex Mono';ctx.textAlign='right';ctx.textBaseline='top';
+    ctx.fillText(String(idx+1),col*cs+cs-2,row*cs+2);
+  });
+}
+
+// Crossbar canvas: column headers (pixel labels + input squares) | grid dots | output bars right
+// Everything drawn in a single canvas so output bars are pixel-perfectly row-aligned.
+function drawXbar(){
+  const H=255;
+  const r=gc('cvX',H);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle=CBG2;ctx.fillRect(0,0,w,h);
+
+  // Compact arc indicators replace wide bar section — frees ~90px for the crossbar grid.
+  const pl=40;    // left margin for N# row labels
+  const arcSec=28; // right section: just arc indicators, no label needed (N# already on left)
+  const pr=4;
+  const pt=70,pb=18;
+  const gw=Math.max(10,w-pl-arcSec-pr);
+  const gh=h-pt-pb;
+  if(gw<10||gh<10)return;
+  const colW=gw/NI,rowH=gh/NO;
+  // Winner highlight color follows the current input pattern (not fixed orange)
+  const winColor=cPi>=0?PCOLORS[cPi]:CO;
+
+  // ── TOP SECTION ──
+
+  // Group labels — abbreviated when narrow, hidden when very narrow
+  if(gw>110){
+    const wide=gw>220;
+    const grpNames=wide?['Image row 0','Image row 1','Image row 2']:['Row 0','Row 1','Row 2'];
+    for(let g=0;g<3;g++){
+      const x1=pl+g*3*colW,x2=pl+(g+1)*3*colW,mx=(x1+x2)/2;
+      ctx.fillStyle=CT3;ctx.font='6.5px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+      ctx.fillText(grpNames[g],mx,10);
+      ctx.strokeStyle='rgba(200,216,184,.7)';ctx.lineWidth=.5;
+      ctx.beginPath();ctx.moveTo(x1+2,12);ctx.lineTo(x2-2,12);ctx.stroke();
+    }
+  }
+  // Group separator dashes always visible
+  [3,6].forEach(gi=>{
+    const sx=pl+gi*colW;
+    ctx.strokeStyle='rgba(200,216,184,.5)';ctx.lineWidth=.8;ctx.setLineDash([3,3]);
+    ctx.beginPath();ctx.moveTo(sx,gw>110?12:2);ctx.lineTo(sx,pt+gh);ctx.stroke();ctx.setLineDash([]);
+  });
+
+  // Pixel number labels 1–9
+  ctx.fillStyle=CT2;ctx.font='700 10px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  for(let i=0;i<NI;i++)ctx.fillText(String(i+1),pl+(i+.5)*colW,25);
+
+  // "Act." header above arcs
+  ctx.fillStyle=CT3;ctx.font='6px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText('Act.',pl+gw+pr+arcSec/2,10);
+
+  // Input-value squares (same color scheme as Now Presenting)
+  const pat=cInput||Array(NI).fill(0);
+  for(let i=0;i<NI;i++){
+    const x=pl+i*colW+2,y=29,bw=Math.max(0,colW-4),bh=33;
+    const v=c01(pat[i]);
+    const rr=Math.round(245-200*v),gg=Math.round(237-147*v),bb=Math.round(220-193*v);
+    ctx.fillStyle=`rgb(${rr},${gg},${bb})`;ctx.fillRect(x,y,bw,bh);
+    if(bw>14){
+      ctx.fillStyle=v>.5?'rgba(255,255,255,.78)':'rgba(26,46,10,.5)';
+      ctx.font='7px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(v.toFixed(1),x+bw/2,y+bh/2);
+    }
+  }
+
+  // Separator
+  ctx.strokeStyle=CBRD;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pl,pt-2);ctx.lineTo(pl+gw,pt-2);ctx.stroke();
+
+  // ── CROSSBAR GRID ──
+  ctx.strokeStyle='rgba(200,216,184,.4)';ctx.lineWidth=.5;
+  for(let i=0;i<=NI;i++){const x=pl+i*colW;ctx.beginPath();ctx.moveTo(x,pt);ctx.lineTo(x,pt+gh);ctx.stroke();}
+  for(let j=0;j<=NO;j++){const y=pt+j*rowH;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+gw,y);ctx.stroke();}
+
+  // Row labels (left)
+  for(let j=0;j<NO;j++){
+    const y=pt+(j+.5)*rowH;
+    ctx.fillStyle=j===cWin?winColor:CT3;ctx.font=`${j===cWin?'700':'400'} 9px IBM Plex Mono`;
+    ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(`N${j+1}`,pl-4,y);
+  }
+
+  // Memristor dots
+  const maxR=Math.max(1,Math.min(colW,rowH)*.35);
+  for(let j=0;j<NO;j++){
+    for(let i=0;i<NI;i++){
+      const x=pl+(i+.5)*colW,y=pt+(j+.5)*rowH,t=c01(W[j][i]);
+      const rr=Math.round(245-200*t),gg=Math.round(237-147*t),bb=Math.round(220-193*t);
+      const dotR=Math.max(.5,maxR*(.45+.55*t));
+      ctx.beginPath();ctx.arc(x,y,dotR,0,Math.PI*2);
+      ctx.fillStyle=`rgb(${rr},${gg},${bb})`;ctx.fill();
+      if(j===cWin){
+        const act=cInput&&cInput[i]>.45;
+        ctx.strokeStyle=act?winColor:CGL;ctx.lineWidth=act?2:1;ctx.stroke();
+      }
+    }
+  }
+
+  // ── COMPACT ARC INDICATORS (row-aligned, replaces wide bar section) ──
+  // Each arc is a filled pie-slice from 12-o'clock clockwise, showing relative activation.
+  const arcCx=pl+gw+pr+arcSec/2;
+  const arcR=Math.min(10,rowH/2-3);
+  const maxAct=cActs?Math.max(...cActs,.001):.001;
+  for(let j=0;j<NO;j++){
+    const cy=pt+(j+.5)*rowH;
+    const frac=cActs?c01(cActs[j]/maxAct):0;
+    const isWin=j===cWin;
+    // background ring
+    ctx.beginPath();ctx.arc(arcCx,cy,arcR,0,Math.PI*2);
+    ctx.fillStyle=CBG2;ctx.fill();
+    ctx.strokeStyle=isWin?winColor:CBRD;ctx.lineWidth=isWin?1.5:.5;ctx.stroke();
+    // filled slice (clockwise from top)
+    if(frac>0.01){
+      ctx.beginPath();ctx.moveTo(arcCx,cy);
+      ctx.arc(arcCx,cy,arcR,-Math.PI/2,-Math.PI/2+frac*2*Math.PI);
+      ctx.closePath();ctx.fillStyle=isWin?winColor:CGL;ctx.fill();
+    }
+    // centre dot
+    ctx.beginPath();ctx.arc(arcCx,cy,1.5,0,Math.PI*2);
+    ctx.fillStyle=isWin?'rgba(255,255,255,.7)':CBG;ctx.fill();
+  }
+}
+
+function drawRFAll(){
+  for(let j=0;j<NO;j++){
+    const cv=document.getElementById(`rf${j}`);if(!cv)continue;
+    const s=66,dpr=window.devicePixelRatio||1;
+    cv.width=s*dpr;cv.height=s*dpr;
+    const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);
+    const cs=s/3;ctx.fillStyle=CBG2;ctx.fillRect(0,0,s,s);
+    for(let i=0;i<NI;i++){
+      const col=i%3,row=Math.floor(i/3),t=c01(W[j][i]);
+      const rr=Math.round(245-200*t),gg=Math.round(237-147*t),bb=Math.round(220-193*t);
+      ctx.fillStyle=`rgb(${rr},${gg},${bb})`;ctx.fillRect(col*cs+1,row*cs+1,cs-2,cs-2);
+      ctx.fillStyle=t>.55?'rgba(255,255,255,.55)':'rgba(26,46,10,.3)';
+      ctx.font='5.5px IBM Plex Mono';ctx.textAlign='right';ctx.textBaseline='top';
+      ctx.fillText(String(i+1),col*cs+cs-2,row*cs+2);
+    }
+    if(j===cWin){const wc=cPi>=0?PCOLORS[cPi]:CO;ctx.strokeStyle=wc;ctx.lineWidth=2.5;ctx.strokeRect(1,1,s-2,s-2);}
+  }
+}
+
+function drawHistogram(){
+  const r=gc('cvH',145);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const pl=24,pr=10,pt=10,pb=44;
+  const cw=w-pl-pr,ch=h-pt-pb;
+
+  // Faint full-width grid lines behind everything (scale reference)
+  ctx.strokeStyle='rgba(200,216,184,.35)';ctx.lineWidth=.5;
+  [0,.5,1].forEach(v=>{
+    const y=pt+(1-v)*ch;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+cw,y);ctx.stroke();
+  });
+
+  // Each neuron gets its OWN background box — clear visual separation between N# groups.
+  const groupGap=8;
+  const groupW=(cw-(NO-1)*groupGap)/NO;
+  const bw=Math.max(2,(groupW-6)/PATS.length);
+  const maxVal=Math.max(1,...winHist.map(a=>Math.max(...a)));
+  const totalAll=winHist.flat().reduce((a,b)=>a+b,0);
+
+  for(let j=0;j<NO;j++){
+    const gx=pl+j*(groupW+groupGap);
+
+    // Group background (separate box — the gap between boxes IS the whitespace)
+    ctx.fillStyle=CBG2;ctx.fillRect(gx,pt,groupW,ch);
+    ctx.strokeStyle='rgba(200,216,184,.5)';ctx.lineWidth=.5;
+    ctx.strokeRect(gx,pt,groupW,ch);
+
+    // Bars inside this group's box
+    for(let pi=0;pi<PATS.length;pi++){
+      const bx=gx+3+pi*(bw+1.5);
+      const bh=Math.max(0,winHist[j][pi]/maxVal*ch);
+      ctx.fillStyle=PCOLORS[pi];ctx.fillRect(bx,pt+ch-bh,bw,bh);
+    }
+
+    // N# label centred under this group's box
+    ctx.fillStyle=CT3;ctx.font='8px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText(`N${j+1}`,gx+groupW/2,h-30);
+
+    // Dominant pattern letter (appears once neuron specialises)
+    const tot=winHist[j].reduce((a,b)=>a+b,0);
+    if(tot>5){
+      const domPi=winHist[j].indexOf(Math.max(...winHist[j]));
+      if(winHist[j][domPi]/tot>.45){
+        ctx.fillStyle=PCOLORS[domPi];ctx.font='700 9px IBM Plex Mono';
+        ctx.fillText(PNAMES[domPi],gx+groupW/2,h-18);
+      }
+    }
+  }
+
+  if(totalAll===0){
+    ctx.fillStyle=CT3;ctx.font='10px Outfit';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('Start training to see specialization emerge',pl+cw/2,pt+ch/2);
+  }
+
+  // Legend
+  PNAMES.forEach((name,pi)=>{
+    const lx=pl+pi*(cw/PNAMES.length)+4;
+    ctx.fillStyle=PCOLORS[pi];ctx.fillRect(lx,h-12,10,8);
+    ctx.fillStyle=CT3;ctx.font='7.5px Outfit';ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    ctx.fillText(`Pattern ${name}`,lx+13,h-5);
+  });
+}
+
+function drawRate(){
+  const r=gc('cvR',110);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const pl=36,pr=12,pt=8,pb=22,cw=w-pl-pr,ch=h-pt-pb;
+  ctx.fillStyle=CBG2;ctx.fillRect(pl,pt,cw,ch);
+  ctx.strokeStyle='rgba(200,216,184,.7)';ctx.lineWidth=.5;
+  [0,.33,.67,1].forEach(v=>{
+    const y=pt+(1-v)*ch;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+cw,y);ctx.stroke();
+    ctx.fillStyle=CT3;ctx.font='7.5px IBM Plex Mono';ctx.textAlign='right';ctx.fillText(Math.round(v*100)+'%',pl-2,y+3);
+  });
+  if(hist.length<2){
+    ctx.fillStyle=CT3;ctx.font='10px Outfit';ctx.textAlign='center';
+    ctx.fillText('Start training to see recognition rate evolve',pl+cw/2,pt+ch/2+4);
+    return;
+  }
+  const maxN=Math.max(hist[hist.length-1].n,100);
+  const tx=n=>pl+(n/maxN)*cw,ty=rr=>pt+(1-rr)*ch;
+  ctx.beginPath();ctx.moveTo(tx(0),pt+ch);
+  hist.forEach(({n,rate})=>ctx.lineTo(tx(n),ty(rate)));
+  ctx.lineTo(tx(hist[hist.length-1].n),pt+ch);ctx.closePath();
+  ctx.fillStyle='rgba(74,124,50,.12)';ctx.fill();
+  ctx.beginPath();hist.forEach(({n,rate},i)=>i===0?ctx.moveTo(tx(n),ty(rate)):ctx.lineTo(tx(n),ty(rate)));
+  ctx.strokeStyle=CG;ctx.lineWidth=2;ctx.stroke();
+  const last=hist[hist.length-1];
+  ctx.beginPath();ctx.arc(tx(last.n),ty(last.rate),4,0,Math.PI*2);ctx.fillStyle=CO;ctx.fill();
+  ctx.fillStyle=CT2;ctx.font='500 8.5px IBM Plex Mono';ctx.textAlign='left';
+  ctx.fillText(`${Math.round(last.rate*100)}%`,tx(last.n)+7,ty(last.rate)+3);
+  ctx.fillStyle=CT3;ctx.font='8px IBM Plex Mono';ctx.textAlign='center';ctx.fillText('training presentations',pl+cw/2,h-3);
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+window.addEventListener('load',()=>{
+  onDt();
+  initW();buildPats();buildRF();
+  setTimeout(drawNet,20);
+});
+window.addEventListener('resize',()=>{
+  if(document.getElementById('tab-s').classList.contains('on'))drawSTDP();
+  if(document.getElementById('tab-n').classList.contains('on'))drawNet();
+});
+</script>
+</body>
+</html>
