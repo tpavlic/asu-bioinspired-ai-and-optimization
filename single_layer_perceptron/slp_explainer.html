@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Single-Layer Perceptron — Neuron &amp; Lever Explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#FAF7F0;--cream-mid:#F0EBE0;--cream-dk:#E2D9C5;
+  --g-dk:#1C3A0E;--g-mid:#2D5A1B;--g-lt:#4A8C2F;--g-pale:#C8E6A8;
+  --orange:#E8630A;--orange-lt:#F08C50;
+  --text:#1A1A1A;--text-muted:#888;
+  --border:#C8BE9A;--border-lt:#DDD6BE;--shadow:rgba(44,90,27,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--text);padding:1.25rem 1rem;min-height:100vh}
+.wrap{max-width:940px;margin:0 auto;display:flex;flex-direction:column;gap:.85rem}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem}
+.hdr h1{font-size:1.45rem;font-weight:700;color:var(--g-dk);letter-spacing:-.02em;line-height:1.2}
+.hdr p{font-size:.85rem;color:var(--text-muted);margin-top:.15rem}
+.hdr-rule{border:none;border-top:2.5px solid var(--g-dk);margin-top:.55rem}
+.card{background:white;border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;box-shadow:0 2px 8px var(--shadow)}
+.ctrl-cols{display:grid;grid-template-columns:1fr 1fr;gap:.5rem 1.6rem}
+.ctrl-group-lbl{font-size:.67rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:.45rem}
+.ctrl-presets{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.6rem;padding-top:.6rem;border-top:1px solid var(--border-lt)}
+.preset-lbl{font-size:.7rem;color:var(--text-muted);letter-spacing:.05em;text-transform:uppercase;margin-right:.15rem}
+.pbtn{font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:500;padding:.28rem .8rem;border-radius:20px;cursor:pointer;border:1.5px solid var(--border);background:var(--cream);color:var(--g-dk);transition:all .15s}
+.pbtn:hover{background:var(--g-pale);border-color:var(--g-lt)}
+.pbtn.active{background:var(--g-dk);border-color:var(--g-dk);color:white}
+.bias-row{margin-top:.55rem;padding-top:.55rem;border-top:1px solid var(--border-lt);display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}
+.bias-row .ctrl-group-lbl{margin:0;min-width:130px}
+.bias-row .srow{flex:1;min-width:180px}
+.srow{display:flex;align-items:center;gap:.45rem;margin-bottom:.3rem}
+.slbl{font-family:'IBM Plex Mono',monospace;font-size:.8rem;font-weight:500;color:var(--g-dk);min-width:30px}
+.slbl.bias-lbl{color:var(--orange)}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:var(--cream-dk);border-radius:2px;cursor:pointer;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--g-mid);border:2.5px solid white;box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:pointer}
+input[type=range].bsld::-webkit-slider-thumb{background:var(--orange)}
+.sval{font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:var(--text-muted);min-width:32px;text-align:right}
+.eq-bar{background:var(--g-dk);color:white;border-radius:8px;padding:.65rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap}
+.eq-formula{font-family:'IBM Plex Mono',monospace;font-size:.82rem;flex:1;min-width:160px;line-height:1.5;opacity:.92}
+.eq-formula strong{font-size:.95rem;opacity:1}
+.eq-cmp{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:600;padding:0 .3rem;color:rgba(255,255,255,.7)}
+.eq-cmp.fire-cmp{color:var(--orange-lt)}
+.eq-status{font-size:.85rem;font-weight:600;padding:0 .95rem;border-radius:20px;white-space:nowrap;transition:background .35s,color .35s;height:1.9rem;display:inline-flex;align-items:center;}
+.eq-status.fire{background:var(--orange);color:white}
+.eq-status.silent{background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+@media(max-width:580px){.panels,.ctrl-cols{grid-template-columns:1fr}}
+.f2d-layout{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+@media(max-width:600px){.f2d-layout{grid-template-columns:1fr}}
+.panel-title{font-size:.67rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);text-align:center;margin-bottom:.1rem}
+.panel-hint{font-size:.6rem;color:var(--text-muted);text-align:center;margin-bottom:.35rem;font-style:italic;opacity:.75}
+.svg-wrap{width:100%;aspect-ratio:4/3;overflow:hidden}
+.svg-wrap svg{width:100%;height:100%}
+.svg-wrap-lever{width:100%;aspect-ratio:5/4;overflow:hidden}
+.svg-wrap-lever svg{width:100%;height:100%}
+.svg-wrap-bc{width:100%;aspect-ratio:10/3;overflow:hidden}
+.svg-wrap-bc svg{width:100%;height:100%}
+#soma-circle{transition:fill .4s,stroke .4s,stroke-width .4s}
+#soma-glow{transition:stroke .4s,opacity .4s}
+#ap-terminal{transition:fill .4s,stroke .4s}
+footer{display:flex;justify-content:flex-end;font-size:.68rem;color:var(--text-muted)}
+footer a,.cr-top a{color:var(--orange);text-decoration:none}
+.cr-top{font-size:.65rem;color:var(--text-muted);text-align:right;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="hdr">
+    <div>
+      <h1>The Single-Layer Perceptron</h1>
+      <p>Animated connection between the biological neuron and the linear classifier</p>
+    </div>
+    <div class="cr-top">© 2026 Theodore P. Pavlic<br><a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></div>
+  </div>
+  <hr class="hdr-rule">
+</header>
+
+<div class="card">
+  <div class="ctrl-cols">
+    <div><div class="ctrl-group-lbl">Synaptic weights w</div><div id="w-sliders"></div></div>
+    <div><div class="ctrl-group-lbl">Input signals x</div><div id="x-sliders"></div></div>
+  </div>
+  <div class="bias-row">
+    <div class="ctrl-group-lbl">Bias weight b <span style="font-weight:400;font-style:italic;font-size:.88em;letter-spacing:0">&nbsp;(w₀ on fixed input x₀ = −1)</span></div>
+    <div class="srow" id="b-slider-row"></div>
+  </div>
+  <div class="ctrl-presets">
+    <span class="preset-lbl">Presets:</span>
+    <button class="pbtn" data-preset="fires">⚡ Fires clearly</button>
+    <button class="pbtn" data-preset="threshold">⚖ Near threshold</button>
+    <button class="pbtn" data-preset="silent">◯ Silent</button>
+  </div>
+</div>
+
+<div class="eq-bar">
+  <div class="eq-formula" id="eq-lhs">…</div>
+  <span class="eq-cmp" id="eq-cmp">≥</span>
+  <div class="eq-formula" id="eq-rhs" style="flex:0;min-width:0">…</div>
+  <div class="eq-status" id="eq-status">…</div>
+</div>
+
+<div class="panels">
+  <div class="card">
+    <div class="panel-title">The Biological Neuron Model</div>
+    <div class="panel-hint">Drag slider ↕ to set xᵢ &nbsp;·&nbsp; Click/right-click wᵢ label ±weight</div>
+    <div class="svg-wrap"><svg id="neuron-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  </div>
+  <div class="card">
+    <div class="panel-title">The Lever (Torque) Analogy</div>
+    <div class="panel-hint">Drag ↔ moves weight (xᵢ) &nbsp;·&nbsp; Drag ↕ changes mass (wᵢ or b)</div>
+    <div class="svg-wrap-lever"><svg id="lever-svg" viewBox="0 0 400 320" xmlns="http://www.w3.org/2000/svg"></svg></div>
+  </div>
+</div>
+
+<!-- ═══ FEATURE SPACE CARD ══════════════════════════════════════════ -->
+<div class="card">
+  <div class="panel-title">Linear Classifier — Feature Space View</div>
+  <div class="panel-hint">
+    Drag x₁ ball ↔ or x₂ ball ↕ to set inputs &nbsp;·&nbsp;
+    Click/right-click axis balls ±wᵢ &nbsp;·&nbsp;
+    Drag ✦ input point freely &nbsp;·&nbsp;
+    Drag threshold ● along <i>w</i> axis to set bias
+  </div>
+  <div class="f2d-layout">
+    <div>
+      <div class="panel-title" style="margin-bottom:.3rem">Feature Space (x₁, x₂)</div>
+      <div class="svg-wrap"><svg id="f2d-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+    <div>
+      <div class="panel-title" style="margin-bottom:.3rem">2-Input Balance</div>
+      <div class="svg-wrap"><svg id="f2d-lv-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BELL CRANK CARD ════════════════════════════════════════════ -->
+<div class="card">
+  <div class="panel-title">Chaining Neurons — The Lever Linkage</div>
+  <div class="panel-hint">
+    Drag the upstream handle ↕ &nbsp;·&nbsp; See how vertical output converts to horizontal input position via a bell crank
+  </div>
+  <div class="svg-wrap-bc">
+    <svg id="bc-svg" viewBox="0 0 800 240" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+</div>
+
+<footer><span>© 2026 Theodore P. Pavlic · <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></span></footer>
+
+</div>
+<script>
+'use strict';
+
+/* ═════ STATE ══════════════════════════════════════════════════════ */
+const S={w:[0.9,0.7,0.5],x:[1.0,0.8,0.6],b:1.2,leverAngle:0,time:0,lastTS:null,particles:[],aps:[],nextAP:0};
+const PRESETS={fires:{w:[1.3,1.0,0.9],x:[1.0,1.0,0.8],b:1.2},threshold:{w:[0.7,0.6,0.5],x:[0.9,0.8,0.7],b:1.5},silent:{w:[0.3,0.3,0.3],x:[0.6,0.5,0.4],b:1.5}};
+function dp(){return S.w[0]*S.x[0]+S.w[1]*S.x[1]+S.w[2]*S.x[2];}
+function firing(){return dp()>=S.b;}
+function clampW(v){return Math.round(Math.max(0,Math.min(2,v))*100)/100;}
+function clampX(v){return Math.round(Math.max(0,Math.min(1,v))*100)/100;}
+function clampB(v){return Math.round(Math.max(0,Math.min(3,v))*100)/100;}
+
+/* ═════ SVG HELPERS ════════════════════════════════════════════════ */
+const NS='http://www.w3.org/2000/svg';
+function E(tag,a={},css={}){const e=document.createElementNS(NS,tag);for(const[k,v] of Object.entries(a))e.setAttribute(k,v);for(const[k,v] of Object.entries(css))e.style[k]=v;return e;}
+function T(str,a={}){const t=E('text',a);t.textContent=str;return t;}
+// SVG subscript via tspan — reliable across fonts regardless of Unicode glyph coverage
+function Tsub(base,sub,attrs){
+  const t=E('text',attrs);
+  const fs=parseFloat(attrs['font-size']||10);
+  const s1=document.createElementNS(NS,'tspan');s1.textContent=base;
+  const s2=document.createElementNS(NS,'tspan');
+  s2.setAttribute('dy',(fs*0.38).toFixed(1));
+  s2.setAttribute('font-size',(fs*0.72).toFixed(1));
+  s2.textContent=sub;
+  t.appendChild(s1);t.appendChild(s2);
+  return t;
+}
+
+/* ═════ SYNC ═══════════════════════════════════════════════════════ */
+function syncSliders(){
+  for(let i=0;i<3;i++){
+    const ws=document.getElementById(`w${i}`),xs=document.getElementById(`x${i}`);
+    if(ws){ws.value=S.w[i];document.getElementById(`v_w${i}`).textContent=S.w[i].toFixed(2);}
+    if(xs){xs.value=S.x[i];document.getElementById(`v_x${i}`).textContent=S.x[i].toFixed(2);}
+  }
+  const bs=document.getElementById('bias');
+  if(bs){bs.value=S.b;document.getElementById('v_bias').textContent=S.b.toFixed(2);}
+  refreshEqBar();clearActivePreset();
+}
+
+/* ═════ NEURON ══════════════════════════════════════════════════════ */
+// inp x=32 gives room for value label to the left (x≈20) without clipping
+const N={sx:188,sy:132,sr:27,inp:[[32,57],[32,132],[32,207]],axEnd:375,bx:188,by:260,gdk:'#1C3A0E',gmid:'#2D5A1B',glt:'#4A8C2F',ora:'#E8630A',oradk:'#C0500A',mut:'#999'};
+const SUB=['₁','₂','₃'];
+const NR={soma:null,somaGlow:null,terminal:null,outLbl:null,wValLbls:[],xValLbls:[],particleEls:[],apGroup:null,sliderHandles:[],dendrites:[],wHits:[],biasWtValLbl:null,biasHit:null,stepDot:null};
+function dendW(w){return (1.2+w*2.6).toFixed(2);}
+// Slider handle y: top of track (iy-20) = xᵢ=1, bottom (iy+20) = xᵢ=0
+function sliderHY(xi,iy){return (iy+20-xi*40).toFixed(1);}
+
+function buildNeuron(){
+  const svg=document.getElementById('neuron-svg');
+  const defs=E('defs');
+  {const f=E('filter',{id:'ng',x:'-60%',y:'-60%',width:'220%',height:'220%'});const gb=E('feGaussianBlur',{stdDeviation:'5',result:'b'});const fm=E('feMerge');fm.appendChild(E('feMergeNode',{in:'b'}));fm.appendChild(E('feMergeNode',{in:'SourceGraphic'}));f.appendChild(gb);f.appendChild(fm);defs.appendChild(f);}
+  {const m=E('marker',{id:'arr',markerWidth:'7',markerHeight:'7',refX:'6',refY:'3.5',orient:'auto'});m.appendChild(E('path',{d:'M0,1 L0,6 L6,3.5 z',fill:'#2D5A1B',opacity:'.6'}));defs.appendChild(m);}
+  {const m=E('marker',{id:'arr-o',markerWidth:'7',markerHeight:'7',refX:'6',refY:'3.5',orient:'auto'});m.appendChild(E('path',{d:'M0,1 L0,6 L6,3.5 z',fill:'#E8630A',opacity:'.8'}));defs.appendChild(m);}
+  svg.appendChild(defs);
+
+  const af={'font-family':'Outfit,sans-serif','font-size':'8.5',fill:N.mut,'letter-spacing':'0.09em'};
+  svg.appendChild(T('DENDRITES',{...af,x:'32',y:'17','text-anchor':'middle'}));
+  svg.appendChild(T('AXON',{...af,x:'262',y:'14','text-anchor':'start'}));
+  svg.appendChild(T('TERMINAL',{...af,x:N.axEnd+1,y:'14','text-anchor':'middle'}));
+  svg.appendChild(T('BIAS',{...af,x:N.bx+28,y:N.by+5,fill:N.ora,'text-anchor':'start','letter-spacing':'.12em'}));
+
+  // ── Dendrites (stroke-width ∝ wᵢ) ──
+  for(let i=0;i<3;i++){
+    const[ix,iy]=N.inp[i];
+    const ln=E('line',{x1:ix,y1:iy,x2:N.sx,y2:N.sy,stroke:N.gmid,'stroke-width':dendW(S.w[i]),'stroke-linecap':'round',opacity:'.5','marker-end':'url(#arr)'});
+    svg.appendChild(ln);NR.dendrites.push(ln);
+  }
+
+  // ── Bias: plain text label + dashed arrow (no circle) ──
+  const bArrowStart=N.by-8;  // arrow starts just below the label
+  svg.appendChild(E('line',{id:'bias-arrow',x1:N.bx,y1:bArrowStart,x2:N.bx,y2:N.sy+N.sr+1,
+    stroke:N.ora,'stroke-width':'2','stroke-dasharray':'5,3',opacity:'.65','marker-end':'url(#arr-o)'}));
+  // "x₀ = −1" label (no enclosing circle)
+  svg.appendChild(T('x₀ = −1',{x:N.bx,y:N.by-2,'text-anchor':'middle','dominant-baseline':'middle',
+    'font-family':'IBM Plex Mono,monospace','font-size':'9.5',fill:N.ora,'font-weight':'600'}));
+
+  // ── Particles — drawn HERE so they sit behind the slider handles ──
+  const pg=E('g',{id:'pgroup'});svg.appendChild(pg);
+  // 6 uniformly-spaced particles per channel — same spacing always, speed ∝ xᵢ.
+  // Perceived frequency = 6 × speed scales with xᵢ (rate coding hint).
+  for(let i=0;i<3;i++)for(let p=0;p<6;p++){const c=E('circle',{r:'3.5',opacity:'0',fill:N.glt});pg.appendChild(c);S.particles.push({i,phase:p/6});NR.particleEls.push(c);}
+  {const c=E('circle',{r:'3',opacity:'0',fill:N.ora});pg.appendChild(c);S.particles.push({i:'b',phase:0.4});NR.particleEls.push(c);}
+
+  // ── Input sliders (vertical pill tracks with draggable handles) ──
+  // Track center x=32, top (xᵢ=1) y=iy-20, bottom (xᵢ=0) y=iy+20
+  NR.sliderHandles=[]; NR.xValLbls=[];
+  for(let i=0;i<3;i++){
+    const[ix,iy]=N.inp[i];
+    // Track background pill
+    svg.appendChild(E('rect',{x:ix-3,y:iy-20,width:'6',height:'40',rx:'3',
+      fill:'rgba(180,200,170,0.25)',stroke:N.gmid,'stroke-width':'1','stroke-opacity':'.4'}));
+    // Tick marks at 0, 0.5, 1
+    for(const xi of[0,0.5,1]){
+      svg.appendChild(E('line',{x1:ix-5,y1:iy+20-xi*40,x2:ix+5,y2:iy+20-xi*40,
+        stroke:N.gmid,'stroke-width':'1','stroke-opacity':'.3'}));
+    }
+    // Draggable handle
+    const handle=E('circle',{cx:ix,cy:sliderHY(S.x[i],iy),r:'7',
+      fill:N.glt,stroke:N.gmid,'stroke-width':'1.5'});
+    handle.style.cursor='ns-resize';
+    svg.appendChild(handle);NR.sliderHandles.push(handle);
+    // xᵢ subscript label above track
+    svg.appendChild(T(`x${SUB[i]}`,{x:ix,y:iy-27,'text-anchor':'middle',
+      'font-family':'IBM Plex Mono,monospace','font-size':'9.5',fill:N.gdk,'font-weight':'500'}));
+    // Value label to the LEFT (right-aligned, font-size 8 keeps "0.00" within x≥1)
+    const xvl=T(S.x[i].toFixed(2),{x:'20',y:(iy+1).toString(),'text-anchor':'end',
+      'font-family':'IBM Plex Mono,monospace','font-size':'8',fill:N.gdk,opacity:'.8'});
+    svg.appendChild(xvl);NR.xValLbls.push(xvl);
+  }
+
+  // ── Weight labels on dendrites + invisible hit zones ──
+  NR.wValLbls=[];NR.wHits=[];
+  for(let i=0;i<3;i++){
+    const[ix,iy]=N.inp[i];const mx=(ix+N.sx)/2,my=(iy+N.sy)/2;
+    const ddx=N.sx-ix,ddy=N.sy-iy,len=Math.hypot(ddx,ddy);
+    const nx=-ddy/len*13,ny=ddx/len*13;
+    const lx=(mx+nx).toFixed(1),ly=(my+ny).toFixed(1);
+    svg.appendChild(T(`w${SUB[i]}`,{x:lx,y:ly,'text-anchor':'middle','dominant-baseline':'middle',
+      'font-family':'IBM Plex Mono,monospace','font-size':'11',fill:N.gdk,'font-weight':'500'}));
+    const wvl=T('=0.90',{x:(mx+nx*1.05).toFixed(1),y:(my+ny*1.05+12).toFixed(1),
+      'text-anchor':'middle','font-family':'IBM Plex Mono,monospace','font-size':'8',fill:N.gmid,opacity:'.85'});
+    svg.appendChild(wvl);NR.wValLbls.push(wvl);
+    const hit=E('circle',{cx:lx,cy:(parseFloat(ly)+5).toFixed(1),r:'17',fill:'transparent'});
+    hit.style.cursor='pointer';svg.appendChild(hit);NR.wHits.push({el:hit,idx:i});
+  }
+
+  // ── Bias weight label on the arrow ──
+  const arrowMidY=(bArrowStart+(N.sy+N.sr+1))/2;
+  svg.appendChild(T('w₀',{x:N.bx+14,y:arrowMidY-7,'text-anchor':'start','dominant-baseline':'middle',
+    'font-family':'IBM Plex Mono,monospace','font-size':'11',fill:N.oradk,'font-weight':'500'}));
+  const bwvl=T('=1.20',{x:N.bx+14,y:arrowMidY+6,'text-anchor':'start',
+    'font-family':'IBM Plex Mono,monospace','font-size':'8',fill:N.ora,opacity:'.9'});
+  svg.appendChild(bwvl);NR.biasWtValLbl=bwvl;
+  // transparent hit zone over w₀ label (click/right-click adjusts b)
+  const bhit=E('rect',{x:(N.bx+5).toString(),y:(arrowMidY-15).toFixed(1),width:'42',height:'28',rx:'4',fill:'transparent'});
+  bhit.style.cursor='pointer';
+  svg.appendChild(bhit);NR.biasHit=bhit;
+
+  // ── Soma glow + soma ──
+  const sg=E('circle',{id:'soma-glow',cx:N.sx,cy:N.sy,r:(N.sr+12).toString(),fill:'none',stroke:N.glt,'stroke-width':'3',opacity:'.2',filter:'url(#ng)'});svg.appendChild(sg);NR.somaGlow=sg;
+  const sc=E('circle',{id:'soma-circle',cx:N.sx,cy:N.sy,r:N.sr.toString(),fill:'white',stroke:N.gmid,'stroke-width':'2.5'});svg.appendChild(sc);NR.soma=sc;
+  svg.appendChild(T('∑',{x:N.sx,y:N.sy-2,'text-anchor':'middle','dominant-baseline':'middle','font-family':'Georgia,serif','font-size':'18',fill:N.gdk,'font-weight':'bold'}));
+  svg.appendChild(T('soma',{x:N.sx,y:N.sy+14,'text-anchor':'middle','font-family':'Outfit,sans-serif','font-size':'7',fill:N.mut}));
+
+  // ── Axon ──
+  svg.appendChild(E('path',{d:`M ${N.sx+N.sr+1} ${N.sy} C ${N.sx+55} ${N.sy} ${N.sx+90} ${N.sy-4} ${N.axEnd} ${N.sy}`,stroke:N.gdk,'stroke-width':'2.5',fill:'none','stroke-linecap':'round'}));
+  svg.appendChild(T('σ(w̃ᵀx̃ ≥ 0)',{x:(N.sx+N.axEnd)/2-5,y:N.sy-17,'text-anchor':'middle','font-family':'IBM Plex Mono,monospace','font-size':'9.5',fill:N.mut,'font-style':'italic'}));
+  NR.apGroup=E('g');svg.appendChild(NR.apGroup);
+
+  // ── Terminal + output label ──
+  const term=E('circle',{id:'ap-terminal',cx:N.axEnd,cy:N.sy,r:'9',fill:'white',stroke:N.gmid,'stroke-width':'2'});svg.appendChild(term);NR.terminal=term;
+  const ol=T('y = 0',{x:N.axEnd,y:N.sy-21,'text-anchor':'middle','font-family':'IBM Plex Mono,monospace','font-size':'12',fill:N.mut,'font-weight':'500'});svg.appendChild(ol);NR.outLbl=ol;
+
+  // ── Heaviside step inset ──
+  const ins=E('g',{transform:'translate(272,180)'});
+  ins.appendChild(E('line',{x1:'-5',y1:'55',x2:'105',y2:'55',stroke:'#CCC','stroke-width':'1','marker-end':'url(#arr)'}));
+  ins.appendChild(E('line',{x1:'50',y1:'78',x2:'50',y2:'-4',stroke:'#CCC','stroke-width':'1','marker-end':'url(#arr)'}));
+  ins.appendChild(E('polyline',{points:'4,55 50,55 50,20 100,20',stroke:N.gmid,'stroke-width':'2',fill:'none','stroke-linecap':'round','stroke-linejoin':'round'}));
+  ins.appendChild(E('line',{x1:'50',y1:'20',x2:'50',y2:'55',stroke:N.gmid,'stroke-width':'1.5','stroke-dasharray':'3,2'}));
+  const sf={'font-family':'IBM Plex Mono,monospace','font-size':'8',fill:N.mut};
+  ins.appendChild(T('σ(z)',{...sf,x:'12',y:'-2','text-anchor':'start'}));ins.appendChild(T('1',{...sf,x:'42',y:'23','text-anchor':'end'}));ins.appendChild(T('0',{...sf,x:'42',y:'60','text-anchor':'end'}));ins.appendChild(T('z',{...sf,x:'107',y:'58','text-anchor':'middle'}));ins.appendChild(T('= u(z)',{...sf,x:'72',y:'16','text-anchor':'start'}));
+  // Continuous step-function cursor: x encodes z = dp()-b, y snaps to σ(z)
+  // x=50 is z=0 (threshold); scale 12px per unit of z
+  {
+    const z0=dp()-S.b;
+    const dx=Math.min(100,Math.max(4,50+z0*12)).toFixed(1);
+    const dy=z0>=0?'20':'55';
+    const fdot=E('circle',{id:'firing-dot',cx:dx,cy:dy,r:'4.5',fill:z0>=0?N.ora:N.glt,opacity:'1'});
+    ins.appendChild(fdot); NR.stepDot=fdot;
+  }
+  svg.appendChild(ins);
+}
+
+/* ═════ NEURON TICK ════════════════════════════════════════════════ */
+const AP_DUR=0.68,AP_INT=0.5,AXON_START=N.sx+N.sr+1,AXON_LEN=N.axEnd-AXON_START;
+// Bias arrow top = just below the "x₀ = −1" text at N.by-8
+const BIAS_ARROW_TOP=N.by-8,BIAS_ARROW_BOT=N.sy+N.sr+1,BIAS_ARROW_LEN=BIAS_ARROW_TOP-BIAS_ARROW_BOT;
+function tickNeuron(dt,isF){
+  // Update dendrite stroke-width ∝ wᵢ, and slider handle positions
+  for(let i=0;i<3;i++){
+    NR.dendrites[i].setAttribute('stroke-width',dendW(S.w[i]));
+    NR.sliderHandles[i].setAttribute('cy',sliderHY(S.x[i],N.inp[i][1]));
+  }
+
+  // Particles: dendrite channels always green, speed/opacity driven by xᵢ only (not by firing).
+  // Bias always orange at constant rate driven by b.
+  // Only the AP pulses on the axon (below) are gated by isF.
+  S.particles.forEach((p,idx)=>{
+    if(p.i==='b'){
+      // Constant moderate inflow — speed depends on b, not on firing state
+      const spd=0.50*(0.3+0.7*Math.min(1,S.b/2));
+      p.phase=(p.phase+spd*dt)%1;
+      const t=p.phase;const y=BIAS_ARROW_TOP-BIAS_ARROW_LEN*t;
+      let a=(t<.15?t/.15:t>.80?(1-t)/.20:1);
+      a*=Math.min(1,S.b*0.65);
+      const pe=NR.particleEls[idx];pe.setAttribute('cx',N.bx);pe.setAttribute('cy',y.toFixed(1));
+      pe.setAttribute('opacity',a.toFixed(2));pe.setAttribute('fill',N.ora);pe.setAttribute('r','3.5');
+    } else {
+      // Speed ∝ xᵢ only; always green regardless of whether the neuron fires
+      const xi=S.x[p.i];
+      const pe=NR.particleEls[idx];
+      // Speed ∝ xᵢ — uniform spacing so perceived frequency = 4 × speed scales with xᵢ
+      const spd=0.12+1.5*xi*xi+0.3*xi;  // nonlinear: ~0.12 at xi=0, ~1.92 at xi=1 → ~16× range
+      p.phase=(p.phase+spd*dt)%1;
+      const t=p.phase;const[ix,iy]=N.inp[p.i];
+      const x=ix+(N.sx-ix)*t,y=iy+(N.sy-iy)*t;
+      const contrib=S.w[p.i]*xi;
+      let a=(t<.15?t/.15:t>.80?(1-t)/.20:1);
+      a*=Math.min(1,contrib*2.2);        // scale by contribution (wᵢxᵢ)
+      a*=(0.05+0.95*xi);                 // xi≈0 → ~5% of base; xi=1 → 100%
+      const r=(1.8+xi*3.2).toFixed(1);   // size: ~1.8 at xi=0, ~5.0 at xi=1
+      pe.setAttribute('cx',x.toFixed(1));pe.setAttribute('cy',y.toFixed(1));
+      pe.setAttribute('opacity',Math.min(1,a).toFixed(2));
+      pe.setAttribute('fill',N.glt);pe.setAttribute('r',r);
+    }
+  });
+
+  if(isF&&S.time>=S.nextAP){
+    const apEl=E('circle',{r:'7',fill:N.ora,opacity:'0',filter:'url(#ng)'});
+    NR.apGroup.appendChild(apEl);S.aps.push({el:apEl,age:0});
+    // Faster output pulse rate when more strongly above threshold
+    const margin=Math.max(0,dp()-S.b);
+    S.nextAP=S.time+Math.max(0.18, 0.55-margin*0.12);
+  }
+  for(let i=S.aps.length-1;i>=0;i--){const ap=S.aps[i];ap.age+=dt;if(ap.age>=AP_DUR){ap.el.remove();S.aps.splice(i,1);continue;}const t=ap.age/AP_DUR;const fade=t<.1?t/.1:t>.85?(1-t)/.15:1;ap.el.setAttribute('cx',(AXON_START+AXON_LEN*t).toFixed(1));ap.el.setAttribute('cy',N.sy);ap.el.setAttribute('opacity',(fade*.92).toFixed(2));}
+  if(isF){NR.soma.style.fill='#FFF2E8';NR.soma.style.stroke=N.ora;NR.soma.style.strokeWidth='3px';NR.somaGlow.style.stroke=N.ora;NR.somaGlow.style.opacity='.55';NR.terminal.style.fill=N.ora;NR.terminal.style.stroke=N.ora;NR.outLbl.textContent='y = 1';NR.outLbl.style.fill=N.ora;}
+  else{NR.soma.style.fill='white';NR.soma.style.stroke=N.gmid;NR.soma.style.strokeWidth='2.5px';NR.somaGlow.style.stroke=N.glt;NR.somaGlow.style.opacity='.18';NR.terminal.style.fill='white';NR.terminal.style.stroke=N.gmid;NR.outLbl.textContent='y = 0';NR.outLbl.style.fill=N.mut;}
+  // Continuous step-function cursor — always visible, tracks z = dp()-b
+  if(NR.stepDot){
+    const z=dp()-S.b;
+    NR.stepDot.setAttribute('cx',Math.min(100,Math.max(4,50+z*12)).toFixed(1));
+    NR.stepDot.setAttribute('cy',isF?'20':'55');
+    NR.stepDot.setAttribute('fill',isF?N.ora:N.glt);
+  }
+  NR.wValLbls.forEach((l,i)=>{l.textContent='='+S.w[i].toFixed(2);});
+  NR.xValLbls.forEach((l,i)=>{l.textContent=S.x[i].toFixed(2);});
+  NR.biasWtValLbl.textContent='='+S.b.toFixed(2);
+}
+
+/* ═════ NEURON INTERACTIONS ════════════════════════════════════════ */
+function addNeuronInteractions(){
+  const svg=document.getElementById('neuron-svg');
+  let nDrag=null;
+  function toSVGY(e){const r=svg.getBoundingClientRect();return (e.clientY-r.top)*(300/r.height);}
+
+  // Slider handles: vertical drag → xᵢ (up = more, down = less)
+  for(let i=0;i<3;i++){
+    NR.sliderHandles[i].addEventListener('mousedown',e=>{
+      if(e.button!==0)return;e.preventDefault();
+      nDrag={idx:i,sy:toSVGY(e),startXi:S.x[i]};
+    });
+  }
+  svg.addEventListener('mousemove',e=>{
+    if(!nDrag)return;
+    const dy=toSVGY(e)-nDrag.sy;
+    // drag up (dy<0) = slider goes up = higher xᵢ; 40px = full range
+    S.x[nDrag.idx]=clampX(nDrag.startXi-dy/40);
+    syncSliders();
+  });
+  svg.addEventListener('mouseup',()=>{nDrag=null;});
+  svg.addEventListener('mouseleave',()=>{nDrag=null;});
+
+  // Weight label hit zones: left-click +0.1, right-click -0.1
+  NR.wHits.forEach(({el,idx})=>{
+    el.addEventListener('click',e=>{e.preventDefault();S.w[idx]=clampW(S.w[idx]+0.1);syncSliders();});
+    el.addEventListener('contextmenu',e=>{e.preventDefault();S.w[idx]=clampW(S.w[idx]-0.1);syncSliders();});
+  });
+  // Bias weight (w₀ = b): click/right-click on the w₀ label area
+  if(NR.biasHit){
+    NR.biasHit.addEventListener('click',e=>{e.preventDefault();S.b=clampB(S.b+0.1);syncSliders();});
+    NR.biasHit.addEventListener('contextmenu',e=>{e.preventDefault();S.b=clampB(S.b-0.1);syncSliders();});
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════════
+   LEVER SVG  (viewBox 0 0 400 320)
+   ─────────────────────────────────────────────────────────────────────
+   Pivot: px=148, py=75   Beam height: bh=10
+
+   Left arm (inputs):   hw_l=122  →  left end x=26
+   Bias attachment:     hw_bias=80 →  x=228  ("1 unit arm")
+   Right arm to capture: hw_r=162 →  right end x=310
+
+   Snap ±7°  →  captHH = 162·sin(7°) ≈ 20px
+   Capture: center x=310, top y=55, bottom y=95
+
+   RISER:  thin column from pivot down to fulcrum apex
+           gives clearance so hanging weights never hit the base
+   Fulcrum apex: y = py + RISER_H = 75+118=193
+   Fulcrum base: y=233  Base plate: y=233-240
+
+   Draw order:
+     1. Annotations (x arrow, bias bracket, torque label)
+     2. Capture bracket + y-axis
+     3. Riser + fulcrum (behind weights)
+     4. Gravity-fixed: strings, balls, bias cylinder
+     5. Beam group (beam, clips, hook, end cap)
+     6. Hit zones layer (on top for interaction)
+     7. Pivot dot
+   ─────────────────────────────────────────────────────────────────── */
+const L={
+  px:148, py:75, bh:10,
+  hw_l:122, hw_bias:80, hw_r:162,
+  maxDist:[112,112,112], // all weights can reach the full left arm and pass each other
+  strLen:22, biasStr:22,
+  snapAng:7, captHH:20,
+  gdk:'#1C3A0E',gmid:'#2D5A1B',glt:'#4A8C2F',
+  ora:'#E8630A',oradk:'#C0500A',mut:'#999',
+};
+const RISER_H=118; // px from pivot down to fulcrum apex
+
+function beamPt(lx,ly){
+  const θ=S.leverAngle*Math.PI/180;
+  return{x:L.px+lx*Math.cos(θ)-ly*Math.sin(θ),y:L.py+lx*Math.sin(θ)+ly*Math.cos(θ)};
+}
+function inputAnchor(i){return beamPt(-(S.x[i]*L.maxDist[i]),L.bh/2);}
+function biasAnchor(){return beamPt(L.hw_bias,L.bh/2);}
+
+function ballR(w){return (7+w*10).toFixed(1);}
+function biasHW(b){return (6+b*7).toFixed(1);}
+function biasHH(b){return (9+b*9).toFixed(1);}
+
+const LR={
+  beamGroup:null,
+  wClips:[],wClipHits:[],   // clips in beam group + their hit zones
+  wStrings:[],wBalls:[],    // gravity-fixed visual elements
+  wBallHits:[],             // large invisible hit circles on top layer
+  wLbl1s:[],wLbl2s:[],wValLbls:[],
+  biasString:null,biasCyl:null,biasCap:null,
+  biasHitZone:null,         // large invisible rect on top layer
+  biasCylLbl1:null,biasCylLbl2:null,biasValLbl:null,
+  captTop:null,captBot:null,
+};
+
+function buildLever(){
+  const svg=document.getElementById('lever-svg');
+  const defs=E('defs');
+  {const f=E('filter',{id:'lds',x:'-5%',y:'-20%',width:'110%',height:'140%'});f.appendChild(E('feDropShadow',{dx:'0',dy:'2',stdDeviation:'2','flood-opacity':'.15'}));defs.appendChild(f);}
+  svg.appendChild(defs);
+
+  const mf={'font-family':'IBM Plex Mono,monospace'};
+  const of_={'font-family':'Outfit,sans-serif'};
+  const capX=L.px+L.hw_r;  // 310
+  const capTopY=L.py-L.captHH; // 55
+  const capBotY=L.py+L.captHH; // 95
+  const capW=16;
+  const fapY=L.py+RISER_H;     // 193 — fulcrum apex y
+
+  /* ── 1. ANNOTATIONS ──────────────────────────────────────────── */
+
+  // "x" range arrow above left arm
+  const arY=50;
+  const arL=L.px-L.maxDist[0], arR=L.px-6;
+  svg.appendChild(E('line',{x1:arL,y1:arY,x2:arR,y2:arY,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  svg.appendChild(E('polygon',{points:`${arL},${arY} ${arL+7},${arY-3.5} ${arL+7},${arY+3.5}`,fill:'#BBBBBB'}));
+  svg.appendChild(E('polygon',{points:`${arR},${arY} ${arR-7},${arY-3.5} ${arR-7},${arY+3.5}`,fill:'#BBBBBB'}));
+  svg.appendChild(T('x',{...mf,'font-size':'13','font-style':'italic',fill:'#AAAAAA',
+    x:(arL+arR)/2,y:arY-7,'text-anchor':'middle'}));
+
+  // Torque balance label (bottom)
+  svg.appendChild(T('Σ wᵢxᵢ  vs  b·1',{...mf,'font-size':'9',fill:'#BBBBBB',x:L.px-20,y:308,'text-anchor':'middle'}));
+
+  /* ── 2. CAPTURE BRACKET + Y-AXIS ─────────────────────────────── */
+
+  // Pill-shaped channel
+  svg.appendChild(E('rect',{x:capX-capW/2,y:capTopY-6,width:capW,height:(capBotY-capTopY)+12,rx:capW/2,
+    fill:'rgba(190,185,175,.13)',stroke:'#CCCCCC','stroke-width':'1.5'}));
+
+  // Top stop (fires → orange)
+  const ctop=E('rect',{x:capX-capW/2,y:capTopY-6,width:capW,height:11,rx:capW/2,fill:'#CCCCCC'});
+  svg.appendChild(ctop);LR.captTop=ctop;
+
+  // Bottom stop (silent → green)
+  const cbot=E('rect',{x:capX-capW/2,y:capBotY-5,width:capW,height:11,rx:capW/2,fill:'#CCCCCC'});
+  svg.appendChild(cbot);LR.captBot=cbot;
+
+  // Y-axis line (just to the right of bracket)
+  const axX=capX+capW/2+10;
+  svg.appendChild(E('line',{x1:axX,y1:capTopY-10,x2:axX,y2:capBotY+10,stroke:'#BBBBBB','stroke-width':'1.5','marker-end':'url(#arr)'}));
+  // Tick marks
+  svg.appendChild(E('line',{x1:axX-4,y1:capTopY,x2:axX+4,y2:capTopY,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  svg.appendChild(E('line',{x1:axX-4,y1:capBotY,x2:axX+4,y2:capBotY,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  // Labels: 1, 0, y
+  svg.appendChild(T('y',{...mf,'font-size':'11','font-style':'italic',fill:'#AAAAAA',x:axX+2,y:capTopY-14,'text-anchor':'middle'}));
+  svg.appendChild(T('1',{...mf,'font-size':'11',fill:L.ora,'font-weight':'600',x:axX+12,y:capTopY+4,'text-anchor':'start'}));
+  svg.appendChild(T('0',{...mf,'font-size':'11',fill:L.glt,'font-weight':'600',x:axX+12,y:capBotY+4,'text-anchor':'start'}));
+
+  // FIRE! / SILENT labels inside bracket area
+  svg.appendChild(T('FIRE!',{...of_,'font-size':'9','font-weight':'700',fill:L.ora,x:capX,y:capTopY-9,'text-anchor':'middle'}));
+  svg.appendChild(T('SILENT',{...of_,'font-size':'8.5','font-weight':'600',fill:'#AAAAAA',x:capX,y:capBotY+20,'text-anchor':'middle'}));
+
+  /* ── 3. RISER + FLARED BASE (single molded piece) ─────────────── */
+  // A thin column that smoothly flares outward into a stable base.
+  // No separate triangle — the whole thing is one continuous SVG path.
+  {
+    const rW=5, bW=29;
+    const flareStart=fapY-22;  // where the flare begins
+    const baseBot=fapY+24;     // bottom of base
+    const d=[
+      `M ${L.px-rW},${L.py+2}`,
+      `L ${L.px-rW},${flareStart}`,
+      `Q ${L.px-bW},${fapY+6} ${L.px-bW},${fapY+9}`,
+      `L ${L.px-bW},${baseBot}`,
+      `Q ${L.px-bW},${baseBot+5} ${L.px-bW+7},${baseBot+5}`,
+      `L ${L.px+bW-7},${baseBot+5}`,
+      `Q ${L.px+bW},${baseBot+5} ${L.px+bW},${baseBot}`,
+      `L ${L.px+bW},${fapY+9}`,
+      `Q ${L.px+bW},${fapY+6} ${L.px+rW},${flareStart}`,
+      `L ${L.px+rW},${L.py+2}`,
+      `Z`
+    ].join(' ');
+    svg.appendChild(E('path',{d,fill:'#888',stroke:'none'}));
+  }
+
+  /* ── 4. GRAVITY-FIXED: STRINGS, BALLS, BIAS ──────────────────── */
+
+  LR.wStrings=[];LR.wBalls=[];LR.wLbl1s=[];LR.wLbl2s=[];LR.wValLbls=[];
+  for(let i=0;i<3;i++){
+    const ap=inputAnchor(i);
+    const br=parseFloat(ballR(S.w[i]));
+    const bcy=ap.y+L.strLen+br;
+
+    // String (slightly thicker for visibility)
+    const str=E('line',{x1:ap.x,y1:ap.y,x2:ap.x,y2:ap.y+L.strLen,stroke:L.gmid,'stroke-width':'2','stroke-linecap':'round'});
+    svg.appendChild(str);LR.wStrings.push(str);
+
+    // Ball
+    const ball=E('circle',{cx:ap.x,cy:bcy,r:br,fill:L.glt,stroke:L.gmid,'stroke-width':'1.5'});
+    svg.appendChild(ball);LR.wBalls.push(ball);
+
+    // Labels inside ball
+    const lb1=T(`w${SUB[i]}`,{x:ap.x,y:bcy-3,'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'8.5',fill:'white','font-weight':'700'});
+    svg.appendChild(lb1);LR.wLbl1s.push(lb1);
+    const lb2=T(`x${SUB[i]}`,{x:ap.x,y:bcy+5.5,'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'7.5',fill:'rgba(255,255,255,.85)'});
+    svg.appendChild(lb2);LR.wLbl2s.push(lb2);
+
+    // Contribution value below ball
+    const vl=T((S.w[i]*S.x[i]).toFixed(2),{x:ap.x,y:bcy+br+12,'text-anchor':'middle',...mf,'font-size':'8.5',fill:L.gdk,opacity:'.85'});
+    svg.appendChild(vl);LR.wValLbls.push(vl);
+  }
+
+  // Bias string + cylinder
+  {
+    const ap=biasAnchor();
+    const bhw=parseFloat(biasHW(S.b));
+    const bhh=parseFloat(biasHH(S.b));
+
+    const bstr=E('line',{x1:ap.x,y1:ap.y,x2:ap.x,y2:ap.y+L.biasStr,stroke:L.oradk,'stroke-width':'2.5','stroke-linecap':'round'});
+    svg.appendChild(bstr);LR.biasString=bstr;
+
+    const bcyl=E('rect',{x:(ap.x-bhw).toFixed(1),y:(ap.y+L.biasStr).toFixed(1),width:(bhw*2).toFixed(1),height:(bhh*2).toFixed(1),rx:'5',fill:L.ora,stroke:L.oradk,'stroke-width':'2'});
+    svg.appendChild(bcyl);LR.biasCyl=bcyl;
+
+    const bcap=E('ellipse',{cx:ap.x.toFixed(1),cy:(ap.y+L.biasStr).toFixed(1),rx:bhw.toFixed(1),ry:'4',fill:'#F49050',stroke:L.oradk,'stroke-width':'2'});
+    svg.appendChild(bcap);LR.biasCap=bcap;
+
+    const bcy=ap.y+L.biasStr+bhh;
+    const bl1=T('w₀',{x:ap.x,y:(bcy-3).toFixed(1),'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'9',fill:'white','font-weight':'700'});
+    svg.appendChild(bl1);LR.biasCylLbl1=bl1;
+    const bl2=T('x₀',{x:ap.x,y:(bcy+6).toFixed(1),'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'7.5',fill:'rgba(255,220,180,.9)'});
+    svg.appendChild(bl2);LR.biasCylLbl2=bl2;
+
+    const bvl=T(S.b.toFixed(2),{x:ap.x,y:(ap.y+L.biasStr+bhh*2+13).toFixed(1),'text-anchor':'middle',...mf,'font-size':'8.5',fill:L.ora,'font-weight':'600'});
+    svg.appendChild(bvl);LR.biasValLbl=bvl;
+
+    // |x₀|=1 arm annotation (near the bias attachment, above beam)
+    svg.appendChild(T('|x₀|=1',{...mf,'font-size':'8','font-style':'italic',fill:'rgba(220,150,80,.65)',
+      x:L.px+L.hw_bias/2,y:L.py-14,'text-anchor':'middle'}));
+  }
+
+  /* ── 5. BEAM GROUP ─────────────────────────────────────────────── */
+  const bg=E('g',{id:'beam-group'});LR.beamGroup=bg;
+
+  // Beam rect
+  bg.appendChild(E('rect',{x:L.px-L.hw_l,y:L.py-L.bh/2,width:L.hw_l+L.hw_r,height:L.bh,rx:'3',fill:L.gdk,filter:'url(#lds)'}));
+
+  // Input attachment clips (larger tabs for easier grabbing)
+  LR.wClips=[];LR.wClipHits=[];
+  for(let i=0;i<3;i++){
+    const cx2=L.px-S.x[i]*L.maxDist[i];
+    // Visible clip tab
+    const clip=E('rect',{x:(cx2-7).toFixed(1),y:(L.py+L.bh/2-1).toFixed(1),width:'14',height:'11',rx:'3',fill:L.glt,stroke:L.gmid,'stroke-width':'1.5'});
+    bg.appendChild(clip);LR.wClips.push(clip);
+    // Large invisible hit zone on the clip
+    const chit=E('rect',{x:(cx2-16).toFixed(1),y:(L.py+L.bh/2-10).toFixed(1),width:'32',height:'30',rx:'4',fill:'transparent'});
+    chit.style.cursor='grab';
+    bg.appendChild(chit);LR.wClipHits.push(chit);
+  }
+
+  // Bias hook peg
+  bg.appendChild(E('circle',{cx:L.px+L.hw_bias,cy:L.py+L.bh/2,r:'5',fill:L.oradk,stroke:'white','stroke-width':'1.5'}));
+
+  // Right end cap
+  bg.appendChild(E('rect',{x:L.px+L.hw_r-9,y:L.py-8,width:'16',height:'16',rx:'3',fill:L.gmid}));
+
+  svg.appendChild(bg);
+
+  /* ── 6. HIT ZONE LAYER (on top, gravity-fixed) ────────────────── */
+  // Large invisible circles over each input ball + string area
+  LR.wBallHits=[];
+  for(let i=0;i<3;i++){
+    const ap=inputAnchor(i);
+    const br=parseFloat(ballR(S.w[i]));
+    const bcy=ap.y+L.strLen+br;
+    // Big hit zone covers string+ball together
+    const hit=E('circle',{cx:ap.x,cy:(ap.y+L.strLen/2+br).toFixed(1),r:(br+L.strLen/2+10).toFixed(1),fill:'transparent'});
+    hit.style.cursor='grab';
+    svg.appendChild(hit);LR.wBallHits.push(hit);
+  }
+
+  // Bias hit zone (large rect over cylinder)
+  {
+    const ap=biasAnchor();
+    const bhw=parseFloat(biasHW(S.b));
+    const bhh=parseFloat(biasHH(S.b));
+    const hzone=E('rect',{x:(ap.x-bhw-12).toFixed(1),y:(ap.y+L.biasStr-10).toFixed(1),
+      width:((bhw+12)*2).toFixed(1),height:(bhh*2+20).toFixed(1),rx:'6',fill:'transparent'});
+    hzone.style.cursor='ns-resize';
+    svg.appendChild(hzone);LR.biasHitZone=hzone;
+  }
+
+  /* ── 7. PIVOT DOT ─────────────────────────────────────────────── */
+  svg.appendChild(E('circle',{cx:L.px,cy:L.py,r:'6',fill:'#444',stroke:'white','stroke-width':'2'}));
+}
+
+/* ═════ LEVER TICK ════════════════════════════════════════════════ */
+function tickLever(dt,isF){
+  const margin=dp()-S.b,EPS=0.005;
+  const target=margin>EPS?-L.snapAng:margin<-EPS?L.snapAng:0;
+  S.leverAngle+=(target-S.leverAngle)*Math.min(1,dt/.18);
+  LR.beamGroup.setAttribute('transform',`rotate(${S.leverAngle.toFixed(2)},${L.px},${L.py})`);
+
+  // Update clips
+  for(let i=0;i<3;i++){
+    const cx2=L.px-S.x[i]*L.maxDist[i];
+    LR.wClips[i].setAttribute('x',(cx2-7).toFixed(1));
+    LR.wClipHits[i].setAttribute('x',(cx2-16).toFixed(1));
+  }
+
+  // Update strings, balls, hit zones
+  for(let i=0;i<3;i++){
+    const ap=inputAnchor(i);
+    const br=parseFloat(ballR(S.w[i]));
+    const bcy=ap.y+L.strLen+br;
+    const hitR=(br+L.strLen/2+10).toFixed(1);
+    const hitCY=(ap.y+L.strLen/2+br).toFixed(1);
+
+    LR.wStrings[i].setAttribute('x1',ap.x.toFixed(1));LR.wStrings[i].setAttribute('y1',ap.y.toFixed(1));
+    LR.wStrings[i].setAttribute('x2',ap.x.toFixed(1));LR.wStrings[i].setAttribute('y2',(ap.y+L.strLen).toFixed(1));
+
+    LR.wBalls[i].setAttribute('cx',ap.x.toFixed(1));LR.wBalls[i].setAttribute('cy',bcy.toFixed(1));LR.wBalls[i].setAttribute('r',br.toFixed(1));
+
+    LR.wLbl1s[i].setAttribute('x',ap.x.toFixed(1));LR.wLbl1s[i].setAttribute('y',(bcy-3).toFixed(1));
+    LR.wLbl2s[i].setAttribute('x',ap.x.toFixed(1));LR.wLbl2s[i].setAttribute('y',(bcy+5.5).toFixed(1));
+    LR.wValLbls[i].setAttribute('x',ap.x.toFixed(1));LR.wValLbls[i].setAttribute('y',(bcy+br+12).toFixed(1));
+    LR.wValLbls[i].textContent=(S.w[i]*S.x[i]).toFixed(2);
+
+    LR.wBallHits[i].setAttribute('cx',ap.x.toFixed(1));LR.wBallHits[i].setAttribute('cy',hitCY);LR.wBallHits[i].setAttribute('r',hitR);
+  }
+
+  // Update bias cylinder
+  {
+    const ap=biasAnchor();
+    const bhw=parseFloat(biasHW(S.b));
+    const bhh=parseFloat(biasHH(S.b));
+    const bcy=ap.y+L.biasStr+bhh;
+
+    LR.biasString.setAttribute('x1',ap.x.toFixed(1));LR.biasString.setAttribute('y1',ap.y.toFixed(1));
+    LR.biasString.setAttribute('x2',ap.x.toFixed(1));LR.biasString.setAttribute('y2',(ap.y+L.biasStr).toFixed(1));
+
+    LR.biasCyl.setAttribute('x',(ap.x-bhw).toFixed(1));LR.biasCyl.setAttribute('y',(ap.y+L.biasStr).toFixed(1));
+    LR.biasCyl.setAttribute('width',(bhw*2).toFixed(1));LR.biasCyl.setAttribute('height',(bhh*2).toFixed(1));
+
+    LR.biasCap.setAttribute('cx',ap.x.toFixed(1));LR.biasCap.setAttribute('cy',(ap.y+L.biasStr).toFixed(1));LR.biasCap.setAttribute('rx',bhw.toFixed(1));
+
+    LR.biasCylLbl1.setAttribute('x',ap.x.toFixed(1));LR.biasCylLbl1.setAttribute('y',(bcy-3).toFixed(1));
+    LR.biasCylLbl2.setAttribute('x',ap.x.toFixed(1));LR.biasCylLbl2.setAttribute('y',(bcy+6).toFixed(1));
+    LR.biasValLbl.setAttribute('x',ap.x.toFixed(1));LR.biasValLbl.setAttribute('y',(ap.y+L.biasStr+bhh*2+13).toFixed(1));
+    LR.biasValLbl.textContent=S.b.toFixed(2);
+
+    LR.biasHitZone.setAttribute('x',(ap.x-bhw-12).toFixed(1));LR.biasHitZone.setAttribute('y',(ap.y+L.biasStr-10).toFixed(1));
+    LR.biasHitZone.setAttribute('width',((bhw+12)*2).toFixed(1));LR.biasHitZone.setAttribute('height',(bhh*2+20).toFixed(1));
+  }
+
+  // Capture stops
+  LR.captTop.setAttribute('fill',isF?L.ora:'#CCCCCC');
+  LR.captBot.setAttribute('fill',!isF?L.glt:'#CCCCCC');
+}
+
+/* ═════ LEVER INTERACTIONS ════════════════════════════════════════
+   Drag ↔  → xᵢ  (left = farther from pivot = bigger xᵢ)
+   Drag ↕  → wᵢ  (down = heavier = bigger)
+   Bias:   ↕ only → b  (down = heavier)
+   Right-click → decrement 0.1
+   Zero-movement click → increment 0.1
+   Hit targets: clips (in beam group), strings, balls, big overlay circles
+═════════════════════════════════════════════════════════════════ */
+function addLeverInteractions(){
+  const svg=document.getElementById('lever-svg');
+  const THRESH=6;
+  let drag=null;
+
+  function toSVG(e){
+    const r=svg.getBoundingClientRect();
+    return{x:(e.clientX-r.left)*(400/r.width),y:(e.clientY-r.top)*(320/r.height)};
+  }
+
+  function startW(e,i){
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG(e);
+    drag={type:'w',idx:i,sx:p.x,sy:p.y,startXi:S.x[i],startWi:S.w[i],dir:null};
+  }
+  function startB(e){
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG(e);
+    drag={type:'b',sx:p.x,sy:p.y,startB:S.b,dir:'v'};
+  }
+  function decW(e,i){e.preventDefault();S.w[i]=clampW(S.w[i]-0.1);syncSliders();}
+  function decB(e){e.preventDefault();S.b=clampB(S.b-0.1);syncSliders();}
+
+  for(let i=0;i<3;i++){
+    // All three targets for input i: ball, clip hit zone, big overlay hit
+    [LR.wBalls[i], LR.wClipHits[i], LR.wBallHits[i]].forEach(el=>{
+      el.addEventListener('mousedown',e=>startW(e,i));
+      el.addEventListener('contextmenu',e=>decW(e,i));
+    });
+  }
+
+  [LR.biasCyl, LR.biasCap, LR.biasHitZone].forEach(el=>{
+    el.addEventListener('mousedown',startB);
+    el.addEventListener('contextmenu',decB);
+  });
+
+  svg.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    const p=toSVG(e);
+    const dx=p.x-drag.sx,dy=p.y-drag.sy;
+    if(drag.dir===null&&(Math.abs(dx)>THRESH||Math.abs(dy)>THRESH))
+      drag.dir=Math.abs(dy)>Math.abs(dx)?'v':'h';
+    if(!drag.dir)return;
+    if(drag.type==='w'){
+      if(drag.dir==='h') S.x[drag.idx]=clampX(drag.startXi-dx/L.maxDist[drag.idx]);
+      else               S.w[drag.idx]=clampW(drag.startWi+dy/52);
+    } else {
+      S.b=clampB(drag.startB+dy/52);
+    }
+    syncSliders();
+  });
+
+  svg.addEventListener('mouseup',()=>{
+    if(!drag)return;
+    if(drag.dir===null){
+      if(drag.type==='w') S.w[drag.idx]=clampW(S.w[drag.idx]+0.1);
+      else                S.b=clampB(S.b+0.1);
+      syncSliders();
+    }
+    drag=null;
+  });
+  svg.addEventListener('mouseleave',()=>{drag=null;});
+}
+
+/* ═════ FEATURE SPACE PANEL ═══════════════════════════════════════════
+   Independent 2-input (x₁,x₂) linear classifier.
+   State F2, geometry F2G (feature space) and FLG (lever).
+   F2R holds all mutable SVG element refs for both sub-panels.
+
+   Feature space shows:
+     • x₁/x₂ axes with draggable weight balls (position=xᵢ, size∝wᵢ)
+     • Weight vector direction ray (the "torque axis")
+     • Decision boundary: w₁x₁+w₂x₂=b  (draggable threshold)
+     • Perpendicular projection of input point onto weight vector
+     • Input point (x₁,x₂) draggable freely
+   2-input lever mirrors the state as a physical torque balance.
+═══════════════════════════════════════════════════════════════════════ */
+const F2={w1:0.9,w2:0.7,x1:0.8,x2:1.2,b:1.2,lvAngle:0};
+function f2dp(){return F2.w1*F2.x1+F2.w2*F2.x2;}
+function f2f(){return f2dp()>=F2.b;}
+function f2cW(v){return Math.round(Math.max(0,Math.min(2,v))*100)/100;}
+function f2cX(v){return Math.round(Math.max(0.05,Math.min(2,v))*100)/100;}
+function f2cB(v){return Math.round(Math.max(0,Math.min(3,v))*100)/100;}
+
+// Feature space coordinate conversion (origin at SVG 62,248; scale 95px/unit)
+const F2G={ox:62,oy:248,sc:95};
+function f2x(m){return F2G.ox+m*F2G.sc;}
+function f2y(m){return F2G.oy-m*F2G.sc;}
+
+// Mutable SVG element refs
+const F2R={
+  firingPoly:null,
+  torqueLine:null,torqueLabel:null,
+  boundLine:null,
+  threshDot:null,threshLabel:null,
+  projLine:null,projDot:null,projLabel:null,
+  inputPt:null,inputLabel:null,
+  x1Ball:null,x1WLbl:null,x1ValLbl:null,
+  x2Ball:null,x2WLbl:null,x2ValLbl:null,
+  statusLbl:null,
+  // 2-input lever
+  lvBeam:null,lvClips:[],lvClipHits:[],
+  lvStrings:[],lvBalls:[],lvBallHits:[],
+  lvLbl1s:[],lvLbl2s:[],lvValLbls:[],
+  lvBiasStr:null,lvBiasCyl:null,lvBiasCap:null,
+  lvBiasLbl:null,lvBiasValLbl:null,lvBiasHit:null,
+  lvCaptTop:null,lvCaptBot:null,
+};
+function f2axBR(w){return (6+w*8).toFixed(1);}
+function f2lvBR(w){return (5+w*8).toFixed(1);}
+function f2lvBHW(b){return (5+b*6).toFixed(1);}
+function f2lvBHH(b){return (7+b*7).toFixed(1);}
+
+// 2-input lever geometry (viewBox 400×300)
+const FLG={
+  px:155,py:70,bh:10,
+  hw_l:108,hw_bias:70,hw_r:110,
+  maxDist:[98,98],
+  snapAng:7,strLen:22,biasStr:20,RISER_H:108,
+  gdk:'#1C3A0E',gmid:'#2D5A1B',glt:'#4A8C2F',ora:'#E8630A',oradk:'#C0500A',
+};
+
+// Anchor of input i's clip on beam bottom surface, rotated by current lvAngle
+function f2lvAnchor(i){
+  const θ=F2.lvAngle*Math.PI/180;
+  const lx=-(F2[`x${i+1}`]/2*FLG.maxDist[i]), ly=FLG.bh/2;
+  return{x:FLG.px+lx*Math.cos(θ)-ly*Math.sin(θ), y:FLG.py+lx*Math.sin(θ)+ly*Math.cos(θ)};
+}
+function f2lvBiasAnchor(){
+  const θ=F2.lvAngle*Math.PI/180;
+  const lx=FLG.hw_bias, ly=FLG.bh/2;
+  return{x:FLG.px+lx*Math.cos(θ)-ly*Math.sin(θ), y:FLG.py+lx*Math.sin(θ)+ly*Math.cos(θ)};
+}
+
+// Compute firing-region polygon (SVG point string) via Sutherland-Hodgman half-plane clip
+function f2firingPoly(){
+  const {w1,w2,b}=F2;
+  if(Math.hypot(w1,w2)<0.01) return '';
+  const inside=([x,y])=>w1*x+w2*y>=b;
+  const corners=[[-0.15,-0.15],[2.15,-0.15],[2.15,2.15],[-0.15,2.15]];
+  const res=[];
+  for(let i=0;i<4;i++){
+    const c=corners[i],n=corners[(i+1)%4];
+    const ci=inside(c),ni=inside(n);
+    if(ci) res.push(c);
+    if(ci!==ni){
+      const dx=n[0]-c[0],dy=n[1]-c[1];
+      const t=(b-w1*c[0]-w2*c[1])/(w1*dx+w2*dy);
+      res.push([c[0]+t*dx,c[1]+t*dy]);
+    }
+  }
+  return res.map(p=>`${f2x(p[0]).toFixed(1)},${f2y(p[1]).toFixed(1)}`).join(' ');
+}
+
+function buildF2DFeature(){
+  const svg=document.getElementById('f2d-svg');
+  const gdk='#1C3A0E',gmid='#2D5A1B',glt='#4A8C2F',ora='#E8630A',mut='#999';
+  const mf={'font-family':'IBM Plex Mono,monospace'};
+  const of_={'font-family':'Outfit,sans-serif'};
+
+  // Grid
+  for(const v of[0.5,1,1.5,2]){
+    svg.appendChild(E('line',{x1:f2x(v),y1:f2y(-0.15),x2:f2x(v),y2:f2y(2.15),stroke:'rgba(200,200,200,.35)','stroke-width':'1'}));
+    svg.appendChild(E('line',{x1:f2x(-0.15),y1:f2y(v),x2:f2x(2.15),y2:f2y(v),stroke:'rgba(200,200,200,.35)','stroke-width':'1'}));
+  }
+
+  // Firing region polygon (drawn first, behind everything)
+  const fp=E('polygon',{points:f2firingPoly(),fill:'rgba(232,99,10,0.07)'});
+  svg.appendChild(fp); F2R.firingPoly=fp;
+
+  // Decision boundary line (mutable)
+  const bl=E('line',{x1:'0',y1:'0',x2:'1',y2:'1',stroke:glt,'stroke-width':'1.5','stroke-dasharray':'8,4','stroke-opacity':'0.85'});
+  svg.appendChild(bl); F2R.boundLine=bl;
+
+  // Torque direction ray (mutable; extends from slightly behind origin to far upper-right)
+  const tqL=E('line',{x1:'0',y1:'0',x2:'1',y2:'1',stroke:gmid,'stroke-width':'2','stroke-dasharray':'7,3','stroke-opacity':'0.7'});
+  svg.appendChild(tqL); F2R.torqueLine=tqL;
+  const tqLbl=T('w',{...mf,'font-size':'12','font-style':'italic','font-weight':'700',fill:gmid,x:'0',y:'0','text-anchor':'start'});
+  svg.appendChild(tqLbl); F2R.torqueLabel=tqLbl;
+
+  // Perpendicular projection line from input point to torque axis (mutable)
+  const pl=E('line',{x1:'0',y1:'0',x2:'1',y2:'1',stroke:'#BBBBBB','stroke-width':'1.2','stroke-dasharray':'4,3'});
+  svg.appendChild(pl); F2R.projLine=pl;
+
+  // Threshold dot on torque axis — orange (matches bias cylinder), "b" inside in white
+  const td=E('circle',{cx:f2x(0.8),cy:f2y(0.7),r:'9',fill:ora,stroke:'white','stroke-width':'2'});
+  td.style.cursor='grab';
+  svg.appendChild(td); F2R.threshDot=td;
+  // "b" label inside the orange dot (position tracked in tick)
+  const tl=T('b',{...mf,'font-size':'9.5','font-style':'italic','font-weight':'700',fill:'white',
+    x:f2x(0.8).toFixed(1),y:(f2y(0.7)+3.5).toFixed(1),'text-anchor':'middle','pointer-events':'none'});
+  svg.appendChild(tl); F2R.threshLabel=tl;
+
+  // Projection dot on torque axis (mutable)
+  const pd=E('circle',{cx:'0',cy:'0',r:'6',fill:ora,stroke:'white','stroke-width':'1.5','opacity':'0.9'});
+  svg.appendChild(pd); F2R.projDot=pd;
+  const pLbl=T('',{...mf,'font-size':'8',fill:ora,x:'0',y:'0','text-anchor':'start'});
+  svg.appendChild(pLbl); F2R.projLabel=pLbl;
+
+  // Axes (arrows drawn as manual polygons)
+  {
+    const axE=f2x(2.28),orX=f2x(0),orY=f2y(0);
+    svg.appendChild(E('line',{x1:f2x(-0.12),y1:orY,x2:axE,y2:orY,stroke:'#CCCCCC','stroke-width':'1.5'}));
+    svg.appendChild(E('polygon',{points:`${axE},${orY} ${axE-8},${orY-3.5} ${axE-8},${orY+3.5}`,fill:'#CCCCCC'}));
+    const ayE=f2y(2.28);
+    svg.appendChild(E('line',{x1:orX,y1:f2y(-0.12),x2:orX,y2:ayE,stroke:'#CCCCCC','stroke-width':'1.5'}));
+    svg.appendChild(E('polygon',{points:`${orX},${ayE} ${orX-3.5},${ayE+8} ${orX+3.5},${ayE+8}`,fill:'#CCCCCC'}));
+  }
+  // Axis labels — use Tsub for proper subscript rendering
+  svg.appendChild(Tsub('x','1',{...mf,'font-size':'12','font-style':'italic',fill:'#AAAAAA',x:f2x(2.35),y:f2y(0)+4,'text-anchor':'start'}));
+  svg.appendChild(Tsub('x','2',{...mf,'font-size':'12','font-style':'italic',fill:'#AAAAAA',x:f2x(0)-5,y:f2y(2.35),'text-anchor':'end'}));
+  // Tick labels at 1 and 2
+  for(const v of[1,2]){
+    svg.appendChild(T(v.toString(),{...mf,'font-size':'8.5',fill:'#CCCCCC',x:f2x(v),y:f2y(0)+15,'text-anchor':'middle'}));
+    svg.appendChild(T(v.toString(),{...mf,'font-size':'8.5',fill:'#CCCCCC',x:f2x(0)-8,y:f2y(v)+3,'text-anchor':'end'}));
+  }
+  svg.appendChild(T('0',{...mf,'font-size':'8.5',fill:'#CCCCCC',x:f2x(0)-5,y:f2y(0)+15,'text-anchor':'end'}));
+
+  // x₁ ball on x-axis — Tsub for "w₁" label inside
+  const x1b=E('circle',{cx:f2x(F2.x1),cy:f2y(0),r:f2axBR(F2.w1),fill:glt,stroke:gmid,'stroke-width':'1.5'});
+  x1b.style.cursor='ew-resize';
+  svg.appendChild(x1b); F2R.x1Ball=x1b;
+  const x1wl=Tsub('w','1',{x:f2x(F2.x1),y:f2y(0)+2,'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'8',fill:'white','font-weight':'700','pointer-events':'none'});
+  svg.appendChild(x1wl); F2R.x1WLbl=x1wl;
+  const x1vl=T(F2.x1.toFixed(2),{x:f2x(F2.x1),y:f2y(0)+22,'text-anchor':'middle',...mf,'font-size':'8',fill:'#555',opacity:'.85'});
+  svg.appendChild(x1vl); F2R.x1ValLbl=x1vl;
+
+  // x₂ ball on y-axis — Tsub for "w₂" label inside
+  const x2b=E('circle',{cx:f2x(0),cy:f2y(F2.x2),r:f2axBR(F2.w2),fill:glt,stroke:gmid,'stroke-width':'1.5'});
+  x2b.style.cursor='ns-resize';
+  svg.appendChild(x2b); F2R.x2Ball=x2b;
+  const x2wl=Tsub('w','2',{x:f2x(0),y:f2y(F2.x2)+2,'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'8',fill:'white','font-weight':'700','pointer-events':'none'});
+  svg.appendChild(x2wl); F2R.x2WLbl=x2wl;
+  const x2vl=T(F2.x2.toFixed(2),{x:f2x(0)-22,y:f2y(F2.x2)+3,'text-anchor':'end',...mf,'font-size':'8',fill:'#555',opacity:'.85'});
+  svg.appendChild(x2vl); F2R.x2ValLbl=x2vl;
+
+  // Input point (draggable) — "x" label inside in white
+  const ip=E('circle',{cx:f2x(F2.x1),cy:f2y(F2.x2),r:'9',fill:gdk,stroke:'white','stroke-width':'2.5'});
+  ip.style.cursor='move';
+  svg.appendChild(ip); F2R.inputPt=ip;
+  const ilbl=T('x',{...mf,'font-size':'10','font-style':'italic','font-weight':'700',fill:'white',
+    x:f2x(F2.x1).toFixed(1),y:(f2y(F2.x2)+3.5).toFixed(1),'text-anchor':'middle','pointer-events':'none'});
+  svg.appendChild(ilbl); F2R.inputLabel=ilbl;
+
+  // Status label (FIRES / SILENT) — top-right corner of feature space
+  const sl=T('',{...of_,'font-size':'10','font-weight':'700',fill:ora,x:'380',y:'18','text-anchor':'end'});
+  svg.appendChild(sl); F2R.statusLbl=sl;
+}
+
+function tickF2D(){
+  const {w1,w2,x1,x2,b}=F2;
+  const wLen=Math.hypot(w1,w2)||0.01;
+  const wu1=w1/wLen, wu2=w2/wLen;
+  const dp=w1*x1+w2*x2;
+  const isF=dp>=b;
+  const ora='#E8630A', glt='#4A8C2F', gmid='#2D5A1B';
+
+  // Firing region
+  F2R.firingPoly.setAttribute('points',f2firingPoly());
+
+  // Torque direction ray: from -0.15 to 3.0 along w
+  const tqFar=3.0, tqNear=-0.18;
+  F2R.torqueLine.setAttribute('x1',f2x(tqNear*wu1).toFixed(1));
+  F2R.torqueLine.setAttribute('y1',f2y(tqNear*wu2).toFixed(1));
+  F2R.torqueLine.setAttribute('x2',f2x(tqFar*wu1).toFixed(1));
+  F2R.torqueLine.setAttribute('y2',f2y(tqFar*wu2).toFixed(1));
+  F2R.torqueLabel.setAttribute('x',(f2x(tqFar*wu1)+8).toFixed(1));
+  F2R.torqueLabel.setAttribute('y',(f2y(tqFar*wu2)+4).toFixed(1));
+
+  // Decision boundary: w·x = b, direction perp to w
+  const px=b*w1/(wLen*wLen), py=b*w2/(wLen*wLen);
+  const dx2=-w2/wLen, dy2=w1/wLen;
+  const ext=3.0;
+  F2R.boundLine.setAttribute('x1',f2x(px+ext*dx2).toFixed(1));
+  F2R.boundLine.setAttribute('y1',f2y(py+ext*dy2).toFixed(1));
+  F2R.boundLine.setAttribute('x2',f2x(px-ext*dx2).toFixed(1));
+  F2R.boundLine.setAttribute('y2',f2y(py-ext*dy2).toFixed(1));
+  F2R.boundLine.setAttribute('stroke',isF?gmid:'#999999');
+
+  // Threshold dot on torque axis at distance b/wLen from origin
+  const td=b/wLen;
+  const tdX=f2x(td*wu1).toFixed(1), tdY=f2y(td*wu2).toFixed(1);
+  // Threshold dot — keep "b" label centered inside
+  F2R.threshDot.setAttribute('cx',tdX);
+  F2R.threshDot.setAttribute('cy',tdY);
+  F2R.threshLabel.setAttribute('x',tdX);
+  F2R.threshLabel.setAttribute('y',(parseFloat(tdY)+3.5).toFixed(1));
+
+  // Projection of input point onto torque axis
+  const projScalar=dp/wLen;
+  const prjX=f2x(projScalar*wu1).toFixed(1), prjY=f2y(projScalar*wu2).toFixed(1);
+  F2R.projDot.setAttribute('cx',prjX);
+  F2R.projDot.setAttribute('cy',prjY);
+  F2R.projDot.setAttribute('fill',isF?ora:glt);
+  F2R.projLine.setAttribute('x1',f2x(x1).toFixed(1));
+  F2R.projLine.setAttribute('y1',f2y(x2).toFixed(1));
+  F2R.projLine.setAttribute('x2',prjX);
+  F2R.projLine.setAttribute('y2',prjY);
+  F2R.projLabel.setAttribute('x',(parseFloat(prjX)+8).toFixed(1));
+  F2R.projLabel.setAttribute('y',(parseFloat(prjY)-7).toFixed(1));
+  F2R.projLabel.textContent=`wᵀx=${dp.toFixed(2)}`;
+  F2R.projLabel.setAttribute('fill',isF?ora:glt);
+
+  // Input point
+  F2R.inputPt.setAttribute('cx',f2x(x1).toFixed(1));
+  F2R.inputPt.setAttribute('cy',f2y(x2).toFixed(1));
+  F2R.inputPt.setAttribute('fill',isF?ora:'#1C3A0E');
+  // "x" label stays centered inside the circle
+  F2R.inputLabel.setAttribute('x',f2x(x1).toFixed(1));
+  F2R.inputLabel.setAttribute('y',(f2y(x2)+3.5).toFixed(1));
+
+  // x₁ and x₂ axis balls
+  const r1=parseFloat(f2axBR(w1)), r2=parseFloat(f2axBR(w2));
+  F2R.x1Ball.setAttribute('cx',f2x(x1).toFixed(1));
+  F2R.x1Ball.setAttribute('r',r1.toFixed(1));
+  F2R.x1WLbl.setAttribute('x',f2x(x1).toFixed(1));
+  F2R.x1ValLbl.setAttribute('x',f2x(x1).toFixed(1));
+  F2R.x1ValLbl.textContent=x1.toFixed(2);
+  F2R.x2Ball.setAttribute('cy',f2y(x2).toFixed(1));
+  F2R.x2Ball.setAttribute('r',r2.toFixed(1));
+  F2R.x2WLbl.setAttribute('y',f2y(x2).toFixed(1));
+  F2R.x2ValLbl.setAttribute('y',(f2y(x2)+3).toFixed(1));
+  F2R.x2ValLbl.textContent=x2.toFixed(2);
+
+  // Status
+  F2R.statusLbl.textContent=isF?'⚡ FIRES':'◯ SILENT';
+  F2R.statusLbl.setAttribute('fill',isF?ora:'#888888');
+}
+
+function addF2DInteractions(){
+  const svg=document.getElementById('f2d-svg');
+  let drag=null;
+  const THRESH=5;
+  function toSVG4(e){
+    const r=svg.getBoundingClientRect();
+    return{x:(e.clientX-r.left)*(400/r.width),y:(e.clientY-r.top)*(300/r.height)};
+  }
+  function svgToMath(sx,sy){return{mx:(sx-F2G.ox)/F2G.sc,my:(F2G.oy-sy)/F2G.sc};}
+
+  // x₁ ball: drag ↔ → x₁; click ±w₁
+  F2R.x1Ball.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG4(e);drag={type:'x1',sx:p.x,sy:p.y,sv:F2.x1,moved:false};
+  });
+  F2R.x1Ball.addEventListener('contextmenu',e=>{e.preventDefault();F2.w1=f2cW(F2.w1-0.1);});
+
+  // x₂ ball: drag ↕ → x₂; click ±w₂
+  F2R.x2Ball.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG4(e);drag={type:'x2',sx:p.x,sy:p.y,sv:F2.x2,moved:false};
+  });
+  F2R.x2Ball.addEventListener('contextmenu',e=>{e.preventDefault();F2.w2=f2cW(F2.w2-0.1);});
+
+  // Input point: free 2D drag
+  F2R.inputPt.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG4(e);drag={type:'xy',sx:p.x,sy:p.y,sv1:F2.x1,sv2:F2.x2,moved:false};
+  });
+
+  // Threshold dot: drag along torque direction → b; click ±b
+  F2R.threshDot.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG4(e);drag={type:'thresh',sx:p.x,sy:p.y,sv:F2.b,moved:false};
+  });
+  F2R.threshDot.addEventListener('contextmenu',e=>{e.preventDefault();F2.b=f2cB(F2.b-0.1);});
+
+  svg.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    const p=toSVG4(e);
+    const dx=p.x-drag.sx, dy=p.y-drag.sy;
+    if(Math.abs(dx)>THRESH||Math.abs(dy)>THRESH) drag.moved=true;
+    if(!drag.moved)return;
+    if(drag.type==='x1'){
+      F2.x1=f2cX(drag.sv+dx/F2G.sc);
+    } else if(drag.type==='x2'){
+      F2.x2=f2cX(drag.sv-dy/F2G.sc);
+    } else if(drag.type==='xy'){
+      const m=svgToMath(p.x,p.y);
+      F2.x1=f2cX(m.mx); F2.x2=f2cX(m.my);
+    } else if(drag.type==='thresh'){
+      const wLen=Math.hypot(F2.w1,F2.w2)||0.01;
+      const wu1=F2.w1/wLen,wu2=F2.w2/wLen;
+      // project drag onto torque direction to get Δ(b/‖w‖), then scale by ‖w‖ → Δb
+      const proj=(dx/F2G.sc)*wu1+(-dy/F2G.sc)*wu2;
+      F2.b=f2cB(drag.sv+proj*wLen);
+    }
+  });
+  svg.addEventListener('mouseup',()=>{
+    if(!drag)return;
+    if(!drag.moved){
+      if(drag.type==='x1') F2.w1=f2cW(F2.w1+0.1);
+      else if(drag.type==='x2') F2.w2=f2cW(F2.w2+0.1);
+      else if(drag.type==='thresh') F2.b=f2cB(F2.b+0.1);
+    }
+    drag=null;
+  });
+  svg.addEventListener('mouseleave',()=>{drag=null;});
+}
+
+/* ─ 2-input lever (feature space panel) ──────────────────────────── */
+function buildF2DLever(){
+  const svg=document.getElementById('f2d-lv-svg');
+  const {gdk,gmid,glt,ora,oradk}=FLG;
+  const mf={'font-family':'IBM Plex Mono,monospace'};
+  const of_={'font-family':'Outfit,sans-serif'};
+  const RISER_H=FLG.RISER_H;
+
+  // Drop shadow filter
+  const defs=E('defs');
+  {const f=E('filter',{id:'f2ds',x:'-5%',y:'-20%',width:'110%',height:'140%'});
+   f.appendChild(E('feDropShadow',{dx:'0',dy:'2',stdDeviation:'2','flood-opacity':'.15'}));
+   defs.appendChild(f);}
+  svg.appendChild(defs);
+
+  // x-range annotation arrow above left arm
+  const arY=48, arL=FLG.px-FLG.maxDist[0], arR=FLG.px-6;
+  svg.appendChild(E('line',{x1:arL,y1:arY,x2:arR,y2:arY,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  svg.appendChild(E('polygon',{points:`${arL},${arY} ${arL+7},${arY-3.5} ${arL+7},${arY+3.5}`,fill:'#BBBBBB'}));
+  svg.appendChild(E('polygon',{points:`${arR},${arY} ${arR-7},${arY-3.5} ${arR-7},${arY+3.5}`,fill:'#BBBBBB'}));
+  svg.appendChild(T('x',{...mf,'font-size':'12','font-style':'italic',fill:'#AAAAAA',x:(arL+arR)/2,y:arY-7,'text-anchor':'middle'}));
+
+  // Torque balance label
+  svg.appendChild(T('Σ wᵢxᵢ  vs  b·1',{...mf,'font-size':'9',fill:'#BBBBBB',x:FLG.px,y:FLG.py+RISER_H+70,'text-anchor':'middle'}));
+
+  // Capture bracket + y-axis (right end)
+  const captHH=Math.round(FLG.hw_r*Math.sin(FLG.snapAng*Math.PI/180))+5;
+  const capX=FLG.px+FLG.hw_r, capW=16;
+  const capTopY=FLG.py-captHH, capBotY=FLG.py+captHH;
+  svg.appendChild(E('rect',{x:capX-capW/2,y:capTopY-6,width:capW,height:(capBotY-capTopY)+12,rx:capW/2,
+    fill:'rgba(190,185,175,.13)',stroke:'#CCCCCC','stroke-width':'1.5'}));
+  const ct=E('rect',{x:capX-capW/2,y:capTopY-6,width:capW,height:11,rx:capW/2,fill:'#CCCCCC'});
+  svg.appendChild(ct); F2R.lvCaptTop=ct;
+  const cb=E('rect',{x:capX-capW/2,y:capBotY-5,width:capW,height:11,rx:capW/2,fill:'#CCCCCC'});
+  svg.appendChild(cb); F2R.lvCaptBot=cb;
+  // y-axis
+  const axX=capX+capW/2+10;
+  svg.appendChild(E('line',{x1:axX,y1:capTopY-10,x2:axX,y2:capBotY+10,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  svg.appendChild(E('polygon',{points:`${axX},${capTopY-10} ${axX-3.5},${capTopY-3} ${axX+3.5},${capTopY-3}`,fill:'#BBBBBB'}));
+  svg.appendChild(E('line',{x1:axX-4,y1:capTopY,x2:axX+4,y2:capTopY,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  svg.appendChild(E('line',{x1:axX-4,y1:capBotY,x2:axX+4,y2:capBotY,stroke:'#BBBBBB','stroke-width':'1.5'}));
+  svg.appendChild(T('y',{...mf,'font-size':'10','font-style':'italic',fill:'#AAAAAA',x:axX+2,y:capTopY-14,'text-anchor':'middle'}));
+  svg.appendChild(T('1',{...mf,'font-size':'10',fill:ora,'font-weight':'600',x:axX+10,y:capTopY+4,'text-anchor':'start'}));
+  svg.appendChild(T('0',{...mf,'font-size':'10',fill:glt,'font-weight':'600',x:axX+10,y:capBotY+4,'text-anchor':'start'}));
+  svg.appendChild(T('FIRE!',{...of_,'font-size':'8.5','font-weight':'700',fill:ora,x:capX,y:capTopY-8,'text-anchor':'middle'}));
+  svg.appendChild(T('SILENT',{...of_,'font-size':'8','font-weight':'600',fill:'#AAAAAA',x:capX,y:capBotY+18,'text-anchor':'middle'}));
+
+  // Riser + flared base
+  {
+    const rW=4,bW=22, fY=FLG.py+RISER_H;
+    const fl=fY-16, bb=fY+18;
+    const d=[`M ${FLG.px-rW},${FLG.py+2}`,`L ${FLG.px-rW},${fl}`,
+      `Q ${FLG.px-bW},${fY+4} ${FLG.px-bW},${fY+7}`,`L ${FLG.px-bW},${bb}`,
+      `Q ${FLG.px-bW},${bb+4} ${FLG.px-bW+6},${bb+4}`,`L ${FLG.px+bW-6},${bb+4}`,
+      `Q ${FLG.px+bW},${bb+4} ${FLG.px+bW},${bb}`,`L ${FLG.px+bW},${fY+7}`,
+      `Q ${FLG.px+bW},${fY+4} ${FLG.px+rW},${fl}`,`L ${FLG.px+rW},${FLG.py+2}`,`Z`].join(' ');
+    svg.appendChild(E('path',{d,fill:'#888',stroke:'none'}));
+  }
+
+  // ── Gravity-fixed hanging elements ──
+  const SUB2=['₁','₂'];
+  F2R.lvStrings=[]; F2R.lvBalls=[]; F2R.lvLbl1s=[]; F2R.lvLbl2s=[]; F2R.lvValLbls=[]; F2R.lvBallHits=[];
+  for(let i=0;i<2;i++){
+    const ap=f2lvAnchor(i);
+    const br=parseFloat(f2lvBR(F2[`w${i+1}`]));
+    const bcy=ap.y+FLG.strLen+br;
+    const str=E('line',{x1:ap.x.toFixed(1),y1:ap.y.toFixed(1),x2:ap.x.toFixed(1),y2:(ap.y+FLG.strLen).toFixed(1),stroke:gmid,'stroke-width':'2','stroke-linecap':'round'});
+    svg.appendChild(str); F2R.lvStrings.push(str);
+    const ball=E('circle',{cx:ap.x.toFixed(1),cy:bcy.toFixed(1),r:br.toFixed(1),fill:glt,stroke:gmid,'stroke-width':'1.5'});
+    ball.style.cursor='grab';
+    svg.appendChild(ball); F2R.lvBalls.push(ball);
+    const lb1=Tsub(`w`,`${i+1}`,{x:ap.x.toFixed(1),y:(bcy-3).toFixed(1),'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'8.5',fill:'white','font-weight':'700','pointer-events':'none'});
+    svg.appendChild(lb1); F2R.lvLbl1s.push(lb1);
+    const lb2=Tsub(`x`,`${i+1}`,{x:ap.x.toFixed(1),y:(bcy+5.5).toFixed(1),'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'7.5',fill:'rgba(255,255,255,.85)','pointer-events':'none'});
+    svg.appendChild(lb2); F2R.lvLbl2s.push(lb2);
+    const vl=T((F2[`w${i+1}`]*F2[`x${i+1}`]).toFixed(2),{x:ap.x.toFixed(1),y:(bcy+br+12).toFixed(1),'text-anchor':'middle',...mf,'font-size':'8.5',fill:gdk,opacity:'.85'});
+    svg.appendChild(vl); F2R.lvValLbls.push(vl);
+    const hit=E('circle',{cx:ap.x.toFixed(1),cy:(ap.y+FLG.strLen/2+br).toFixed(1),r:(br+FLG.strLen/2+10).toFixed(1),fill:'transparent'});
+    hit.style.cursor='grab';
+    svg.appendChild(hit); F2R.lvBallHits.push(hit);
+  }
+
+  // Bias string + cylinder
+  {
+    const ap=f2lvBiasAnchor();
+    const bhw=parseFloat(f2lvBHW(F2.b)), bhh=parseFloat(f2lvBHH(F2.b));
+    const bstr=E('line',{x1:ap.x.toFixed(1),y1:ap.y.toFixed(1),x2:ap.x.toFixed(1),y2:(ap.y+FLG.biasStr).toFixed(1),stroke:oradk,'stroke-width':'2.5','stroke-linecap':'round'});
+    svg.appendChild(bstr); F2R.lvBiasStr=bstr;
+    const bcyl=E('rect',{x:(ap.x-bhw).toFixed(1),y:(ap.y+FLG.biasStr).toFixed(1),width:(bhw*2).toFixed(1),height:(bhh*2).toFixed(1),rx:'5',fill:ora,stroke:oradk,'stroke-width':'2'});
+    bcyl.style.cursor='ns-resize';
+    svg.appendChild(bcyl); F2R.lvBiasCyl=bcyl;
+    const bcap=E('ellipse',{cx:ap.x.toFixed(1),cy:(ap.y+FLG.biasStr).toFixed(1),rx:bhw.toFixed(1),ry:'4',fill:'#F49050',stroke:oradk,'stroke-width':'2'});
+    svg.appendChild(bcap); F2R.lvBiasCap=bcap;
+    const blbl=T('w₀',{x:ap.x.toFixed(1),y:(ap.y+FLG.biasStr+bhh-3).toFixed(1),'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'9',fill:'white','font-weight':'700'});
+    svg.appendChild(blbl); F2R.lvBiasLbl=blbl;
+    const bvl=T(F2.b.toFixed(2),{x:ap.x.toFixed(1),y:(ap.y+FLG.biasStr+bhh*2+12).toFixed(1),'text-anchor':'middle',...mf,'font-size':'8.5',fill:ora,'font-weight':'600'});
+    svg.appendChild(bvl); F2R.lvBiasValLbl=bvl;
+    const bhit=E('rect',{x:(ap.x-bhw-12).toFixed(1),y:(ap.y+FLG.biasStr-10).toFixed(1),width:((bhw+12)*2).toFixed(1),height:(bhh*2+20).toFixed(1),rx:'6',fill:'transparent'});
+    bhit.style.cursor='ns-resize';
+    svg.appendChild(bhit); F2R.lvBiasHit=bhit;
+  }
+
+  // ── Beam group ──
+  const bg=E('g',{id:'f2dlv-beam'}); F2R.lvBeam=bg;
+  bg.appendChild(E('rect',{x:(FLG.px-FLG.hw_l).toFixed(1),y:(FLG.py-FLG.bh/2).toFixed(1),
+    width:(FLG.hw_l+FLG.hw_r).toString(),height:FLG.bh.toString(),rx:'3',fill:gdk,filter:'url(#f2ds)'}));
+  // Square end caps (16×16px, matching main lever style)
+  bg.appendChild(E('rect',{x:(FLG.px-FLG.hw_l-8).toFixed(1),y:(FLG.py-8).toFixed(1),width:'16',height:'16',rx:'3',fill:gmid}));
+  bg.appendChild(E('rect',{x:(FLG.px+FLG.hw_r-8).toFixed(1),y:(FLG.py-8).toFixed(1),width:'16',height:'16',rx:'3',fill:gmid}));
+  // Bias hook peg
+  bg.appendChild(E('circle',{cx:(FLG.px+FLG.hw_bias).toFixed(1),cy:(FLG.py+FLG.bh/2).toFixed(1),r:'5',fill:oradk,stroke:'white','stroke-width':'1.5'}));
+  // Input clips
+  F2R.lvClips=[]; F2R.lvClipHits=[];
+  for(let i=0;i<2;i++){
+    const cx2=FLG.px-F2[`x${i+1}`]/2*FLG.maxDist[i];
+    const clip=E('rect',{x:(cx2-7).toFixed(1),y:(FLG.py+FLG.bh/2-1).toFixed(1),width:'14',height:'11',rx:'3',fill:glt,stroke:gmid,'stroke-width':'1.5'});
+    bg.appendChild(clip); F2R.lvClips.push(clip);
+    const chit=E('rect',{x:(cx2-16).toFixed(1),y:(FLG.py+FLG.bh/2-10).toFixed(1),width:'32',height:'30',rx:'4',fill:'transparent'});
+    chit.style.cursor='grab';
+    bg.appendChild(chit); F2R.lvClipHits.push(chit);
+  }
+  svg.appendChild(bg);
+  // Pivot dot on top
+  svg.appendChild(E('circle',{cx:FLG.px,cy:FLG.py,r:'6',fill:'#444',stroke:'white','stroke-width':'2'}));
+}
+
+function tickF2DLever(dt){
+  const isF=f2f();
+  const margin=f2dp()-F2.b, EPS=0.005;
+  const target=margin>EPS?-FLG.snapAng:margin<-EPS?FLG.snapAng:0;
+  F2.lvAngle+=(target-F2.lvAngle)*Math.min(1,dt/.18);
+  F2R.lvBeam.setAttribute('transform',`rotate(${F2.lvAngle.toFixed(2)},${FLG.px},${FLG.py})`);
+
+  // Clips
+  for(let i=0;i<2;i++){
+    const cx2=FLG.px-F2[`x${i+1}`]/2*FLG.maxDist[i];
+    F2R.lvClips[i].setAttribute('x',(cx2-7).toFixed(1));
+    F2R.lvClipHits[i].setAttribute('x',(cx2-16).toFixed(1));
+  }
+  // Strings, balls, hit zones
+  for(let i=0;i<2;i++){
+    const ap=f2lvAnchor(i);
+    const br=parseFloat(f2lvBR(F2[`w${i+1}`]));
+    const bcy=ap.y+FLG.strLen+br;
+    F2R.lvStrings[i].setAttribute('x1',ap.x.toFixed(1)); F2R.lvStrings[i].setAttribute('y1',ap.y.toFixed(1));
+    F2R.lvStrings[i].setAttribute('x2',ap.x.toFixed(1)); F2R.lvStrings[i].setAttribute('y2',(ap.y+FLG.strLen).toFixed(1));
+    F2R.lvBalls[i].setAttribute('cx',ap.x.toFixed(1)); F2R.lvBalls[i].setAttribute('cy',bcy.toFixed(1));
+    F2R.lvBalls[i].setAttribute('r',br.toFixed(1));
+    F2R.lvLbl1s[i].setAttribute('x',ap.x.toFixed(1)); F2R.lvLbl1s[i].setAttribute('y',(bcy-3).toFixed(1));
+    F2R.lvLbl2s[i].setAttribute('x',ap.x.toFixed(1)); F2R.lvLbl2s[i].setAttribute('y',(bcy+5.5).toFixed(1));
+    F2R.lvValLbls[i].setAttribute('x',ap.x.toFixed(1)); F2R.lvValLbls[i].setAttribute('y',(bcy+br+12).toFixed(1));
+    F2R.lvValLbls[i].textContent=(F2[`w${i+1}`]*F2[`x${i+1}`]).toFixed(2);
+    F2R.lvBallHits[i].setAttribute('cx',ap.x.toFixed(1));
+    F2R.lvBallHits[i].setAttribute('cy',(ap.y+FLG.strLen/2+br).toFixed(1));
+    F2R.lvBallHits[i].setAttribute('r',(br+FLG.strLen/2+10).toFixed(1));
+  }
+  // Bias cylinder (gravity-fixed, tracks rotated hook)
+  const θ=F2.lvAngle*Math.PI/180;
+  const bAttX=FLG.px+FLG.hw_bias*Math.cos(θ)-(FLG.bh/2)*Math.sin(θ);
+  const bAttY=FLG.py+FLG.hw_bias*Math.sin(θ)+(FLG.bh/2)*Math.cos(θ);
+  const bhw=parseFloat(f2lvBHW(F2.b)), bhh=parseFloat(f2lvBHH(F2.b));
+  const bcy2=bAttY+FLG.biasStr+bhh;
+  F2R.lvBiasStr.setAttribute('x1',bAttX.toFixed(1)); F2R.lvBiasStr.setAttribute('y1',bAttY.toFixed(1));
+  F2R.lvBiasStr.setAttribute('x2',bAttX.toFixed(1)); F2R.lvBiasStr.setAttribute('y2',(bAttY+FLG.biasStr).toFixed(1));
+  F2R.lvBiasCyl.setAttribute('x',(bAttX-bhw).toFixed(1)); F2R.lvBiasCyl.setAttribute('y',(bAttY+FLG.biasStr).toFixed(1));
+  F2R.lvBiasCyl.setAttribute('width',(bhw*2).toFixed(1)); F2R.lvBiasCyl.setAttribute('height',(bhh*2).toFixed(1));
+  F2R.lvBiasCap.setAttribute('cx',bAttX.toFixed(1)); F2R.lvBiasCap.setAttribute('cy',(bAttY+FLG.biasStr).toFixed(1));
+  F2R.lvBiasCap.setAttribute('rx',bhw.toFixed(1));
+  F2R.lvBiasLbl.setAttribute('x',bAttX.toFixed(1)); F2R.lvBiasLbl.setAttribute('y',(bcy2-3).toFixed(1));
+  F2R.lvBiasValLbl.setAttribute('x',bAttX.toFixed(1)); F2R.lvBiasValLbl.setAttribute('y',(bAttY+FLG.biasStr+bhh*2+12).toFixed(1));
+  F2R.lvBiasValLbl.textContent=F2.b.toFixed(2);
+  F2R.lvBiasHit.setAttribute('x',(bAttX-bhw-12).toFixed(1)); F2R.lvBiasHit.setAttribute('y',(bAttY+FLG.biasStr-10).toFixed(1));
+  F2R.lvBiasHit.setAttribute('width',((bhw+12)*2).toFixed(1)); F2R.lvBiasHit.setAttribute('height',(bhh*2+20).toFixed(1));
+  // Capture stops
+  F2R.lvCaptTop.setAttribute('fill',isF?FLG.ora:'#CCCCCC');
+  F2R.lvCaptBot.setAttribute('fill',!isF?FLG.glt:'#CCCCCC');
+}
+
+function addF2DLeverInteractions(){
+  const svg=document.getElementById('f2d-lv-svg');
+  const THRESH=6;
+  let drag=null;
+  function toSVG5(e){
+    const r=svg.getBoundingClientRect();
+    return{x:(e.clientX-r.left)*(400/r.width),y:(e.clientY-r.top)*(300/r.height)};
+  }
+  function startW5(e,i){
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG5(e);
+    drag={type:'w',idx:i,sx:p.x,sy:p.y,startXi:F2[`x${i+1}`],startWi:F2[`w${i+1}`],dir:null};
+  }
+  function startB5(e){
+    if(e.button!==0)return;e.preventDefault();
+    const p=toSVG5(e);
+    drag={type:'b',sx:p.x,sy:p.y,startB:F2.b,dir:'v'};
+  }
+  for(let i=0;i<2;i++){
+    [F2R.lvBalls[i],F2R.lvClipHits[i],F2R.lvBallHits[i]].forEach(el=>{
+      el.addEventListener('mousedown',e=>startW5(e,i));
+      el.addEventListener('contextmenu',e=>{e.preventDefault();F2[`w${i+1}`]=f2cW(F2[`w${i+1}`]-0.1);});
+    });
+  }
+  [F2R.lvBiasCyl,F2R.lvBiasCap,F2R.lvBiasHit].forEach(el=>{
+    el.addEventListener('mousedown',startB5);
+    el.addEventListener('contextmenu',e=>{e.preventDefault();F2.b=f2cB(F2.b-0.1);});
+  });
+  svg.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    const p=toSVG5(e);
+    const dx=p.x-drag.sx,dy=p.y-drag.sy;
+    if(drag.dir===null&&(Math.abs(dx)>THRESH||Math.abs(dy)>THRESH))
+      drag.dir=Math.abs(dy)>Math.abs(dx)?'v':'h';
+    if(!drag.dir)return;
+    if(drag.type==='w'){
+      if(drag.dir==='h') F2[`x${drag.idx+1}`]=f2cX(drag.startXi-dx*2/FLG.maxDist[drag.idx]);
+      else               F2[`w${drag.idx+1}`]=f2cW(drag.startWi+dy/55);
+    } else {
+      F2.b=f2cB(drag.startB+dy/55);
+    }
+  });
+  svg.addEventListener('mouseup',()=>{
+    if(!drag)return;
+    if(drag.dir===null){
+      if(drag.type==='w') F2[`w${drag.idx+1}`]=f2cW(F2[`w${drag.idx+1}`]+0.1);
+      else F2.b=f2cB(F2.b+0.1);
+    }
+    drag=null;
+  });
+  svg.addEventListener('mouseleave',()=>{drag=null;});
+}
+
+/* ═════ CONTROLS ══════════════════════════════════════════════════ */
+function makeSlider(container,labelHtml,id,min,max,step,initVal,isBias){
+  const d=document.createElement('div');d.className='srow';
+  d.innerHTML=`<span class="slbl${isBias?' bias-lbl':''}">${labelHtml}</span><input type="range" id="${id}"${isBias?' class="bsld"':''} min="${min}" max="${max}" step="${step}" value="${initVal}"><span class="sval" id="v_${id}">${parseFloat(initVal).toFixed(2)}</span>`;
+  container.appendChild(d);
+  document.getElementById(id).addEventListener('input',e=>{
+    const v=parseFloat(e.target.value);
+    document.getElementById(`v_${id}`).textContent=v.toFixed(2);
+    if(id.startsWith('w'))S.w[parseInt(id[1])]=v;
+    else if(id.startsWith('x'))S.x[parseInt(id[1])]=v;
+    else S.b=v;
+    refreshEqBar();clearActivePreset();
+  });
+}
+
+function buildControls(){
+  const wc=document.getElementById('w-sliders'),xc=document.getElementById('x-sliders');
+  for(let i=0;i<3;i++){makeSlider(wc,`w<sub>${i+1}</sub>`,`w${i}`,0,2,.05,S.w[i],false);makeSlider(xc,`x<sub>${i+1}</sub>`,`x${i}`,0,1,.05,S.x[i],false);}
+  makeSlider(document.getElementById('b-slider-row'),'b','bias',0,3,.05,S.b,true);
+  document.querySelectorAll('.pbtn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const p=PRESETS[btn.dataset.preset];if(!p)return;
+      for(let i=0;i<3;i++){S.w[i]=p.w[i];S.x[i]=p.x[i];const ws=document.getElementById(`w${i}`),xs=document.getElementById(`x${i}`);if(ws){ws.value=p.w[i];document.getElementById(`v_w${i}`).textContent=p.w[i].toFixed(2);}if(xs){xs.value=p.x[i];document.getElementById(`v_x${i}`).textContent=p.x[i].toFixed(2);}}
+      S.b=p.b;const bs=document.getElementById('bias');if(bs){bs.value=p.b;document.getElementById('v_bias').textContent=p.b.toFixed(2);}
+      refreshEqBar();document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+    });
+  });
+}
+
+function clearActivePreset(){document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));}
+
+function refreshEqBar(){
+  const s=dp(),f=firing();
+  const terms=S.w.map((w,i)=>`${w.toFixed(2)}·${S.x[i].toFixed(2)}`).join(' + ');
+  const aug=(s-S.b).toFixed(3);
+  // Wrap aug in a fixed-width span so the layout doesn't shift when sign changes
+  const augFmt=`<span style="display:inline-block;min-width:3.8em;text-align:right">${aug}</span>`;
+  document.getElementById('eq-lhs').innerHTML=`<i>w̃</i><sup>T</sup><i>x̃</i> = ${terms} + ${S.b.toFixed(2)}·(−1) = <strong>${augFmt}</strong>`;
+  document.getElementById('eq-rhs').textContent=`0`;
+  const cmp=document.getElementById('eq-cmp');cmp.textContent=f?'≥':'<';cmp.className='eq-cmp'+(f?' fire-cmp':'');
+  const st=document.getElementById('eq-status');st.textContent=f?'⚡ FIRES  (y = 1)':'◯  SILENT  (y = 0)';st.className='eq-status '+(f?'fire':'silent');
+}
+
+/* ═════ BELL CRANK CARD ═══════════════════════════════════════════════
+   Concept: an upstream neuron's binary (or continuous) output y₁ is a
+   VERTICAL position. A bell crank linkage — an L-shaped lever pivoting at
+   its corner — converts this vertical motion into HORIZONTAL motion, which
+   slides a weight on a downstream neuron's lever arm. This shows, in a
+   purely mechanical way, how neurons can be chained into a network.
+
+   Geometry (viewBox 760×240):
+     Upstream handle:   x=100,  track y=30..200
+     Bell crank pivot:  (390, 115)
+     Input arm (horiz-left, len=68): tip tracks handle y via connection rod
+     Output arm (vert-down, len=68): tip moves LEFT/RIGHT as crank rotates
+     Connecting rod:    rigid, slides from output arm tip to downstream weight
+     Downstream pivot:  x=655, y=115
+     Downstream weight: slides at x=outputArmX+200  (distance from pivot = 455-outputArmX)
+     Threshold:         dist=70  →  fires when y₁ > 0.5  (verified below)
+
+   Key values at y₁=1 (upstream fires):  bcA=-15°, inTip y≈97, outTip x≈367, dist≈88 > 70 → fires
+   Key values at y₁=0 (upstream silent): bcA=+15°, inTip y≈133, outTip x≈403, dist≈52 < 70 → silent
+   Key values at y₁=0.5 (threshold):     bcA= 0°,  outTip x=390, dist=65 < 70 → just silent
+   Actual threshold y₁ ≈ 0.52 (close enough to 0.5 for pedagogy).
+═══════════════════════════════════════════════════════════════════════ */
+const BC={y1:0.7, w_down:1.0, b_down:1.2};
+function clampWD(v){return Math.round(Math.max(0,Math.min(2,v))*100)/100;}
+function clampBD(v){return Math.round(Math.max(0,Math.min(3,v))*100)/100;}
+const BCR={
+  handle:null, handleLabel:null, handleStatus:null,
+  inputArm:null, outputArm:null,
+  connectIn:null, connectOut:null,
+  downWeightMarker:null, downWeightClip:null, downString:null,
+  downBiasStr:null, downBiasCyl:null, downBiasCap:null, downBiasLbl:null,
+  downBeamGroup:null,
+  captTop:null, captBot:null,
+  dAngleSm:0,
+};
+
+function buildBellCrank(){
+  const svg=document.getElementById('bc-svg');
+  const mf={'font-family':'IBM Plex Mono,monospace'};
+  const of_={'font-family':'Outfit,sans-serif'};
+  const gdk='#1C3A0E',gmid='#2D5A1B',glt='#4A8C2F',ora='#E8630A',oradk='#C0500A',mut='#999';
+  const defs=E('defs');
+  {const m=E('marker',{id:'bcarr',markerWidth:'7',markerHeight:'7',refX:'6',refY:'3.5',orient:'auto'});
+   m.appendChild(E('path',{d:'M0,1 L0,6 L6,3.5 z',fill:'#CCC',opacity:'.8'}));defs.appendChild(m);}
+  svg.appendChild(defs);
+
+  // Geometry constants
+  const PX=390, PY=108;   // bell crank pivot
+  const ARM=65;            // crank arm length
+  const DWO=200;           // downstream offset (output arm x + DWO = clip x)
+  const DP=655, DPY=108;  // downstream pivot (same height as bell crank for horizontal rod)
+  const BH=8;              // downstream beam height
+  const HW_L=128, HW_R=82;// downstream beam arms
+  const DW_BIAS=50;        // bias attachment x from pivot (inward to clear right end cap)
+  const SNAP_D=7;          // downstream snap angle
+  const STR=22;            // hanging string length
+  const BALL_R=10;         // input weight ball radius (fixed)
+  const D_RISER=62;        // riser height below beam
+
+  // ── Section dividers ──
+  svg.appendChild(E('line',{x1:'230',y1:'12',x2:'230',y2:'228',stroke:'#DDD','stroke-width':'1','stroke-dasharray':'4,3'}));
+  svg.appendChild(E('line',{x1:'530',y1:'12',x2:'530',y2:'228',stroke:'#DDD','stroke-width':'1','stroke-dasharray':'4,3'}));
+
+  // ── Section titles (two-line, small, no overlap) ──
+  const st={'font-family':'Outfit,sans-serif','font-size':'8','font-weight':'700','letter-spacing':'.07em',fill:mut};
+  svg.appendChild(T('UPSTREAM NEURON OUTPUT',{...st,x:'115',y:'10','text-anchor':'middle'}));
+  svg.appendChild(T('(Pre-Synaptic)',{...st,'font-size':'7.5','font-weight':'400','font-style':'italic',x:'115',y:'19','text-anchor':'middle'}));
+  svg.appendChild(T('BELL CRANK LINKAGE',{...st,'font-size':'8.5',x:'380',y:'12','text-anchor':'middle'}));
+  svg.appendChild(T('DOWNSTREAM NEURON INPUT',{...st,x:'645',y:'10','text-anchor':'middle'}));
+  svg.appendChild(T('(Post-Synaptic)',{...st,'font-size':'7.5','font-weight':'400','font-style':'italic',x:'645',y:'19','text-anchor':'middle'}));
+
+  // ── UPSTREAM track ──
+  const trackX=115, trackTop=50, trackBot=218;
+  svg.appendChild(T('FIRES  y₁=1',{...mf,'font-size':'8',fill:ora,'font-weight':'600',x:trackX,y:trackTop-8,'text-anchor':'middle'}));
+  svg.appendChild(E('rect',{x:trackX-4,y:trackTop,width:8,height:trackBot-trackTop,rx:'4',fill:'#EEE'}));
+  svg.appendChild(T('SILENT  y₁=0',{...mf,'font-size':'8',fill:'#AAAAAA',x:trackX,y:trackBot+12,'text-anchor':'middle'}));
+
+  // Draggable handle
+  const initHY=trackTop+(1-BC.y1)*(trackBot-trackTop);
+  const handle=E('circle',{cx:trackX,cy:initHY.toFixed(1),r:'12',fill:ora,stroke:'white','stroke-width':'2'});
+  handle.style.cursor='ns-resize';
+  svg.appendChild(handle); BCR.handle=handle;
+  const hlbl=T(`y₁ = ${BC.y1.toFixed(2)}`,{...mf,'font-size':'9',fill:gdk,x:trackX+18,y:(initHY+3).toFixed(1),'text-anchor':'start'});
+  svg.appendChild(hlbl); BCR.handleLabel=hlbl;
+  const hst=T('FIRES',{...of_,'font-size':'8','font-weight':'700',fill:ora,x:trackX-18,y:(initHY+3).toFixed(1),'text-anchor':'end'});
+  svg.appendChild(hst); BCR.handleStatus=hst;
+
+  // ── BELL CRANK ──
+  const initBcA=(0.5-BC.y1)*Math.PI/6;
+  const initInX=PX-ARM*Math.cos(initBcA), initInY=PY+ARM*Math.sin(initBcA);
+  const initOutX=PX+ARM*Math.sin(initBcA), initOutY=PY+ARM*Math.cos(initBcA);
+  const initDwX=initOutX+DWO;
+
+  svg.appendChild(E('circle',{cx:PX,cy:PY,r:'7',fill:'#555',stroke:'white','stroke-width':'1.5'}));
+  svg.appendChild(T('input arm',{...mf,'font-size':'7.5',fill:mut,x:PX-ARM/2,y:PY-14,'text-anchor':'middle','font-style':'italic'}));
+  svg.appendChild(T('output arm',{...mf,'font-size':'7.5',fill:mut,x:PX+14,y:PY+ARM/2+14,'text-anchor':'start','font-style':'italic'}));
+
+  // Connection: upstream handle → input arm tip
+  const cIn=E('line',{x1:trackX,y1:initHY.toFixed(1),x2:initInX.toFixed(1),y2:initInY.toFixed(1),'stroke-dasharray':'5,3',stroke:'#BBBBBB','stroke-width':'1.5'});
+  svg.appendChild(cIn); BCR.connectIn=cIn;
+
+  // Arms
+  const inArm=E('line',{x1:PX,y1:PY,x2:initInX.toFixed(1),y2:initInY.toFixed(1),stroke:gdk,'stroke-width':'4','stroke-linecap':'round'});
+  svg.appendChild(inArm); BCR.inputArm=inArm;
+  const outArm=E('line',{x1:PX,y1:PY,x2:initOutX.toFixed(1),y2:initOutY.toFixed(1),stroke:gdk,'stroke-width':'4','stroke-linecap':'round'});
+  svg.appendChild(outArm); BCR.outputArm=outArm;
+  svg.appendChild(E('circle',{cx:PX,cy:PY,r:'7',fill:'#555',stroke:'white','stroke-width':'1.5'}));
+
+  // Connection: output arm tip → downstream clip (rod goes to clip top on beam)
+  const cOut=E('line',{x1:initOutX.toFixed(1),y1:initOutY.toFixed(1),x2:initDwX.toFixed(1),y2:(DPY-BH/2).toFixed(1),'stroke-dasharray':'5,3',stroke:'#BBBBBB','stroke-width':'1.5'});
+  svg.appendChild(cOut); BCR.connectOut=cOut;
+
+  // ── DOWNSTREAM LEVER ─────────────────────────────────────────────
+  // Riser + flared base (one smooth path, same style as main lever)
+  {
+    const rW=4,bW=22;
+    const flareStart=DPY+D_RISER-16, baseBot=DPY+D_RISER+18;
+    const d=[
+      `M ${DP-rW},${DPY+2}`,`L ${DP-rW},${flareStart}`,
+      `Q ${DP-bW},${DPY+D_RISER+4} ${DP-bW},${DPY+D_RISER+7}`,
+      `L ${DP-bW},${baseBot}`,
+      `Q ${DP-bW},${baseBot+4} ${DP-bW+6},${baseBot+4}`,
+      `L ${DP+bW-6},${baseBot+4}`,
+      `Q ${DP+bW},${baseBot+4} ${DP+bW},${baseBot}`,
+      `L ${DP+bW},${DPY+D_RISER+7}`,
+      `Q ${DP+bW},${DPY+D_RISER+4} ${DP+rW},${flareStart}`,
+      `L ${DP+rW},${DPY+2}`, `Z`
+    ].join(' ');
+    svg.appendChild(E('path',{d,fill:'#888',stroke:'none'}));
+  }
+
+  // Gravity-fixed elements: string + ball for the input weight
+  // Ball radius ∝ BC.w_down (draggable)
+  const beamBottom=DPY+BH/2;
+  const initBallR = 5 + BC.w_down*8;
+  const dwStr=E('line',{x1:initDwX.toFixed(1),y1:beamBottom.toFixed(1),
+    x2:initDwX.toFixed(1),y2:(beamBottom+STR).toFixed(1),
+    stroke:gmid,'stroke-width':'2','stroke-linecap':'round'});
+  svg.appendChild(dwStr); BCR.downString=dwStr;
+
+  const dwBall=E('circle',{cx:initDwX.toFixed(1),cy:(beamBottom+STR+initBallR).toFixed(1),
+    r:initBallR.toFixed(1),fill:glt,stroke:gmid,'stroke-width':'1.5'});
+  dwBall.style.cursor='ns-resize';
+  svg.appendChild(dwBall); BCR.downWeightMarker=dwBall;
+
+  // Gravity-fixed bias cylinder — STORED for tick updates (tracks beam rotation)
+  // Uses BC.b_down — independent of the main lever's bias
+  const biasX=DP+DW_BIAS, biasHW=5+BC.b_down*5, biasHH=8+BC.b_down*7;
+  const dbStr=E('line',{x1:biasX.toFixed(1),y1:beamBottom.toFixed(1),
+    x2:biasX.toFixed(1),y2:(beamBottom+STR).toFixed(1),stroke:oradk,'stroke-width':'2','stroke-linecap':'round'});
+  svg.appendChild(dbStr); BCR.downBiasStr=dbStr;
+  const dbCyl=E('rect',{x:(biasX-biasHW).toFixed(1),y:(beamBottom+STR).toFixed(1),
+    width:(biasHW*2).toFixed(1),height:(biasHH*2).toFixed(1),rx:'4',fill:ora,stroke:oradk,'stroke-width':'1.5'});
+  dbCyl.style.cursor='ns-resize';
+  svg.appendChild(dbCyl); BCR.downBiasCyl=dbCyl;
+  const dbCap=E('ellipse',{cx:biasX.toFixed(1),cy:(beamBottom+STR).toFixed(1),
+    rx:biasHW.toFixed(1),ry:'3',fill:'#F49050',stroke:oradk,'stroke-width':'1.5'});
+  svg.appendChild(dbCap); BCR.downBiasCap=dbCap;
+  const dbLbl=T('b',{x:biasX.toFixed(1),y:(beamBottom+STR+biasHH).toFixed(1),
+    'text-anchor':'middle','dominant-baseline':'middle',...mf,'font-size':'8',fill:'white','font-weight':'700'});
+  svg.appendChild(dbLbl); BCR.downBiasLbl=dbLbl;
+
+  // ── BEAM GROUP ──
+  const DBG=E('g',{id:'bc-down-beam'}); BCR.downBeamGroup=DBG;
+  DBG.appendChild(E('rect',{x:(DP-HW_L).toFixed(1),y:(DPY-BH/2).toFixed(1),
+    width:(HW_L+HW_R).toString(),height:BH.toString(),rx:'2',fill:gdk}));
+  // End caps — same 16×16 square proportions as main lever's end cap
+  DBG.appendChild(E('rect',{x:(DP-HW_L-7).toFixed(1),y:(DPY-8).toFixed(1),width:'16',height:'16',rx:'3',fill:gmid}));
+  DBG.appendChild(E('rect',{x:(DP+HW_R-9).toFixed(1),y:(DPY-8).toFixed(1),width:'16',height:'16',rx:'3',fill:gmid}));
+  // Bias hook peg on right arm
+  DBG.appendChild(E('circle',{cx:(DP+DW_BIAS).toFixed(1),cy:(DPY+BH/2).toFixed(1),r:'4',fill:oradk,stroke:'white','stroke-width':'1.2'}));
+  // Input weight clip (slides with dwX)
+  const dwClip=E('rect',{x:(initDwX-5).toFixed(1),y:(DPY-BH/2).toFixed(1),width:'10',height:BH.toString(),rx:'2',fill:glt,stroke:gmid,'stroke-width':'1.5'});
+  DBG.appendChild(dwClip); BCR.downWeightClip=dwClip;
+  svg.appendChild(DBG);
+
+  // Downstream pivot dot (drawn over beam group)
+  svg.appendChild(E('circle',{cx:DP,cy:DPY,r:'5',fill:'#444',stroke:'white','stroke-width':'1.5'}));
+
+  // ── CAPTURE (right end, slot-style) ──
+  const captHH=Math.round(HW_R*Math.sin(SNAP_D*Math.PI/180))+5;
+  const dcX=DP+HW_R, dcW=12;
+  svg.appendChild(E('rect',{x:dcX-dcW/2,y:DPY-captHH-5,width:dcW,height:(captHH*2)+10,rx:dcW/2,
+    fill:'rgba(190,185,175,.13)',stroke:'#CCCCCC','stroke-width':'1.5'}));
+  const dct=E('rect',{x:dcX-dcW/2,y:DPY-captHH-5,width:dcW,height:9,rx:dcW/2,fill:'#CCC'});
+  svg.appendChild(dct); BCR.captTop=dct;
+  const dcb=E('rect',{x:dcX-dcW/2,y:DPY+captHH-4,width:dcW,height:9,rx:dcW/2,fill:'#CCC'});
+  svg.appendChild(dcb); BCR.captBot=dcb;
+  svg.appendChild(T('y₂=1',{...mf,'font-size':'8.5',fill:ora,x:dcX+dcW/2+3,y:DPY-captHH+2,'text-anchor':'start'}));
+  svg.appendChild(T('y₂=0',{...mf,'font-size':'8.5',fill:'#AAAAAA',x:dcX+dcW/2+3,y:DPY+captHH+4,'text-anchor':'start'}));
+}
+
+function tickBellCrank(dt){
+  const PX=390,PY=108,ARM=65,DWO=200,DP=655,DPY=108;
+  const BH=8,STR=22,DW_BIAS=50;
+  const trackTop=50,trackBot=218,trackX=115;
+  const bcA=(0.5-BC.y1)*Math.PI/6;
+
+  // Arm tips
+  const inX=PX-ARM*Math.cos(bcA), inY=PY+ARM*Math.sin(bcA);
+  const outX=PX+ARM*Math.sin(bcA), outY=PY+ARM*Math.cos(bcA);
+  const dwX=outX+DWO;
+  const dist=DP-outX-DWO; // arm length = distance from downstream pivot
+  // Fires when (w_down × input torque) > (b_down × bias arm) — b_down is independent of main lever
+  const dFires = BC.w_down * dist > BC.b_down * 55;
+
+  // Upstream handle
+  const handleY=trackTop+(1-BC.y1)*(trackBot-trackTop);
+  BCR.handle.setAttribute('cy',handleY.toFixed(1));
+  BCR.handle.setAttribute('fill',BC.y1>=0.5?'#E8630A':'#4A8C2F');
+  BCR.handleLabel.setAttribute('y',(handleY+3).toFixed(1));
+  BCR.handleLabel.textContent=`y₁ = ${BC.y1.toFixed(2)}`;
+  BCR.handleStatus.setAttribute('y',(handleY+3).toFixed(1));
+  BCR.handleStatus.textContent=BC.y1>=0.5?'FIRES':'SILENT';
+  BCR.handleStatus.setAttribute('fill',BC.y1>=0.5?'#E8630A':'#AAAAAA');
+
+  // Connection rods
+  BCR.connectIn.setAttribute('x1',trackX.toString());BCR.connectIn.setAttribute('y1',handleY.toFixed(1));
+  BCR.connectIn.setAttribute('x2',inX.toFixed(1));BCR.connectIn.setAttribute('y2',inY.toFixed(1));
+  BCR.connectOut.setAttribute('x1',outX.toFixed(1));BCR.connectOut.setAttribute('y1',outY.toFixed(1));
+  BCR.connectOut.setAttribute('x2',dwX.toFixed(1));BCR.connectOut.setAttribute('y2',(DPY-BH/2).toFixed(1));
+
+  // Crank arms
+  BCR.inputArm.setAttribute('x2',inX.toFixed(1));BCR.inputArm.setAttribute('y2',inY.toFixed(1));
+  BCR.outputArm.setAttribute('x2',outX.toFixed(1));BCR.outputArm.setAttribute('y2',outY.toFixed(1));
+
+  // Downstream beam snap
+  const dtarget=dFires?-7:7;
+  BCR.dAngleSm=(BCR.dAngleSm||0)+(dtarget-BCR.dAngleSm)*Math.min(1,dt/.15);
+  BCR.downBeamGroup.setAttribute('transform',`rotate(${BCR.dAngleSm.toFixed(2)},${DP},${DPY})`);
+
+  // θ used for both clip-tracking (input weight) and bias hook position
+  const θ=BCR.dAngleSm*Math.PI/180;
+
+  // Gravity-fixed input weight: string + ball track the ROTATED clip position
+  const ballR = 5 + BC.w_down*8;
+  const clipLX = dwX - DP;  // beam-local x offset of clip from pivot
+  const clipSvgX = DP + clipLX*Math.cos(θ) - (BH/2)*Math.sin(θ);
+  const clipSvgY = DPY + clipLX*Math.sin(θ) + (BH/2)*Math.cos(θ);
+  BCR.downString.setAttribute('x1',clipSvgX.toFixed(1));BCR.downString.setAttribute('y1',clipSvgY.toFixed(1));
+  BCR.downString.setAttribute('x2',clipSvgX.toFixed(1));BCR.downString.setAttribute('y2',(clipSvgY+STR).toFixed(1));
+  BCR.downWeightMarker.setAttribute('cx',clipSvgX.toFixed(1));
+  BCR.downWeightMarker.setAttribute('cy',(clipSvgY+STR+ballR).toFixed(1));
+  BCR.downWeightMarker.setAttribute('r',ballR.toFixed(1));
+
+  // Clip x in beam group (pre-rotation SVG coord)
+  BCR.downWeightClip.setAttribute('x',(dwX-5).toFixed(1));
+
+  // Gravity-fixed bias cylinder: tracks rotated hook position on right arm
+  const bAttachX=DP+DW_BIAS*Math.cos(θ)-(BH/2)*Math.sin(θ);
+  const bAttachY=DPY+DW_BIAS*Math.sin(θ)+(BH/2)*Math.cos(θ);
+  const biasHW=5+BC.b_down*5, biasHH=8+BC.b_down*7;
+  BCR.downBiasStr.setAttribute('x1',bAttachX.toFixed(1));BCR.downBiasStr.setAttribute('y1',bAttachY.toFixed(1));
+  BCR.downBiasStr.setAttribute('x2',bAttachX.toFixed(1));BCR.downBiasStr.setAttribute('y2',(bAttachY+STR).toFixed(1));
+  BCR.downBiasCyl.setAttribute('x',(bAttachX-biasHW).toFixed(1));
+  BCR.downBiasCyl.setAttribute('y',(bAttachY+STR).toFixed(1));
+  BCR.downBiasCyl.setAttribute('width',(biasHW*2).toFixed(1));
+  BCR.downBiasCyl.setAttribute('height',(biasHH*2).toFixed(1));
+  BCR.downBiasCap.setAttribute('cx',bAttachX.toFixed(1));
+  BCR.downBiasCap.setAttribute('cy',(bAttachY+STR).toFixed(1));
+  BCR.downBiasCap.setAttribute('rx',biasHW.toFixed(1));
+  BCR.downBiasLbl.setAttribute('x',bAttachX.toFixed(1));
+  BCR.downBiasLbl.setAttribute('y',(bAttachY+STR+biasHH).toFixed(1));
+
+  // Capture stops
+  BCR.captTop.setAttribute('fill',dFires?'#E8630A':'#CCCCCC');
+  BCR.captBot.setAttribute('fill',!dFires?'#4A8C2F':'#CCCCCC');
+}
+
+function addBellCrankInteractions(){
+  const svg=document.getElementById('bc-svg');
+  let bcDrag=null;  // {type:'y1'|'w'|'b', startSY, startVal}
+  const trackTop=50, trackBot=218;
+
+  function toSVGY(e){
+    const r=svg.getBoundingClientRect();
+    return (e.clientY-r.top)*(240/r.height);
+  }
+
+  // Upstream handle — sets y₁
+  BCR.handle.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    bcDrag={type:'y1',startSY:toSVGY(e),startVal:BC.y1};
+  });
+
+  // Downstream input ball — sets w_down (drag ↕, up=heavier)
+  BCR.downWeightMarker.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;e.preventDefault();
+    bcDrag={type:'w',startSY:toSVGY(e),startVal:BC.w_down};
+  });
+  BCR.downWeightMarker.addEventListener('contextmenu',e=>{
+    e.preventDefault();BC.w_down=clampWD(BC.w_down-0.1);
+  });
+
+  // Downstream bias cylinder — sets S.b (drag ↕, up=heavier, syncs sliders)
+  [BCR.downBiasCyl, BCR.downBiasCap].forEach(el=>{
+    el.addEventListener('mousedown',e=>{
+      if(e.button!==0)return;e.preventDefault();
+      bcDrag={type:'b',startSY:toSVGY(e),startVal:BC.b_down};
+    });
+    el.addEventListener('contextmenu',e=>{
+      e.preventDefault();BC.b_down=clampBD(BC.b_down-0.1);
+    });
+  });
+
+  svg.addEventListener('mousemove',e=>{
+    if(!bcDrag)return;
+    const dy=toSVGY(e)-bcDrag.startSY;
+    if(bcDrag.type==='y1'){
+      BC.y1=Math.round(Math.max(0,Math.min(1,bcDrag.startVal-dy/(trackBot-trackTop)))*100)/100;
+    } else if(bcDrag.type==='w'){
+      // drag DOWN (dy>0) = heavier = bigger weight
+      BC.w_down=clampWD(bcDrag.startVal+dy/55);
+    } else {
+      // drag DOWN (dy>0) = heavier bias
+      BC.b_down=clampBD(bcDrag.startVal+dy/55);
+    }
+  });
+  svg.addEventListener('mouseup',()=>{bcDrag=null;});
+  svg.addEventListener('mouseleave',()=>{bcDrag=null;});
+}
+
+/* ═════ MAIN LOOP ═════════════════════════════════════════════════ */
+function tick(ts){
+  const dt=S.lastTS?Math.min(.05,(ts-S.lastTS)/1000):.016;
+  S.lastTS=ts;S.time+=dt;
+  const f=firing();tickNeuron(dt,f);tickLever(dt,f);tickBellCrank(dt);tickF2D();tickF2DLever(dt);
+  requestAnimationFrame(tick);
+}
+
+/* ═════ INIT ══════════════════════════════════════════════════════ */
+buildControls();buildNeuron();buildLever();addNeuronInteractions();addLeverInteractions();buildBellCrank();addBellCrankInteractions();buildF2DFeature();buildF2DLever();addF2DInteractions();addF2DLeverInteractions();refreshEqBar();requestAnimationFrame(tick);
+</script>
+</body>
+</html>
