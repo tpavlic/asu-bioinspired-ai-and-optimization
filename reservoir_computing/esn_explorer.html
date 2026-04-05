@@ -71,7 +71,7 @@ canvas{display:block;}
 #c1-tr{cursor:col-resize;}
 #t1-lbl{height:1.3em;overflow:hidden;white-space:nowrap;}
 .tab-select{display:none;width:100%;padding:9px 14px;font-family:'Outfit';font-size:.85rem;font-weight:500;color:var(--muted);background:var(--surf);border:none;border-bottom:2px solid var(--border);cursor:pointer;outline:none;}
-@media(max-width:560px){.tabs{display:none;}.tab-select{display:block;}}
+@media(max-width:720px){.tabs{display:none;}.tab-select{display:block;}}
 .cr-block{margin-left:auto;font-family:'IBM Plex Mono';font-size:.62rem;opacity:.65;text-align:right;line-height:1.6;padding-bottom:2px;}
 .cr-block a{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(255,255,255,.5);}
 .cr-sep{display:none;}
@@ -95,13 +95,13 @@ canvas{display:block;}
 <div class="tabs">
   <button class="tab on" onclick="showTab(0)">① Echo &amp; Memory</button>
   <button class="tab"    onclick="showTab(1)">② RMS Fingerprint</button>
-  <button class="tab"    onclick="showTab(2)">③ Pattern Fingerprints</button>
+  <button class="tab"    onclick="showTab(2)">③ Pattern Separability</button>
   <button class="tab"    onclick="showTab(3)">④ Classification Comparison</button>
 </div>
 <select class="tab-select" id="tab-dropdown" onchange="showTab(parseInt(this.value))">
   <option value="0">① Echo &amp; Memory</option>
   <option value="1">② RMS Fingerprint</option>
-  <option value="2">③ Pattern Fingerprints</option>
+  <option value="2">③ Pattern Separability</option>
   <option value="3">④ Classification Comparison</option>
 </select>
 
@@ -436,6 +436,7 @@ canvas{display:block;}
   </div>
 
 </div>
+
 </div>
 
 <script>
@@ -598,7 +599,7 @@ const GALL_T=[20,30,40,50,58,66,74,82,90,97];  // 10 stable-oscillation gallery 
 let t1ShowIC=false;
 let t1States=[], t1States2IC=[];
 let t1GalleryByType={};  // type -> Float64Array[]  (length = GALL_T.length)
-let t1SelectedTime=110;
+let t1SelectedTime=58;
 let t1VoteHist=new Int32Array(4);
 let t1CurrentType='sine_slow';
 let t1CachedParams=null;
