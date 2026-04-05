@@ -128,6 +128,29 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
 /* footer */
 .footer{margin-top:18px;text-align:right;font-size:.66rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);}
 
+/* ── TAB DROPDOWN (narrow screens) ── */
+.tab-select{
+  display:none;width:100%;padding:8px 12px;
+  font-family:'Outfit',sans-serif;font-size:.85rem;font-weight:600;
+  color:var(--green);background:var(--bg);border:2px solid var(--brd);
+  border-radius:6px;margin-bottom:12px;cursor:pointer;outline:none;
+  -webkit-appearance:auto;appearance:auto;
+}
+.tab-select:focus{border-color:var(--org);}
+
+/* ── NARROW SCREEN OVERRIDES ── */
+@media(max-width:500px){
+  /* swap tab bar for dropdown */
+  .tab-bar{display:none;}
+  .tab-select{display:block;}
+  /* copyright: hide separator, MIT License drops to its own line */
+  .hdr-copy .cs{display:none;}
+  .hdr-copy .cl{display:block;text-align:right;margin-top:2px;}
+  .hdr-copy{max-width:none;flex-shrink:1;}
+  .footer-cs{display:none;}
+  .footer-cl{display:block;text-align:right;margin-top:1px;}
+}
+
 /* ── RESPONSIVE: crossbar reflow ── */
 @media(max-width:560px){
   /* Stack Now Presenting above the crossbar canvas */
@@ -163,6 +186,12 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
     <span class="cn">&#169; 2026 Theodore P. Pavlic</span><span class="cs">&nbsp;&middot;&nbsp;</span><a class="cl" href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
   </div>
 </div>
+
+<!-- TAB DROPDOWN (shown on narrow screens instead of tab bar) -->
+<select id="tabSelect" class="tab-select" onchange="gotoTab(this.value)">
+  <option value="s">① STDP Synapse</option>
+  <option value="n">② Crossbar Network</option>
+</select>
 
 <!-- TABS -->
 <div class="tab-bar">
@@ -360,8 +389,7 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
 
 <!-- FOOTER -->
 <div class="footer">
-  &#169; 2026 Theodore P. Pavlic &nbsp;&middot;&nbsp;
-  <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+  &#169; 2026 Theodore P. Pavlic<span class="footer-cs">&nbsp;&middot;&nbsp;</span><a href="https://opensource.org/licenses/MIT" target="_blank" class="footer-cl">MIT License</a>
 </div>
 </div>
 
@@ -446,6 +474,8 @@ function gotoTab(id){
   document.querySelectorAll('.tab').forEach(p=>p.classList.remove('on'));
   document.getElementById('tbtn-'+id).classList.add('on');
   document.getElementById('tab-'+id).classList.add('on');
+  const sel=document.getElementById('tabSelect');
+  if(sel)sel.value=id;
   if(id==='s')setTimeout(drawSTDP,15);
   if(id==='n')setTimeout(drawNet,15);
 }
