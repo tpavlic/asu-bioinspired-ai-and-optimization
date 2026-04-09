@@ -69,7 +69,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .formula-mini{font-family:'IBM Plex Mono',monospace;font-size:.71rem;background:var(--bg2);border-radius:4px;padding:6px 9px;margin:6px 0 2px;line-height:2.0;color:var(--green);}
 .formula-mini .lo{color:var(--txt3);font-size:.67rem;}
 .formula-mini .ann{color:var(--txt3);font-size:.65rem;font-family:'Outfit',sans-serif;}
-  background:var(--bg2);border-radius:6px;padding:10px 14px;text-align:center;margin:8px 0;}
+.formula{font-family:'IBM Plex Mono',monospace;font-size:.88rem;font-weight:500;color:var(--green);background:var(--bg2);border-radius:6px;padding:10px 14px;text-align:center;margin:8px 0;}
 .mode-card-title{font-size:.78rem;font-weight:700;font-family:'IBM Plex Mono',monospace;margin:0 0 6px 0;}
 .mode-card-desc{font-size:.68rem;color:var(--txt3);line-height:1.55;}
 .mcard{cursor:pointer;transition:box-shadow .15s;border-left:4px solid transparent !important;}
@@ -274,6 +274,28 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
     </div>
   </div><!-- end Input Patterns panel -->
 
+  <!-- Controls — after patterns, above weight matrix, matching memristor layout -->
+  <div class="panel">
+    <div class="ctrl-row">
+      <button class="btn btn-p" id="btnRun2" onclick="toggleRun2()">&#9654; Start</button>
+      <button class="btn btn-s" id="btnStep2" onclick="stepOnce2()">&#x23ED; Step</button>
+      <button class="btn btn-s" onclick="resetClustering()">&#x21BA; Reset</button>
+      <div class="cgrp">
+        <label>Speed:</label>
+        <input type="range" id="slSp2" min="1" max="10" value="5" step="1" oninput="onSpeed2()">
+        <span class="cval" id="spLbl2">&times;5</span>
+      </div>
+      <div class="cgrp">
+        <label>Noise:</label>
+        <input type="range" id="slNo2" min="0" max="0.9" value="0.35" step="0.05" oninput="onNoise2()">
+        <span class="cval" id="noLbl2">0.35</span>
+      </div>
+      <span class="chip" id="chipSt2">Stopped</span>
+      <span class="spacer"></span>
+      <span style="font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);" id="cntLbl2">0 presentations</span>
+    </div>
+  </div>
+
   <!-- Weight matrix -->
   <div class="panel">
     <div class="ptitle">Weight Matrix &mdash; 9 inputs × 5 output neurons &nbsp;&middot;&nbsp; cell intensity = synaptic weight &nbsp;&middot;&nbsp; highlighted row = current winner</div>
@@ -320,28 +342,6 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   <div class="panel">
     <div class="ptitle">Recognition Rate Over Training</div>
     <canvas id="cvR2" style="width:100%;display:block;"></canvas>
-  </div>
-
-  <!-- Controls -->
-  <div class="panel" style="margin-bottom:0;">
-    <div class="ctrl-row">
-      <button class="btn btn-p" id="btnRun2" onclick="toggleRun2()">&#9654; Start</button>
-      <button class="btn btn-s" id="btnStep2" onclick="stepOnce2()">&#x23ED; Step</button>
-      <button class="btn btn-s" onclick="resetClustering()">&#x21BA; Reset</button>
-      <div class="cgrp">
-        <label>Speed:</label>
-        <input type="range" id="slSp2" min="1" max="10" value="5" step="1" oninput="onSpeed2()">
-        <span class="cval" id="spLbl2">&times;5</span>
-      </div>
-      <div class="cgrp">
-        <label>Noise:</label>
-        <input type="range" id="slNo2" min="0" max="0.9" value="0.35" step="0.05" oninput="onNoise2()">
-        <span class="cval" id="noLbl2">0.35</span>
-      </div>
-      <span class="chip" id="chipSt2">Stopped</span>
-      <span class="spacer"></span>
-      <span style="font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);" id="cntLbl2">0 presentations</span>
-    </div>
   </div>
 </div>
 
@@ -1136,7 +1136,7 @@ window.addEventListener('resize',()=>{
   if(document.getElementById('tab-c').classList.contains('on'))drawNet2();
 });
 </script>
-<footer id="course-nav-footer" style="margin-top:0;padding-top:0.75rem;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;text-align:left;">
+<footer id="course-nav-footer" style="margin-top:0;padding-top:0.75rem;padding-left:1rem;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;text-align:left;">
   <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
 </footer>
 <script>
