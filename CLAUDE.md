@@ -192,6 +192,7 @@ Add a row to the appropriate table under `## Contents`:
 - `radial_basis_function_nn/rbfnn_explorer.html`
 - `optimal_foraging_theory/mvt_explorer.html`
 - `memristors/memristor_stdp_array.html`
+- `hebbian_learning/hebbian_competitive_clustering.html`
 - `reservoir_computing/esn_explorer.html`
 
 ### Cellular Automata
