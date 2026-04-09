@@ -321,6 +321,28 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
     </div>
   </div>
 
+  <!-- Controls — placed here so Start is always near the top -->
+  <div class="panel">
+    <div class="ctrl-row">
+      <button class="btn btn-p" id="btnRun" onclick="toggleRun()">&#9654; Start</button>
+      <button class="btn btn-s" id="btnStep" onclick="stepOnce()">&#x23ED; Step</button>
+      <button class="btn btn-s" onclick="resetNet()">&#x21BA; Reset</button>
+      <div class="cgrp">
+        <label>Speed:</label>
+        <input type="range" id="slSp" min="1" max="10" value="5" step="1" oninput="onSpeed()">
+        <span class="cval" id="spLbl">&times;5</span>
+      </div>
+      <div class="cgrp">
+        <label>Noise:</label>
+        <input type="range" id="slNo" min="0" max="0.9" value="0.35" step="0.05" oninput="onNoise()">
+        <span class="cval" id="noLbl">0.35</span>
+      </div>
+      <span class="chip" id="chipSt">Stopped</span>
+      <span class="spacer"></span>
+      <span style="font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);" id="cntLbl">0 presentations</span>
+    </div>
+  </div>
+
   <!-- Crossbar panel -->
   <div class="panel">
     <div class="ptitle">Crossbar Array &nbsp;&mdash;&nbsp; 9 input columns × 5 output rows = 45 FTJ memristors &nbsp;&middot;&nbsp; output activity bars aligned right</div>
@@ -376,27 +398,7 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
     <canvas id="cvR" style="width:100%;display:block;"></canvas>
   </div>
 
-  <!-- Controls -->
-  <div class="panel" style="margin-bottom:0;">
-    <div class="ctrl-row">
-      <button class="btn btn-p" id="btnRun" onclick="toggleRun()">&#9654; Start</button>
-      <button class="btn btn-s" id="btnStep" onclick="stepOnce()">&#x23ED; Step</button>
-      <button class="btn btn-s" onclick="resetNet()">&#x21BA; Reset</button>
-      <div class="cgrp">
-        <label>Speed:</label>
-        <input type="range" id="slSp" min="1" max="10" value="5" step="1" oninput="onSpeed()">
-        <span class="cval" id="spLbl">&times;5</span>
-      </div>
-      <div class="cgrp">
-        <label>Noise:</label>
-        <input type="range" id="slNo" min="0" max="0.9" value="0.35" step="0.05" oninput="onNoise()">
-        <span class="cval" id="noLbl">0.35</span>
-      </div>
-      <span class="chip" id="chipSt">Stopped</span>
-      <span class="spacer"></span>
-      <span style="font-size:.7rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);" id="cntLbl">0 presentations</span>
-    </div>
-  </div>
+  <!-- Controls removed from here — moved above Crossbar panel -->
 </div>
 
 <!-- FOOTER -->
