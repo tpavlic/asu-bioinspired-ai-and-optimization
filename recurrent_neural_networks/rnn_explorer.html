@@ -540,7 +540,7 @@ footer a{color:var(--orange);}
         <div class="cc" style="height:300px"><canvas id="c3b"></canvas></div>
       </div>
       <div>
-        <div class="clbl">Phase portrait: h₁[k] vs h₂[k]</div>
+        <div class="clbl">State-space trajectory: h₁[k] vs h₂[k] &nbsp;<span style="font-weight:400;color:var(--text-muted)">(k = 0–50; x[k] held at last value for k &gt; 20)</span></div>
         <div class="cc" style="height:190px"><canvas id="c3c"></canvas></div>
       </div>
     </div>
@@ -588,9 +588,9 @@ footer a{color:var(--orange);}
       In a real ESN, A is large (hundreds of neurons), frozen after random initialization, and only the output weights Cᵀ are trained — by simple linear regression, not backprop.
       This widget is a 2D preview of that reservoir idea.
       <br><br>
-      <strong>Try this:</strong> click <em>Random A</em> with ρ ≈ 0.9, then cycle through the four input signals (step, impulse, 01 alt, square). Watch how the <strong>phase portrait changes shape and location</strong> for each signal — the cloud of (h₁, h₂) points lands in a different region of state space depending on the temporal structure of the input. The random mixing of A is sufficient to create this separation even without tanh. This is exactly why ESNs can classify time series: different patterns produce geometrically separable reservoir states, and a linear readout (Cᵀ) can then separate them.
+      <strong>Try this:</strong> click <em>Random A</em> with ρ ≈ 0.9, then cycle through the four input signals (step, impulse, 01 alt, square). Watch how the <strong>state-space trajectory changes shape and location</strong> for each signal — the cloud of (h₁, h₂) points lands in a different region of state space depending on the temporal structure of the input. The random mixing of A is sufficient to create this separation even without tanh. This is exactly why ESNs can classify time series: different patterns produce geometrically separable reservoir states, and a linear readout (Cᵀ) can then separate them.
       <br><br>
-      Now repeat the experiment with a <em>rotation-mode</em> A (e.g. Oscillatory preset). The phase portrait traces the same orbit regardless of input signal — only the position along the orbit changes. The marginal distributions of h₁ and h₂ look nearly identical across all inputs, making linear classification much harder. The random A breaks this symmetry and creates the rich, input-dependent geometry that makes reservoir computing useful.
+      Now repeat the experiment with a <em>rotation-mode</em> A (e.g. Oscillatory preset). The state-space trajectory traces the same orbit regardless of input signal — only the position along the orbit changes. The marginal distributions of h₁ and h₂ look nearly identical across all inputs, making linear classification much harder. The random A breaks this symmetry and creates the rich, input-dependent geometry that makes reservoir computing useful.
     </div>
 
   </div>
@@ -864,7 +864,7 @@ footer a{color:var(--orange);}
       (and thus wᵣ here) is <em>fixed at random initialization</em> and never trained.
       Only the readout weights (wᵧ / Cᵀ) are trained — by simple linear regression, not backprop.
       This works because a well-chosen random reservoir with ρ(A) &lt; 1 already projects the input
-      history into a rich, separable state space (as you can see in the Tab 3 phase portrait).
+      history into a rich, separable state space (as you can see in the Tab 3 state-space trajectory).
       <br><br>
       The tradeoff: ESNs are fast and stable but the reservoir is fixed. BPTT-trained RNNs can
       learn task-specific dynamics but require gradient clipping or LSTMs to train reliably.
