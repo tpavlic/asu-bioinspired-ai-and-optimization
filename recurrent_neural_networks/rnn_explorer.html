@@ -1,0 +1,3334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recurrent Networks &amp; Temporal Supervision Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream:       #faf7f2;
+  --cream-dark:  #f0ebe0;
+  --cream-darker:#e5ddd0;
+  --green:       #2d5a27;
+  --green-mid:   #3d7a35;
+  --green-light: #5a9e50;
+  --green-pale:  #e8f0e6;
+  --orange:      #c8581a;
+  --orange-light:#e07a3a;
+  --orange-pale: #fdeede;
+  --purple:      #8040a0;
+  --red-bad:     #c83030;
+  --text:        #1e1e1e;
+  --text-mid:    #4a4a4a;
+  --text-muted:  #7a7a7a;
+  --border:      #cec5b5;
+  --border-light:#e0d8cc;
+  --font-body:   'Outfit', sans-serif;
+  --font-mono:   'IBM Plex Mono', monospace;
+  --r:  6px;
+  --rl: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--cream);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;font-size:14px;}
+
+/* ── header ── */
+.hdr{background:var(--green);color:#fff;padding:12px 20px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
+.hdr h1{font-size:1rem;font-weight:600;letter-spacing:.02em;}
+.hdr-copy{font-size:.62rem;opacity:.75;font-family:var(--font-mono);}
+.hdr-copy a{color:rgba(255,255,255,.85);text-decoration:underline;}
+
+/* ── tabs ── */
+.tab-bar{display:flex;background:var(--cream-dark);border-bottom:2px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{padding:10px 16px;font-family:var(--font-body);font-size:.8rem;font-weight:500;
+  background:none;border:none;cursor:pointer;color:var(--text-muted);
+  border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:all .15s;}
+.tab-btn:hover{color:var(--green);background:var(--cream-darker);}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--orange);
+  background:var(--cream);font-weight:600;}
+
+/* ── panels ── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.panel-content{display:flex;min-height:0;}
+
+/* ── sidebar ── */
+.sidebar{width:295px;min-width:235px;background:var(--cream-dark);
+  border-right:1px solid var(--border);padding:14px;overflow-y:auto;overflow-x:hidden;flex-shrink:0;}
+
+/* ── canvas area ── */
+.carea{flex:1;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0;overflow:hidden;}
+
+/* ── controls ── */
+.cg{margin-bottom:12px;}
+.cg-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--green);margin-bottom:7px;padding-bottom:3px;border-bottom:1px solid var(--border-light);}
+.crow{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
+.clabel{font-size:.68rem;color:var(--text-muted);min-width:68px;
+  font-family:var(--font-mono);white-space:nowrap;}
+.swrap{flex:1;display:flex;align-items:center;gap:5px;}
+input[type=range]{flex:1;height:4px;accent-color:var(--orange);cursor:pointer;min-width:0;}
+.vd{font-family:var(--font-mono);font-size:.68rem;color:var(--orange);
+  min-width:38px;text-align:right;}
+select{font-family:var(--font-body);font-size:.75rem;background:var(--cream);
+  border:1px solid var(--border);border-radius:var(--r);padding:3px 7px;
+  color:var(--text);cursor:pointer;max-width:100%;}
+.check-row{display:flex;align-items:center;gap:7px;font-size:.75rem;color:var(--text-mid);margin-bottom:4px;}
+input[type=checkbox]{accent-color:var(--orange);width:14px;height:14px;cursor:pointer;flex-shrink:0;}
+
+/* ── presets / signals ── */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;}
+.pbtn{padding:5px 7px;font-size:.68rem;font-family:var(--font-body);
+  background:var(--cream);border:1px solid var(--border);border-radius:var(--r);
+  cursor:pointer;color:var(--text-mid);text-align:center;transition:all .12s;line-height:1.3;}
+.pbtn:hover{background:var(--green-pale);border-color:var(--green-mid);color:var(--green);}
+.pbtn.active{background:var(--green);border-color:var(--green);color:#fff;}
+.spick{display:flex;flex-wrap:wrap;gap:3px;}
+.sbtn{padding:3px 7px;font-size:.65rem;font-family:var(--font-mono);
+  background:var(--cream);border:1px solid var(--border);border-radius:4px;
+  cursor:pointer;color:var(--text-muted);transition:all .12s;}
+.sbtn:hover{border-color:var(--orange-light);color:var(--orange);}
+.sbtn.active{background:var(--orange);border-color:var(--orange);color:#fff;}
+
+/* ── buttons ── */
+.btns{display:flex;gap:5px;flex-wrap:wrap;}
+.btn{padding:5px 13px;font-size:.75rem;font-family:var(--font-body);font-weight:500;
+  border:none;border-radius:var(--r);cursor:pointer;transition:all .12s;}
+.btn-g{background:var(--green);color:#fff;}
+.btn-g:hover{background:var(--green-mid);}
+.btn-s{background:var(--cream-darker);color:var(--text-mid);border:1px solid var(--border);}
+.btn-s:hover{background:var(--border);}
+
+/* ── canvas containers ── */
+.cc{background:#fff;border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;position:relative;}
+.cc canvas{width:100%;display:block;}
+.clbl{font-size:.67rem;font-weight:700;color:var(--text-muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+
+/* ── info box ── */
+.ibox{background:var(--green-pale);border:1px solid var(--border-light);
+  border-left:3px solid var(--green);border-radius:var(--r);
+  padding:7px 9px;font-size:.73rem;color:var(--text-mid);line-height:1.5;}
+.ibox .mono{font-family:var(--font-mono);font-size:.68rem;color:var(--green);}
+
+/* ── info row (Tab 3 three-card explainer) ── */
+.info-row{display:flex;flex-direction:row;gap:10px;padding:10px 14px 14px;flex-wrap:wrap;
+  border-top:1px solid var(--border-light);background:var(--cream);}
+.info-card{flex:1;min-width:200px;background:var(--green-pale);
+  border:1px solid var(--border-light);border-left:3px solid var(--green);
+  border-radius:var(--r);padding:9px 11px;font-size:.73rem;color:var(--text-mid);line-height:1.5;}
+.info-card-title{font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--green);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border-light);}
+.info-card .mono{font-family:var(--font-mono);font-size:.68rem;color:var(--green);}
+.info-card ul{margin:4px 0 0 14px;padding:0;}
+.info-card li{margin-bottom:3px;}
+
+
+/* ── spectral ── */
+.spec-box{background:var(--cream);border:1px solid var(--border);border-radius:var(--r);
+  padding:8px;font-family:var(--font-mono);font-size:.67rem;}
+.spec-row{display:flex;justify-content:space-between;align-items:flex-start;padding:2px 0;gap:4px;}
+.sk{color:var(--text-muted);white-space:nowrap;}
+.sv{color:var(--orange);font-weight:500;text-align:right;}
+.stable{color:#2a8a2a;}.marginal{color:#b88820;}.unstable{color:var(--red-bad);}
+
+/* ── matrix ── */
+.mat-wrap{display:flex;align-items:center;gap:4px;margin-top:4px;}
+.mat-bracket{font-family:var(--font-mono);font-size:1.5rem;color:var(--border);line-height:1;}
+.mat{display:inline-grid;grid-template-columns:1fr 1fr;gap:2px;
+  background:var(--cream);border:1px solid var(--border);border-radius:var(--r);padding:5px;}
+.mc{font-family:var(--font-mono);font-size:.67rem;text-align:center;padding:2px 5px;
+  background:#fff;border:1px solid var(--border-light);border-radius:3px;color:var(--orange);}
+
+/* ── advanced toggle ── */
+.adv-btn{font-size:.68rem;color:var(--orange);cursor:pointer;background:none;border:none;
+  font-family:var(--font-body);padding:3px 0;display:flex;align-items:center;gap:3px;}
+.adv-btn::before{content:'▶';font-size:.55rem;transition:transform .15s;}
+.adv-btn.open::before{transform:rotate(90deg);}
+.adv-panel{display:none;padding-top:6px;}
+.adv-panel.open{display:block;}
+
+/* ── seq editor ── */
+.seq-ed{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;}
+.scell{width:26px;height:26px;border:1px solid var(--border);border-radius:3px;
+  background:var(--cream);display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:.65rem;cursor:pointer;transition:all .12s;color:var(--text-mid);}
+.scell.on{background:var(--orange);border-color:var(--orange);color:#fff;}
+.scell.cur{border-color:var(--green);border-width:2px;}
+
+/* ── two-canvas row (Tab 3) ── */
+.two-cv{display:flex;gap:10px;}
+.two-cv > div{flex:1;min-width:0;}
+
+/* ── footer ── */
+footer{text-align:center;padding:8px;font-size:.62rem;font-family:var(--font-mono);
+  color:var(--text-muted);border-top:1px solid var(--border-light);}
+footer a{color:var(--orange);}
+
+/* ── responsive ── */
+@media(max-width:700px){
+  .panel-content{flex-direction:column;}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .two-cv{flex-direction:column;}
+  .tab-btn{font-size:.72rem;padding:8px 11px;}
+}
+/* ── narrow: tabs become a dropdown ── */
+.tab-select{display:none;}
+@media(max-width:520px){
+  .tab-bar{display:none;}
+  .tab-select{display:block;width:100%;font-family:var(--font-body);font-size:.82rem;
+    font-weight:500;background:var(--cream-dark);border:none;
+    border-bottom:2px solid var(--border);padding:10px 14px;
+    color:var(--text);cursor:pointer;outline:none;appearance:auto;}
+  /* Header: title takes full row, copyright wraps below right-aligned */
+  .hdr{align-items:flex-start;}
+  .hdr h1{flex:1 1 100%;font-size:1rem;}
+  .hdr-copy{width:100%;display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+  /* Copyright: hide separator, stack vertically */
+  .copy-sep{display:none;}
+  footer{display:flex;flex-direction:column;align-items:center;gap:2px;}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <h1>Recurrent Networks &amp; Temporal Supervision Explorer</h1>
+  <span class="hdr-copy">
+    <span>&copy; 2026 Theodore P. Pavlic</span>
+    <span class="copy-sep">&nbsp;&middot;&nbsp;</span>
+    <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+  </span>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab-btn active"  onclick="switchTab(0)">① Delay Lines (TDNN)</button>
+  <button class="tab-btn"         onclick="switchTab(1)">② Output Feedback</button>
+  <button class="tab-btn"         onclick="switchTab(2)">③ Latent State (RNN)</button>
+  <button class="tab-btn"         onclick="switchTab(3)">④ Training: BPTT</button>
+  <button class="tab-btn"         onclick="switchTab(4)">⑤ Gated RNNs: LSTM</button>
+</nav>
+<select class="tab-select" id="tabSelect" onchange="switchTab(+this.value)">
+  <option value="0">① Delay Lines (TDNN)</option>
+  <option value="1">② Output Feedback</option>
+  <option value="2">③ Latent State (RNN)</option>
+  <option value="3">④ Training: BPTT</option>
+  <option value="4">⑤ Gated RNNs: LSTM</option>
+</select>
+
+<!-- ═══════════════════════════════════════════════════════ TAB 1 -->
+<div class="tab-panel active" id="tab0">
+  <div class="panel-content">
+    <aside class="sidebar">
+
+      <div class="cg">
+        <div class="cg-label">Tap Weights</div>
+        <div class="crow"><span class="clabel">w₀ (now)</span>
+          <div class="swrap"><input type="range" id="t1w0" min="-2" max="2" step="0.1" value="1" oninput="t1upd()">
+          <span class="vd" id="t1w0v">1.0</span></div></div>
+        <div class="crow"><span class="clabel">w₁ (k−1)</span>
+          <div class="swrap"><input type="range" id="t1w1" min="-2" max="2" step="0.1" value="0" oninput="t1upd()">
+          <span class="vd" id="t1w1v">0.0</span></div></div>
+        <div class="crow"><span class="clabel">w₂ (k−2)</span>
+          <div class="swrap"><input type="range" id="t1w2" min="-2" max="2" step="0.1" value="0" oninput="t1upd()">
+          <span class="vd" id="t1w2v">0.0</span></div></div>
+        <div class="crow"><span class="clabel">w₃ (k−3)</span>
+          <div class="swrap"><input type="range" id="t1w3" min="-2" max="2" step="0.1" value="0" oninput="t1upd()">
+          <span class="vd" id="t1w3v">0.0</span></div></div>
+        <div class="crow"><span class="clabel">θ (thresh)</span>
+          <div class="swrap"><input type="range" id="t1th" min="-3" max="4" step="0.1" value="0.5" oninput="t1upd()">
+          <span class="vd" id="t1thv">0.5</span></div></div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Input Signal</div>
+        <div class="spick">
+          <button class="sbtn active" onclick="t1sig('step',this)">step</button>
+          <button class="sbtn" onclick="t1sig('impulse',this)">impulse</button>
+          <button class="sbtn" onclick="t1sig('alt',this)">01 alt</button>
+          <button class="sbtn" onclick="t1sig('square',this)">square</button>
+          <button class="sbtn" onclick="t1sig('ramp',this)">ramp</button>
+        </div>
+        <div style="font-size:.67rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
+          Click any input sample in the plot to toggle it 0↔1 and build a custom signal.
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Weight Presets</div>
+        <div class="pgrid">
+          <button class="pbtn" onclick="t1pre('rise',this)">Rising edge</button>
+          <button class="pbtn" onclick="t1pre('fall',this)">Falling edge</button>
+          <button class="pbtn" onclick="t1pre('alt',this)">Alternating</button>
+          <button class="pbtn" onclick="t1pre('same',this)">Consecutive 1s</button>
+          <button class="pbtn" onclick="t1pre('avg',this)">Smoother</button>
+          <button class="pbtn" onclick="t1pre('pulse',this)">Pulse detector</button>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Simulation</div>
+        <div class="btns">
+          <button class="btn btn-s" onclick="t1step()">Next →</button>
+          <button class="btn btn-g" id="t1pb" onclick="t1play()">Play</button>
+          <button class="btn btn-s" onclick="t1rst()">Reset</button>
+        </div>
+      </div>
+
+      <div class="ibox">
+        <div class="cg-label" style="margin-bottom:5px">System Update Equation</div>
+        <div class="mono">y[k] = Σᵢ wᵢ · x[k−i]</div>
+        Weighted sum of delayed inputs. Fires (y=1) when sum exceeds threshold θ.
+        Equivalent to an FIR filter with a threshold comparator — no feedback, finite memory.
+      </div>
+
+    </aside>
+    <div class="carea">
+      <div>
+        <div class="clbl">Shift Register &amp; Fan-in to Output &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:.75">(k = <span id="t1klbl">3</span>)</span></div>
+        <div class="cc" style="height:175px"><canvas id="c1a"></canvas></div>
+      </div>
+      <div>
+        <div class="clbl">Input x[k] and Output y[k] — drag to inspect any time step</div>
+        <div class="cc" style="height:230px"><canvas id="c1b"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TAB 2 -->
+<div class="tab-panel" id="tab1">
+  <div class="panel-content">
+    <aside class="sidebar">
+
+      <div class="cg">
+        <div class="cg-label">Weights &amp; Activation</div>
+        <div class="crow"><span class="clabel">wₓ (input)</span>
+          <div class="swrap"><input type="range" id="t2wx" min="-3" max="3" step="0.1" value="2" oninput="t2upd()">
+          <span class="vd" id="t2wxv">2.0</span></div></div>
+        <div class="crow"><span class="clabel">w_r (recur)</span>
+          <div class="swrap"><input type="range" id="t2wr" min="-3" max="3" step="0.1" value="2" oninput="t2upd()">
+          <span class="vd" id="t2wrv">2.0</span></div></div>
+        <div class="crow"><span class="clabel">θ (thresh)</span>
+          <div class="swrap"><input type="range" id="t2th" min="-3" max="4" step="0.1" value="1" oninput="t2upd()">
+          <span class="vd" id="t2thv">1.0</span></div></div>
+        <div class="crow"><span class="clabel">y[0] (init)</span>
+          <div class="swrap"><input type="range" id="t2y0" min="-1" max="1" step="0.1" value="0" oninput="t2upd()">
+          <span class="vd" id="t2y0v">0.0</span></div></div>
+        <div class="crow"><span class="clabel">activation</span>
+          <select id="t2act" onchange="t2upd()">
+            <option value="step" selected>Heaviside step</option>
+            <option value="tanh">tanh</option>
+            <option value="sigmoid">sigmoid</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Input Signal</div>
+        <div class="spick">
+          <button class="sbtn active" onclick="t2sig('step',this)">step</button>
+          <button class="sbtn" onclick="t2sig('impulse',this)">impulse</button>
+          <button class="sbtn" onclick="t2sig('alt',this)">01 alt</button>
+          <button class="sbtn" onclick="t2sig('square',this)">square</button>
+          <button class="sbtn" onclick="t2sig('ramp',this)">ramp</button>
+        </div>
+        <div style="font-size:.67rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
+          Click any input sample in the plot to toggle it 0↔1 and build a custom signal.
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Weight Presets</div>
+        <div class="pgrid">
+          <button class="pbtn" onclick="t2pre('latch',this)">Memory latch</button>
+          <button class="pbtn" onclick="t2pre('echo',this)">One-step echo</button>
+          <button class="pbtn" onclick="t2pre('osc',this)">Oscillator</button>
+          <button class="pbtn" onclick="t2pre('bistable',this)">Bistable</button>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Simulation</div>
+        <div class="btns">
+          <button class="btn btn-s" onclick="t2step()">Next →</button>
+          <button class="btn btn-g" id="t2pb" onclick="t2play()">Play ▶</button>
+          <button class="btn btn-s" onclick="t2rst()">Reset</button>
+        </div>
+      </div>
+
+      <div class="ibox">
+        <div class="cg-label" style="margin-bottom:5px">System Update Equation</div>
+        <div class="mono">y[k+1] = f(wₓ·x[k] + w_r·y[k] − θ)</div>
+        The purple y[k] cell holds the <em>previous output</em>, which feeds back as a second input.
+        θ shifts the threshold (equivalent to bias b=−θ). Changing weights instantly recomputes the full output sequence.
+      </div>
+
+    </aside>
+    <div class="carea">
+      <div>
+        <div class="clbl">Register &amp; Feedback (k = <span id="t2klbl">3</span>)</div>
+        <div class="cc" style="height:175px"><canvas id="c2a"></canvas></div>
+      </div>
+      <div>
+        <div class="clbl">Input x[k] and Output y[k] — drag to inspect, click x[k] to toggle</div>
+        <div class="cc" style="height:230px"><canvas id="c2b"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TAB 3 -->
+<div class="tab-panel" id="tab2">
+  <div class="panel-content">
+    <aside class="sidebar">
+
+      <div class="cg">
+        <div class="cg-label">Recurrence Matrix A</div>
+        <div class="crow" style="margin-bottom:7px">
+          <span class="clabel" style="min-width:52px">Mode</span>
+          <select id="t3amode" onchange="t3amodeSwitch()" style="flex:1">
+            <option value="rot" selected>α·R(θ) — scaled rotation</option>
+            <option value="free">Free — all 4 entries</option>
+          </select>
+        </div>
+        <!-- Rotation mode sliders -->
+        <div id="t3arot">
+          <div class="crow"><span class="clabel">α (scale)</span>
+            <div class="swrap"><input type="range" id="t3al" min="0" max="1.5" step="0.01" value="0.8" oninput="t3upd()">
+            <span class="vd" id="t3alv">0.80</span></div></div>
+          <div class="crow"><span class="clabel">θ (rotation)</span>
+            <div class="swrap"><input type="range" id="t3th" min="0" max="3.14159" step="0.02" value="0" oninput="t3upd()">
+            <span class="vd" id="t3thv">0.00</span></div></div>
+        </div>
+        <!-- Free mode sliders -->
+        <div id="t3afree" style="display:none">
+          <div class="crow"><span class="clabel">a₁₁</span>
+            <div class="swrap"><input type="range" id="t3a11" min="-2" max="2" step="0.05" value="0.8" oninput="t3upd()">
+            <span class="vd" id="t3a11v">0.80</span></div></div>
+          <div class="crow"><span class="clabel">a₁₂</span>
+            <div class="swrap"><input type="range" id="t3a12" min="-2" max="2" step="0.05" value="0" oninput="t3upd()">
+            <span class="vd" id="t3a12v">0.00</span></div></div>
+          <div class="crow"><span class="clabel">a₂₁</span>
+            <div class="swrap"><input type="range" id="t3a21" min="-2" max="2" step="0.05" value="0" oninput="t3upd()">
+            <span class="vd" id="t3a21v">0.00</span></div></div>
+          <div class="crow"><span class="clabel">a₂₂</span>
+            <div class="swrap"><input type="range" id="t3a22" min="-2" max="2" step="0.05" value="0.8" oninput="t3upd()">
+            <span class="vd" id="t3a22v">0.80</span></div></div>
+        </div>
+        <!-- Random reservoir -->
+        <div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border-light)">
+          <div class="crow" style="margin-bottom:5px">
+            <span class="clabel" style="min-width:72px">Target ρ(A)</span>
+            <div class="swrap">
+              <input type="range" id="t3rho" min="0.1" max="1.4" step="0.05" value="0.9" oninput="document.getElementById('t3rhov').textContent=parseFloat(this.value).toFixed(2)">
+              <span class="vd" id="t3rhov">0.90</span>
+            </div>
+          </div>
+          <button class="btn btn-s" style="width:100%;font-size:.72rem" onclick="t3randomA()">🎲 Random A (scaled to ρ)</button>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Input Gains B and Output Mix C</div>
+        <div class="crow"><span class="clabel">b₁ (→ h₁)</span>
+          <div class="swrap"><input type="range" id="t3b1" min="-2" max="2" step="0.1" value="1" oninput="t3upd()">
+          <span class="vd" id="t3b1v">1.0</span></div></div>
+        <div class="crow"><span class="clabel">b₂ (→ h₂)</span>
+          <div class="swrap"><input type="range" id="t3b2" min="-2" max="2" step="0.1" value="0" oninput="t3upd()">
+          <span class="vd" id="t3b2v">0.0</span></div></div>
+        <div class="crow"><span class="clabel">φ (out mix)</span>
+          <div class="swrap"><input type="range" id="t3ph" min="0" max="6.283" step="0.05" value="0" oninput="t3upd()">
+          <span class="vd" id="t3phv">0.00</span></div></div>
+        <div class="check-row">
+          <input type="checkbox" id="t3nl" onchange="t3upd()">
+          <label for="t3nl">Apply tanh to h[k+1]</label>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Initial State h[0]</div>
+        <div class="crow"><span class="clabel">h₁[0]</span>
+          <div class="swrap"><input type="range" id="t3h10" min="-2" max="2" step="0.1" value="0" oninput="t3h0upd()">
+          <span class="vd" id="t3h10v">0.0</span></div></div>
+        <div class="crow"><span class="clabel">h₂[0]</span>
+          <div class="swrap"><input type="range" id="t3h20" min="-2" max="2" step="0.1" value="0" oninput="t3h0upd()">
+          <span class="vd" id="t3h20v">0.0</span></div></div>
+        <div style="font-size:.67rem;color:var(--text-muted);margin-top:4px;line-height:1.4">
+          Or drag the h₁ / h₂ stems at k=0 vertically in the plot.
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">What A does to h each step</div>
+        <div class="spec-box" style="font-size:.69rem;line-height:1.55" id="t3spec">—</div>
+        <div style="margin-top:5px;font-size:.68rem;font-family:var(--font-mono)">
+          <span id="t3stab">—</span>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Input Signal</div>
+        <div class="spick">
+          <button class="sbtn active" onclick="t3sig('step',this)">step</button>
+          <button class="sbtn" onclick="t3sig('impulse',this)">impulse</button>
+          <button class="sbtn" onclick="t3sig('alt',this)">01 alt</button>
+          <button class="sbtn" onclick="t3sig('square',this)">square</button>
+        </div>
+        <div style="font-size:.67rem;color:var(--text-muted);margin-top:6px;line-height:1.4">
+          Click any input sample in the plot to toggle it 0↔1.
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">A-Matrix Presets</div>
+        <div style="font-size:.67rem;color:var(--text-muted);margin-bottom:5px">Rotation mode:</div>
+        <div class="pgrid">
+          <button class="pbtn" onclick="t3pre('decay',this)">Fading memory</button>
+          <button class="pbtn" onclick="t3pre('osc',this)">Oscillatory</button>
+          <button class="pbtn" onclick="t3pre('integ',this)">Integrator</button>
+          <button class="pbtn" onclick="t3pre('unstable',this)">Unstable</button>
+        </div>
+        <div style="font-size:.67rem;color:var(--text-muted);margin-top:7px;margin-bottom:5px">Free mode:</div>
+        <div class="pgrid">
+          <button class="pbtn" onclick="t3pre('dblint',this)">Double integrator</button>
+          <button class="pbtn" onclick="t3pre('shear',this)">Shear (Jordan)</button>
+          <button class="pbtn" onclick="t3pre('reflect',this)">Flip h₂</button>
+          <button class="pbtn" onclick="t3pre('coupled',this)">Coupled decay</button>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Simulation</div>
+        <div class="btns">
+          <button class="btn btn-s" onclick="t3step()">Next →</button>
+          <button class="btn btn-g" id="t3pb" onclick="t3play()">Play ▶</button>
+          <button class="btn btn-s" onclick="t3rst()">Reset</button>
+        </div>
+      </div>
+
+    </aside>
+    <div class="carea">
+      <div>
+        <div class="clbl">System Diagram &nbsp;<span style="font-weight:400;text-transform:none;letter-spacing:0;opacity:.75">(k = <span id="t3klbl">3</span>)</span></div>
+        <div class="cc" style="height:295px"><canvas id="c3a"></canvas></div>
+      </div>
+      <div>
+        <div class="clbl">x[k], h₁[k], h₂[k], y[k] over time — drag to inspect, click x[k] to toggle</div>
+        <div class="cc" style="height:300px"><canvas id="c3b"></canvas></div>
+      </div>
+      <div>
+        <div class="clbl">Phase portrait: h₁[k] vs h₂[k]</div>
+        <div class="cc" style="height:190px"><canvas id="c3c"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Three-card info row — spans full width below the sidebar+canvas split ── -->
+  <div class="info-row">
+
+    <div class="info-card">
+      <div class="info-card-title">System Update Equations</div>
+      <div class="mono">h[k+1] = A·h[k] + B·x[k]<br>y[k] = Cᵀ·h[k]</div>
+      <br>
+      A transforms the 2D hidden state each step. B injects the scalar input x[k] into h.
+      Cᵀ projects the hidden state to a scalar output y[k].
+      <br><br>
+      <strong>Apply tanh to h[k+1]</strong> wraps the update:
+      <span class="mono">h[k+1] = tanh(A·h[k] + B·x[k])</span>.
+      This does two things: it bounds h to (−1, 1) regardless of ρ(A), and it nonlinearly mixes
+      the input history at each step — creating richer representations that can be more separable
+      than the purely linear case. Without tanh, the system is a linear map and h grows without
+      bound whenever ρ &gt; 1.
+      <br><br>
+      <strong>Overflow guard:</strong> without tanh, h can grow without bound when ρ(A) &gt; 1.
+      The display clamps h to ±15 per step to prevent NaN — it does not change the mathematics.
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">Modes for the A Matrix</div>
+      <ul>
+        <li><strong>Scaled rotation α·R(θ)</strong> — A is constrained to rotate the hidden state by θ radians and scale it by α each step. Spectral radius ρ = α. Clean parameterization but limited to orthogonal-like structures.</li>
+        <li><strong>Free (4 entries)</strong> — all four entries of A can be set independently, enabling structures a rotation cannot represent: Jordan blocks, shears, asymmetric coupling, double integrators.</li>
+        <li><strong>Random A (scaled to ρ)</strong> — a random 2×2 matrix is drawn and rescaled so its spectral radius equals the target ρ. This mimics how an Echo State Network reservoir is initialized: random, frozen, and scaled to just below ρ = 1.</li>
+      </ul>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">ρ(A) and the Echo State Property</div>
+      The <strong>spectral radius ρ(A)</strong> is the magnitude of the largest eigenvalue of A.
+      It controls the long-run behavior of the hidden state:
+      <ul>
+        <li><strong>ρ &lt; 1</strong> — h eventually forgets any initial condition and reflects only recent inputs. This is the <em>echo state property</em>: the reservoir is driven entirely by the input signal.</li>
+        <li><strong>ρ = 1</strong> — h neither grows nor decays. Memory is indefinitely long but fragile.</li>
+        <li><strong>ρ &gt; 1</strong> — h grows without bound. Initial conditions dominate; the echo state property is lost.</li>
+      </ul>
+      In a real ESN, A is large (hundreds of neurons), frozen after random initialization, and only the output weights Cᵀ are trained — by simple linear regression, not backprop.
+      This widget is a 2D preview of that reservoir idea.
+      <br><br>
+      <strong>Try this:</strong> click <em>Random A</em> with ρ ≈ 0.9, then cycle through the four input signals (step, impulse, 01 alt, square). Watch how the <strong>phase portrait changes shape and location</strong> for each signal — the cloud of (h₁, h₂) points lands in a different region of state space depending on the temporal structure of the input. The random mixing of A is sufficient to create this separation even without tanh. This is exactly why ESNs can classify time series: different patterns produce geometrically separable reservoir states, and a linear readout (Cᵀ) can then separate them.
+      <br><br>
+      Now repeat the experiment with a <em>rotation-mode</em> A (e.g. Oscillatory preset). The phase portrait traces the same orbit regardless of input signal — only the position along the orbit changes. The marginal distributions of h₁ and h₂ look nearly identical across all inputs, making linear classification much harder. The random A breaks this symmetry and creates the rich, input-dependent geometry that makes reservoir computing useful.
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TAB 4 -->
+<div class="tab-panel" id="tab3">
+  <div class="panel-content">
+    <aside class="sidebar">
+
+      <div class="cg">
+        <div class="cg-label">Input Sequence x[0..5]</div>
+        <div id="t4seq" style="display:flex;gap:4px;margin-bottom:4px"></div>
+        <div style="font-size:.67rem;color:var(--text-muted)">Click cells to toggle 0↔1.</div>
+      </div>
+
+      <div class="cg" id="t4tgtsec">
+        <div class="cg-label">Target &amp; Learning Rate</div>
+        <div class="crow"><span class="clabel">target y*</span>
+          <div class="swrap"><input type="range" id="t4tgt" min="-1" max="1" step="0.05" value="0.5" oninput="t4paramUpd()">
+          <span class="vd" id="t4tgtv">0.50</span></div></div>
+        <div class="crow"><span class="clabel">η (lr)</span>
+          <div class="swrap"><input type="range" id="t4lr" min="0.005" max="0.5" step="0.005" value="0.05" oninput="t4paramUpd()">
+          <span class="vd" id="t4lrv">0.050</span></div></div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Weights &amp; Gradients</div>
+        <table id="t4wtbl" style="width:100%;font-size:.68rem;font-family:var(--font-mono);border-collapse:collapse;line-height:1.7">
+          <thead><tr style="color:var(--text-muted)"><th style="text-align:left">param</th><th style="text-align:right">value</th><th style="text-align:right">∂L/∂w (sum)</th></tr></thead>
+          <tbody>
+            <tr><td>wᵣ</td><td id="t4wrv" style="text-align:right;color:var(--green-mid)">0.9000</td><td id="t4dwrv" style="text-align:right">—</td></tr>
+            <tr><td>wₓ</td><td id="t4wxv" style="text-align:right;color:var(--green-mid)">1.5000</td><td id="t4dwxv" style="text-align:right">—</td></tr>
+            <tr><td>wᵧ</td><td id="t4wyv" style="text-align:right;color:var(--purple)">1.0000</td><td id="t4dwyv" style="text-align:right">—</td></tr>
+          </tbody>
+        </table>
+        <!-- gradient accumulation moved to main panel between canvases -->
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Presets</div>
+        <div class="pgrid">
+          <button class="pbtn" onclick="t4pre('van',this)">Vanishing</button>
+          <button class="pbtn" onclick="t4pre('stb',this)">Stable</button>
+          <button class="pbtn" onclick="t4pre('exp',this)">Exploding</button>
+        </div>
+      </div>
+
+      <div class="cg">
+        <div class="cg-label">Mode</div>
+        <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden">
+          <button id="t4modetrn" onclick="t4setMode('train')"
+            style="flex:1;padding:6px 4px;font-size:.72rem;font-weight:600;border:none;cursor:pointer;
+                   background:var(--green);color:#fff;font-family:var(--font-body)">
+            ✎ Training
+          </button>
+          <button id="t4modeinf" onclick="t4setMode('infer')"
+            style="flex:1;padding:6px 4px;font-size:.72rem;font-weight:600;border:none;cursor:pointer;
+                   background:var(--cream-dark);color:var(--text-muted);font-family:var(--font-body)">
+            ▷ Inference
+          </button>
+        </div>
+        <div id="t4modelbl" style="font-size:.66rem;color:var(--text-muted);margin-top:4px;line-height:1.4">
+          Training mode — weights update after each backward pass.
+        </div>
+      </div>
+
+      <div class="cg" id="t4simcg">
+        <div class="cg-label">Training Simulation</div>
+        <div id="t4phase" style="font-size:.7rem;color:var(--text-muted);margin-bottom:7px;min-height:1.4em">
+          Ready — press Step → to begin forward pass
+        </div>
+        <div class="btns" id="t4steprow" style="flex-wrap:wrap;gap:5px">
+          <button class="btn btn-s" id="t4stepbtn" onclick="t4advance()">Step →</button>
+          <button class="btn btn-s" onclick="t4fullPass()">Full Pass</button>
+        </div>
+        <div class="btns" id="t4trainrow" style="margin-top:5px;gap:5px">
+          <button class="btn btn-g" id="t4trainbtn" onclick="t4train()">Train ▶</button>
+          <button class="btn btn-s" onclick="t4rst()">Reset</button>
+        </div>
+        <div id="t4inferrow" style="display:none;margin-top:5px;gap:5px" class="btns">
+        </div>
+        <div id="t4iterlossrow" style="margin-top:6px;font-size:.68rem;font-family:var(--font-mono);display:flex;gap:12px">
+          <span style="color:var(--text-muted)">iter <span id="t4iterv">0</span></span>
+          <span style="color:var(--orange)">loss <span id="t4lossv">—</span></span>
+        </div>
+      </div>
+
+
+    </aside>
+    <div class="carea">
+      <div>
+        <div class="clbl">Unrolled Computation Graph</div>
+        <div class="cc" style="height:320px"><canvas id="c4a"></canvas></div>
+      </div>
+      <div>
+        <div class="clbl">Gradient Accumulation — ∂L/∂wᵣ = Σ e[k+1]·h[k] &nbsp;&nbsp; ∂L/∂wₓ = Σ e[k+1]·x[k] &nbsp;&nbsp; where e[k+1] = (∂L/∂h[k+1])·σ′</div>
+        <div id="t4accumbox" style="
+          background:#fdfaf5;border:1px solid var(--border-light);border-radius:var(--r);
+          padding:8px 12px;min-height:88px;font-family:var(--font-mono);font-size:.67rem;
+          color:var(--text-muted);line-height:1.8;overflow:hidden">
+          <em>Backward pass not yet run — step through or press Full Pass to see accumulation.</em>
+        </div>
+      </div>
+      <div>
+        <div class="clbl" id="t4lossclbl">Loss over Training Iterations</div>
+        <div class="cc" style="height:150px"><canvas id="c4b"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 1: Gradient mechanics + Weight accumulation (complementary pair) ── -->
+  <div class="info-row">
+
+    <div class="info-card">
+      <div class="info-card-title">Backprop Review: Chain Rule &amp; Local Error Signals</div>
+      To update any weight w, we need ∂L/∂w. Because the network is a composition of functions,
+      we apply the <strong>chain rule</strong>. For a weight at step k that affects h[k+1] through
+      the pre-activation z = wᵣ·h[k] + wₓ·x[k]:
+      <br><br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        ∂L/∂w = (∂L/∂h[k+1]) · (∂h[k+1]/∂z) · (∂z/∂w)
+      </span>
+      <br><br>
+      The middle factor ∂h[k+1]/∂z is the derivative of tanh (the chosen activation function) —
+      because h[k+1] = tanh(z):
+      <br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        ∂h[k+1]/∂z = 1 − tanh²(z) = 1 − h[k+1]²
+      </span>
+      <br><br>
+      Combining the first two factors gives a <strong>local error signal</strong>:
+      <br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        e[k+1] = (∂L/∂h[k+1]) · (1 − h[k+1]²)
+      </span>
+      <br><br>
+      So ∂L/∂w = e[k+1] · (∂z/∂w). The local error from one step — fully computable
+      from quantities known at that step — simply scales by the partial derivative of z
+      with respect to whatever quantity we are differentiating. Since z = wᵣ·h[k] + wₓ·x[k],
+      those partials are:
+      <ul>
+        <li>Contribution to ∂L/∂wᵣ &nbsp;is&nbsp; e[k+1] · ∂z/∂wᵣ &nbsp;=&nbsp; e[k+1] · h[k]</li>
+        <li>Contribution to ∂L/∂wₓ &nbsp;is&nbsp; e[k+1] · ∂z/∂wₓ &nbsp;=&nbsp; e[k+1] · x[k]</li>
+        <li>Contribution to ∂L/∂h[k] &nbsp;(passed left to the next step) &nbsp;is&nbsp; e[k+1] · ∂z/∂h[k] &nbsp;=&nbsp; e[k+1] · wᵣ</li>
+      </ul>
+      The third bullet is the key to the recursion: h[k] is not a trainable weight, but it
+      connects step k to step k+1, so its gradient carries the error signal one step further left.
+      <br><br>
+      <strong>This pattern is recursive.</strong> Computing ∂L/∂h[k+1] itself requires the same
+      chain-rule step one position to the right. At the very top, the derivative we ultimately
+      need is ∂L/∂wᵣ or ∂L/∂wₓ (the weights that appear at every step and therefore require
+      the full BPTT treatment). We also update wᵧ, but its gradient ∂L/∂wᵧ = (y−y*)·h[T]
+      is a single term with no chain through time — so it does not illustrate the challenge
+      of gradient flow and is not our focus here.
+      <br><br>
+      For wᵣ and wₓ, the chain must reach all the way back through the h-nodes. The full
+      decomposition at the output step is:
+      <br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        ∂L/∂w = (∂L/∂y) · (∂y/∂h[T]) · (∂h[T]/∂z[T]) · (∂z[T]/∂w)
+      </span>
+      <br>
+      where ∂L/∂y = (y−y*) is the prediction error; ∂y/∂h[T] = wᵧ because y = wᵧ·h[T]
+      (no activation on the output); ∂h[T]/∂z[T] = σ′(h[T]) = 1−h[T]² is the tanh derivative;
+      and ∂z[T]/∂w is h[T−1] for wᵣ or x[T−1] for wₓ. Grouping the first three factors
+      gives the first local error signal:
+      <br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        e[T] = (y−y*) · σ′(h[T]) · wᵧ &nbsp; ← error · activation deriv · weight
+      </span>
+      <br>
+      This is the seed that propagates leftward. At every subsequent step k, the incoming
+      gradient ∂L/∂h[k+1] plays the role that (y−y*)·wᵧ played here — the recursion
+      simply repeats: compute e[k+1], use it with h[k] and x[k] to get the weight gradient
+      contributions, then use e[k+1]·wᵣ = ∂L/∂h[k] (from the third line above) to seed
+      the next step to the left.
+      The ∂L/∂h[k] values shown below each node in the graph are exactly these propagated signals.
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">Gradient Flow Through Time: Shared Weights &amp; Accumulation</div>
+      This network uses <strong>squared-error loss</strong>: L = ½(y − y*)². The ½ is a
+      convenience that cancels the exponent when differentiating: ∂L/∂y = y − y*.
+      <br><br>
+      As derived in the left card, the local error signal at each step is:
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        e[k+1] = (∂L/∂h[k+1]) · (1 − h[k+1]²)
+      </span>
+      — the gradient of the loss with respect to h[k+1] scaled by the activation derivative.
+      It captures how much the loss would change if h[k+1] changed, after accounting for
+      the nonlinearity. Summing e[k+1] terms across k is therefore summing the loss-sensitivity
+      at each time step, weighted by how much each step's input (h[k] or x[k]) contributed.
+      <br><br>
+      In a feedforward net each weight appears once, so ∂L/∂w is a single chain-rule term.
+      In an RNN, wᵣ and wₓ appear at <em>every</em> step, so their gradients are
+      <strong>sums across all T steps</strong>:
+      <br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        ∂L/∂wᵣ = Σ<sub>k</sub> e[k+1] · h[k]<br>
+        ∂L/∂wₓ = Σ<sub>k</sub> e[k+1] · x[k]<br>
+        ∂L/∂wᵧ = (y−y*) · h[T] &nbsp;(wᵧ appears once)
+      </span>
+      <br><br>
+      <strong>All T contributions must be accumulated before any weight moves.</strong>
+      <br><br>
+      The gradient ∂L/∂h[k] has been multiplied by wᵣ a total of T−k times on its journey
+      from h[T]. If |wᵣ| &lt; 1, each multiplication shrinks it — early steps contribute almost
+      nothing. Arrow <strong>color</strong> encodes magnitude:
+      <strong style="color:#2a8a2a">gray=small</strong> ·
+      <strong style="color:#b88820">orange≈1</strong> ·
+      <strong style="color:var(--red-bad)">red=large</strong>.
+      Each weight is then updated once: <span style="font-family:var(--font-mono);font-size:.68rem">w ← w − η · ∂L/∂w</span>
+      where η is the learning rate slider.
+    </div>
+
+  </div>
+
+  <!-- ── Row 2: Context cards ── -->
+  <div class="info-row">
+
+    <div class="info-card">
+      <div class="info-card-title">Training Objective &amp; the T=6 Window</div>
+      The network is trained to produce a target output y* at <em>step T=6</em> given the input
+      sequence x[0..5]. The three weights — wᵣ (recurrent), wₓ (input), wᵧ (output) — are all
+      updated by gradient descent after each forward+backward pass.
+      <br><br>
+      The choice of T matters: longer T lets the network use earlier inputs but makes gradients
+      harder to propagate (more multiplications by wᵣ). In practice, truncated BPTT uses a
+      fixed window (like T=6 here) that slides through long sequences, trading some long-range
+      memory for computational tractability.
+      <br><br>
+      <strong>σ (sigma)</strong> is the activation function applied at each step — here σ = tanh.
+      Its derivative σ′ = 1−h² appears at every backward step. When h≈±1 (saturated), σ′≈0,
+      compounding with the wᵣ factor to make vanishing gradients even worse.
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">Rolled Network (What It Actually Looks Like)</div>
+      The unrolled graph above is a teaching device — the actual network has a single hidden
+      node h with a self-loop. The same three weights are reused at every step.
+      <!-- Compact SVG of the rolled RNN -->
+      <svg viewBox="0 16 260 132" style="width:100%;max-width:280px;display:block;margin:2px auto 6px">
+        <defs>
+          <marker id="arr4b"  markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#2a5f8a"/></marker>
+          <marker id="arrg4b" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#3d7a35"/></marker>
+          <marker id="arrp4b" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#804090"/></marker>
+        </defs>
+        <circle cx="130" cy="100" r="24" fill="#eef3ff" stroke="#2a5f8a" stroke-width="2"/>
+        <text x="130" y="105" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#2a5f8a">h[k]</text>
+        <path d="M145,79 C160,30 100,30 115,79" fill="none" stroke="#2a5f8a" stroke-width="1.6" marker-end="url(#arr4b)"/>
+        <text x="130" y="34" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#2a5f8a">wᵣ</text>
+        <line x1="14" y1="100" x2="103" y2="100" stroke="#3d7a35" stroke-width="1.6" marker-end="url(#arrg4b)"/>
+        <text x="10" y="93" font-family="IBM Plex Mono,monospace" font-size="10" fill="#3d7a35">x[k]</text>
+        <text x="58" y="93" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#3d7a35">wₓ</text>
+        <line x1="157" y1="100" x2="226" y2="100" stroke="#804090" stroke-width="1.6" marker-end="url(#arrp4b)"/>
+        <text x="234" y="105" font-family="IBM Plex Mono,monospace" font-size="10" fill="#804090">y[k]</text>
+        <text x="191" y="93" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#804090">wᵧ</text>
+        <text x="130" y="138" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#888">h[k+1] = tanh(wᵣ·h[k] + wₓ·x[k])</text>
+      </svg>
+      Unrolling copies this diagram T times with shared weights, creating the chain above.
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">BPTT vs. Reservoir / ESN Training</div>
+      BPTT trains <em>all</em> weights — wᵣ, wₓ, and wᵧ — by propagating gradients back through
+      the unrolled chain. This is expensive and unstable when gradients vanish or explode.
+      <br><br>
+      <strong>Echo State Networks (ESNs)</strong> sidestep this entirely. The recurrent matrix A
+      (and thus wᵣ here) is <em>fixed at random initialization</em> and never trained.
+      Only the readout weights (wᵧ / Cᵀ) are trained — by simple linear regression, not backprop.
+      This works because a well-chosen random reservoir with ρ(A) &lt; 1 already projects the input
+      history into a rich, separable state space (as you can see in the Tab 3 phase portrait).
+      <br><br>
+      The tradeoff: ESNs are fast and stable but the reservoir is fixed. BPTT-trained RNNs can
+      learn task-specific dynamics but require gradient clipping or LSTMs to train reliably.
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ TAB 5 -->
+<div class="tab-panel" id="tab4">
+
+  <!-- ── Top: two-column comparison ── -->
+  <div style="display:flex;gap:20px;padding:14px 14px 0;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- Left: RNN problem recap -->
+    <div style="flex:0 1 280px">
+      <div class="clbl">Vanilla RNN (from Tab ④)</div>
+      <svg viewBox="0 16 260 144" style="width:100%;max-width:280px;display:block;margin:4px auto">
+        <defs>
+          <marker id="t5rnn-b" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#2a5f8a"/></marker>
+          <marker id="t5rnn-g" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#3d7a35"/></marker>
+          <marker id="t5rnn-p" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#804090"/></marker>
+        </defs>
+        <circle cx="130" cy="100" r="24" fill="#eef3ff" stroke="#2a5f8a" stroke-width="2"/>
+        <text x="130" y="105" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#2a5f8a">h[k]</text>
+        <path d="M145,79 C160,30 100,30 115,79" fill="none" stroke="#2a5f8a" stroke-width="1.6" marker-end="url(#t5rnn-b)"/>
+        <text x="130" y="34" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="11" fill="#2a5f8a">wᵣ</text>
+        <line x1="14" y1="100" x2="103" y2="100" stroke="#3d7a35" stroke-width="1.6" marker-end="url(#t5rnn-g)"/>
+        <text x="10" y="93" font-family="IBM Plex Mono,monospace" font-size="10" fill="#3d7a35">x[k]</text>
+        <text x="58" y="93" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#3d7a35">wₓ</text>
+        <line x1="157" y1="100" x2="226" y2="100" stroke="#804090" stroke-width="1.6" marker-end="url(#t5rnn-p)"/>
+        <text x="234" y="105" font-family="IBM Plex Mono,monospace" font-size="10" fill="#804090">y[k]</text>
+        <text x="191" y="93" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#804090">wᵧ</text>
+        <text x="130" y="136" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#888">h[k+1] = tanh(wᵣ·h[k] + wₓ·x[k])</text>
+        <!-- Gradient annotation with proper superscript T -->
+        <text x="130" y="156" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#c8581a" font-weight="600"><tspan>gradient ∝ (wᵣ·σ′)</tspan><tspan dy="-5" font-size="8">T</tspan><tspan dy="5">  →  vanishes/explodes</tspan></text>
+      </svg>
+      <p style="font-size:.7rem;color:var(--text-muted);line-height:1.4;margin:4px 0 0">
+        Every backward step multiplies the gradient by wᵣ·σ′ — once per step. After T steps
+        this factor has been applied T times. If |wᵣ|&lt;1 the gradient vanishes; if |wᵣ|&gt;1 it explodes.
+      </p>
+    </div>
+
+    <!-- Right: LSTM cell diagram -->
+    <div style="flex:1;min-width:310px">
+      <div class="clbl">LSTM Cell — adding a gradient highway</div>
+      <svg viewBox="0 0 542 228" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:600px;display:block;margin:4px auto">
+        <defs>
+          <marker id="l5b" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,.5 L6,3 L0,5.5Z" fill="#2a5f8a"/></marker>
+          <marker id="l5g" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,.5 L6,3 L0,5.5Z" fill="#3d7a35"/></marker>
+          <marker id="l5o" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,.5 L6,3 L0,5.5Z" fill="#c8581a"/></marker>
+          <marker id="l5p" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,.5 L6,3 L0,5.5Z" fill="#804090"/></marker>
+          <marker id="l5t" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,.5 L6,3 L0,5.5Z" fill="#257a7a"/></marker>
+          <marker id="l5d" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,.5 L6,3 L0,5.5Z" fill="#4a3020"/></marker>
+        </defs>
+
+        <!-- Track label -->
+        <text x="4" y="12" font-family="Outfit,sans-serif" font-size="7.5" font-weight="700" fill="#2a5f8a">c &#8212; CELL STATE  (gradient highway &#8212; additive updates)</text>
+        <text x="4" y="21" font-family="IBM Plex Mono,monospace" font-size="6.5" fill="#2a5f8a" opacity="0.75">c[k] = f&#8857;c[k&#8722;1] + i&#8857;g   &#183;   g = tanh(W&#183;[h[k&#8722;1]; x[k]])   &#183;   f, i = &#963;(W&#183;[h[k&#8722;1]; x[k]])</text>
+
+        <!-- ── CELL STATE TRACK y=32 ── -->
+        <text x="4" y="54" font-family="IBM Plex Mono,monospace" font-size="10" fill="#2a5f8a">c[k&#8722;1]</text>
+        <line x1="46" y1="50" x2="157" y2="50" stroke="#2a5f8a" stroke-width="2.2" marker-end="url(#l5b)"/>
+        <circle cx="170" cy="50" r="13" fill="#fff2eb" stroke="#c8581a" stroke-width="1.8"/>
+        <text x="170" y="56" text-anchor="middle" font-size="15" font-family="Outfit,sans-serif" fill="#c8581a" font-weight="700">&#215;</text>
+        <line x1="183" y1="50" x2="302" y2="50" stroke="#2a5f8a" stroke-width="2.2" marker-end="url(#l5b)"/>
+        <circle cx="315" cy="50" r="13" fill="#f0ecfe" stroke="#804090" stroke-width="1.8"/>
+        <text x="315" y="56" text-anchor="middle" font-size="15" font-family="Outfit,sans-serif" fill="#804090" font-weight="700">+</text>
+        <line x1="328" y1="50" x2="508" y2="50" stroke="#2a5f8a" stroke-width="2.2" marker-end="url(#l5b)"/>
+        <text x="511" y="54" font-family="IBM Plex Mono,monospace" font-size="10" fill="#2a5f8a">c[k]</text>
+        <!-- tap dot for output section -->
+        <circle cx="460" cy="50" r="3.5" fill="#2a5f8a"/>
+
+        <!-- ── f gate arrow straight up to forget &#215; ── -->
+        <line x1="170" y1="115" x2="170" y2="63" stroke="#c8581a" stroke-width="1.4" marker-end="url(#l5o)"/>
+
+        <!-- ── i&#8857;g junction at (262,72), aligned with tanh(c) box ── -->
+        <line x1="237" y1="115" x2="237" y2="90" stroke="#804090" stroke-width="1.2"/>
+        <line x1="237" y1="90" x2="254" y2="90" stroke="#804090" stroke-width="1.2"/>
+        <line x1="297" y1="115" x2="297" y2="90" stroke="#3d7a35" stroke-width="1.2"/>
+        <line x1="297" y1="90" x2="270" y2="90" stroke="#3d7a35" stroke-width="1.2"/>
+        <circle cx="262" cy="90" r="8" fill="#f4f0ff" stroke="#804090" stroke-width="1"/>
+        <text x="262" y="95" text-anchor="middle" font-family="Outfit,sans-serif" font-size="10" fill="#804090" font-weight="700">&#215;</text>
+        <!-- route from i&#8857;g top up then right to enter + from below; single path = one arrowhead -->
+        <path d="M262,82 L262,74 L315,74 L315,63" fill="none" stroke="#804090" stroke-width="1.2" marker-end="url(#l5p)"/>
+
+        <!-- ── GATE BLOCKS y=97&#8211;125 ── -->
+        <rect x="146" y="115" width="48" height="28" rx="5" fill="#fff2eb" stroke="#c8581a" stroke-width="1.5"/>
+        <text x="170" y="133" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#c8581a" font-weight="600">f  &#963;</text>
+        <rect x="214" y="115" width="46" height="28" rx="5" fill="#f0ecfe" stroke="#804090" stroke-width="1.5"/>
+        <text x="237" y="133" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#804090" font-weight="600">i  &#963;</text>
+        <rect x="269" y="115" width="56" height="28" rx="5" fill="#ecf8ee" stroke="#3d7a35" stroke-width="1.5"/>
+        <text x="297" y="133" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#3d7a35" font-weight="600">g  tanh</text>
+        <rect x="352" y="115" width="48" height="28" rx="5" fill="#e8f8f8" stroke="#257a7a" stroke-width="1.5"/>
+        <text x="376" y="133" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#257a7a" font-weight="600">o  &#963;</text>
+
+        <!-- ── INPUT BUS y=152 (thick &#8212; carries [h[k&#8722;1]; x[k]]) ── -->
+        <text x="4" y="161" font-family="IBM Plex Mono,monospace" font-size="10" fill="#3d7a35">h[k&#8722;1]</text>
+        <line x1="4" y1="170" x2="38" y2="170" stroke="#3d7a35" stroke-width="1.6" marker-end="url(#l5g)"/>
+        <line x1="40" y1="170" x2="412" y2="170" stroke="#4a3020" stroke-width="3"/>
+        <!-- gate stubs to bus -->
+        <line x1="170" y1="143" x2="170" y2="170" stroke="#4a3020" stroke-width="1"/>
+        <line x1="237" y1="143" x2="237" y2="170" stroke="#4a3020" stroke-width="1"/>
+        <line x1="297" y1="143" x2="297" y2="170" stroke="#4a3020" stroke-width="1"/>
+        <line x1="376" y1="143" x2="376" y2="170" stroke="#4a3020" stroke-width="1"/>
+        <!-- x[k] from below -->
+        <circle cx="265" cy="170" r="3.5" fill="#4a3020"/>
+        <line x1="265" y1="188" x2="265" y2="173" stroke="#4a3020" stroke-width="1.5" marker-end="url(#l5d)"/>
+        <text x="265" y="197" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="#4a3020">x[k]</text>
+
+        <!-- ── OUTPUT SECTION (shifted right for breathing room) ── -->
+        <!-- solid tap line from c-track down to tanh box -->
+        <line x1="460" y1="53" x2="460" y2="80" stroke="#2a5f8a" stroke-width="1.6"/>
+        <rect x="436" y="80" width="48" height="22" rx="4" fill="#eef3ff" stroke="#2a5f8a" stroke-width="1.2"/>
+        <text x="460" y="95" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8.5" fill="#2a5f8a">tanh(c)</text>
+        <line x1="460" y1="102" x2="460" y2="157" stroke="#2a5f8a" stroke-width="1.5" marker-end="url(#l5b)"/>
+        <!-- output &#215; at cy=152, same level as bus / h[k&#8722;1] -->
+        <circle cx="460" cy="170" r="13" fill="#e8f8f8" stroke="#257a7a" stroke-width="1.8"/>
+        <text x="460" y="176" text-anchor="middle" font-family="Outfit,sans-serif" font-size="15" fill="#257a7a" font-weight="700">&#215;</text>
+        <!-- o gate route: clear of bus endpoint (x&gt;412), around to &#215; left -->
+        <path d="M400,129 L435,129 L435,170 L447,170" fill="none" stroke="#257a7a" stroke-width="1.3" marker-end="url(#l5t)"/>
+        <!-- h[k] output at same level as h[k&#8722;1] -->
+        <line x1="473" y1="170" x2="510" y2="170" stroke="#3d7a35" stroke-width="2.2" marker-end="url(#l5g)"/>
+        <text x="513" y="174" font-family="IBM Plex Mono,monospace" font-size="10" fill="#3d7a35">h[k]</text>
+
+        <!-- ── h-track label and equations (just below the diagram) ── -->
+        <text x="4" y="211" font-family="Outfit,sans-serif" font-size="7.5" font-weight="700" fill="#3d7a35">h &#8212; HIDDEN STATE  (output each step; feeds back as h[k&#8722;1] in the next cell):</text>
+        <text x="4" y="221" font-family="IBM Plex Mono,monospace" font-size="7.5" fill="#3d7a35" opacity="0.8">h[k] = o&#8857;tanh(c[k])   &#183;   o = &#963;(W&#183;[h[k&#8722;1]; x[k]])</text>
+      </svg>
+      <p style="font-size:.7rem;color:var(--text-muted);line-height:1.4;margin:12px 0 8px">
+        The cell state c flows across the top with only <em>additive</em> modifications — no tanh
+        squashing, no fixed wᵣ multiplication. Gradients traveling back through c are multiplied
+        by the forget gate f (learned, ≈1 for things worth remembering) rather than by wᵣ·σ′.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- ── Row 1 info cards ── -->
+  <div class="info-row">
+
+    <div class="info-card">
+      <div class="info-card-title">The Gradient Highway (Cell State)</div>
+      In the vanilla RNN, the gradient at h[k] is obtained by multiplying the gradient at h[k+1]
+      by wᵣ·σ′(h[k+1]) at <em>every</em> step — the same factor repeated T−k times.
+      <br><br>
+      The LSTM introduces a second state variable <strong>c[k]</strong> that is updated
+      <em>additively</em>:
+      <span style="font-family:var(--font-mono);font-size:.7rem">c[k] = f⊙c[k−1] + i⊙g</span>.
+      The gradient of the loss flowing back through c is:
+      <span style="font-family:var(--font-mono);font-size:.7rem">∂L/∂c[k] = (∂L/∂c[k+1]) · f[k+1]</span>.
+      <br><br>
+      Because f is a <em>learned</em> sigmoid output (between 0 and 1), the network can learn to
+      keep f≈1 for information it needs to retain — making the gradient factor close to 1 step
+      after step, rather than shrinking by wᵣ·σ′&lt;1 at every step.
+      This is the core insight of LSTM: replace the fixed, uncontrolled wᵣ multiplication with
+      a learnable, task-specific gating factor.
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">The Four LSTM Gates</div>
+      All four gates receive the same concatenated input <strong>[h[k−1]; x[k]]</strong>,
+      each with its own learned weight matrix:
+      <br><br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        <strong style="color:var(--orange)">f = σ(W<sub>f</sub>·[h[k−1]; x[k]])</strong> &nbsp;(forget gate)<br>
+        <strong style="color:var(--purple)">i = σ(W<sub>i</sub>·[h[k−1]; x[k]])</strong> &nbsp;(input gate)<br>
+        <strong style="color:var(--green-mid)">g = tanh(W<sub>g</sub>·[h[k−1]; x[k]])</strong> &nbsp;(cell gate / candidate)<br>
+        <strong style="color:#257a7a">o = σ(W<sub>o</sub>·[h[k−1]; x[k]])</strong> &nbsp;(output gate)
+      </span>
+      <br><br>
+      <strong style="color:var(--orange)">f (forget gate)</strong> — sigmoid output in (0,1).
+      Decides what fraction of the old cell state c[k−1] to keep. f≈0 erases; f≈1 preserves.
+      <br><br>
+      <strong style="color:var(--purple)">i (input gate)</strong> — sigmoid, controls <em>how much</em>
+      of the candidate g to write into the cell state.
+      <br><br>
+      <strong style="color:var(--green-mid)">g (cell gate / candidate)</strong> — tanh output in (−1,1).
+      The <em>proposed</em> new content to write into c. Added as i⊙g.
+      <br><br>
+      <strong style="color:#257a7a">o (output gate)</strong> — sigmoid, controls how much of
+      tanh(c[k]) is exposed as the hidden state h[k].
+      <br><br>
+      Cell state: <span style="font-family:var(--font-mono);font-size:.68rem">c[k] = f⊙c[k−1] + i⊙g</span><br>
+      Hidden state: <span style="font-family:var(--font-mono);font-size:.68rem">h[k] = o⊙tanh(c[k])</span>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">GRU: Simplified Gated Alternative to LSTM</div>
+      The <strong>Gated Recurrent Unit (GRU)</strong> achieves similar gradient-flow benefits
+      with fewer parameters by merging the forget and input gates into a single
+      <em>update gate</em> z, and eliminating the separate cell state:
+      <br><br>
+      <span style="font-family:var(--font-mono);font-size:.68rem">
+        z = σ(W·[h[k−1]; x[k]])  &nbsp;(update gate)<br>
+        r = σ(W·[h[k−1]; x[k]])  &nbsp;(reset gate)<br>
+        g = tanh(W·[r⊙h[k−1]; x[k]])<br>
+        h[k] = (1−z)⊙h[k−1] + z⊙g
+      </span>
+      <br><br>
+      <strong>z (update gate)</strong> — combines LSTM's forget and input gates into one:
+      (1−z) keeps the old state, z writes new content. z≈0 copies h[k−1] unchanged;
+      z≈1 replaces it with g. The network learns when to update and when to hold.
+      <br><br>
+      <strong>r (reset gate)</strong> — controls how much of h[k−1] is visible when
+      computing the candidate g. r≈0 ignores history (fresh start); r≈1 uses it fully.
+      This has no direct LSTM equivalent — it lets the GRU selectively forget past state
+      when computing new content without a separate cell state variable.
+      <br><br>
+      <strong>g (candidate)</strong> — like LSTM's cell gate, but conditioned on r⊙h[k−1]
+      instead of h[k−1] directly. The reset gate decides how much past context shapes the
+      proposed new content.
+      <br><br>
+      The update h[k] = (1−z)⊙h[k−1] + z⊙g has the same additive structure as the LSTM cell
+      state — gradient flows back through (1−z), which can stay near 1.
+      GRUs are faster to train and often match LSTM performance on shorter sequences.
+    </div>
+
+  </div>
+
+  <!-- ── Row 2 info cards ── -->
+  <div class="info-row">
+
+    <div class="info-card">
+      <div class="info-card-title">Training LSTMs: Same BPTT, Better Gradients</div>
+      LSTMs are trained with exactly the same BPTT algorithm you saw in Tab ④ — forward pass,
+      then chain-rule gradients backward through the unrolled computation graph.
+      <br><br>
+      The improvement is not algorithmic but structural: the gradient path through c[k] involves
+      multiplication by f rather than by wᵣ·σ′, and f is learned to be favorable. In practice this
+      means gradients can usefully propagate hundreds of steps rather than vanishing after ~10.
+      <br><br>
+      The gradient still vanishes eventually (if f&lt;1 consistently) or can explode (gradient
+      clipping is still routinely used). LSTMs are not a complete solution — they are a
+      significantly better initialization point for the same underlying optimization problem.
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-title">LSTM vs ESN: Two Ends of a Spectrum</div>
+      The three architectures from Tabs ③, ④, and ⑤ represent a spectrum of how the
+      recurrent weights are treated:
+      <br><br>
+      <strong>ESN (Tab ③)</strong> — recurrent weights A fixed at random init, only the readout
+      Cᵀ is trained (linear regression, no backprop). Fast, stable, but capacity is limited by
+      the fixed reservoir.
+      <br><br>
+      <strong>Vanilla RNN (Tab ④)</strong> — all weights trained by BPTT. Full expressiveness
+      in principle, but the gradient problem makes this hard in practice.
+      <br><br>
+      <strong>LSTM</strong> — all weights trained by BPTT, but the gated cell state provides
+      a controlled gradient path. The gates themselves add parameters and expressiveness —
+      the network learns not just <em>what</em> to compute but <em>what to remember</em>.
+      <br><br>
+      For many sequence tasks where the relevant context spans long time windows, LSTMs or
+      GRUs are the practical choice. For tasks where a well-seeded random projection suffices,
+      ESNs remain faster and more interpretable.
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  <span>&copy; 2026 Theodore P. Pavlic</span>
+  <span class="copy-sep">&nbsp;&middot;&nbsp;</span>
+  <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────
+// Shared utilities
+// ─────────────────────────────────────────────────────────────────────
+const G   = '#2d5a27', GM = '#3d7a35', GL = '#5a9e50';
+const O   = '#c8581a', OL = '#e07a3a';
+const PU  = '#8040a0';
+const BL  = '#2a5f8a'; // steel blue — for memory/inspection highlight boxes
+const RED = '#c83030';
+const CR  = '#faf7f2', CRD = '#f0ebe0', CRDD = '#e5ddd0';
+const BR  = '#cec5b5', BRL = '#e0d8cc';
+const TX  = '#1e1e1e', TM = '#4a4a4a', TMU = '#7a7a7a';
+
+function gc(id) {
+  const cv = document.getElementById(id);
+  if (!cv) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.parentElement.clientWidth;
+  const H = cv.parentElement.clientHeight;
+  cv.width  = W * dpr; cv.height = H * dpr;
+  cv.style.width = W+'px'; cv.style.height = H+'px';
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx._w = W; ctx._h = H;
+  return ctx;
+}
+
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+function gradCol(mag) {
+  if (mag < 1e-8) return '#cccccc';
+  const lm = Math.log10(Math.max(mag, 1e-10));
+  if (lm <= 0) {
+    const t = Math.max(0, 1 + lm/3);
+    return `rgb(${Math.round(lerp(150,200,t))},${Math.round(lerp(150,88,t))},${Math.round(lerp(150,26,t))})`;
+  } else {
+    const t = Math.min(1, lm/1.5);
+    return `rgb(${Math.round(lerp(200,220,t))},${Math.round(lerp(88,30,t))},${Math.round(lerp(26,30,t))})`;
+  }
+}
+
+function arrowR(ctx, x, y, sz, col) {
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(x,y-sz/2); ctx.lineTo(x+sz,y); ctx.lineTo(x,y+sz/2);
+  ctx.closePath(); ctx.fill();
+}
+
+function arrowD(ctx, x, y, sz, col) {
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  ctx.moveTo(x-sz/2,y-sz); ctx.lineTo(x,y); ctx.lineTo(x+sz/2,y-sz);
+  ctx.closePath(); ctx.fill();
+}
+
+// General arrowhead pointing in direction (dx,dy) with tip at (x,y)
+function arrowAt(ctx, x, y, dx, dy, sz, col) {
+  const len=Math.sqrt(dx*dx+dy*dy)||1;
+  const ux=dx/len, uy=dy/len;
+  const px=-uy, py=ux; // perpendicular
+  ctx.fillStyle=col;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - ux*sz + px*sz*0.45, y - uy*sz + py*sz*0.45);
+  ctx.lineTo(x - ux*sz - px*sz*0.45, y - uy*sz - py*sz*0.45);
+  ctx.closePath(); ctx.fill();
+}
+
+function rrect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y); ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r); ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h); ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r); ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// TAB 1 — TDNN
+// ─────────────────────────────────────────────────────────────────────
+const t1 = { sig:'step', k:0, hist:[], playing:false, tmr:null };
+const T1_WIN = 20; // display window (steps) — 4-tap filter, 20 steps is plenty
+
+function t1genX(k) {
+  switch(t1.sig){
+    case 'step':    return k>=5?1:0;
+    case 'impulse': return k===5?1:0;
+    case 'alt':     return k%2;
+    case 'square':  return (Math.floor(k/5)%2===0)?1:0;
+    case 'ramp':    return clamp((k-3)/8,0,1);
+    default: return 0;
+  }
+}
+function t1W() {
+  return ['t1w0','t1w1','t1w2','t1w3'].map(id=>parseFloat(document.getElementById(id).value));
+}
+function t1Th() { return parseFloat(document.getElementById('t1th').value); }
+// Look up a sample by absolute step index (returns 0 for steps before recording started)
+function t1hv(k){ return k>=0&&k<t1.hist.length ? t1.hist[k] : 0; }
+// Compute weighted sum at absolute step k
+function t1wsum(k,w){ let s=0; for(let i=0;i<4;i++) s+=w[i]*t1hv(k-i); return s; }
+
+function t1upd() {
+  ['w0','w1','w2','w3'].forEach(id=>{
+    const v=parseFloat(document.getElementById('t1'+id).value);
+    document.getElementById('t1'+id+'v').textContent=v.toFixed(1);
+  });
+  const th=parseFloat(document.getElementById('t1th').value);
+  document.getElementById('t1thv').textContent=th.toFixed(1);
+  t1updateSliderColors();
+  t1draw();
+}
+function t1sig(s,el){
+  t1.sig=s;
+  document.querySelectorAll('#tab0 .sbtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  // Regenerate signal but keep inspection position — student can see how the same k
+  // looks under different input patterns without losing their place
+  t1.hist = Array.from({length: T1_WIN}, (_,i) => t1genX(i));
+  t1.playing=false; clearInterval(t1.tmr); document.getElementById('t1pb').textContent='Play ▶';
+  t1updateSliderColors(); t1draw();
+}
+function t1pre(n,el){
+  const P={ rise:[1,-1,0,0,.5], fall:[-1,1,0,0,.5], alt:[1,-1,1,-1,.5],
+            same:[1,1,0,0,1.5], avg:[.25,.25,.25,.25,.5], pulse:[-1,1,1,-1,1.5] };
+  const p=P[n]; if(!p)return;
+  ['w0','w1','w2','w3'].forEach((id,i)=>{ document.getElementById('t1'+id).value=p[i]; });
+  document.getElementById('t1th').value=p[4];
+  document.querySelectorAll('#tab0 .pbtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  t1upd();
+}
+function t1rst() {
+  // Pre-generate the full T1_WIN signal upfront — no more incremental pushing
+  t1.hist = Array.from({length: T1_WIN}, (_,i) => t1genX(i));
+  t1.k = 3; t1.playing = false;
+  clearInterval(t1.tmr); document.getElementById('t1pb').textContent='Play ▶';
+  t1updateSliderColors(); t1draw();
+}
+function t1step() {
+  // Advance inspection position one step (clamp at end)
+  t1.k = Math.min(T1_WIN-1, t1.k+1); t1draw();
+}
+function t1play() {
+  t1.playing = !t1.playing;
+  document.getElementById('t1pb').textContent = t1.playing ? 'Pause ⏸' : 'Play ▶';
+  if(t1.playing){
+    t1.tmr = setInterval(()=>{
+      if(t1.k < T1_WIN-1){ t1.k++; t1draw(); }
+      else { t1.playing=false; clearInterval(t1.tmr); document.getElementById('t1pb').textContent='Play ▶'; }
+    }, 120);
+  } else clearInterval(t1.tmr);
+}
+
+// Slider colors: accent-color and value tint reflect sign of each weight
+function t1updateSliderColors() {
+  const w = t1W();
+  ['w0','w1','w2','w3'].forEach((id,i)=>{
+    const wi=w[i];
+    const color = wi>0.05?'#3d7a35' : (wi<-0.05?'#c8581a':'#9a9080');
+    const el=document.getElementById('t1'+id);
+    const vEl=document.getElementById('t1'+id+'v');
+    if(el) el.style.accentColor=color;
+    if(vEl) vEl.style.color=color;
+  });
+}
+
+// Drag handler: drag inside memory box moves it; click in x[k] sub-plot toggles that sample
+function t1setupDrag() {
+  const cv = document.getElementById('c1b');
+  if(!cv) return;
+
+  // Mirror the layout constants from t1draw — these are fixed design values
+  const xTop=16, xBot=88, wboxBot=114;
+
+  function slotFrom(e) {
+    const padL=38, padR=14;
+    const pw = cv.clientWidth - padL - padR;
+    const cx = e.touches ? e.touches[0].clientX - cv.getBoundingClientRect().left : e.offsetX;
+    return Math.max(0, Math.min(T1_WIN-1, Math.round((cx-padL)/(pw/T1_WIN))));
+  }
+  function yFrom(e) {
+    return e.touches ? e.touches[0].clientY - cv.getBoundingClientRect().top : e.offsetY;
+  }
+  function inBox(slot, y) {
+    const ms=Math.max(0, t1.k-3), me=t1.k;
+    return slot>=ms && slot<=me && y>=xTop-4 && y<=wboxBot+4;
+  }
+  function inXPlot(y) { return y>=xTop-4 && y<=xBot+8; }
+
+  let drag=false, dragStart=0, kStart=0;
+
+  function onDown(e) {
+    const slot=slotFrom(e), y=yFrom(e);
+    if(inBox(slot, y)){
+      drag=true; dragStart=slot; kStart=t1.k;
+    } else if(inXPlot(y)){
+      // Toggle this sample 0↔1 and mark signal as custom (clear active signal button)
+      t1.hist[slot] = 1 - t1.hist[slot];
+      document.querySelectorAll('#tab0 .sbtn').forEach(b=>b.classList.remove('active'));
+      t1draw();
+    }
+  }
+  function onMove(e) {
+    const slot=slotFrom(e), y=yFrom(e);
+    if(drag){
+      e.preventDefault();
+      t1.k=Math.max(0,Math.min(T1_WIN-1, kStart+(slot-dragStart)));
+      t1draw();
+    } else {
+      // Update cursor to hint at the available interaction
+      cv.style.cursor = inBox(slot,y) ? 'ew-resize' : (inXPlot(y) ? 'pointer' : 'default');
+    }
+  }
+  function onUp() { drag=false; }
+
+  cv.addEventListener('mousedown',  onDown);
+  cv.addEventListener('mousemove',  onMove);
+  cv.addEventListener('mouseup',    onUp);
+  cv.addEventListener('mouseleave', onUp);
+  cv.addEventListener('touchstart', e=>{ onDown(e); },{passive:false});
+  cv.addEventListener('touchmove',  e=>{ if(!drag)return; e.preventDefault(); onMove(e); },{passive:false});
+  cv.addEventListener('touchend',   onUp);
+}
+
+function t1draw() {
+  // ═══════════════════════════════════════════════════
+  // CANVAS A — shift register with fan-in to output
+  // ═══════════════════════════════════════════════════
+  const c1=gc('c1a'); if(!c1)return;
+  const W=c1._w, H=c1._h;
+  c1.clearRect(0,0,W,H); c1.fillStyle='#fff'; c1.fillRect(0,0,W,H);
+
+  const w=t1W(), th=t1Th();
+  const curK = t1.k; // inspection position (0-indexed, direct index into hist)
+
+  const N=4, cW=52, cH=44;
+  const cellGap=18;
+  const totalCellW = N*cW + (N-1)*cellGap;
+  const startX = Math.max(8, (W - totalCellW) / 2);
+  const ry = 10;
+
+  const outW=94, outH=46;
+  const outCX = W/2;
+  const outX = outCX - outW/2;
+  const outY = ry + cH + 38;
+
+  const s = t1wsum(curK, w);
+  const out = s > th ? 1 : 0;
+
+  // — Fan-in bezier curves — cell position is now FLIPPED (lag 3 leftmost, lag 0 rightmost)
+  for(let i=0;i<N;i++){
+    const pos = N-1-i; // lag i at position (N-1-i): x[k-3] left, x[k] right
+    const cellCX = startX + pos*(cW+cellGap) + cW/2;
+    const cellBotY = ry + cH;
+    const alpha = Math.abs(w[i])>0.05 ? 0.6 : 0.15;
+    const lw = Math.abs(w[i])>0.05 ? 1.4 : 0.7;
+    c1.strokeStyle = `rgba(61,122,53,${alpha})`;
+    c1.lineWidth = lw;
+    c1.beginPath();
+    c1.moveTo(cellCX, cellBotY+3);
+    const midY = (cellBotY + outY) / 2;
+    c1.bezierCurveTo(cellCX, midY, outCX, midY, outCX, outY-2);
+    c1.stroke();
+  }
+
+  // — Cell boxes: x[k-3] leftmost → x[k] rightmost (matches weight-vector order)
+  // Between-cell arrows removed: labels already convey the delay relationship.
+  for(let i=0;i<N;i++){
+    const pos = N-1-i; // lag i drawn at column pos
+    const cx = startX + pos*(cW+cellGap);
+    const val = t1hv(curK-i);
+
+    // Cell color reflects VALUE sign — matches slider convention
+    const cFg = val>0.05?GM : val<-0.05?O : BR;
+    const cBg = val>0.05?'#f0f9f0' : val<-0.05?'#fff2ec' : CRD;
+    c1.fillStyle=cBg; c1.strokeStyle=cFg; c1.lineWidth=Math.abs(val)>0.05?1.8:1;
+    rrect(c1, cx, ry, cW, cH, 4); c1.fill(); c1.stroke();
+
+    // tap label (top)
+    c1.fillStyle=TMU; c1.font=`9px 'IBM Plex Mono',monospace`; c1.textAlign='center';
+    c1.fillText(i===0?'x[k]':`x[k−${i}]`, cx+cW/2, ry+11);
+
+    // value (middle) — sign-colored
+    c1.fillStyle = val>0.05?GM : val<-0.05?O : TM;
+    c1.font=`bold 13px 'Outfit',sans-serif`;
+    c1.fillText(val.toFixed(2), cx+cW/2, ry+26);
+
+    // weight (bottom) — sign-colored by weight value
+    const wi_=w[i];
+    c1.fillStyle = wi_>0.05?G : wi_<-0.05?O : TMU;
+    c1.font = `9px 'IBM Plex Mono',monospace`;
+    const sign_ = wi_>=0?'+':'';
+    c1.fillText(`w${i}=${sign_}${wi_.toFixed(1)}`, cx+cW/2, ry+cH-4);
+  }
+
+  // — Output box — PURPLE (y[k] is a distinct output, not a value sign)
+  c1.fillStyle = out ? '#f5eeff' : CRD;
+  c1.strokeStyle = out ? PU : '#9a9080';
+  c1.lineWidth = out ? 2 : 1.2;
+  rrect(c1, outX, outY, outW, outH, 5); c1.fill(); c1.stroke();
+
+  // "y[k] =" label — top-left inside box
+  c1.fillStyle = out ? PU : TMU;
+  c1.font = `9px 'IBM Plex Mono',monospace`; c1.textAlign='left';
+  c1.fillText('y[k] =', outX+5, outY+13);
+
+  // Large binary output — right-aligned inside box
+  c1.fillStyle = out ? PU : TM;
+  c1.font = `bold 22px 'Outfit',sans-serif`; c1.textAlign='right';
+  c1.fillText(out, outX+outW-5, outY+outH-8);
+
+  // Σ and θ info BELOW the box (no overflow risk)
+  c1.fillStyle = TMU; c1.font=`8px 'IBM Plex Mono',monospace`; c1.textAlign='center';
+  c1.fillText(`Σwᵢxᵢ = ${s.toFixed(2)}`, outCX, outY+outH+11);
+  c1.fillText(`θ = ${th.toFixed(1)}`, outCX, outY+outH+21);
+
+  // Update k label in card title
+  const t1kEl=document.getElementById('t1klbl'); if(t1kEl) t1kEl.textContent=t1.k;
+
+  // ═══════════════════════════════════════════════════
+  // CANVAS B — stacked stem plots with graph-paper grid
+  // ═══════════════════════════════════════════════════
+  const c2=gc('c1b'); if(!c2)return;
+  const W2=c2._w, H2=c2._h;
+  c2.clearRect(0,0,W2,H2);
+
+  // warm paper background
+  c2.fillStyle='#fdfaf5'; c2.fillRect(0,0,W2,H2);
+
+  const padL=38, padR=14;
+  const pw=W2-padL-padR;
+
+  // Sub-plot vertical regions (absolute pixel y)
+  const xTop=16, xBot=88;          // x[k] sub-plot plot area
+  const wboxTop=91, wboxBot=114;   // weight bar (rides under x[k] memory box)
+  const divY=118;                  // divider line between x and y sub-plots
+  const yTop=123, yBot=195;        // y[k] sub-plot plot area
+
+  const ylo=-0.15, yhi=1.3, yRange=yhi-ylo;
+  const xPH=xBot-xTop, yPH=yBot-yTop; // plot heights
+
+  function toXs(slot){ return padL + (slot/T1_WIN)*pw; }
+  function toYx(v){ return xBot - ((v-ylo)/yRange)*xPH; }
+  function toYy(v){ return yBot - ((v-ylo)/yRange)*yPH; }
+  const zeroYx=toYx(0), zeroYy=toYy(0);
+  const slotW=pw/T1_WIN;
+
+  const winStart=0, numShown=T1_WIN; // always full window
+  // inspection position = t1.k (drag/step to change)
+  const ms=Math.max(0, t1.k-3), me=t1.k; // memory window slot range
+
+  // — Graph paper: full-height vertical guide lines at every slot
+  c2.strokeStyle='rgba(160,120,60,.1)'; c2.lineWidth=0.7;
+  for(let slot=0;slot<=T1_WIN;slot++){
+    const x=toXs(slot);
+    c2.beginPath(); c2.moveTo(x,xTop); c2.lineTo(x,yBot+2); c2.stroke();
+  }
+  // Slightly more visible every 5 slots
+  c2.strokeStyle='rgba(140,105,55,.18)'; c2.lineWidth=0.8;
+  for(let slot=0;slot<=T1_WIN;slot+=5){
+    const x=toXs(slot);
+    c2.beginPath(); c2.moveTo(x,xTop); c2.lineTo(x,yBot+2); c2.stroke();
+  }
+
+  // — Horizontal grid at 0 and 1 in each sub-plot
+  c2.strokeStyle='rgba(180,155,115,.35)'; c2.lineWidth=0.5;
+  [0,1].forEach(v=>{
+    c2.beginPath(); c2.moveTo(padL,toYx(v)); c2.lineTo(padL+pw,toYx(v)); c2.stroke();
+    c2.beginPath(); c2.moveTo(padL,toYy(v)); c2.lineTo(padL+pw,toYy(v)); c2.stroke();
+  });
+
+  // — Divider line between sub-plots
+  c2.strokeStyle='rgba(160,135,100,.6)'; c2.lineWidth=1;
+  c2.beginPath(); c2.moveTo(padL-6,divY); c2.lineTo(padL+pw,divY); c2.stroke();
+
+  // — Left-side axes
+  c2.strokeStyle=BR; c2.lineWidth=1;
+  c2.beginPath(); c2.moveTo(padL,xTop); c2.lineTo(padL,xBot+1); c2.stroke();
+  c2.beginPath(); c2.moveTo(padL,yTop-1); c2.lineTo(padL,yBot+1); c2.stroke();
+
+  // — Stems (all T1_WIN at once — drawn first so boxes overlay them)
+  function stemAt(x, val, zeroY, toYfn, color, big){
+    const yv=toYfn(val);
+    const r = big ? 5 : 3.5;
+    c2.strokeStyle=color; c2.lineWidth=big?2:1.5;
+    c2.beginPath(); c2.moveTo(x,zeroY); c2.lineTo(x,yv); c2.stroke();
+    c2.fillStyle=Math.abs(val)>0.01?color:'#fdfaf5';
+    c2.strokeStyle=color; c2.lineWidth=1;
+    c2.beginPath(); c2.arc(x,yv,r,0,Math.PI*2); c2.fill(); c2.stroke();
+  }
+
+  for(let slot=0;slot<T1_WIN;slot++){
+    const xv=t1hv(slot);
+    const yv=t1wsum(slot,w)>th?1:0;
+    const px=toXs(slot);
+    const inMem = (slot>=ms && slot<=me);
+    stemAt(px, xv, zeroYx, toYx, GM, inMem);   // x[k] — green
+    stemAt(px, yv, zeroYy, toYy, PU, slot===me); // y[k] — PURPLE
+  }
+
+  // — Memory window box in x[k] sub-plot — STEEL BLUE highlight
+  {
+    const bx1=Math.max(padL, toXs(ms)-slotW*0.4);
+    const bx2=Math.min(padL+pw, toXs(me)+slotW*0.4);
+    c2.fillStyle=`rgba(42,95,138,.07)`; c2.strokeStyle=`rgba(42,95,138,.45)`; c2.lineWidth=1;
+    rrect(c2, bx1, xTop-2, bx2-bx1, xBot-xTop+4, 3); c2.fill(); c2.stroke();
+    // Time-index labels at top
+    c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center';
+    c2.fillStyle=BL;
+    for(let slot=ms;slot<=me;slot++){
+      const lag=t1.k-slot;
+      c2.fillText(lag===0?'k':`k−${lag}`, toXs(slot), xTop+9);
+    }
+
+    // — Weight bar: visual mini-bars + adaptive text
+    const wH=wboxBot-wboxTop;
+    c2.fillStyle=`rgba(42,95,138,.06)`; c2.strokeStyle=`rgba(42,95,138,.4)`; c2.lineWidth=1;
+    rrect(c2, bx1, wboxTop, bx2-bx1, wH, 3); c2.fill(); c2.stroke();
+    // Row label
+    c2.fillStyle=`rgba(42,95,138,.7)`; c2.font=`7px 'IBM Plex Mono',monospace`; c2.textAlign='right';
+    c2.fillText('wᵢ', bx1-2, wboxTop+wH/2+3);
+
+    const wCtrY=wboxTop+wH/2;
+    const maxBarH=wH/2-2;
+    // Crisp solid zero-line spanning full box width
+    c2.strokeStyle=`rgba(42,95,138,.5)`; c2.lineWidth=1;
+    c2.beginPath(); c2.moveTo(bx1+1,wCtrY); c2.lineTo(bx2-1,wCtrY); c2.stroke();
+
+    for(let slot=ms;slot<=me;slot++){
+      const lag=t1.k-slot;
+      if(lag<0||lag>3) continue;
+      const wi=w[lag];
+      const x=toXs(slot);
+      const barW=Math.max(slotW*0.62, 5);
+      if(Math.abs(wi)>0.02){
+        const bh=Math.abs(wi)*maxBarH;
+        // Fully opaque bars — sign-colored, no competing text
+        c2.fillStyle=wi>0.05?GM:O;
+        c2.fillRect(x-barW/2, wi>0?wCtrY-bh:wCtrY, barW, bh);
+      } else {
+        // Zero: small dot on the centre-line
+        c2.fillStyle=TMU;
+        c2.beginPath(); c2.arc(x,wCtrY,2,0,Math.PI*2); c2.fill();
+      }
+    }
+  }
+
+  // — y[k] inspection box — PURPLE
+  {
+    const cur=t1.k;
+    const bx1=Math.max(padL, toXs(cur)-slotW*0.4);
+    const bx2=Math.min(padL+pw, toXs(cur)+slotW*0.4);
+    c2.fillStyle=`rgba(128,64,160,.08)`; c2.strokeStyle=`rgba(128,64,160,.45)`; c2.lineWidth=1;
+    rrect(c2, bx1, yTop-2, bx2-bx1, yBot-yTop+4, 3); c2.fill(); c2.stroke();
+    c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center'; c2.fillStyle=PU;
+    c2.fillText('k', toXs(cur), yTop+9);
+  }
+
+  c2.font=`bold 10px 'IBM Plex Mono',monospace`; c2.textAlign='right';
+  c2.fillStyle=GM; c2.fillText('x[k]', padL+pw-4, xTop+6);
+  c2.fillStyle=PU; c2.fillText('y[k]', padL+pw-4, yTop+6);
+
+  // — Y-axis ticks (left side, no conflict now)
+  c2.fillStyle=TMU; c2.font=`8.5px 'IBM Plex Mono',monospace`; c2.textAlign='right';
+  c2.fillText('1',padL-4,toYx(1)+3); c2.fillText('0',padL-4,zeroYx+3);
+  c2.fillText('1',padL-4,toYy(1)+3); c2.fillText('0',padL-4,zeroYy+3);
+
+  // — X-axis ticks and labels (slot = absolute step index)
+  c2.fillStyle=TMU; c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center';
+  for(let slot=0;slot<=T1_WIN;slot+=5){
+    const x=toXs(slot);
+    if(x<padL) continue;
+    c2.strokeStyle=BR; c2.lineWidth=0.8;
+    c2.beginPath(); c2.moveTo(x,yBot); c2.lineTo(x,yBot+3); c2.stroke();
+    c2.fillText(slot, x, H2-5);
+  }
+  c2.fillStyle=TMU; c2.font=`9px 'IBM Plex Mono',monospace`;
+  c2.fillText('k  →', padL+pw/2, H2-5);
+
+}
+
+// Detection target removed — the weight bar in the time series already communicates
+// which pattern fires by showing tap weights visually alongside the stems.
+
+// ─────────────────────────────────────────────────────────────────────
+// TAB 2 — Output Feedback (extends Tab 1: y[k] feeds back as a second input)
+// ─────────────────────────────────────────────────────────────────────
+const T2_WIN = T1_WIN;
+const t2 = { sig:'step', k:3, hist_x:[], hist_y:[], y0:0, playing:false, tmr:null };
+
+function t2genX(k) {
+  switch(t2.sig){
+    case 'step':    return k>=5?1:0;
+    case 'impulse': return k===5?1:0;
+    case 'alt':     return k%2;
+    case 'square':  return (Math.floor(k/5)%2===0)?1:0;
+    case 'ramp':    return clamp((k-3)/8,0,1);
+    default: return 0;
+  }
+}
+function t2P(){ return { wx:+document.getElementById('t2wx').value, wr:+document.getElementById('t2wr').value, th:+document.getElementById('t2th').value, act:document.getElementById('t2act').value }; }
+function t2f(z,act){ if(act==='step')return z>0?1:0; if(act==='tanh')return Math.tanh(z); return 1/(1+Math.exp(-z)); }
+
+function t2computeY() {
+  const {wx,wr,th,act}=t2P();
+  const y0=+document.getElementById('t2y0').value;
+  t2.hist_y=new Array(T2_WIN+1); t2.hist_y[0]=y0;
+  for(let k=0;k<T2_WIN;k++) t2.hist_y[k+1]=t2f(wx*(t2.hist_x[k]||0)+wr*t2.hist_y[k]-th, act);
+}
+
+function t2updateSliderColors() {
+  ['wx','wr'].forEach(id=>{
+    const v=parseFloat(document.getElementById('t2'+id).value);
+    const c=v>0.05?'#3d7a35':v<-0.05?'#c8581a':'#9a9080';
+    const el=document.getElementById('t2'+id), vEl=document.getElementById('t2'+id+'v');
+    if(el) el.style.accentColor=c; if(vEl) vEl.style.color=c;
+  });
+}
+
+function t2upd(){
+  ['wx','wr','th','y0'].forEach(id=>{ const v=parseFloat(document.getElementById('t2'+id).value); document.getElementById('t2'+id+'v').textContent=v.toFixed(1); });
+  t2updateSliderColors(); t2computeY(); t2draw();
+}
+function t2sig(s,el){
+  t2.sig=s; document.querySelectorAll('#tab1 .sbtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  t2.hist_x=Array.from({length:T2_WIN},(_,i)=>t2genX(i)); t2computeY(); t2draw();
+}
+function t2rst(){
+  t2.hist_x=Array.from({length:T2_WIN},(_,i)=>t2genX(i));
+  document.getElementById('t2y0').value=0; document.getElementById('t2y0v').textContent='0.0';
+  t2computeY(); t2.k=3; t2.playing=false; clearInterval(t2.tmr);
+  document.getElementById('t2pb').textContent='Play ▶';
+  document.getElementById('t2klbl').textContent=t2.k;
+  t2updateSliderColors(); t2draw();
+}
+function t2step(){ t2.k=Math.min(T2_WIN-1,t2.k+1); document.getElementById('t2klbl').textContent=t2.k; t2draw(); }
+function t2play(){
+  t2.playing=!t2.playing; document.getElementById('t2pb').textContent=t2.playing?'Pause ⏸':'Play ▶';
+  if(t2.playing){ t2.tmr=setInterval(()=>{ if(t2.k<T2_WIN-1){t2.k++;document.getElementById('t2klbl').textContent=t2.k;t2draw();}else{t2.playing=false;clearInterval(t2.tmr);document.getElementById('t2pb').textContent='Play ▶';} },120); } else clearInterval(t2.tmr);
+}
+function t2pre(n,el){
+  const P={
+    latch:    {wx:2,  wr:2,  th:1,  act:'step', x:[0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], y0:0},
+    echo:     {wx:1,  wr:0,  th:0.5,act:'step', x:[0,1,0,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0], y0:0},
+    osc:      {wx:0,  wr:-2, th:0,  act:'tanh', x:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], y0:0.1},
+    bistable: {wx:2,  wr:3,  th:0,  act:'tanh', x:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], y0:0.1}
+  };
+  const p=P[n]; if(!p)return;
+  document.getElementById('t2wx').value=p.wx; document.getElementById('t2wr').value=p.wr;
+  document.getElementById('t2th').value=p.th; document.getElementById('t2act').value=p.act;
+  document.getElementById('t2y0').value=p.y0; document.getElementById('t2y0v').textContent=p.y0.toFixed(1);
+  t2.hist_x=[...p.x];
+  document.querySelectorAll('#tab1 .sbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#tab1 .pbtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  t2upd(); t2.k=3; document.getElementById('t2klbl').textContent=t2.k; t2draw();
+}
+
+function t2draw() {
+  // ═══════════════════════════════════════════════════
+  // CANVAS A — two-cell register with feedback arrow
+  // ═══════════════════════════════════════════════════
+  const c1=gc('c2a'); if(!c1)return;
+  const W=c1._w, H=c1._h;
+  c1.clearRect(0,0,W,H); c1.fillStyle='#fff'; c1.fillRect(0,0,W,H);
+
+  const {wx,wr,th,act}=t2P();
+  const k=t2.k;
+  const yk=t2.hist_y[k]||0, xk=t2.hist_x[k]||0, yk1=t2.hist_y[k+1]||0;
+
+  const cW=60, cH=44, cellGap=26;
+  const totalCellW=2*cW+cellGap;
+  const startX=Math.max(8,(W-totalCellW)/2);
+  const ry=10;
+  const outW=94, outH=46, outCX=W/2, outX=outCX-outW/2, outY=ry+cH+38;
+  const yCellX=startX, xCellX=startX+cW+cellGap;
+  const yCellCX=startX+cW/2, xCellCX=xCellX+cW/2;
+
+  // ── Feedback arrow: output box ← left ← up → into y[k] cell left side
+  const leftX=Math.max(8,startX-45);
+  const fbY=ry+cH*0.5;
+  c1.strokeStyle='rgba(128,64,160,.6)'; c1.lineWidth=1.2; c1.setLineDash([4,3]);
+  c1.beginPath(); c1.moveTo(outX,outY+outH/2); c1.lineTo(leftX,outY+outH/2);
+  c1.lineTo(leftX,fbY); c1.lineTo(yCellX,fbY); c1.stroke(); c1.setLineDash([]);
+  arrowR(c1,yCellX,fbY,5,'rgba(128,64,160,.75)');
+  // Feedback label with cream background so it reads clearly over the dashed line
+  const fbLbl='feedback', fbLx=leftX, fbLy=outY+outH/2-6;
+  c1.fillStyle='rgba(250,247,242,.85)';
+  c1.fillRect(fbLx-20,fbLy-8,40,10);
+  c1.fillStyle='rgba(128,64,160,.75)'; c1.font=`7px 'IBM Plex Mono',monospace`; c1.textAlign='center';
+  c1.fillText(fbLbl,fbLx,fbLy);
+
+  // ── Fan-in beziers
+  const midY=(ry+cH+outY)/2;
+  [[yCellCX,`rgba(128,64,160,`,wr],[xCellX+cW/2,`rgba(61,122,53,`,wx]].forEach(([cx,rgba,wi])=>{
+    const a=Math.abs(wi)>0.05?0.6:0.15;
+    c1.strokeStyle=rgba+a+')'; c1.lineWidth=Math.abs(wi)>0.05?1.4:0.7;
+    c1.beginPath(); c1.moveTo(cx,ry+cH+3); c1.bezierCurveTo(cx,midY,outCX,midY,outCX,outY-2); c1.stroke();
+  });
+
+  // ── Cell: y[k] (LEFT, PURPLE — the recycled past output)
+  const yFg=yk>0.05?PU:yk<-0.05?O:BR, yBg=yk>0.05?'#f5eeff':yk<-0.05?'#fff2ec':CRD;
+  c1.fillStyle=yBg; c1.strokeStyle=yFg; c1.lineWidth=Math.abs(yk)>0.05?1.8:1;
+  rrect(c1,yCellX,ry,cW,cH,4); c1.fill(); c1.stroke();
+  c1.fillStyle=TMU; c1.font=`9px 'IBM Plex Mono',monospace`; c1.textAlign='center';
+  c1.fillText('y[k]',yCellCX,ry+11);
+  c1.fillStyle=yk>0.05?PU:yk<-0.05?O:TM; c1.font=`bold 13px 'Outfit',sans-serif`;
+  c1.fillText(yk.toFixed(2),yCellCX,ry+26);
+  c1.fillStyle=wr>0.05?G:wr<-0.05?O:TMU; c1.font=`9px 'IBM Plex Mono',monospace`;
+  c1.fillText(`wᵣ=${wr>=0?'+':''}${wr.toFixed(1)}`,yCellCX,ry+cH-4);
+
+  // ── Cell: x[k] (RIGHT, GREEN — external input)
+  const xFg=xk>0.05?GM:xk<-0.05?O:BR, xBg=xk>0.05?'#f0f9f0':xk<-0.05?'#fff2ec':CRD;
+  c1.fillStyle=xBg; c1.strokeStyle=xFg; c1.lineWidth=Math.abs(xk)>0.05?1.8:1;
+  rrect(c1,xCellX,ry,cW,cH,4); c1.fill(); c1.stroke();
+  c1.fillStyle=TMU; c1.font=`9px 'IBM Plex Mono',monospace`; c1.textAlign='center';
+  c1.fillText('x[k]',xCellCX,ry+11);
+  c1.fillStyle=xk>0.05?GM:xk<-0.05?O:TM; c1.font=`bold 13px 'Outfit',sans-serif`;
+  c1.fillText(xk.toFixed(2),xCellCX,ry+26);
+  c1.fillStyle=wx>0.05?G:wx<-0.05?O:TMU; c1.font=`9px 'IBM Plex Mono',monospace`;
+  c1.fillText(`wₓ=${wx>=0?'+':''}${wx.toFixed(1)}`,xCellCX,ry+cH-4);
+
+  // ── Output box: y[k+1] — PURPLE
+  const outFiring=Math.abs(yk1)>0.05;
+  c1.fillStyle=outFiring?'#f5eeff':CRD; c1.strokeStyle=outFiring?PU:'#9a9080'; c1.lineWidth=outFiring?2:1.2;
+  rrect(c1,outX,outY,outW,outH,5); c1.fill(); c1.stroke();
+  c1.fillStyle=outFiring?PU:TMU; c1.font=`9px 'IBM Plex Mono',monospace`; c1.textAlign='left';
+  c1.fillText('y[k+1] =',outX+5,outY+13);
+  c1.fillStyle=outFiring?PU:TM; c1.font=`bold 16px 'Outfit',sans-serif`; c1.textAlign='right';
+  c1.fillText(yk1.toFixed(2),outX+outW-5,outY+outH-8);
+  const z=wx*xk+wr*yk-th;
+  c1.fillStyle=TMU; c1.font=`8px 'IBM Plex Mono',monospace`; c1.textAlign='center';
+  c1.fillText(`f(${z.toFixed(2)})   θ=${th.toFixed(1)}`,outCX,outY+outH+11);
+
+  // ═══════════════════════════════════════════════════
+  // CANVAS B — stacked stem plots (same structure as Tab 1)
+  // ═══════════════════════════════════════════════════
+  const c2=gc('c2b'); if(!c2)return;
+  const W2=c2._w, H2=c2._h;
+  c2.clearRect(0,0,W2,H2); c2.fillStyle='#fdfaf5'; c2.fillRect(0,0,W2,H2);
+
+  const padL=38,padR=14,pw=W2-padL-padR;
+  const xTop=16,xBot=88, divY=108, yTop=114,yBot=192;
+  const xPH=xBot-xTop, yPH=yBot-yTop;
+  const xlo=-0.15,xhi=1.3,xRange=xhi-xlo;
+  const ylo2=-1.3, yhi2=1.3, yRange2=yhi2-ylo2;
+
+  const toXs2=s=>padL+(s/T2_WIN)*pw;
+  const toYx2=v=>xBot-((v-xlo)/xRange)*xPH;
+  const toYy2=v=>yBot-((v-ylo2)/yRange2)*yPH;
+  const z2Yx=toYx2(0), z2Yy=toYy2(0);
+  const sW2=pw/T2_WIN;
+
+  // Graph paper
+  c2.strokeStyle='rgba(160,120,60,.1)'; c2.lineWidth=0.7;
+  for(let s=0;s<=T2_WIN;s++){ const x=toXs2(s); c2.beginPath(); c2.moveTo(x,xTop); c2.lineTo(x,yBot+2); c2.stroke(); }
+  c2.strokeStyle='rgba(140,105,55,.18)'; c2.lineWidth=0.8;
+  for(let s=0;s<=T2_WIN;s+=5){ const x=toXs2(s); c2.beginPath(); c2.moveTo(x,xTop); c2.lineTo(x,yBot+2); c2.stroke(); }
+
+  // Horizontal grids
+  c2.strokeStyle='rgba(180,155,115,.35)'; c2.lineWidth=0.5;
+  [0,1].forEach(v=>{ c2.beginPath(); c2.moveTo(padL,toYx2(v)); c2.lineTo(padL+pw,toYx2(v)); c2.stroke(); });
+  [-1,0,1].forEach(v=>{ c2.beginPath(); c2.moveTo(padL,toYy2(v)); c2.lineTo(padL+pw,toYy2(v)); c2.stroke(); });
+
+  // Divider
+  c2.strokeStyle='rgba(160,135,100,.6)'; c2.lineWidth=1;
+  c2.beginPath(); c2.moveTo(padL-6,divY); c2.lineTo(padL+pw,divY); c2.stroke();
+
+  // Axes
+  c2.strokeStyle=BR; c2.lineWidth=1;
+  c2.beginPath(); c2.moveTo(padL,xTop); c2.lineTo(padL,xBot+1); c2.stroke();
+  c2.beginPath(); c2.moveTo(padL,yTop-1); c2.lineTo(padL,yBot+1); c2.stroke();
+
+  // Stems
+  function stemAt2(x,val,zeroY,toYfn,color,big){
+    const yv=toYfn(val), r=big?5:3.5;
+    c2.strokeStyle=color; c2.lineWidth=big?2:1.5;
+    c2.beginPath(); c2.moveTo(x,zeroY); c2.lineTo(x,yv); c2.stroke();
+    c2.fillStyle=Math.abs(val)>0.01?color:'#fdfaf5'; c2.strokeStyle=color; c2.lineWidth=1;
+    c2.beginPath(); c2.arc(x,yv,r,0,Math.PI*2); c2.fill(); c2.stroke();
+  }
+  for(let s=0;s<T2_WIN;s++){
+    const atK=s===k, atK1=s===k+1;
+    stemAt2(toXs2(s),t2.hist_x[s]||0,z2Yx,toYx2,GM,atK);
+    stemAt2(toXs2(s),t2.hist_y[s]||0,z2Yy,toYy2,PU,atK||atK1);
+  }
+
+  // Inspection box — x[k] sub-plot (BLUE, solid)
+  { const bx1=Math.max(padL,toXs2(k)-sW2*0.45), bx2=Math.min(padL+pw,toXs2(k)+sW2*0.45);
+    c2.fillStyle='rgba(42,95,138,.07)'; c2.strokeStyle='rgba(42,95,138,.45)'; c2.lineWidth=1;
+    rrect(c2,bx1,xTop-2,bx2-bx1,xBot-xTop+4,3); c2.fill(); c2.stroke();
+    c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center'; c2.fillStyle=BL;
+    c2.fillText('k',toXs2(k),xTop+9); }
+
+  // Inspection box — y[k] sub-plot (PURPLE solid = current feedback input)
+  { const bx1=Math.max(padL,toXs2(k)-sW2*0.45), bx2=Math.min(padL+pw,toXs2(k)+sW2*0.45);
+    c2.fillStyle='rgba(128,64,160,.08)'; c2.strokeStyle='rgba(128,64,160,.45)'; c2.lineWidth=1;
+    rrect(c2,bx1,yTop-2,bx2-bx1,yBot-yTop+4,3); c2.fill(); c2.stroke();
+    c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center'; c2.fillStyle=PU;
+    c2.fillText('k',toXs2(k),yTop+9); }
+
+  // y[k+1] output box — dashed purple (distinguishes output from current-state box)
+  if(k+1<T2_WIN){
+    const bx1=Math.max(padL,toXs2(k+1)-sW2*0.45), bx2=Math.min(padL+pw,toXs2(k+1)+sW2*0.45);
+    c2.fillStyle='rgba(128,64,160,.05)'; c2.strokeStyle='rgba(128,64,160,.4)'; c2.lineWidth=1;
+    c2.setLineDash([3,3]);
+    rrect(c2,bx1,yTop-2,bx2-bx1,yBot-yTop+4,3); c2.fill(); c2.stroke();
+    c2.setLineDash([]);
+    c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center'; c2.fillStyle=PU;
+    c2.fillText('k+1',toXs2(k+1),yTop+9); }
+
+  // Labels, ticks
+  c2.font=`bold 10px 'IBM Plex Mono',monospace`; c2.textAlign='right';
+  c2.fillStyle=GM; c2.fillText('x[k]',padL+pw-4,xTop+6);
+  c2.fillStyle=PU; c2.fillText('y[k]',padL+pw-4,yTop+6);
+  c2.fillStyle=TMU; c2.font=`8.5px 'IBM Plex Mono',monospace`; c2.textAlign='right';
+  c2.fillText('1',padL-4,toYx2(1)+3); c2.fillText('0',padL-4,z2Yx+3);
+  c2.fillText('1',padL-4,toYy2(1)+3); c2.fillText('0',padL-4,z2Yy+3); c2.fillText('−1',padL-4,toYy2(-1)+3);
+  c2.fillStyle=TMU; c2.font=`8px 'IBM Plex Mono',monospace`; c2.textAlign='center';
+  for(let s=0;s<=T2_WIN;s+=5){
+    const x=toXs2(s); if(x<padL)continue;
+    c2.strokeStyle=BR; c2.lineWidth=0.8; c2.beginPath(); c2.moveTo(x,yBot); c2.lineTo(x,yBot+3); c2.stroke();
+    c2.fillText(s,x,H2-5);
+  }
+  c2.fillStyle=TMU; c2.font=`9px 'IBM Plex Mono',monospace`;
+  c2.fillText('k  →',padL+pw/2,H2-5);
+}
+
+// Drag/toggle handler for Tab 2 canvas B
+function t2setupDrag() {
+  const cv=document.getElementById('c2b'); if(!cv)return;
+  const xTop=16,xBot=88,yTop=114,yBot=192;
+  const ylo2=-1.3, yPHL=yBot-yTop, yRange2=2.6;
+
+  function slotFrom2(e){
+    const padL=38,padR=14,pw=cv.clientWidth-padL-padR;
+    const cx=e.touches?e.touches[0].clientX-cv.getBoundingClientRect().left:e.offsetX;
+    return Math.max(0,Math.min(T2_WIN-1,Math.round((cx-padL)/(pw/T2_WIN))));
+  }
+  function yFrom2(e){ return e.touches?e.touches[0].clientY-cv.getBoundingClientRect().top:e.offsetY; }
+  function inXPlot(y){ return y>=xTop-4&&y<=xBot+8; }
+  function inYPlot(y){ return y>=yTop-4&&y<=yBot+8; }
+  function nearK(s){ return Math.abs(s-t2.k)<=1; }
+
+  function setY0(mouseY){
+    const val=Math.round(clamp(ylo2+((yBot-mouseY)/yPHL)*yRange2,-1,1)*10)/10;
+    const slEl=document.getElementById('t2y0'),vEl=document.getElementById('t2y0v');
+    slEl.value=val; vEl.textContent=val.toFixed(1);
+    t2computeY(); t2draw();
+  }
+
+  let drag=false,y0drag=false,dragStart=0,kStart=0;
+
+  function onDown(e){
+    const s=slotFrom2(e),y=yFrom2(e);
+    const act=document.getElementById('t2act').value;
+    if(inYPlot(y)&&s===0&&act!=='step'){
+      // Continuous activations: drag y[0] vertically
+      y0drag=true; setY0(y);
+    } else if(nearK(s)&&(inXPlot(y)||inYPlot(y))){
+      drag=true; dragStart=s; kStart=t2.k;
+    } else if(inXPlot(y)){
+      t2.hist_x[s]=1-(t2.hist_x[s]||0);
+      document.querySelectorAll('#tab1 .sbtn').forEach(b=>b.classList.remove('active'));
+      t2computeY(); t2draw();
+    } else if(inYPlot(y)&&s===0){
+      // Step activation: toggle 0↔1
+      const slEl=document.getElementById('t2y0'),vEl=document.getElementById('t2y0v');
+      const cur=parseFloat(slEl.value);
+      slEl.value=Math.abs(cur)<0.05?1:0; vEl.textContent=parseFloat(slEl.value).toFixed(1);
+      t2computeY(); t2draw();
+    }
+  }
+  function onMove(e){
+    const s=slotFrom2(e),y=yFrom2(e);
+    const act=document.getElementById('t2act').value;
+    if(drag){ e.preventDefault(); t2.k=Math.max(0,Math.min(T2_WIN-1,kStart+(s-dragStart)));
+      document.getElementById('t2klbl').textContent=t2.k; t2draw(); }
+    else if(y0drag){ e.preventDefault(); setY0(yFrom2(e)); }
+    else{
+      const isY0=inYPlot(y)&&s===0;
+      cv.style.cursor = nearK(s)&&(inXPlot(y)||inYPlot(y)) ? 'ew-resize' :
+        inXPlot(y) ? 'pointer' :
+        isY0 ? (act==='step'?'pointer':'ns-resize') : 'default';
+    }
+  }
+  function onUp(){ drag=false; y0drag=false; }
+  cv.addEventListener('mousedown',onDown); cv.addEventListener('mousemove',onMove);
+  cv.addEventListener('mouseup',onUp); cv.addEventListener('mouseleave',onUp);
+  cv.addEventListener('touchstart',e=>{onDown(e);},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(!drag&&!y0drag)return;e.preventDefault();onMove(e);},{passive:false});
+  cv.addEventListener('touchend',onUp);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// TAB 3 — Latent State RNN
+// ─────────────────────────────────────────────────────────────────────
+const T3_WIN=20;
+const T3_PHASE=50; // phase portrait extends further than the time-series window
+const t3={sig:'step',k:3,hist_x:[],hist_h:[],hist_y:[],playing:false,tmr:null};
+
+function t3isFree(){ return document.getElementById('t3amode')?.value==='free'; }
+
+function t3P(){
+  const b1=+document.getElementById('t3b1').value;
+  const b2=+document.getElementById('t3b2').value;
+  const ph=+document.getElementById('t3ph').value;
+  const nl=document.getElementById('t3nl').checked;
+  let A, al=null, th=null;
+  if(t3isFree()){
+    const a11=+document.getElementById('t3a11').value;
+    const a12=+document.getElementById('t3a12').value;
+    const a21=+document.getElementById('t3a21').value;
+    const a22=+document.getElementById('t3a22').value;
+    A=[[a11,a12],[a21,a22]];
+  } else {
+    al=+document.getElementById('t3al').value;
+    th=+document.getElementById('t3th').value;
+    A=[[al*Math.cos(th),-al*Math.sin(th)],[al*Math.sin(th),al*Math.cos(th)]];
+  }
+  return {al,th,A,B:[b1,b2],C:[Math.cos(ph),Math.sin(ph)],nl};
+}
+
+// Eigenvalues of a 2×2 matrix — returns {lam1,lam2,mag,complex}
+function t3eig(A){
+  const tr=A[0][0]+A[1][1], det=A[0][0]*A[1][1]-A[0][1]*A[1][0];
+  const disc=tr*tr-4*det;
+  if(disc>=0){
+    const sq=Math.sqrt(disc);
+    const l1=(tr+sq)/2, l2=(tr-sq)/2;
+    return {mag:Math.max(Math.abs(l1),Math.abs(l2)), complex:false, l1, l2, tr, det};
+  } else {
+    const mag=Math.sqrt(Math.max(det,0));
+    return {mag, complex:true, re:tr/2, im:Math.sqrt(-disc)/2, tr, det};
+  }
+}
+
+function t3amodeSwitch(){
+  const free=t3isFree();
+  document.getElementById('t3arot').style.display=free?'none':'';
+  document.getElementById('t3afree').style.display=free?'':'none';
+  if(free){
+    // Pre-populate free sliders from current rotation A
+    const {A}=t3P(); // still rotation since we just switched
+    // Actually recompute from rotation sliders directly
+    const al=+document.getElementById('t3al').value;
+    const th=+document.getElementById('t3th').value;
+    const Ar=[[al*Math.cos(th),-al*Math.sin(th)],[al*Math.sin(th),al*Math.cos(th)]];
+    [['t3a11',Ar[0][0]],['t3a12',Ar[0][1]],['t3a21',Ar[1][0]],['t3a22',Ar[1][1]]].forEach(([id,v])=>{
+      document.getElementById(id).value=Math.round(v*100)/100;
+      document.getElementById(id+'v').textContent=(Math.round(v*100)/100).toFixed(2);
+    });
+  }
+  t3upd();
+}
+
+function t3upd(){
+  // Update rotation readouts
+  if(!t3isFree()){
+    [['al',2],['th',2]].forEach(([id,dp])=>{
+      const v=parseFloat(document.getElementById('t3'+id).value);
+      document.getElementById('t3'+id+'v').textContent=v.toFixed(dp);
+    });
+  } else {
+    ['a11','a12','a21','a22'].forEach(id=>{
+      const v=parseFloat(document.getElementById('t3'+id).value);
+      document.getElementById('t3'+id+'v').textContent=v.toFixed(2);
+    });
+  }
+  [['b1',1],['b2',1],['ph',2]].forEach(([id,dp])=>{
+    const v=parseFloat(document.getElementById('t3'+id).value);
+    document.getElementById('t3'+id+'v').textContent=v.toFixed(dp);
+  });
+
+  const {al,th,A}=t3P();
+  const eig=t3eig(A);
+  const mag=eig.mag;
+
+  // Spectral description
+  let eigStr='', beh='';
+  if(!t3isFree()){
+    const deg=(th*180/Math.PI).toFixed(0);
+    eigStr=th<0.01?`${al.toFixed(3)} (×2, real)`:`${al.toFixed(2)}·e^(±i·${th.toFixed(2)}) = ${al.toFixed(2)}∠${deg}°`;
+    if(al<0.95&&th<0.05)        beh='h decays straight to zero — simple fading memory, no oscillation';
+    else if(al<0.95&&th>0.05)   beh='h spirals inward — oscillating memory that gradually fades';
+    else if(Math.abs(al-1)<0.02&&th>0.05) beh='h orbits at constant radius — sustained oscillation';
+    else if(Math.abs(al-1)<0.02&&th<0.05) beh='h stays nearly constant — marginal/neutral memory';
+    else if(al>1.05&&th<0.05)   beh='h grows exponentially — unstable';
+    else if(al>1.05&&th>0.05)   beh='h spirals outward — unstable growing oscillation';
+  } else {
+    if(eig.complex) eigStr=`${eig.re.toFixed(3)} ± ${eig.im.toFixed(3)}i  (|λ|=${mag.toFixed(3)})`;
+    else eigStr=`${eig.l1.toFixed(3)}, ${eig.l2.toFixed(3)}  (real)`;
+    if(mag<0.999)        beh='h converges to origin — stable';
+    else if(mag<1.001)   beh='h neither grows nor shrinks — marginal';
+    else                 beh='h grows without bound — unstable';
+  }
+
+  const specEl=document.getElementById('t3spec');
+  const rhoColor=mag<0.999?'var(--green-mid)':mag<1.001?'var(--orange)':'var(--red-bad)';
+  if(specEl) specEl.innerHTML=
+    `<strong>ρ(A) = <span style="color:${rhoColor}">${mag.toFixed(3)}</span></strong>`+
+    (mag<0.999?' — echo state property holds (memory fades)':
+     mag<1.001?' — marginal (memory persists indefinitely)':
+               ' — no echo state property (memory grows)')+`<br>`+
+    `<span style="color:var(--text-muted);font-size:.65rem">eigenvalues: ${eigStr}</span><br>`+
+    `<span style="color:var(--text-mid)">${beh}</span>`;
+  const stEl=document.getElementById('t3stab');
+  if(stEl){
+    if(mag<0.999){stEl.style.color='var(--green-mid)';stEl.textContent=`✓ stable  (|λ|=${mag.toFixed(3)} < 1)`;}
+    else if(mag<1.001){stEl.style.color='var(--orange)';stEl.textContent=`△ marginal  (|λ|≈1)`;}
+    else{stEl.style.color='var(--red-bad)';stEl.textContent=`✗ unstable  (|λ|=${mag.toFixed(3)} > 1)`;}
+  }
+  t3computeAll();
+  const kEl=document.getElementById('t3klbl'); if(kEl) kEl.textContent=t3.k;
+  t3draw();
+}
+
+function t3setFreeA(a11,a12,a21,a22,b1,b2,ph){
+  document.getElementById('t3amode').value='free';
+  document.getElementById('t3arot').style.display='none';
+  document.getElementById('t3afree').style.display='';
+  [['t3a11',a11,2],['t3a12',a12,2],['t3a21',a21,2],['t3a22',a22,2]].forEach(([id,v,dp])=>{
+    document.getElementById(id).value=v; document.getElementById(id+'v').textContent=v.toFixed(dp);
+  });
+  if(b1!==undefined){ document.getElementById('t3b1').value=b1; document.getElementById('t3b1v').textContent=b1.toFixed(1); }
+  if(b2!==undefined){ document.getElementById('t3b2').value=b2; document.getElementById('t3b2v').textContent=b2.toFixed(1); }
+  if(ph!==undefined){ document.getElementById('t3ph').value=ph; document.getElementById('t3phv').textContent=ph.toFixed(2); }
+}
+
+function t3pre(n,el){
+  const Prot={
+    decay:   {al:.8,  th:0,   b1:1, b2:0, ph:0},
+    osc:     {al:.93, th:.6,  b1:1, b2:0, ph:0},
+    integ:   {al:1.0, th:0,   b1:.1,b2:0, ph:0},
+    unstable:{al:1.06,th:.3,  b1:.5,b2:.2,ph:.4}
+  };
+  const Pfree={
+    // Double integrator: h₁ accumulates input, h₂ accumulates h₁
+    // A=[[1,0],[1,1]], B=[1,0]^T, C=[0,1] (read off h₂)
+    dblint:  {a11:1,  a12:0,  a21:1,  a22:1,  b1:1, b2:0, ph:Math.PI/2},
+    // Shear / Jordan block: h₂ drives h₁, both marginally stable
+    shear:   {a11:1,  a12:0.6,a21:0,  a22:1,  b1:0.5,b2:0,ph:0},
+    // Flip h₂: h₁ decays, h₂ oscillates with period 2
+    reflect: {a11:0.9,a12:0,  a21:0,  a22:-0.9,b1:1,b2:1,ph:Math.PI/4},
+    // Asymmetric coupled decay
+    coupled: {a11:0.8,a12:0.4,a21:-0.3,a22:0.7,b1:1,b2:0,ph:0}
+  };
+  document.querySelectorAll('#tab2 .pbtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  if(Prot[n]){
+    const p=Prot[n];
+    // Switch to rotation mode
+    document.getElementById('t3amode').value='rot';
+    document.getElementById('t3arot').style.display='';
+    document.getElementById('t3afree').style.display='none';
+    document.getElementById('t3al').value=p.al; document.getElementById('t3th').value=p.th;
+    document.getElementById('t3b1').value=p.b1; document.getElementById('t3b2').value=p.b2;
+    document.getElementById('t3ph').value=p.ph;
+  } else if(Pfree[n]){
+    const p=Pfree[n];
+    t3setFreeA(p.a11,p.a12,p.a21,p.a22,p.b1,p.b2,p.ph);
+  } else return;
+  t3upd();
+}
+function t3getX(k){
+  switch(t3.sig){
+    case 'step':    return k>=5?1:0;
+    case 'impulse': return k===5?1:0;
+    case 'alt':     return k%2;
+    case 'square':  return (Math.floor(k/5)%2===0)?1:0;
+    default: return 0;
+  }
+}
+function t3getH0(){
+  const h10=parseFloat(document.getElementById('t3h10')?.value||0);
+  const h20=parseFloat(document.getElementById('t3h20')?.value||0);
+  return [h10,h20];
+}
+function t3h0upd(){
+  const h0=t3getH0();
+  const v10=document.getElementById('t3h10v'), v20=document.getElementById('t3h20v');
+  if(v10) v10.textContent=h0[0].toFixed(1);
+  if(v20) v20.textContent=h0[1].toFixed(1);
+  t3computeAll(); t3draw();
+}
+function t3computeAll(){
+  const {A,B,C,nl}=t3P();
+  // hist_x is populated by t3sig/t3rst/toggle — don't overwrite it here
+  if(!t3.hist_x||t3.hist_x.length!==T3_WIN)
+    t3.hist_x=Array.from({length:T3_WIN},(_,i)=>t3getX(i));
+  t3.hist_h=new Array(T3_PHASE+1); t3.hist_h[0]=t3getH0();
+  t3.hist_y=new Array(T3_WIN+1); // includes y[T3_WIN] for the k=20 inspection box
+  for(let k=0;k<T3_PHASE;k++){
+    const h=t3.hist_h[k];
+    // Within T3_WIN use hist_x (may be custom-toggled); beyond that
+    // continue the signal pattern so step stays high, square stays in phase, etc.
+    const x = k < T3_WIN ? (t3.hist_x[k]||0) : t3getX(k);
+    let h1n=A[0][0]*h[0]+A[0][1]*h[1]+B[0]*x;
+    let h2n=A[1][0]*h[0]+A[1][1]*h[1]+B[1]*x;
+    if(nl){h1n=Math.tanh(h1n);h2n=Math.tanh(h2n);}
+    t3.hist_h[k+1]=[clamp(h1n,-15,15),clamp(h2n,-15,15)];
+    if(k<=T3_WIN) t3.hist_y[k]=C[0]*h[0]+C[1]*h[1];
+  }
+  // y[T3_WIN] = C^T h[T3_WIN]
+  const hN=t3.hist_h[T3_WIN];
+  if(hN) t3.hist_y[T3_WIN]=C[0]*hN[0]+C[1]*hN[1];
+}
+function t3randomA(){
+  // Generate random 2×2 matrix, rescale so spectral radius = target rho
+  const rho=parseFloat(document.getElementById('t3rho')?.value||0.9);
+  let a11,a12,a21,a22,curRho;
+  do {
+    a11=(Math.random()*2-1); a12=(Math.random()*2-1);
+    a21=(Math.random()*2-1); a22=(Math.random()*2-1);
+    curRho=t3eig([[a11,a12],[a21,a22]]).mag;
+  } while(curRho<1e-4); // retry if near-zero matrix
+  const s=rho/curRho;
+  a11*=s; a12*=s; a21*=s; a22*=s;
+  // Round to 2dp for slider compatibility
+  a11=Math.round(a11*20)/20; a12=Math.round(a12*20)/20;
+  a21=Math.round(a21*20)/20; a22=Math.round(a22*20)/20;
+  t3setFreeA(a11,a12,a21,a22);
+  document.querySelectorAll('#tab2 .pbtn').forEach(b=>b.classList.remove('active'));
+  t3upd();
+}
+
+
+function t3sig(s,el){
+  t3.sig=s; document.querySelectorAll('#tab2 .sbtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+  t3.hist_x=Array.from({length:T3_WIN},(_,i)=>t3getX(i));
+  t3computeAll(); t3draw();
+}
+function t3rst(){
+  // Reset h[0] sliders to zero
+  ['t3h10','t3h20'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=0;});
+  ['t3h10v','t3h20v'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='0.0';});
+  t3.hist_x=Array.from({length:T3_WIN},(_,i)=>t3getX(i));
+  t3computeAll(); t3.k=3; t3.playing=false; clearInterval(t3.tmr);
+  document.getElementById('t3pb').textContent='Play ▶';
+  const kEl=document.getElementById('t3klbl'); if(kEl) kEl.textContent=t3.k;
+  t3upd();
+}
+function t3step(){ t3.k=Math.min(T3_WIN,t3.k+1); const kEl=document.getElementById('t3klbl'); if(kEl) kEl.textContent=t3.k; t3draw(); }
+function t3play(){
+  t3.playing=!t3.playing; document.getElementById('t3pb').textContent=t3.playing?'Pause ⏸':'Play ▶';
+  if(t3.playing){ t3.tmr=setInterval(()=>{if(t3.k<T3_WIN){t3.k++;const kEl=document.getElementById('t3klbl');if(kEl)kEl.textContent=t3.k;t3draw();}else{t3.playing=false;clearInterval(t3.tmr);document.getElementById('t3pb').textContent='Play ▶';}},120);} else clearInterval(t3.tmr);
+}
+function t3miniMat(c,A,x,y){
+  const cW=28,cH=15,gap=2;
+  const vals=[[A[0][0],A[0][1]],[A[1][0],A[1][1]]];
+  for(let r=0;r<2;r++) for(let col=0;col<2;col++){
+    const rx=x+col*(cW+gap), ry=y+r*(cH+gap);
+    c.fillStyle='rgba(240,249,240,.95)'; c.strokeStyle='rgba(100,160,100,.4)'; c.lineWidth=0.5;
+    c.fillRect(rx,ry,cW,cH); c.strokeRect(rx,ry,cW,cH);
+    c.fillStyle=GM; c.font=`9px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText(vals[r][col].toFixed(2),rx+cW/2,ry+cH-3);
+  }
+  c.strokeStyle='rgba(61,122,53,.5)'; c.lineWidth=1.2;
+  const tw=2*(cW+gap)-gap, th=2*(cH+gap)-gap;
+  c.beginPath(); c.moveTo(x-1,y-2); c.lineTo(x-5,y-2); c.lineTo(x-5,y+th+2); c.lineTo(x-1,y+th+2); c.stroke();
+  c.beginPath(); c.moveTo(x+tw+1,y-2); c.lineTo(x+tw+5,y-2); c.lineTo(x+tw+5,y+th+2); c.lineTo(x+tw+1,y+th+2); c.stroke();
+  c.fillStyle=G; c.font=`bold 9px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText('A=',x-7,y+th/2+3);
+}
+function t3miniVec(c,B,x,y,label,col){
+  const cW=28,cH=15,gap=2;
+  for(let r=0;r<2;r++){
+    const ry=y+r*(cH+gap);
+    c.fillStyle='rgba(240,249,240,.95)'; c.strokeStyle='rgba(100,160,100,.4)'; c.lineWidth=0.5;
+    c.fillRect(x,ry,cW,cH); c.strokeRect(x,ry,cW,cH);
+    const vc=B[r]>0.05?GM:B[r]<-0.05?O:TMU;
+    c.fillStyle=vc; c.font=`9px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText(B[r].toFixed(1),x+cW/2,ry+cH-3);
+  }
+  const th=2*(cH+gap)-gap;
+  c.strokeStyle='rgba(61,122,53,.5)'; c.lineWidth=1.2;
+  c.beginPath(); c.moveTo(x-1,y-2); c.lineTo(x-4,y-2); c.lineTo(x-4,y+th+2); c.lineTo(x-1,y+th+2); c.stroke();
+  c.beginPath(); c.moveTo(x+cW+1,y-2); c.lineTo(x+cW+4,y-2); c.lineTo(x+cW+4,y+th+2); c.lineTo(x+cW+1,y+th+2); c.stroke();
+  c.fillStyle=col||G; c.font=`bold 9px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText((label||'B')+'=',x-7,y+th/2+3);
+}
+function t3miniRowVec(c,C,x,y,label,col){
+  const cW=28,cH=15,gap=2;
+  for(let i=0;i<2;i++){
+    const rx=x+i*(cW+gap);
+    c.fillStyle='rgba(245,238,255,.95)'; c.strokeStyle='rgba(160,100,200,.4)'; c.lineWidth=0.5;
+    c.fillRect(rx,y,cW,cH); c.strokeRect(rx,y,cW,cH);
+    const vc=C[i]>0.05?PU:C[i]<-0.05?O:TMU;
+    c.fillStyle=vc; c.font=`9px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText(C[i].toFixed(2),rx+cW/2,y+cH-3);
+  }
+  const tw=2*(cW+gap)-gap;
+  c.strokeStyle='rgba(128,64,160,.5)'; c.lineWidth=1.2;
+  c.beginPath(); c.moveTo(x-1,y-2); c.lineTo(x-5,y-2); c.lineTo(x-5,y+cH+2); c.lineTo(x-1,y+cH+2); c.stroke();
+  c.beginPath(); c.moveTo(x+tw+1,y-2); c.lineTo(x+tw+5,y-2); c.lineTo(x+tw+5,y+cH+2); c.lineTo(x+tw+1,y+cH+2); c.stroke();
+  c.fillStyle=col||PU; c.font=`bold 9px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText((label||'Cᵀ')+'=',x-7,y+cH/2+3);
+}
+
+function t3drawDiagram(){
+  const c=gc('c3a'); if(!c)return;
+  const W=c._w, H=c._h;
+  c.clearRect(0,0,W,H); c.fillStyle='#fff'; c.fillRect(0,0,W,H);
+
+  const k=t3.k;
+  const hk =t3.hist_h[k  ]||[0,0], xk=t3.hist_x[k]||0;
+  const hk1=t3.hist_h[k+1]||[0,0], yk=t3.hist_y[k]||0;
+  const {A,B,C}=t3P();
+  const nl=document.getElementById('t3nl').checked;
+
+  // Layout: left col = x[k], h[k], y[k]; right col = h[k+1]
+  // time axis at bottom
+  const mg=10;
+  const timeAxisH=32;
+  const usableH=H-mg-timeAxisH;
+
+  const lBW=Math.round(Math.min(Math.max(W*0.30,90),130)), lBH=60;
+  const sBW=Math.round(Math.min(Math.max(W*0.22,70),96)),  sBH=42;
+
+  const leftGap=Math.round((usableH-sBH-lBH-sBH)/2);
+  const xkT=mg, hkT=mg+sBH+leftGap, ykT=mg+sBH+leftGap+lBH+leftGap;
+
+  const lx=Math.round(W*0.04)+34;
+  const xkCX=lx+sBW/2, xkCY=xkT+sBH/2;
+  const hkCX=lx+lBW/2, hkCY=hkT+lBH/2;
+  const ykBoxL=lx+Math.round((lBW-sBW)/2);
+  const ykCX=ykBoxL+sBW/2, ykCY=ykT+sBH/2;
+
+  const rx=Math.round(W*0.64);
+  const hk1T=Math.round(hkT);
+  const hk1CX=rx+lBW/2, hk1CY=hk1T+lBH/2;
+
+  // ── Arrow 1: x[k] → h[k+1]  diagonal, B label beside
+  const a1x0=lx+sBW+2, a1y0=xkCY;
+  const a1x1=rx-2,     a1y1=hk1CY-10;
+  const a1dx=a1x1-a1x0, a1dy=a1y1-a1y0;
+  c.strokeStyle='rgba(61,122,53,.5)'; c.lineWidth=1.5;
+  c.beginPath(); c.moveTo(a1x0,a1y0); c.lineTo(a1x1,a1y1); c.stroke();
+  arrowAt(c,a1x1,a1y1,a1dx,a1dy,8,'rgba(61,122,53,.6)');
+  t3miniVec(c,B,(a1x0+a1x1)/2-14,(a1y0+a1y1)/2-40,'B',G);
+
+  // ── Arrow 2: h[k] → h[k+1]  dashed horizontal, A label BELOW line
+  const a2x0=lx+lBW+2, a2y0=hkCY, a2x1=rx-2, a2y1=hk1CY+10;
+  const a2dx=a2x1-a2x0, a2dy=a2y1-a2y0;
+  c.strokeStyle='rgba(61,122,53,.7)'; c.lineWidth=1.8; c.setLineDash([6,4]);
+  c.beginPath(); c.moveTo(a2x0,a2y0); c.lineTo(a2x1,a2y1); c.stroke();
+  c.setLineDash([]);
+  arrowAt(c,a2x1,a2y1,a2dx,a2dy,8,'rgba(61,122,53,.75)');
+  // A matrix below midpoint — on narrow screens, drop below h[k+1] bottom edge instead
+  const aMidX=(a2x0+a2x1)/2, aMidY=(a2y0+a2y1)/2;
+  const aMatW=2*28+2+2*2; // approx total mat width (2 cells + gaps)
+  const aMidClear = aMidX-aMatW/2 > lx+lBW+6; // true if midpoint has room
+  const aMatX = aMidClear ? aMidX-aMatW/2 : rx+(lBW-aMatW)/2;
+  const aMatY = aMidClear ? aMidY+6       : hk1T+lBH+6;
+  t3miniMat(c,A,aMatX,aMatY);
+
+  // ── Arrow 3: h[k] → y[k]  vertical, C^T centered on line
+  const a3x=ykCX, a3y0=hkT+lBH+2, a3y1=ykT-2;
+  c.strokeStyle='rgba(128,64,160,.55)'; c.lineWidth=1.5;
+  c.beginPath(); c.moveTo(a3x,a3y0); c.lineTo(a3x,a3y1); c.stroke();
+  arrowAt(c,a3x,a3y1,0,1,8,'rgba(128,64,160,.6)');
+  // C^T row vec: straddle the vertical line (each cell on one side)
+  const cMidY=(a3y0+a3y1)/2;
+  const cCW=28, cGap=2, cH2=15;
+  // cell 0 left of line, cell 1 right of line, with a gap
+  const cLineGap=3;
+  const c0x=a3x-cCW-cLineGap, c1x=a3x+cLineGap;
+  [[C[0],c0x],[C[1],c1x]].forEach(([v,cx])=>{
+    const vc=v>0.05?PU:v<-0.05?O:TMU;
+    c.fillStyle='rgba(245,238,255,.95)'; c.strokeStyle='rgba(160,100,200,.4)'; c.lineWidth=0.5;
+    c.fillRect(cx,cMidY-cH2/2,cCW,cH2); c.strokeRect(cx,cMidY-cH2/2,cCW,cH2);
+    c.fillStyle=vc; c.font=`9px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText(v.toFixed(2),cx+cCW/2,cMidY+cH2/2-3);
+  });
+  // Brackets spanning both cells
+  c.strokeStyle='rgba(128,64,160,.5)'; c.lineWidth=1.2;
+  const totW=cCW+cLineGap+cCW+cLineGap;
+  c.beginPath(); c.moveTo(c0x-1,cMidY-cH2/2-2); c.lineTo(c0x-5,cMidY-cH2/2-2);
+  c.lineTo(c0x-5,cMidY+cH2/2+2); c.lineTo(c0x-1,cMidY+cH2/2+2); c.stroke();
+  c.beginPath(); c.moveTo(c1x+cCW+1,cMidY-cH2/2-2); c.lineTo(c1x+cCW+5,cMidY-cH2/2-2);
+  c.lineTo(c1x+cCW+5,cMidY+cH2/2+2); c.lineTo(c1x+cCW+1,cMidY+cH2/2+2); c.stroke();
+  c.fillStyle=PU; c.font=`bold 9px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText('Cᵀ=',c0x-7,cMidY+3);
+
+  // ── Boxes (drawn after arrows so they cover the line ends)
+  function drawBox(bx,by,bw,bh,label,v1str,v2str,sublabel,isNz,borderCol,bg,txtCol1,txtCol2){
+    c.fillStyle=isNz?bg:CRD; c.strokeStyle=isNz?borderCol:BR; c.lineWidth=isNz?2:1.5;
+    rrect(c,bx,by,bw,bh,5); c.fill(); c.stroke();
+    c.fillStyle=TMU; c.font=`10px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText(label,bx+bw/2,by+14);
+    if(v2str!==null){
+      c.fillStyle=txtCol1; c.font=`10px 'IBM Plex Mono',monospace`;
+      c.fillText(v1str,bx+bw/2,by+29);
+      c.fillStyle=txtCol2; c.fillText(v2str,bx+bw/2,by+43);
+      c.fillStyle=TMU; c.font=`8.5px 'IBM Plex Mono',monospace`;
+      c.fillText(sublabel,bx+bw/2,by+bh-5);
+    } else {
+      c.fillStyle=txtCol1; c.font=`bold 15px 'Outfit',sans-serif`;
+      c.fillText(v1str,bx+bw/2,by+bh-8);
+    }
+  }
+
+  drawBox(lx,xkT,sBW,sBH,'x[k]',xk.toFixed(2),null,'',xk>0.05,GM,'#f0f9f0',xk>0.05?GM:TM,null);
+  drawBox(lx,hkT,lBW,lBH,'h[k]',`h₁: ${hk[0].toFixed(3)}`,`h₂: ${hk[1].toFixed(3)}`,
+    nl?'current state (tanh)':'current state',
+    Math.max(Math.abs(hk[0]),Math.abs(hk[1]))>0.005,GM,'#f0f9f0',GM,PU);
+  drawBox(ykBoxL,ykT,sBW,sBH,'y[k]',yk.toFixed(3),null,'',Math.abs(yk)>0.005,PU,'#f5eeff',Math.abs(yk)>0.005?PU:TM,null);
+  drawBox(rx,hk1T,lBW,lBH,'h[k+1]',`h₁: ${hk1[0].toFixed(3)}`,`h₂: ${hk1[1].toFixed(3)}`,
+    nl?'next state (tanh)':'next state',
+    Math.max(Math.abs(hk1[0]),Math.abs(hk1[1]))>0.005,PU,'#f5eeff',GM,PU);
+
+  // ── Time axis
+  const axY=H-16, axL=lx, axR=rx+lBW;
+  c.fillStyle='rgba(100,85,65,.65)'; c.font=`8.5px 'IBM Plex Mono',monospace`; c.textAlign='center';
+  c.fillText('discrete time', (axL+axR)/2, axY-5);
+  c.strokeStyle='rgba(120,100,80,.5)'; c.lineWidth=1;
+  c.beginPath(); c.moveTo(axL,axY); c.lineTo(axR,axY); c.stroke();
+  arrowAt(c,axR,axY,1,0,6,'rgba(120,100,80,.5)');
+  c.fillStyle='rgba(100,85,65,.7)'; c.font=`9px 'IBM Plex Mono',monospace`;
+  c.textAlign='left';  c.fillText('k',  axL,  axY+10);
+  c.textAlign='right'; c.fillText('k+1',axR-2,axY+10);
+}
+
+function t3drawSeries(){
+  const c=gc('c3b'); if(!c)return;
+  const W=c._w, H=c._h;
+  c.clearRect(0,0,W,H); c.fillStyle='#fdfaf5'; c.fillRect(0,0,W,H);
+
+  const padL=54, padR=14, pw=W-padL-padR; // wider left margin for labels
+  const axPad=22;
+  const nPlots=4, gap=5;
+  const totalH=H-axPad;
+  const pH=Math.floor((totalH-gap*(nPlots-1))/nPlots);
+
+  function subPlot(i){ return {top:i*(pH+gap), bot:i*(pH+gap)+pH}; }
+  const sp=[subPlot(0),subPlot(1),subPlot(2),subPlot(3)];
+
+  const toXs=s=>padL+(s/T3_WIN)*pw;
+  const slotW=pw/T3_WIN;
+
+  const allH1=(t3.hist_h||[]).slice(0,T3_WIN).map(h=>(h||[0,0])[0]);
+  const allH2=(t3.hist_h||[]).slice(0,T3_WIN).map(h=>(h||[0,0])[1]);
+  const h1Max=Math.max(0.5,...allH1.map(Math.abs));
+  const h2Max=Math.max(0.5,...allH2.map(Math.abs));
+  const yMax =Math.max(0.5,...(t3.hist_y||[]).map(Math.abs));
+
+  function mkScale(lo,hi,top,bot){
+    const range=hi-lo, ph2=bot-top;
+    return { toY:v=>bot-((v-lo)/range)*ph2, zY:bot-((0-lo)/range)*ph2, lo,hi,top,bot };
+  }
+  const scX =mkScale(-0.15,1.3,  sp[0].top,sp[0].bot);
+  const scH1=mkScale(-h1Max,h1Max,sp[1].top,sp[1].bot);
+  const scH2=mkScale(-h2Max,h2Max,sp[2].top,sp[2].bot);
+  const scY =mkScale(-yMax, yMax, sp[3].top,sp[3].bot);
+  const scales=[scX,scH1,scH2,scY];
+  const colors=[GM,GM,PU,O];
+  const labels=['x[k]','h₁[k]','h₂[k]','y[k]'];
+
+  // Graph paper
+  c.strokeStyle='rgba(160,120,60,.1)'; c.lineWidth=0.7;
+  for(let s=0;s<=T3_WIN;s++){const x=toXs(s); c.beginPath(); c.moveTo(x,sp[0].top); c.lineTo(x,sp[3].bot+2); c.stroke();}
+  c.strokeStyle='rgba(140,105,55,.18)'; c.lineWidth=0.8;
+  for(let s=0;s<=T3_WIN;s+=5){const x=toXs(s); c.beginPath(); c.moveTo(x,sp[0].top); c.lineTo(x,sp[3].bot+2); c.stroke();}
+
+  scales.forEach((sc)=>{
+    c.strokeStyle='rgba(180,155,115,.35)'; c.lineWidth=0.5;
+    c.beginPath(); c.moveTo(padL,sc.zY); c.lineTo(padL+pw,sc.zY); c.stroke();
+    c.strokeStyle=BR; c.lineWidth=1;
+    c.beginPath(); c.moveTo(padL,sc.top); c.lineTo(padL,sc.bot+1); c.stroke();
+  });
+
+  c.strokeStyle='rgba(160,135,100,.6)'; c.lineWidth=1;
+  for(let i=1;i<nPlots;i++){
+    const dy=sp[i].top-Math.floor(gap/2);
+    c.beginPath(); c.moveTo(padL-6,dy); c.lineTo(padL+pw,dy); c.stroke();
+  }
+
+  const k=t3.k;
+
+  function stemAt3(x,val,sc,col,big){
+    const yv=sc.toY(val), r=big?5:3.5;
+    c.strokeStyle=col; c.lineWidth=big?2:1.5;
+    c.beginPath(); c.moveTo(x,sc.zY); c.lineTo(x,yv); c.stroke();
+    c.fillStyle=Math.abs(val)>0.005?col:'#fdfaf5'; c.strokeStyle=col; c.lineWidth=1;
+    c.beginPath(); c.arc(x,yv,r,0,Math.PI*2); c.fill(); c.stroke();
+  }
+
+  for(let s=0;s<=T3_WIN;s++){
+    const atK=s===k, atK1=s===k+1;
+    const px=toXs(s);
+    const h=(t3.hist_h[s]||[0,0]);
+    // x[T3_WIN] not in hist_x (only 0..T3_WIN-1); continue the signal pattern
+    const xv = s < T3_WIN ? (t3.hist_x[s]||0) : t3getX(s);
+    stemAt3(px,xv,                scX, GM,atK);
+    stemAt3(px,h[0],              scH1,GM,atK||atK1);
+    stemAt3(px,h[1],              scH2,PU,atK||atK1);
+    stemAt3(px,t3.hist_y[s]||0,  scY, O, atK);
+  }
+
+  // Inspection boxes — k (solid blue) + k+1 (dashed purple) in h sub-plots
+  const kx=toXs(k);
+  const bx1k=Math.max(padL,kx-slotW*0.45), bx2k=Math.min(padL+pw,kx+slotW*0.45);
+  sp.forEach((sp2,i)=>{
+    c.fillStyle='rgba(42,95,138,.06)'; c.strokeStyle='rgba(42,95,138,.4)'; c.lineWidth=1;
+    rrect(c,bx1k,sp2.top-2,bx2k-bx1k,sp2.bot-sp2.top+4,3); c.fill(); c.stroke();
+    c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='center'; c.fillStyle=BL;
+    c.fillText('k',kx,sp2.top+9);
+  });
+  // k+1 box in h₁ and h₂ only (dashed) — show up to T3_WIN
+  if(k+1<=T3_WIN){
+    const k1x=toXs(k+1);
+    const bx1k1=Math.max(padL,k1x-slotW*0.45), bx2k1=Math.min(padL+pw,k1x+slotW*0.45);
+    [sp[1],sp[2]].forEach(sp2=>{
+      c.fillStyle='rgba(128,64,160,.06)'; c.strokeStyle='rgba(128,64,160,.4)'; c.lineWidth=1;
+      c.setLineDash([3,3]);
+      rrect(c,bx1k1,sp2.top-2,bx2k1-bx1k1,sp2.bot-sp2.top+4,3); c.fill(); c.stroke();
+      c.setLineDash([]);
+      c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='center'; c.fillStyle=PU;
+      c.fillText('k+1',k1x,sp2.top+9);
+    });
+  }
+
+  // Labels on LEFT of each sub-plot, vertically centered
+  scales.forEach((sc,i)=>{
+    const midY=(sc.top+sc.bot)/2;
+    c.save();
+    c.translate(14, midY);
+    c.rotate(-Math.PI/2);
+    c.font=`bold 9.5px 'IBM Plex Mono',monospace`; c.textAlign='center'; c.fillStyle=colors[i];
+    c.fillText(labels[i],0,4);
+    c.restore();
+  });
+
+  // Y-axis ticks
+  c.fillStyle=TMU; c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  scales.forEach(sc=>c.fillText('0',padL-4,sc.zY+3));
+  c.fillText('1',padL-4,scX.toY(1)+3);
+  // Show ±hMax bounds for h sub-plots so students know values aren't capped at 1
+  c.fillText(`+${h1Max.toFixed(2)}`,padL-4,scH1.top+9);
+  c.fillText(`−${h1Max.toFixed(2)}`,padL-4,scH1.bot-1);
+  c.fillText(`+${h2Max.toFixed(2)}`,padL-4,scH2.top+9);
+  c.fillText(`−${h2Max.toFixed(2)}`,padL-4,scH2.bot-1);
+  c.fillText(`+${yMax.toFixed(2)}`,padL-4,scY.top+9);
+  c.fillText(`−${yMax.toFixed(2)}`,padL-4,scY.bot-1);
+
+  // X-axis ticks
+  c.fillStyle=TMU; c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='center';
+  for(let s=0;s<=T3_WIN;s+=5){
+    const x=toXs(s);
+    c.strokeStyle=BR; c.lineWidth=0.8; c.beginPath(); c.moveTo(x,sp[3].bot); c.lineTo(x,sp[3].bot+3); c.stroke();
+    c.fillText(s,x,H-5);
+  }
+  c.fillStyle=TMU; c.font=`9px 'IBM Plex Mono',monospace`;
+  c.fillText('k  →',padL+pw/2,H-5);
+}
+
+function t3drawPhase(){
+  const c=gc('c3c'); if(!c)return;
+  const W=c._w, H=c._h;
+  c.clearRect(0,0,W,H); c.fillStyle='#fdfaf5'; c.fillRect(0,0,W,H);
+
+  const pad=18, ox=pad+(W-2*pad)/2, oy=pad+(H-2*pad)/2;
+  const pw2=(W-2*pad)/2, ph2=(H-2*pad)/2;
+
+  // Auto-scale to all T3_PHASE+1 points so the full trajectory fits
+  const allH=t3.hist_h.slice(0,T3_PHASE+1).flatMap(h=>h||[0,0]);
+  const mv=Math.max(...allH.map(Math.abs),0.2);
+  const scl=Math.min(pw2,ph2)/(mv*1.15);
+
+  // Axes
+  c.strokeStyle=BRL; c.lineWidth=0.8;
+  c.beginPath(); c.moveTo(pad,oy); c.lineTo(W-pad,oy); c.stroke();
+  c.beginPath(); c.moveTo(ox,pad); c.lineTo(ox,H-pad); c.stroke();
+  c.fillStyle=TMU; c.font=`9px 'IBM Plex Mono',monospace`;
+  c.textAlign='center'; c.fillText('h₁',W-pad,oy-4);
+  c.textAlign='left';   c.fillText('h₂',ox+3,pad+9);
+
+  const N=T3_PHASE+1;
+
+  // Extended trail (k > T3_WIN): faint dashed, shows long-run behavior
+  c.setLineDash([3,3]);
+  for(let i=T3_WIN+1;i<N;i++){
+    const h0=t3.hist_h[i-1]||[0,0], h1=t3.hist_h[i]||[0,0];
+    const t2=(i-T3_WIN)/(T3_PHASE-T3_WIN);
+    c.strokeStyle=`rgba(128,64,160,${0.08+0.20*t2})`;
+    c.lineWidth=1;
+    c.beginPath();
+    c.moveTo(ox+h0[0]*scl, oy-h0[1]*scl);
+    c.lineTo(ox+h1[0]*scl, oy-h1[1]*scl);
+    c.stroke();
+  }
+  c.setLineDash([]);
+
+  // Main trail (k=0..T3_WIN): solid, fading in from early to late
+  for(let i=1;i<=T3_WIN+1;i++){
+    const h0=t3.hist_h[i-1]||[0,0], h1=t3.hist_h[i]||[0,0];
+    const t2=i/(T3_WIN+1);
+    c.strokeStyle=`rgba(128,64,160,${0.15+0.65*t2})`;
+    c.lineWidth=1.4;
+    c.beginPath();
+    c.moveTo(ox+h0[0]*scl, oy-h0[1]*scl);
+    c.lineTo(ox+h1[0]*scl, oy-h1[1]*scl);
+    c.stroke();
+  }
+
+  // Extended dots (small, faint)
+  for(let i=T3_WIN+1;i<N;i++){
+    const h=t3.hist_h[i]||[0,0];
+    c.fillStyle='rgba(128,64,160,.12)';
+    c.beginPath(); c.arc(ox+h[0]*scl, oy-h[1]*scl, 2, 0, Math.PI*2); c.fill();
+  }
+  // Main dots (small)
+  for(let i=0;i<=T3_WIN+1;i++){
+    const h=t3.hist_h[i]||[0,0];
+    c.fillStyle='rgba(128,64,160,.35)';
+    c.beginPath(); c.arc(ox+h[0]*scl, oy-h[1]*scl, 2.5, 0, Math.PI*2); c.fill();
+  }
+
+  const k=t3.k;
+  // h[k+1] — medium purple dot
+  if(k+1<=T3_PHASE){
+    const hk1=t3.hist_h[k+1]||[0,0];
+    c.fillStyle='rgba(128,64,160,.55)'; c.strokeStyle=PU; c.lineWidth=1;
+    c.beginPath(); c.arc(ox+hk1[0]*scl, oy-hk1[1]*scl, 5.5, 0, Math.PI*2); c.fill(); c.stroke();
+  }
+  // h[k] — large green dot
+  const hk=t3.hist_h[k]||[0,0];
+  c.fillStyle=GM; c.strokeStyle=G; c.lineWidth=1.5;
+  c.beginPath(); c.arc(ox+hk[0]*scl, oy-hk[1]*scl, 7, 0, Math.PI*2); c.fill(); c.stroke();
+
+  // Origin
+  c.fillStyle=TMU;
+  c.beginPath(); c.arc(ox,oy,2.5,0,Math.PI*2); c.fill();
+
+  // k and k+1 labels
+  c.font=`8.5px 'IBM Plex Mono',monospace`;
+  c.fillStyle=G; c.textAlign='center';
+  c.fillText('k', ox+hk[0]*scl, oy-hk[1]*scl-10);
+  if(k+1<=T3_PHASE){
+    const hk1=t3.hist_h[k+1]||[0,0];
+    c.fillStyle=PU; c.fillText('k+1', ox+hk1[0]*scl, oy-hk1[1]*scl-8);
+  }
+
+  // Scale and legend hints
+  c.fillStyle=TMU; c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText(`axis ±${mv.toFixed(2)}`,W-pad,H-4);
+  c.textAlign='left'; c.fillStyle='rgba(128,64,160,.45)';
+  c.fillText(`solid k=0–${T3_WIN}`,pad,H-4);
+  c.fillStyle='rgba(128,64,160,.25)';
+  c.fillText(` · dashed k=${T3_WIN+1}–${T3_PHASE}`,pad+64,H-4);
+}
+
+function t3draw(){ t3drawDiagram(); t3drawSeries(); t3drawPhase(); }
+
+function t3setupDrag(){
+  const cv=document.getElementById('c3b'); if(!cv)return;
+  function getSubPlots(){
+    const H2=cv.clientHeight, nP=4, g=5, ax=22;
+    const pH=Math.floor((H2-ax-g*(nP-1))/nP);
+    return Array.from({length:nP},(_,i)=>({top:i*(pH+g),bot:i*(pH+g)+pH}));
+  }
+  const padL=54, padR=14;
+  function slotFrom3(e){
+    const pw=cv.clientWidth-padL-padR;
+    const cx=e.touches?e.touches[0].clientX-cv.getBoundingClientRect().left:e.offsetX;
+    return Math.max(0,Math.min(T3_WIN,Math.round((cx-padL)/(pw/T3_WIN))));
+  }
+  function yFrom3(e){return e.touches?e.touches[0].clientY-cv.getBoundingClientRect().top:e.offsetY;}
+
+  // Convert canvas y in h₁/h₂ sub-plot to a value in [-2,2]
+  function yToVal(mouseY, sp){
+    const h=(t3.hist_h||[]).slice(0,T3_WIN).flatMap(h2=>h2||[0,0]);
+    const hMax=Math.max(2,...h.map(Math.abs));
+    const frac=(sp.bot-mouseY)/(sp.bot-sp.top);
+    return Math.round(clamp((frac*2-1)*hMax,-2,2)*10)/10;
+  }
+  function setH0comp(comp, val){
+    const id=comp===0?'t3h10':'t3h20', vid=comp===0?'t3h10v':'t3h20v';
+    const sl=document.getElementById(id), vl=document.getElementById(vid);
+    if(sl){sl.value=val;} if(vl){vl.textContent=val.toFixed(1);}
+    t3computeAll(); t3draw();
+  }
+
+  let drag=false, h0drag=-1, dStart=0, kStart=0;
+  function onDown(e){
+    const s=slotFrom3(e),y=yFrom3(e);
+    const sp=getSubPlots();
+    const inX   =y>=sp[0].top-4&&y<=sp[0].bot+8;
+    const inH1  =y>=sp[1].top-4&&y<=sp[1].bot+8;
+    const inH2  =y>=sp[2].top-4&&y<=sp[2].bot+8;
+    const inAny =y>=sp[0].top-4&&y<=sp[3].bot+8;
+    const nearK =Math.abs(s-t3.k)<=1;
+    if(s===0&&inH1){ h0drag=0; setH0comp(0,yToVal(y,sp[1])); }
+    else if(s===0&&inH2){ h0drag=1; setH0comp(1,yToVal(y,sp[2])); }
+    else if(nearK&&inAny){ drag=true; dStart=s; kStart=t3.k; }
+    else if(inX){
+      t3.hist_x[s]=1-(t3.hist_x[s]||0);
+      document.querySelectorAll('#tab2 .sbtn').forEach(b=>b.classList.remove('active'));
+      t3computeAll(); t3draw();
+    }
+  }
+  function onMove(e){
+    const s=slotFrom3(e),y=yFrom3(e);
+    const sp=getSubPlots();
+    const inX  =y>=sp[0].top-4&&y<=sp[0].bot+8;
+    const inH1 =y>=sp[1].top-4&&y<=sp[1].bot+8;
+    const inH2 =y>=sp[2].top-4&&y<=sp[2].bot+8;
+    const inAny=y>=sp[0].top-4&&y<=sp[3].bot+8;
+    const nearK=Math.abs(s-t3.k)<=1;
+    if(drag){ e.preventDefault(); t3.k=Math.max(0,Math.min(T3_WIN,kStart+(s-dStart)));
+      const kEl=document.getElementById('t3klbl');if(kEl)kEl.textContent=t3.k; t3draw(); }
+    else if(h0drag===0){ e.preventDefault(); setH0comp(0,yToVal(y,sp[1])); }
+    else if(h0drag===1){ e.preventDefault(); setH0comp(1,yToVal(y,sp[2])); }
+    else{
+      const atS0H=(s===0)&&(inH1||inH2);
+      cv.style.cursor = nearK&&inAny?'ew-resize' : atS0H?'ns-resize' : inX?'pointer':'default';
+    }
+  }
+  function onUp(){ drag=false; h0drag=-1; }
+  cv.addEventListener('mousedown',onDown); cv.addEventListener('mousemove',onMove);
+  cv.addEventListener('mouseup',onUp); cv.addEventListener('mouseleave',onUp);
+  cv.addEventListener('touchstart',e=>{onDown(e);},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(!drag&&h0drag<0)return;e.preventDefault();onMove(e);},{passive:false});
+  cv.addEventListener('touchend',onUp);
+}
+// ─────────────────────────────────────────────────────────────────────
+// TAB 4 — BPTT (Backpropagation Through Time)
+// ─────────────────────────────────────────────────────────────────────
+const T4_T = 6; // fixed unrolling depth
+
+const t4 = {
+  seq:[0,0,0,1,0,0],  // x[0..T-1]: single pulse at step 3
+  target:0.5,
+  wr:0.9, wx:1.5, wy:1.0,
+  wr0:0.9, wx0:1.5, wy0:1.0, // initial values for reset
+  lr:0.05,
+  h:null, y:0, loss:0,
+  dh:null, delta:null,
+  dwr:0, dwx:0, dwy:0,
+  phase:'idle',   // 'idle'|'fwd'|'bwd'|'done'
+  fwdStep:0,      // how many h[k] computed (0 = only h[0]=0; T = all h[0..T])
+  bwdStep:0,      // how many backward steps completed (0..T)
+  losses:[], iters:0,
+  playing:false, tmr:null, trainPhase:0,
+  mode:'train'  // 'train' | 'infer'
+};
+
+// ── Sequence editor ──────────────────────────────────────────────────
+function t4initSeq(){
+  const el=document.getElementById('t4seq'); if(!el)return;
+  el.innerHTML='';
+  t4.seq.forEach((v,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText=`flex:1;text-align:center;padding:5px 2px;cursor:pointer;
+      border-radius:4px;font-family:var(--font-mono);font-size:.82rem;font-weight:600;
+      border:1.5px solid ${v?'var(--green)':'var(--border)'};
+      background:${v?'var(--green-pale)':'var(--cream-dark)'};
+      color:${v?'var(--green)':'var(--text-muted)'}`;
+    d.textContent=v;
+    d.onclick=()=>{
+      t4.seq[i]=1-t4.seq[i];
+      if(t4.phase!=='idle'&&t4.mode!=='infer'){ t4.phase='idle'; t4.fwdStep=0; t4.bwdStep=0;
+        t4.h=null; t4.dh=null; t4.dwr=0; t4.dwx=0; t4.dwy=0; t4.loss=0; }
+      t4initSeq();
+      if(t4.mode==='infer'){ t4doForward(); t4.phase='infer_done'; t4.fwdStep=T4_T; }
+      t4draw();
+    };
+    el.appendChild(d);
+  });
+}
+
+function t4inferNew(){
+  // Reset to idle but stay in inference mode, then auto-run forward
+  t4.phase='idle'; t4.fwdStep=0; t4.bwdStep=0;
+  t4.h=null; t4.dh=null; t4.delta=null;
+  t4.dwr=0; t4.dwx=0; t4.dwy=0; t4.y=0; t4.loss=0;
+  t4doForward(); t4.phase='infer_done'; t4.fwdStep=T4_T;
+  t4draw();
+}
+
+function t4setMode(m){
+  t4.mode=m;
+  if(t4.playing){ t4.playing=false; clearInterval(t4.tmr);
+    const tb=document.getElementById('t4trainbtn'); if(tb) tb.textContent='Train ▶'; }
+  t4.phase='idle'; t4.fwdStep=0; t4.bwdStep=0;
+  t4.h=null; t4.dh=null; t4.delta=null;
+  t4.dwr=0; t4.dwx=0; t4.dwy=0; t4.loss=0;
+  const trn=document.getElementById('t4modetrn'), inf=document.getElementById('t4modeinf');
+  const lbl=document.getElementById('t4modelbl');
+  const trainRow=document.getElementById('t4trainrow'), inferRow=document.getElementById('t4inferrow');
+  const stepRow=document.getElementById('t4steprow');
+  const tgtSection=document.getElementById('t4tgtsec');
+  const lossClbl=document.getElementById('t4lossclbl');
+  const iterRow=document.querySelector('#tab3 .panel-content .carea [style*="iter"]');
+  const simCg=document.getElementById('t4simcg');
+  const iterLossRow=document.getElementById('t4iterlossrow');
+  if(m==='train'){
+    if(trn){trn.style.background='var(--green)';trn.style.color='#fff';}
+    if(inf){inf.style.background='var(--cream-dark)';inf.style.color='var(--text-muted)';}
+    if(lbl) lbl.textContent='Training mode — weights update after each backward pass.';
+    if(trainRow) trainRow.style.display='';
+    if(inferRow) inferRow.style.display='none';
+    if(stepRow) stepRow.style.display='';
+    if(simCg) simCg.style.display='';
+    if(iterLossRow) iterLossRow.style.display='';
+    if(tgtSection) tgtSection.style.opacity='1';
+    if(lossClbl) lossClbl.style.opacity='1';
+  } else {
+    if(trn){trn.style.background='var(--cream-dark)';trn.style.color='var(--text-muted)';}
+    if(inf){inf.style.background='var(--green)';inf.style.color='#fff';}
+    if(lbl) lbl.textContent='Inference mode — weights frozen. Click any input cell to probe the network.';
+    if(trainRow) trainRow.style.display='none';
+    if(inferRow) inferRow.style.display='none';
+    if(stepRow) stepRow.style.display='none';
+    if(simCg) simCg.style.display='none';
+    if(iterLossRow) iterLossRow.style.display='none';
+    if(tgtSection) tgtSection.style.opacity='0.35';
+    if(lossClbl) lossClbl.style.opacity='0.35';
+    // Auto-run forward pass immediately
+    t4doForward(); t4.phase='infer_done'; t4.fwdStep=T4_T;
+  }
+  t4draw();
+}
+
+
+function t4paramUpd(){
+  t4.target=+document.getElementById('t4tgt').value;
+  t4.lr=+document.getElementById('t4lr').value;
+  document.getElementById('t4tgtv').textContent=t4.target.toFixed(2);
+  document.getElementById('t4lrv').textContent=t4.lr.toFixed(3);
+  t4draw();
+}
+function t4pre(n,el){
+  const P={van:{wr:0.5,wx:1.5,wy:1.0},stb:{wr:1.0,wx:1.0,wy:1.0},exp:{wr:1.3,wx:1.0,wy:1.0}};
+  const p=P[n]; if(!p)return;
+  t4.wr=t4.wr0=p.wr; t4.wx=t4.wx0=p.wx; t4.wy=t4.wy0=p.wy;
+  document.querySelectorAll('#tab3 .pbtn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  t4rst();
+}
+
+// ── Core computation ─────────────────────────────────────────────────
+function t4doForward(){
+  const T=T4_T;
+  t4.h=new Array(T+1); t4.h[0]=0;
+  for(let k=0;k<T;k++) t4.h[k+1]=Math.tanh(t4.wr*t4.h[k]+t4.wx*t4.seq[k]);
+  t4.y=t4.wy*t4.h[T];
+  t4.loss=0.5*(t4.y-t4.target)**2;
+}
+function t4doBackward(){
+  const T=T4_T;
+  t4.dh=new Array(T+1).fill(0);
+  t4.delta=new Array(T+1).fill(0);
+  t4.dwr=0; t4.dwx=0;
+  t4.dwy=(t4.y-t4.target)*t4.h[T];
+  t4.dh[T]=(t4.y-t4.target)*t4.wy;
+  for(let k=T-1;k>=0;k--){
+    t4.delta[k+1]=t4.dh[k+1]*(1-t4.h[k+1]**2);
+    t4.dwr+=t4.delta[k+1]*t4.h[k];
+    t4.dwx+=t4.delta[k+1]*t4.seq[k];
+    t4.dh[k]=t4.delta[k+1]*t4.wr;
+  }
+}
+
+// ── Step-by-step advance ─────────────────────────────────────────────
+function t4advance(){
+  const T=T4_T;
+  if(t4.phase==='idle'){
+    t4.h=new Array(T+1).fill(0);
+    t4.dh=new Array(T+1).fill(0);
+    t4.delta=new Array(T+1).fill(0);
+    t4.dwr=0; t4.dwx=0; t4.dwy=0;
+    t4.phase='fwd'; t4.fwdStep=0;
+  } else if(t4.phase==='fwd'){
+    if(t4.fwdStep<T){
+      const k=t4.fwdStep;
+      t4.h[k+1]=Math.tanh(t4.wr*t4.h[k]+t4.wx*t4.seq[k]);
+      t4.fwdStep++;
+      // Compute y and loss immediately when h[T] is set — show on Fwd T/T
+      if(t4.fwdStep===T){
+        t4.y=t4.wy*t4.h[T];
+        t4.loss=0.5*(t4.y-t4.target)**2;
+      }
+    } else {
+      // Step clicked from Fwd T/T — now begin backward pass
+      if(t4.mode==='infer'){
+        t4.phase='infer_done';
+      } else {
+        t4.phase='bwd'; t4.bwdStep=0;
+        t4.dwy=(t4.y-t4.target)*t4.h[T];
+        t4.dh[T]=(t4.y-t4.target)*t4.wy;
+      }
+    }
+  } else if(t4.phase==='bwd'){
+    if(t4.bwdStep<T){
+      const k=T-1-t4.bwdStep;
+      t4.delta[k+1]=t4.dh[k+1]*(1-t4.h[k+1]**2);
+      t4.dwr+=t4.delta[k+1]*t4.h[k];
+      t4.dwx+=t4.delta[k+1]*t4.seq[k];
+      t4.dh[k]=t4.delta[k+1]*t4.wr;
+      t4.bwdStep++;
+      if(t4.bwdStep>=T) t4.phase='done';
+    } else {
+      t4.phase='done';
+    }
+  } else if(t4.phase==='done'){
+    t4applyUpdate(); return;
+  } else if(t4.phase==='infer_done'){
+    // In inference, Step → resets to idle ready for new input
+    t4.phase='idle'; t4.fwdStep=0; t4.h=null;
+  }
+  t4draw();
+}
+
+function t4fullPass(){
+  t4doForward();
+  if(t4.mode==='infer'){
+    t4.phase='infer_done'; t4.fwdStep=T4_T;
+  } else {
+    t4doBackward();
+    t4.phase='done'; t4.fwdStep=T4_T; t4.bwdStep=T4_T;
+  }
+  t4draw();
+}
+
+function t4applyUpdate(){
+  if(t4.phase!=='done') return;
+  t4.wr=clamp(t4.wr-t4.lr*t4.dwr,-3,3);
+  t4.wx=clamp(t4.wx-t4.lr*t4.dwx,-3,3);
+  t4.wy=clamp(t4.wy-t4.lr*t4.dwy,-3,3);
+  t4.losses.push(t4.loss);
+  t4.iters++;
+  t4.phase='idle'; t4.fwdStep=0; t4.bwdStep=0;
+  t4.h=null; t4.dh=null; t4.delta=null;
+  t4.dwr=0; t4.dwx=0; t4.dwy=0;
+  t4draw();
+}
+
+function t4train(){
+  t4.playing=!t4.playing;
+  document.getElementById('t4trainbtn').textContent=t4.playing?'Pause ⏸':'Train ▶';
+  if(t4.playing){
+    // Two-phase interval: odd ticks compute+show, even ticks apply+show
+    t4.trainPhase=0;
+    t4.tmr=setInterval(()=>{
+      if(!t4.playing){ clearInterval(t4.tmr); return; }
+      if(t4.trainPhase===0){
+        // Show completed forward+backward (gradient visualization)
+        t4doForward(); t4doBackward();
+        t4.phase='done'; t4.fwdStep=T4_T; t4.bwdStep=T4_T;
+        t4draw();
+        t4.trainPhase=1;
+      } else {
+        // Apply update, return to idle
+        t4applyUpdate();
+        t4.trainPhase=0;
+        if(t4.iters>=300||t4.loss<1e-6){
+          t4.playing=false; clearInterval(t4.tmr);
+          document.getElementById('t4trainbtn').textContent='Train ▶';
+        }
+      }
+    },120);
+  } else clearInterval(t4.tmr);
+}
+
+function t4rst(){
+  const savedMode=t4.mode;
+  t4.wr=t4.wr0; t4.wx=t4.wx0; t4.wy=t4.wy0;
+  t4.phase='idle'; t4.fwdStep=0; t4.bwdStep=0;
+  t4.h=null; t4.dh=null; t4.delta=null;
+  t4.dwr=0; t4.dwx=0; t4.dwy=0; t4.y=0; t4.loss=0;
+  t4.losses=[]; t4.iters=0;
+  t4.playing=false; clearInterval(t4.tmr);
+  const tb=document.getElementById('t4trainbtn'); if(tb) tb.textContent='Train ▶';
+  t4initSeq(); t4setMode(savedMode);
+}
+
+// ── Sidebar readout ──────────────────────────────────────────────────
+function t4updateSidebar(){
+  const ph=t4.phase, fs=t4.fwdStep, bs=t4.bwdStep, T=T4_T;
+
+  // Phase label
+  const pl=document.getElementById('t4phase');
+  if(pl){
+    const msgs={
+      idle: t4.mode==='infer'?'Inference — press Step → to run forward pass':
+            'Ready — press Step → to begin forward pass',
+      fwd:  fs===0?`Forward pass — h[0]=0, computing h[1]…`:
+               fs<T?`Forward pass — h[${fs}] computed, next: h[${fs+1}]`:
+               `Press Step → to begin backward pass`,
+      bwd:  bs<T?`Backward pass — ∂L/∂h[${T-bs}] computed (${bs}/${T} steps back)`:
+               `All gradients ready — Step → now applies the update`,
+      done: `All gradients ready — Step → now applies the update`,
+      infer_done:`y = ${t4.y.toFixed(4)} — click input cells to probe different sequences`
+    };
+    pl.textContent=msgs[ph]||'';
+    pl.style.color=ph==='bwd'||ph==='done'?'var(--orange)':
+                   ph==='fwd'?'var(--green-mid)':
+                   ph==='infer_done'?'var(--purple)':'var(--text-muted)';
+  }
+  // Step button: morph based on phase
+  const sb=document.getElementById('t4stepbtn');
+  if(sb){
+    if(ph==='done'){
+      sb.textContent='Update Weights ↓'; sb.className='btn btn-g';
+    } else if(ph==='infer_done'){
+      sb.textContent='New Input ↺'; sb.className='btn btn-s';
+    } else {
+      sb.textContent='Step →'; sb.className='btn btn-s';
+    }
+  }
+  const fmtW=v=>v.toFixed(4);
+  const el=id=>document.getElementById(id);
+  if(el('t4wrv')) el('t4wrv').textContent=fmtW(t4.wr);
+  if(el('t4wxv')) el('t4wxv').textContent=fmtW(t4.wx);
+  if(el('t4wyv')) el('t4wyv').textContent=fmtW(t4.wy);
+
+  // Gradients
+  const hasGrad=ph==='bwd'||ph==='done';
+  const fmtG=v=>Math.abs(v)<1e-9?'≈0':v.toExponential(2);
+  if(el('t4dwrv')){
+    el('t4dwrv').textContent=hasGrad?fmtG(t4.dwr):'—';
+    el('t4dwrv').style.color=hasGrad?gradCol(Math.abs(t4.dwr)):'var(--text-muted)';
+  }
+  if(el('t4dwxv')){
+    el('t4dwxv').textContent=hasGrad?fmtG(t4.dwx):'—';
+    el('t4dwxv').style.color=hasGrad?gradCol(Math.abs(t4.dwx)):'var(--text-muted)';
+  }
+  if(el('t4dwyv')){
+    el('t4dwyv').textContent=hasGrad?fmtG(t4.dwy):'—';
+    el('t4dwyv').style.color=hasGrad?gradCol(Math.abs(t4.dwy)):'var(--text-muted)';
+  }
+
+  // Fixed accumulation panel — always visible, same format for step and full-pass
+  const abox=el('t4accumbox');
+  if(abox){
+    if(t4.mode==='infer'){
+      if(ph==='infer_done'){
+        abox.innerHTML=`<strong style="color:var(--purple)">Network output — weights frozen</strong><br>`+
+          `y = <strong style="color:var(--purple);font-size:1.1em">${t4.y.toFixed(4)}</strong>`+
+          `<span style="color:var(--text-muted);margin-left:12px;font-size:.9em">wᵣ=${t4.wr.toFixed(4)} · wₓ=${t4.wx.toFixed(4)} · wᵧ=${t4.wy.toFixed(4)}</span><br>`+
+          `<em>Click any input cell to toggle it — graph updates instantly.</em>`;
+      } else {
+        abox.innerHTML='<em>Switch to inference mode after training to probe the network with different inputs.</em>';
+      }
+      return;
+    }
+    const stepsShown=(ph==='bwd')?t4.bwdStep:(ph==='done')?T:0;
+    if(stepsShown===0){
+      abox.innerHTML='<em>Backward pass not yet run — step through or press Full Pass to see accumulation.</em>';
+    } else {
+      // Build per-step chips for wᵣ and wₓ
+      let wrTerms=[], wxTerms=[], wrSum=0, wxSum=0;
+      for(let j=0;j<stepsShown;j++){
+        const k=T-1-j;
+        if(t4.delta&&t4.delta[k+1]!==undefined&&t4.h&&t4.h[k]!==undefined){
+          const cWr=t4.delta[k+1]*t4.h[k];
+          const cWx=t4.delta[k+1]*(t4.seq[k]||0);
+          wrSum+=cWr; wxSum+=cWx;
+          const chip=(v,col)=>`<span style="color:${col};white-space:nowrap">${v>=0?'+':''}${v.toExponential(1)}</span>`;
+          wrTerms.push(chip(cWr,gradCol(Math.abs(cWr))));
+          wxTerms.push(chip(cWx,gradCol(Math.abs(cWx))));
+        }
+      }
+      const pending=stepsShown<T?`<span style="color:var(--text-muted)"> + … (${T-stepsShown} more steps)</span>`:'';
+      const updWr=ph==='done'?
+        `<span style="color:var(--text-muted)">  →  wᵣ ← wᵣ − η · <strong style="color:${gradCol(Math.abs(t4.dwr))}">${fmtG(t4.dwr)}</strong></span>`:'';
+      const updWx=ph==='done'?
+        `<span style="color:var(--text-muted)">  →  wₓ ← wₓ − η · <strong style="color:${gradCol(Math.abs(t4.dwx))}">${fmtG(t4.dwx)}</strong></span>`:'';
+      abox.innerHTML=
+        `<span style="color:var(--text-mid)">∂L/∂wᵣ</span> = ${wrTerms.join(' + ')}${pending} = <strong style="color:${gradCol(Math.abs(t4.dwr))}">${fmtG(t4.dwr)}</strong>${updWr}<br>`+
+        `<span style="color:var(--text-mid)">∂L/∂wₓ</span> = ${wxTerms.join(' + ')}${pending} = <strong style="color:${gradCol(Math.abs(t4.dwx))}">${fmtG(t4.dwx)}</strong>${updWx}`+
+        (ph==='done'?`<br><span style="color:var(--text-mid)">∂L/∂wᵧ</span> = (y−y*)·h[T] = <strong style="color:${gradCol(Math.abs(t4.dwy))}">${fmtG(t4.dwy)}</strong><span style="color:var(--text-muted)">  →  wᵧ ← wᵧ − η · ${fmtG(t4.dwy)}</span>`:'');
+    }
+  }
+
+  // Loss / iter
+  if(el('t4lossv')) el('t4lossv').textContent=t4.loss>0?t4.loss.toFixed(6):'—';
+  if(el('t4iterv')) el('t4iterv').textContent=t4.iters;
+}
+
+// ── Canvas A: computation graph ──────────────────────────────────────
+function t4drawGraph(){
+  const c=gc('c4a'); if(!c)return;
+  const W=c._w, H=c._h;
+  c.clearRect(0,0,W,H); c.fillStyle='#fdfaf5'; c.fillRect(0,0,W,H);
+
+  const T=T4_T;
+  const {phase:ph, fwdStep:fs, bwdStep:bs}=t4;
+
+  // Layout — three rows: x (top), h (middle), y+L (bottom-right under h[T])
+  const padL=18, padR=28, padT=26, padB=14;
+  const mainW=W-padL-padR;
+  const hR=Math.min(22,Math.max(13,mainW/(T+0.5)*0.36));
+  const xR=hR*0.62;
+
+  // h[0..T] x-positions span full width
+  const hSpan=mainW-2*hR;
+  const hxP=i=>padL+hR+i*(hSpan/T);
+  const xxP=k=>(hxP(k)+hxP(k+1))/2;
+
+  const xRow=Math.round(H*0.16);
+  const hRow=Math.round(H*0.50);  // moved down to give breathing room between brackets
+  const gradRow=hRow+hR+Math.round(hR*1.1); // first line of two-line ∂L/∂h label
+  const outRow=H-padB-hR; // third row: y and L below h[T]
+
+  // Clockwise from h[T]: down to y (bottom-right), then left to Loss
+  const yNX=Math.min(W-padR-hR-4, hxP(T));   // y directly below h[T]
+  const lNX=Math.max(padL+hR*2, yNX-hR*4.2); // Loss to the LEFT of y
+
+  // State helpers
+  const hDone=k=>ph==='idle'?k===0:ph==='fwd'?k<=fs:true;
+  const yDone=ph==='bwd'||ph==='done'||ph==='infer_done'||(ph==='fwd'&&fs>=T);
+  const dhKnown=k=>{
+    if(ph==='done') return true;
+    if(ph==='bwd') return k>=T-bs;
+    return false;
+  };
+
+  // ── Shared weight annotations — top of canvas, not over the graph ──
+  {
+    const annY=padT-8;
+    c.fillStyle='rgba(42,95,138,.5)';
+    c.font=`${Math.max(8,Math.round(hR*0.48))}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText('wᵣ = recurrent weight (shared at every step)  ·  wₓ = input weight (shared at every step)',W/2,annY);
+  }
+
+  // ── Recurrent edges h[k]→h[k+1] ─────────────────────────────────
+  for(let k=0;k<T;k++){
+    const x0=hxP(k)+hR+1, y0=hRow, x1=hxP(k+1)-hR-1, y1=hRow;
+    const fwdActive=(ph==='fwd'&&fs===k);
+    const edgeDone=hDone(k);
+
+    // Color for forward arrow
+    const fCol=fwdActive?O:edgeDone?'rgba(42,95,138,.60)':'rgba(140,125,105,.55)';
+    const fLw=fwdActive?2.2:edgeDone?1.5:1.0;
+    c.strokeStyle=fCol; c.lineWidth=fLw;
+    c.beginPath(); c.moveTo(x0,y0); c.lineTo(x1,y1); c.stroke();
+    arrowAt(c,x1,y1,1,0,7,fCol);
+
+    // wᵣ label on active forward edge — pill background so it reads over the line
+    if(fwdActive){
+      const lbl=`wᵣ=${t4.wr.toFixed(2)}`;
+      const fs=Math.round(hR*0.52);
+      c.font=`${fs}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+      const lw2=c.measureText(lbl).width;
+      const lx2=(x0+x1)/2, ly2=hRow-6;
+      c.fillStyle='rgba(250,247,242,.82)';
+      rrect(c,lx2-lw2/2-3,ly2-fs+1,lw2+6,fs+2,3); c.fill();
+      c.fillStyle=O; c.fillText(lbl,lx2,ly2);
+    }
+
+    // Backward gradient arrows — one per processed recurrent edge, colored by magnitude
+    // Processed edges: at bwdStep=bs, edges T-1, T-2, ..., T-bs have been processed
+    // i.e. k from T-1 down to T-bs (= k >= T-bs).
+    // BUT: delta[k+1] is only set when k was processed (j = T-1-k, bwdStep becomes j+1 after)
+    // Active (most recently completed): k = T-bs (the last one processed before current bwdStep)
+    const bwdEdgeDone = (ph==='done') || (ph==='bwd' && k > T-1-bs);
+    // active = the edge just processed this step (k = T-1-(bs-1) = T-bs)
+    const bwdActive = ph==='bwd' && k === T-bs;
+    if((bwdEdgeDone||bwdActive) && t4.delta && t4.delta[k+1]!==undefined && t4.dh){
+      const bgY=hRow-hR*0.82;
+      const gMag=Math.abs(t4.dh[k+1]);
+      const gCol=gradCol(gMag);
+      c.strokeStyle=gCol; c.lineWidth=bwdActive?2.2:1.2;
+      if(!bwdActive) c.setLineDash([3,3]);
+      c.beginPath(); c.moveTo(x1,bgY); c.lineTo(x0,bgY); c.stroke();
+      c.setLineDash([]);
+      arrowAt(c,x0,bgY,-1,0,6,gCol);
+      // Active edge only gets a label: ×wᵣ explains the scaling
+      if(bwdActive){
+        const lbl=`×wᵣ`;
+        const fs2=Math.round(hR*0.54);
+        c.font=`bold ${fs2}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+        const lx2=(x0+x1)/2, ly2=bgY-5;
+        const lw2=c.measureText(lbl).width;
+        c.fillStyle='rgba(253,250,245,.88)';
+        rrect(c,lx2-lw2/2-2,ly2-fs2+1,lw2+4,fs2+1,2); c.fill();
+        c.fillStyle=gCol; c.fillText(lbl,lx2,ly2);
+      }
+    }
+  }
+
+  // ── ∂h labels below h nodes for processed backward steps ─────────
+  // Show δ[k+1] at each h node — clearly shows the vanishing/exploding gradient
+  for(let k=0;k<=T;k++){
+    const cx=hxP(k);
+    const isProcessed = (ph==='done') ||
+      (ph==='bwd' && k >= T-bs && k<=T); // dh[k] known for k >= T-bs
+    if(isProcessed && t4.dh && t4.dh[k]!==undefined){
+      const dv=t4.dh[k];
+      const gc2=gradCol(Math.abs(dv));
+      const fs3=Math.round(hR*0.48);
+      c.font=`${fs3}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+      c.fillStyle=gc2;
+      c.fillText('∂L/∂h',cx,gradRow);
+      const s=Math.abs(dv)<0.00001?dv.toExponential(1):dv.toFixed(4);
+      c.fillText(s,cx,gradRow+fs3+1);
+    }
+  }
+
+  // ── Input edges x[k]→h[k+1] — structural arrows, wₓ label on active forward step ──
+  for(let k=0;k<T;k++){
+    const x0=xxP(k), y0=xRow+xR+1, x1=hxP(k+1), y1=hRow-hR-2;
+    const active=(ph==='fwd'&&fs===k);
+    const used=hDone(k+1);
+    const col=active?O:used?'rgba(61,122,53,.70)':'rgba(130,115,95,.55)';
+    const lw=active?2.2:used?1.5:1.0;
+    c.strokeStyle=col; c.lineWidth=lw;
+    c.beginPath(); c.moveTo(x0,y0); c.lineTo(x1,y1); c.stroke();
+    arrowAt(c,x1,y1,x1-x0,y1-y0,7,col);
+    if(active){
+      const lbl=`wₓ=${t4.wx.toFixed(2)}`;
+      const fs3=Math.round(hR*0.48);
+      c.font=`${fs3}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+      const lmx=(x0+x1)/2+10, lmy=y0+(y1-y0)*0.45;
+      const lw2=c.measureText(lbl).width;
+      c.fillStyle='rgba(253,250,245,.82)';
+      rrect(c,lmx-lw2/2-3,lmy-fs3+1,lw2+6,fs3+2,3); c.fill();
+      c.fillStyle=O; c.fillText(lbl,lmx,lmy);
+    }
+  }
+
+  // ── h[T]→y edge (straight down to third row) ─────────────────────
+  const htEc=yDone?'rgba(128,64,160,.65)':'rgba(190,178,158,.3)';
+  c.strokeStyle=htEc; c.lineWidth=yDone?1.8:0.6;
+  c.beginPath(); c.moveTo(yNX,hRow+hR+2); c.lineTo(yNX,outRow-hR-2); c.stroke();
+  arrowAt(c,yNX,outRow-hR-2,0,1,6,htEc);
+  if(yDone){
+    const lbl=`wᵧ=${t4.wy.toFixed(2)}`;
+    const fs3=Math.round(hR*0.5);
+    c.font=`${fs3}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    const ly=outRow-hR-14; // just above the y circle
+    const lw2=c.measureText(lbl).width;
+    c.fillStyle='rgba(253,250,245,.88)';
+    rrect(c,yNX-lw2/2-3,ly-fs3+1,lw2+6,fs3+2,3); c.fill();
+    c.fillStyle='rgba(128,64,160,.7)';
+    c.fillText(lbl,yNX,ly);
+  }
+
+  const isInfer = t4.mode==='infer';
+
+  // ── y→Loss edge — hidden in inference mode ───────────────────────
+  if(!isInfer){
+    const lEc=yDone?'rgba(180,40,40,.6)':'rgba(190,178,158,.3)';
+    c.strokeStyle=lEc; c.lineWidth=yDone?1.8:0.6;
+    c.beginPath(); c.moveTo(yNX-hR-2,outRow); c.lineTo(lNX+22,outRow); c.stroke();
+    arrowAt(c,lNX+22,outRow,-1,0,6,lEc);
+  }
+
+  // ── x nodes ─────────────────────────────────────────────────────
+  for(let k=0;k<T;k++){
+    const cx=xxP(k), cy=xRow, v=t4.seq[k];
+    const active=(ph==='fwd'&&fs===k);
+    const used=hDone(k+1);
+    const fg=active?O:used?(v?GM:'rgba(100,90,80,.5)'):'rgba(180,168,148,.5)';
+    const bg=active?'#fff8f0':used?(v?'#f0f9f0':CRD):CRD;
+    c.fillStyle=bg; c.strokeStyle=fg; c.lineWidth=active?2:used?1.1:0.5;
+    c.beginPath(); c.arc(cx,cy,xR,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle=active?O:used?(v?GM:TM):TMU;
+    c.font=`bold ${Math.round(xR*0.92)}px 'Outfit',sans-serif`; c.textAlign='center';
+    c.fillText(v.toString(),cx,cy+xR*0.38);
+    c.fillStyle=TMU; c.font=`${Math.round(xR*0.62)}px 'IBM Plex Mono',monospace`;
+    c.fillText(`x[${k}]`,cx,cy-xR-3);
+  }
+
+  // ── h nodes ─────────────────────────────────────────────────────
+  for(let k=0;k<=T;k++){
+    const cx=hxP(k), cy=hRow;
+    const computed=hDone(k);
+    const hasGrad=dhKnown(k)&&t4.dh&&t4.dh[k]!==undefined;
+    const activeFwd=(ph==='fwd'&&k>0&&fs===k);
+    const activeBwd=(ph==='bwd'&&k===T-bs);
+
+    let fg,bg,lw;
+    if(activeFwd){ fg=O; bg='#fff8f0'; lw=2.5; }
+    else if(activeBwd){ fg=gradCol(Math.abs((t4.dh&&t4.dh[k])||0)); bg='#fff8f0'; lw=2.5; }
+    else if(hasGrad){ fg=gradCol(Math.abs((t4.dh&&t4.dh[k])||0)); bg='#fff'; lw=2; }
+    else if(computed){ fg=BL; bg='#eef3ff'; lw=1.8; }
+    else { fg='rgba(180,168,148,.4)'; bg=CRD; lw=0.7; }
+
+    c.fillStyle=bg; c.strokeStyle=fg; c.lineWidth=lw;
+    c.beginPath(); c.arc(cx,cy,hR,0,Math.PI*2); c.fill(); c.stroke();
+    c.fillStyle=TMU; c.font=`${Math.round(hR*0.56)}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText(`h[${k}]`,cx,cy-hR-4);
+    if(computed&&t4.h&&t4.h[k]!==undefined){
+      c.fillStyle=fg; c.font=`bold ${Math.round(hR*0.72)}px 'Outfit',sans-serif`;
+      c.fillText(t4.h[k].toFixed(2),cx,cy+hR*0.32);
+    }
+  }
+
+  // ── y node (third row, under h[T]) ──────────────────────────────
+  c.fillStyle=yDone?'#f5eeff':CRD;
+  c.strokeStyle=yDone?PU:'rgba(180,168,148,.4)'; c.lineWidth=yDone?2:0.7;
+  c.beginPath(); c.arc(yNX,outRow,hR,0,Math.PI*2); c.fill(); c.stroke();
+  c.fillStyle=yDone?PU:TMU;
+  c.font=`${Math.round(hR*0.56)}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+  c.fillText('y',yNX,outRow-hR-4);
+  if(yDone){
+    c.font=`bold ${Math.round(hR*0.72)}px 'Outfit',sans-serif`;
+    c.fillText(t4.y.toFixed(3),yNX,outRow+hR*0.32);
+    if(!isInfer){
+      c.fillStyle='rgba(200,88,26,.7)'; c.font=`${Math.round(hR*0.48)}px 'IBM Plex Mono',monospace`;
+      c.fillText(`y*=${t4.target.toFixed(2)}`,yNX,outRow+hR+12);
+    }
+  }
+
+  // ── Loss box — hidden in inference mode ──────────────────────────
+  if(!isInfer){
+    const lbW=Math.round(hR*3.2), lbH=Math.round(hR*1.7);
+    const lbx=lNX-lbW/2, lby=outRow-lbH/2;
+    c.fillStyle=yDone?'#fff0f0':CRD;
+    c.strokeStyle=yDone?RED:'rgba(180,168,148,.4)'; c.lineWidth=yDone?2:0.7;
+    rrect(c,lbx,lby,lbW,lbH,4); c.fill(); c.stroke();
+    c.fillStyle=yDone?RED:TMU;
+    c.font=`${Math.round(hR*0.52)}px 'IBM Plex Mono',monospace`; c.textAlign='center';
+    c.fillText('Loss',lNX,lby-3);
+    if(yDone){
+      c.font=`bold ${Math.round(hR*0.62)}px 'Outfit',sans-serif`;
+      c.fillText(t4.loss.toFixed(5),lNX,outRow+hR*0.28);
+    }
+  }
+
+  // ── Phase annotation (bottom-left, no background needed) ─────────
+  {
+    const pColors={idle:TMU,fwd:'#2a7a2a',bwd:'#c85010',done:'#8040a0',infer_done:'#8040a0'};
+    const pLabels={idle:'Ready',fwd:`Fwd ${fs}/${T}`,bwd:`Bwd ${bs}/${T}`,done:'Done ✓',infer_done:'Done ✓'};
+    c.fillStyle=pColors[ph]||TMU;
+    c.font=`bold ${Math.round(hR*0.58)}px 'Outfit',sans-serif`;
+    c.textAlign='left'; c.fillText(pLabels[ph]||'',padL,H-6);
+  }
+}
+
+// ── Canvas B: loss curve ─────────────────────────────────────────────
+function t4drawLoss(){
+  const c=gc('c4b'); if(!c)return;
+  const W=c._w, H=c._h;
+  c.clearRect(0,0,W,H); c.fillStyle='#fdfaf5'; c.fillRect(0,0,W,H);
+
+  const padL=46, padR=14, padT=14, padB=22;
+  const pw=W-padL-padR, ph=H-padT-padB;
+
+  if(t4.losses.length===0){
+    c.fillStyle=TMU; c.font=`10px 'Outfit',sans-serif`; c.textAlign='center';
+    c.fillText('Loss history appears after first weight update',W/2,H/2);
+    return;
+  }
+
+  const n=t4.losses.length;
+  const maxL=Math.max(...t4.losses,0.001);
+  const toX=i=>padL+(i/(Math.max(n-1,1)))*pw;
+  const toY=v=>padT+ph*(1-(v/maxL)*0.92);
+
+  // Graph paper
+  c.strokeStyle='rgba(180,155,115,.3)'; c.lineWidth=0.5;
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const y=padT+ph*(1-f*0.92);
+    c.beginPath(); c.moveTo(padL,y); c.lineTo(padL+pw,y); c.stroke();
+  });
+  c.strokeStyle=BR; c.lineWidth=1;
+  c.beginPath(); c.moveTo(padL,padT); c.lineTo(padL,padT+ph); c.lineTo(padL+pw,padT+ph); c.stroke();
+
+  // Loss curve
+  c.strokeStyle=RED; c.lineWidth=2; c.beginPath();
+  t4.losses.forEach((v,i)=>i?c.lineTo(toX(i),toY(v)):c.moveTo(toX(i),toY(v)));
+  c.stroke();
+
+  // Latest dot
+  c.fillStyle=RED;
+  c.beginPath(); c.arc(toX(n-1),toY(t4.losses[n-1]),4,0,Math.PI*2); c.fill();
+
+  // Labels
+  c.fillStyle=TMU; c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText(maxL.toFixed(4),padL-2,padT+10);
+  c.fillText('0',padL-2,padT+ph+4);
+  c.fillStyle=RED; c.font=`bold 8.5px 'IBM Plex Mono',monospace`; c.textAlign='right';
+  c.fillText(`loss=${t4.losses[n-1].toFixed(6)}`,padL+pw,padT+10);
+  c.fillStyle=TMU; c.font=`8px 'IBM Plex Mono',monospace`; c.textAlign='center';
+  c.fillText(`iteration →`,padL+pw/2,H-4);
+  c.textAlign='left';
+  c.fillText(`n=${n}`,padL,H-4);
+}
+
+function t4draw(){ t4drawGraph(); t4drawLoss(); t4updateSidebar(); }
+function switchTab(n){
+  document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===n));
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===n));
+  const sel=document.getElementById('tabSelect'); if(sel) sel.value=n;
+  setTimeout(()=>{
+    if(n===0){ t1draw(); }
+    if(n===1){ t2draw(); }
+    if(n===2){ t3draw(); }
+    if(n===3){ t4draw(); }
+  },40);
+}
+
+let _rt;
+window.addEventListener('resize',()=>{
+  clearTimeout(_rt);
+  _rt=setTimeout(()=>{
+    const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+    switchTab(idx);
+  },120);
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  t1rst(); t1setupDrag();
+  t2rst(); t2setupDrag();
+  t3rst(); t3setupDrag();
+  t4rst();
+});
+</script>
+</body>
+</html>
