@@ -193,6 +193,7 @@ Add a row to the appropriate table under `## Contents`:
 - `optimal_foraging_theory/mvt_explorer.html`
 - `memristors/memristor_stdp_array.html`
 - `hebbian_learning/hebbian_competitive_clustering.html`
+- `recurrent_neural_networks/rnn_explorer.html`
 - `reservoir_computing/esn_explorer.html`
 
 ### Cellular Automata
