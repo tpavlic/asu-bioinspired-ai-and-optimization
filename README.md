@@ -76,6 +76,7 @@ as iframes.
 | [`hebbian_learning/hebbian_competitive_clustering.html`](hebbian_learning/hebbian_competitive_clustering.html) | Interactive explorer for Hebbian learning rules and lateral inhibition-driven competitive clustering: watch winner-take-all dynamics and simple synaptic updates organize input patterns into distinct categories without supervision |
 | [`recurrent_neural_networks/rnn_explorer.html`](recurrent_neural_networks/rnn_explorer.html) | Interactive explorer tracing TDNNs → output-feedback RNNs → autoregressive latent-state RNNs, with BPTT training and a visual guide to gated architectures (LSTM, GRU) |
 | [`reservoir_computing/esn_explorer.html`](reservoir_computing/esn_explorer.html) | Interactive reservoir computing explorer using Echo State Networks: adjust spectral radius, sparsity, and input scaling to watch a fixed random reservoir project inputs into separable high-dimensional dynamics |
+| [`transformers/transformer_explorer.html`](transformers/transformer_explorer.html) | Interactive explorer for the Transformer architecture: step through scaled dot-product self-attention, multi-head attention, positional encodings, and Vision Transformers (ViT) with live attention-map and patch-embedding visualizations |
 
 ### Cellular Automata
 

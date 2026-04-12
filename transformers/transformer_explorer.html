@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Transformer Architecture Explorer — Bio-Inspired AI &amp; Optimization</title>
+<meta name="description" content="Interactive explorer for the Transformer architecture: step through scaled dot-product self-attention, multi-head attention, positional encodings, and Vision Transformers (ViT) with live visualizations of attention maps and patch embeddings.">
+
+<!-- Open Graph (Facebook, LinkedIn, Slack, iMessage, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Transformer Architecture Explorer — Bio-Inspired AI &amp; Optimization">
+<meta property="og:description" content="Interactive explorer for the Transformer architecture: step through scaled dot-product self-attention, multi-head attention, positional encodings, and Vision Transformers (ViT) with live visualizations of attention maps and patch embeddings.">
+<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/transformers/transformer_explorer-preview.png">
+<meta property="og:image:width" content="2112">
+<meta property="og:image:height" content="992">
+<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/transformers/transformer_explorer.html">
+<meta property="fb:app_id" content="2385695445236853">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Transformer Architecture Explorer — Bio-Inspired AI &amp; Optimization">
+<meta name="twitter:description" content="Interactive explorer for the Transformer architecture: step through scaled dot-product self-attention, multi-head attention, positional encodings, and Vision Transformers (ViT) with live visualizations of attention maps and patch embeddings.">
+<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/transformers/transformer_explorer-preview.png">
+
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 /* ── DESIGN SYSTEM ─────────────────────────────────────── */
@@ -1940,6 +1958,12 @@ window.addEventListener('resize',()=>{
   if(curTab===2){renderSSTab();}
   if(curTab===3){renderVitTab();}
 });
+</script>
+<footer id="course-nav-footer" style="margin-top:0;padding-top:0.75rem;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;text-align:left;">
+  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+</footer>
+<script>
+if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 </body>
 </html>

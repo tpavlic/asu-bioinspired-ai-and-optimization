@@ -196,6 +196,7 @@ Add a row to the appropriate table under `## Contents`:
 - `recurrent_neural_networks/rnn_explorer.html`
 - `reservoir_computing/esn_explorer.html`
 - `unsupervised_learning/autoencoder_explorer.html`
+- `transformers/transformer_explorer.html`
 
 ### Cellular Automata
 
