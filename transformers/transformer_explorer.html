@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformer Architecture Explorer — Bio-Inspired AI &amp; Optimization</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN SYSTEM ─────────────────────────────────────── */
+:root {
+  --bg:          #FAF7EF;
+  --surface:     #F3EDE0;
+  --surface-2:   #EBE3CF;
+  --surface-3:   #DDD5BC;
+  --green:       #243D18;
+  --green-mid:   #3B6227;
+  --green-light: #567A38;
+  --green-pale:  #E5EFD8;
+  --orange:      #B85A10;
+  --orange-hi:   #D96F1A;
+  --orange-pale: #FAE8D0;
+  --text:        #1C1C12;
+  --text-mid:    #48483A;
+  --text-light:  #78786A;
+  --border:      #CECA9A;
+  --border-lt:   #E0DAC0;
+  --mono:        'IBM Plex Mono', monospace;
+  --sans:        'Outfit', sans-serif;
+  --r:           8px;
+  --r-lg:        14px;
+  --shadow:      0 2px 12px rgba(36,61,24,.09);
+  --shadow-lg:   0 4px 28px rgba(36,61,24,.14);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--sans);background:var(--bg);color:var(--text);
+  min-height:100vh;font-size:15px;line-height:1.65;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.hdr{
+  background:var(--green);color:#fff;
+  padding:16px 28px;display:flex;align-items:flex-start;
+  justify-content:space-between;flex-wrap:wrap;gap:8px;
+}
+.hdr-title h1{font-size:1.28rem;font-weight:700;line-height:1.2;letter-spacing:.01em}
+.hdr-title .sub{font-size:.76rem;opacity:.68;margin-top:3px}
+.hdr-copy{font-family:var(--mono);font-size:.66rem;opacity:.6;text-align:right;flex-shrink:0}
+.hdr-copy a{color:#fff;opacity:.85;text-decoration:none}
+.hdr-copy a:hover{opacity:1}
+
+/* ── TAB BAR ─────────────────────────────────────────────── */
+.tabbar{
+  background:var(--green);display:flex;
+  border-top:1px solid rgba(255,255,255,.12);overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+.tbtn{
+  flex:1;min-width:max-content;padding:10px 18px;
+  background:none;border:none;border-bottom:3px solid transparent;
+  color:rgba(255,255,255,.58);font-family:var(--sans);font-size:.8rem;
+  font-weight:500;cursor:pointer;transition:color .18s,border-color .18s,background .18s;
+  white-space:nowrap;letter-spacing:.025em;
+}
+.tbtn:hover{color:rgba(255,255,255,.9);background:rgba(255,255,255,.06)}
+.tbtn.active{color:#fff;border-bottom-color:var(--orange-hi)}
+
+/* ── MAIN ─────────────────────────────────────────────────── */
+.main{max-width:1080px;margin:0 auto;padding:26px 22px 16px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── TYPOGRAPHY ─────────────────────────────────────────── */
+.ph h2{font-size:1.22rem;font-weight:700;color:var(--green)}
+.ph .lead{margin-top:6px;color:var(--text-mid);font-size:.9rem}
+h3.sec{
+  font-size:.88rem;font-weight:700;color:var(--green);
+  margin:18px 0 8px;display:flex;align-items:center;gap:8px;
+}
+h3.sec::after{content:'';flex:1;height:1px;background:var(--border-lt)}
+p.sm{font-size:.85rem;color:var(--text-mid);margin-bottom:8px}
+
+/* ── CALLOUTS ───────────────────────────────────────────── */
+.callout{
+  background:var(--orange-pale);border-left:4px solid var(--orange);
+  border-radius:var(--r);padding:13px 17px;margin:14px 0;
+  font-size:.86rem;color:var(--text-mid);
+}
+.callout strong{color:var(--orange)}
+.note{
+  background:var(--green-pale);border:1px solid #BBCFA0;
+  border-radius:var(--r);padding:13px 17px;margin:10px 0;
+  font-size:.86rem;color:var(--text-mid);
+}
+.note strong{color:var(--green-mid)}
+.card{
+  background:var(--surface);border:1px solid var(--border-lt);
+  border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow);
+}
+
+/* ── LAYOUT HELPERS ─────────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:700px){.two-col,.three-col{grid-template-columns:1fr}}
+hr.div{border:none;border-top:1px solid var(--border-lt);margin:22px 0}
+
+/* ── FORMULA ────────────────────────────────────────────── */
+.formula{
+  font-family:var(--mono);font-size:.8rem;background:var(--surface-2);
+  border-radius:var(--r);padding:10px 14px;color:var(--green);
+  margin:8px 0;overflow-x:auto;white-space:pre;
+}
+
+/* ── ARCH DIAGRAM ───────────────────────────────────────── */
+.arch-layout{display:grid;grid-template-columns:270px 1fr;gap:22px;align-items:start}
+@media(max-width:700px){.arch-layout{grid-template-columns:1fr}}
+.arch-dia{
+  display:flex;flex-direction:column;align-items:center;
+  gap:0;width:100%;max-width:270px;margin:0 auto;
+}
+.ab{
+  width:100%;padding:9px 14px;border-radius:var(--r);border:2px solid transparent;
+  cursor:pointer;transition:transform .15s,box-shadow .15s,border-color .15s;
+  text-align:center;font-size:.8rem;font-weight:600;user-select:none;
+  display:block;
+}
+.ab:hover{transform:translateX(5px);box-shadow:var(--shadow)}
+.ab.sel{border-color:var(--orange-hi)!important;box-shadow:0 0 0 3px var(--orange-pale)}
+.ab-g{background:var(--green);color:#fff}
+.ab-gm{background:var(--green-mid);color:#fff}
+.ab-gl{background:var(--green-light);color:#fff}
+.ab-s{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+.ab-o{background:var(--orange);color:#fff}
+.aa{width:2px;height:18px;background:var(--border);margin:0 auto;position:relative;flex-shrink:0}
+.aa::after{
+  content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  border-top:6px solid var(--border);
+}
+.aa-lbl{font-size:.66rem;color:var(--text-light);font-family:var(--mono);text-align:center;margin:1px 0;line-height:1.2}
+.tip{border-bottom:1px dashed var(--green-light);cursor:help;position:relative;display:inline}
+.tip::after{
+  content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);background:var(--green);color:#fff;
+  padding:7px 11px;border-radius:7px;font-size:.76rem;font-family:var(--sans);
+  font-weight:400;line-height:1.45;white-space:normal;width:230px;
+  pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;
+  box-shadow:0 4px 14px rgba(0,0,0,.18);
+}
+.tip:hover::after,.tip.tip-open::after{opacity:1}
+.arch-n{
+  border:2px dashed var(--border);border-radius:12px;
+  padding:10px 8px;width:100%;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:0;
+}
+.arch-n-lbl{
+  position:absolute;top:-10px;right:10px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:4px;font-size:.68rem;font-family:var(--mono);
+  padding:1px 7px;color:var(--text-light);
+}
+.arch-detail{
+  background:var(--surface);border:1px solid var(--border-lt);
+  border-radius:var(--r-lg);padding:20px;min-height:220px;
+}
+.arch-detail h3{font-size:.98rem;font-weight:700;color:var(--green);margin-bottom:8px}
+.arch-detail p,.arch-detail li{font-size:.85rem;color:var(--text-mid);margin-bottom:6px}
+.arch-detail ul{padding-left:18px}
+.math-inline{font-family:'IBM Plex Mono','Cambria Math','STIX Two Math',serif;font-size:.92em}
+.arch-detail .math{
+  font-family:var(--mono);font-size:.78rem;color:var(--green-mid);
+  background:var(--surface-2);padding:6px 10px;border-radius:5px;margin:8px 0;
+  white-space:pre;overflow-x:auto;
+}
+
+/* ── ATTENTION TAB ──────────────────────────────────────── */
+.tok-row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.tok{
+  background:var(--surface-2);border:2px solid var(--border-lt);
+  border-radius:20px;padding:4px 12px;font-family:var(--mono);
+  font-size:.8rem;cursor:pointer;transition:background .14s,border-color .14s;
+  user-select:none;
+}
+.tok:hover{background:var(--surface-3)}
+.tok.sel{background:var(--green);color:#fff;border-color:var(--green)}
+.head-sel{display:flex;gap:7px;flex-wrap:wrap;margin:8px 0}
+.hbtn{
+  padding:5px 14px;border-radius:20px;border:2px solid var(--border);
+  background:var(--surface);font-family:var(--sans);font-size:.78rem;
+  font-weight:500;cursor:pointer;transition:all .14s;
+}
+.hbtn:hover{border-color:var(--green-mid)}
+.hbtn.active{background:var(--green);color:#fff;border-color:var(--green)}
+.score-wrap{margin:3px 0}
+.score-labels{display:flex;justify-content:space-between;font-size:.76rem;font-family:var(--mono);color:var(--text-mid);margin-bottom:2px}
+.score-outer{background:var(--surface-2);border-radius:4px;height:11px;overflow:hidden}
+.score-inner{height:100%;border-radius:4px;transition:width .35s ease}
+.bar-green{background:var(--green-mid)}
+.bar-orange{background:var(--orange-hi)}
+
+/* ── SELF-SUPERVISION TAB ───────────────────────────────── */
+.ss-sent{
+  background:var(--surface-2);border-radius:var(--r);
+  padding:14px 16px;font-family:var(--mono);font-size:.88rem;
+  display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:12px 0;
+}
+.ss-tok{
+  padding:4px 10px;border-radius:6px;cursor:pointer;
+  transition:all .14s;border:2px solid transparent;user-select:none;
+}
+.ss-norm{background:var(--bg);border-color:var(--border-lt)}
+.ss-mask{background:var(--green);color:#fff;border-color:var(--green)}
+.ss-pred{background:var(--orange);color:#fff;border-color:var(--orange)}
+.ss-ctx{background:var(--green-pale);border-color:#BBCFA0}
+.ss-fut{background:var(--surface-2);color:var(--text-light);border-color:var(--border-lt);opacity:.42}
+.mode-tog{
+  display:flex;border:2px solid var(--border);
+  border-radius:30px;overflow:hidden;width:fit-content;
+}
+.mbtn{
+  padding:6px 18px;border:none;background:none;cursor:pointer;
+  font-family:var(--sans);font-size:.82rem;font-weight:500;
+  color:var(--text-mid);transition:background .18s,color .18s;
+}
+.mbtn.active{background:var(--green);color:#fff}
+
+/* ── VIT TAB ────────────────────────────────────────────── */
+.vit-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:700px){.vit-layout{grid-template-columns:1fr}}
+canvas.vc{border-radius:var(--r);border:1px solid var(--border-lt);display:block}
+.patch-grid{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}
+.ptok{
+  width:28px;height:28px;border-radius:4px;border:2px solid var(--border-lt);
+  cursor:pointer;transition:transform .14s,border-color .14s;
+}
+.ptok:hover{transform:scale(1.18);border-color:var(--orange-hi)}
+.ptok.sel{border-color:var(--orange-hi);transform:scale(1.18);box-shadow:0 0 0 2px var(--orange-pale)}
+
+/* ── CONTROLS ───────────────────────────────────────────── */
+label{font-size:.8rem;font-weight:600;color:var(--text-mid);display:block;margin-bottom:5px}
+select,input[type=text]{
+  font-family:var(--sans);font-size:.86rem;padding:7px 11px;
+  border:1.5px solid var(--border);border-radius:var(--r);
+  background:var(--bg);color:var(--text);width:100%;
+}
+select:focus,input:focus{outline:2px solid var(--green-light);outline-offset:1px}
+input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
+.btn{
+  display:inline-block;padding:8px 16px;border-radius:var(--r);border:none;
+  cursor:pointer;font-family:var(--sans);font-size:.82rem;font-weight:600;
+  transition:opacity .14s,transform .1s;
+}
+.btn:hover{opacity:.87;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-g{background:var(--green);color:#fff}
+.btn-o{background:var(--orange);color:#fff}
+.btn-ol{background:none;border:2px solid var(--green);color:var(--green)}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+
+/* ── LEGEND ─────────────────────────────────────────────── */
+.lgnd{display:flex;flex-wrap:wrap;gap:10px;font-size:.76rem;color:var(--text-mid);align-items:center;margin:6px 0}
+.ls{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle;margin-right:3px}
+
+/* ── FOOTER ─────────────────────────────────────────────── */
+.ftr{
+  background:var(--surface-2);
+  border-top:1px solid var(--border-lt);padding:7px 22px;
+  display:flex;justify-content:center;font-size:.67rem;
+  font-family:var(--mono);color:var(--text-light);
+  text-align:center;margin-top:40px;
+}
+.ftr a{color:var(--text-light);text-decoration:none}
+.ftr a:hover{color:var(--text-mid)}
+.ftr-sep{display:inline}.ftr-br{display:none}
+@media(max-width:340px){
+  .ftr-sep{display:none}
+  .ftr-br{display:inline}
+}
+
+/* ── TAB SELECT (narrow screens) ───────────────────────── */
+.tab-select-wrap{display:none;background:var(--green);padding:8px 16px 10px}
+.tab-select-wrap select{
+  width:100%;font-family:var(--sans);font-size:.88rem;
+  background:var(--green-mid);color:#fff;
+  border:1px solid rgba(255,255,255,.3);border-radius:var(--r);
+  padding:7px 10px;cursor:pointer;
+}
+@media(max-width:580px){
+  .tabbar{display:none}
+  .tab-select-wrap{display:block}
+}
+
+/* ── TOPOLOGY CARDS ─────────────────────────────────────── */
+.topo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:12px 0}
+@media(max-width:700px){.topo-grid{grid-template-columns:1fr}}
+.topo-card{background:var(--surface);border:1px solid var(--border-lt);border-radius:var(--r-lg);padding:18px;box-shadow:var(--shadow)}
+.topo-title{font-size:1rem;font-weight:700;color:var(--green);text-align:center;margin-bottom:3px}
+.topo-attn{font-size:.78rem;font-style:italic;color:var(--text-light);text-align:center;margin-bottom:14px}
+.topo-dia{display:flex;flex-direction:column;align-items:stretch;gap:0;margin-bottom:14px}
+.topo-blk{padding:7px 10px;border-radius:6px;text-align:center;font-size:.82rem;font-weight:500;line-height:1.3}
+.topo-blk.lt{background:var(--surface-2);border:1px solid var(--border-lt);color:var(--text-mid)}
+.topo-blk.gr{background:var(--green);color:#fff}
+.topo-blk.or{background:var(--orange);color:#fff}
+.topo-blk small{font-size:.69rem;opacity:.68;display:block;margin-top:2px}
+.topo-arr{text-align:center;color:var(--border);font-size:.8rem;line-height:1.2;margin:2px 0}
+.topo-rule{border:none;border-top:1px solid var(--border-lt);margin:12px 0}
+.topo-models{font-size:.8rem;font-weight:700;color:var(--green-mid);text-align:center;margin-bottom:5px}
+.topo-product{font-size:.78rem;font-weight:600;color:var(--orange);text-align:center;margin-bottom:5px}
+.topo-tasks{font-size:.77rem;color:var(--text-light);text-align:center}
+.topo-explain{font-size:.8rem;color:var(--text-mid);font-style:italic;margin:10px 0 4px;line-height:1.5}
+
+/* ── RESPONSIVE MISC ────────────────────────────────────── */
+.hdr-sep{display:inline}.hdr-br{display:none}
+@media(max-width:500px){
+  .main{padding:16px 13px 24px}
+  .hdr{padding:13px 16px}
+  .hdr-sep{display:none}
+  .hdr-br{display:inline}
+  .hdr-copy{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ──────────────────────────────────────────── -->
+<header class="hdr">
+  <div class="hdr-title">
+    <h1>Transformer Architecture Explorer</h1>
+    <div class="sub">Attention · Self-Supervision · Vision Transformers</div>
+  </div>
+  <div class="hdr-copy">
+    &copy; 2026 Theodore P. Pavlic<span class="hdr-sep"> &middot; </span><br class="hdr-br"><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
+  </div>
+</header>
+
+<!-- ── TAB BAR ─────────────────────────────────────────── -->
+<nav class="tabbar" role="tablist">
+  <button class="tbtn active" role="tab" onclick="switchTab(0)">① Architecture</button>
+  <button class="tbtn" role="tab" onclick="switchTab(1)">② Attention Mechanism</button>
+  <button class="tbtn" role="tab" onclick="switchTab(2)">③ Self-Supervision</button>
+  <button class="tbtn" role="tab" onclick="switchTab(3)">④ Vision Transformer</button>
+</nav>
+
+<div class="tab-select-wrap">
+  <select id="tab-select" onchange="switchTab(+this.value)">
+    <option value="0">① Architecture</option>
+    <option value="1">② Attention Mechanism</option>
+    <option value="2">③ Self-Supervision</option>
+    <option value="3">④ Vision Transformer</option>
+  </select>
+</div>
+
+<main class="main">
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 1 — ARCHITECTURE
+══════════════════════════════════════════════════════ -->
+<div class="tab-panel active" id="tab-0">
+  <div class="ph">
+    <h2>Transformer Architecture</h2>
+    <p class="lead">Click any block in the encoder diagram to learn what it does. Despite its power, a transformer is fundamentally a <strong>feedforward neural network</strong> — at inference it has no persistent internal state, and its only "memory" is whatever fits in the current context window. What makes it distinctive is <em>how</em> it mixes information: rather than compressing history into a hidden state (RNN) or restricting interactions to a local patch (CNN), every token can directly attend to every other token in a single parallel step. The architecture's inductive bias is deliberately weak — it makes almost no assumptions about where relevant information will be — which is both its strength and the reason it needs large amounts of training data to work well. See Tab ② for a deeper comparison with CNNs and RNNs.</p>
+  </div>
+
+  <div class="callout">
+    <strong>Why "transformer"?</strong> Unlike an RNN, which passes context through a fixed-size hidden state sequentially, a transformer directly connects every token to every other token in a single step. Each encoder layer <em>transforms</em> the entire set of token representations in parallel, enabling rich, long-range contextual mixing from the very first layer — hence the name. The transformation at each layer is what's distinctive: global, parallel, and context-mixing, rather than sequential (RNN) or local (CNN).
+  </div>
+
+  <div class="arch-layout">
+
+    <!-- Diagram -->
+    <div>
+      <div class="arch-dia">
+
+        <div class="ab ab-s" id="ab-inp" onclick="archSel('inp')">Input Tokens</div>
+        <div class="aa"></div>
+        <div class="ab ab-s" id="ab-emb" onclick="archSel('emb')">Token Embeddings</div>
+        <div class="aa"></div>
+        <div class="ab ab-gl" id="ab-pe" onclick="archSel('pe')">Positional Encoding</div>
+        <div class="aa"></div>
+
+        <div class="arch-n">
+          <div class="arch-n-lbl"><span class="tip" data-tip="N is the number of times this entire block is stacked. In an encoder: MHSA → Add&Norm → FFN → Add&Norm. In a decoder: MHSA → Add&Norm → Cross-Attention (optional) → FFN → Add&Norm. Typical values: N=6 in the original transformer, N=12 in BERT-base, N=96 in GPT-3.">× N layers</span></div>
+          <div class="ab ab-gm" id="ab-mha" onclick="archSel('mha')">Multi-Head Self-Attention</div>
+          <div class="aa-lbl"><span class="tip" data-tip="The sub-layer's input is added directly to its output — x ← x + sub-layer(x) — creating a shortcut path that keeps gradients flowing to early layers during training.">↓ residual skip connection</span></div>
+          <div class="ab ab-s" id="ab-n1" onclick="archSel('n1')">Add &amp; Norm (1)</div>
+          <div class="aa"></div>
+          <div class="ab" id="ab-xattn" onclick="archSel('xattn')" style="background:var(--surface-3);border:2px dashed var(--green-light);color:var(--text-mid);font-style:italic">Cross-Attention <span style="font-size:.72rem;font-style:normal;opacity:.7">(optional)</span></div>
+          <div class="aa-lbl" style="font-style:italic;color:var(--text-light)">encoder-decoder only</div>
+          <div class="aa"></div>
+          <div class="ab ab-o" id="ab-ffn" onclick="archSel('ffn')">Feed-Forward Network (FFN)</div>
+          <div class="aa-lbl"><span class="tip" data-tip="The sub-layer's input is added directly to its output — x ← x + sub-layer(x) — creating a shortcut path that keeps gradients flowing to early layers during training.">↓ residual skip connection</span></div>
+          <div class="ab ab-s" id="ab-n2" onclick="archSel('n2')">Add &amp; Norm (2)</div>
+        </div>
+
+        <div class="aa"></div>
+        <div class="ab ab-g" id="ab-out" onclick="archSel('out')">Output Representations</div>
+
+      </div>
+    </div>
+
+    <!-- Detail panel -->
+    <div class="arch-detail" id="arch-panel">
+      <p style="color:var(--text-light);font-style:italic;font-size:.88rem;">← Click a block to explore it</p>
+    </div>
+  </div>
+
+  <hr class="div">
+  <div class="note">
+    <strong>Encoder · Decoder · Encoder-Decoder.</strong>
+    The diagram above shows a <em>transformer encoder</em> (BERT-style): every token attends to every other token, making it ideal for understanding tasks.
+    A <em>decoder</em> (GPT-style) uses a causal mask so each token can only attend to tokens that came before it — enabling autoregressive generation (see Tab ③).
+    A full <em>encoder-decoder</em> model (the original "Attention Is All You Need" architecture, T5, BART) uses both halves connected by a cross-attention bridge, letting a generated output sequence attend to an encoded input sequence.
+  </div>
+
+  <h3 class="sec" style="margin-top:20px">Parameter Count at a Glance</h3>
+  <div class="card" style="margin-bottom:20px">
+    <p style="font-size:.86rem;color:var(--text-mid);margin-bottom:12px">
+      For a standard encoder with vocabulary size <span class="math-inline">V</span>, model dimension <span class="math-inline">d</span> (also written d<sub>model</sub> — the dimensionality of every token's representation throughout the network), N layers, and learned positional encodings up to sequence length <span class="math-inline">L</span>:
+    </p>
+    <div class="formula">Total ≈ V·d  +  L·d  +  N·12d²
+
+  Token embeddings:      V·d
+  Positional encodings:  L·d  (if learned; zero if sinusoidal)
+  Per encoder layer:     4d²  (MHSA: W_Q, W_K, W_V, W_O)
+                       + 8d²  (FFN:  W_1, W_2, including biases)
+                       + 4d   (LayerNorm γ,β ×2  —  negligible)
+                       ≈ 12d² per layer</div>
+    <p style="font-size:.84rem;color:var(--text-mid);margin:12px 0 8px">
+      The <span class="math-inline">N·12d²</span> term dominates for large models — parameter count scales with depth and the <em>square</em> of model dimension. Doubling <span class="math-inline">d</span> quadruples per-layer cost.
+    </p>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem;font-family:var(--mono)">
+        <thead>
+          <tr style="background:var(--surface-2);color:var(--green)">
+            <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border)">Model</th>
+            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">V</th>
+            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">d</th>
+            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">N</th>
+            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">h</th>
+            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">~Params</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border-lt)">
+            <td style="padding:7px 10px;font-weight:600;color:var(--green)">BERT-base</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">30k</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">768</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">12</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">12</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:600;color:var(--orange)">~110M</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-lt)">
+            <td style="padding:7px 10px;font-weight:600;color:var(--green)">BERT-large</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">30k</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">1024</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">24</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">16</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:600;color:var(--orange)">~340M</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-lt)">
+            <td style="padding:7px 10px;font-weight:600;color:var(--green)">GPT-2</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">50k</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">768</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">12</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">12</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:600;color:var(--orange)">~117M</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border-lt)">
+            <td style="padding:7px 10px;font-weight:600;color:var(--green)">GPT-3</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">50k</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">12288</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">96</td>
+            <td style="padding:7px 10px;text-align:right;color:var(--text-mid)">96</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:600;color:var(--orange)">~175B</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.76rem;color:var(--text-light);margin-top:10px;font-family:var(--mono)">
+      BERT-base check: 30k×768 + 12×12×768² ≈ 23M + 85M ≈ 108M ✓
+    </p>
+  </div>
+
+  <h3 class="sec" style="margin-top:20px">Transformer Topologies</h3>
+  <div class="topo-grid">
+
+    <!-- ── Encoder Only ── -->
+    <div class="topo-card">
+      <div class="topo-title">Encoder Only</div>
+      <div class="topo-attn">↕ bidirectional self-attention</div>
+      <div class="topo-dia">
+        <div class="topo-blk lt">Input Tokens</div>
+        <div class="topo-arr">↓</div>
+        <div class="topo-blk gr">Encoder Layer ×N<small>each token attends to all others</small></div>
+        <div class="topo-arr">↓</div>
+        <div class="topo-blk lt">Contextual Representations</div>
+      </div>
+      <hr class="topo-rule">
+      <p class="topo-explain">The output is a rich contextual vector for every token — not a generated word. These vectors encode meaning geometrically: similar meanings land nearby in the vector space, so a query and a relevant page will have similar representations even if they share no keywords. For more demanding tasks (e.g., Q&amp;A), the query and candidate passage can be concatenated as a single input so their tokens attend to each other directly, and the resulting <span class="tip" data-tip="[CLS] (short for 'classification') — a special token prepended to every input sequence. Unlike regular tokens it has no linguistic meaning — it's a placeholder whose output vector is trained to summarize the whole sequence, making it useful for classification and matching tasks."><code>[CLS]</code> vector</span> is trained to score how well they match.</p>
+      <div class="topo-models">BERT · RoBERTa · ELECTRA</div>
+      <div class="topo-product">📌 Google Search (2019) — BERT transformed how Google understands query intent and page meaning, one of the largest NLP deployments in history</div>
+      <div class="topo-tasks">Classification · NER · Embeddings · Extractive QA</div>
+    </div>
+
+    <!-- ── Decoder Only ── -->
+    <div class="topo-card">
+      <div class="topo-title">Decoder Only</div>
+      <div class="topo-attn">causal attention — left tokens only<br><span style="font-size:.75rem">(each token predicts the next; can't peek right)</span></div>
+      <div class="topo-dia">
+        <div class="topo-blk lt">Tokens generated so far</div>
+        <div class="topo-arr">↓</div>
+        <div class="topo-blk or">Decoder Layer ×N<small>token attends to left tokens only</small></div>
+        <div class="topo-arr">↓</div>
+        <div class="topo-blk lt">Next Token Distribution</div>
+      </div>
+      <hr class="topo-rule">
+      <p class="topo-explain">Each forward pass predicts the next token given all previous ones, appends it, then repeats. At training time this is self-supervised (the sequence is its own label); at inference time it generates. There is no separate "task head" — the generation IS the output.</p>
+      <div class="topo-models">GPT-2/3/4 · LLaMA · Mistral · Claude</div>
+      <div class="topo-product">📌 ChatGPT / Claude / Copilot — virtually every modern AI assistant and code completion tool uses this architecture</div>
+      <div class="topo-tasks">Text generation · Chat · Code · Language modeling</div>
+    </div>
+
+    <!-- ── Encoder-Decoder ── -->
+    <div class="topo-card">
+      <div class="topo-title">Encoder–Decoder</div>
+      <div class="topo-attn">cross-attention bridge</div>
+      <div class="topo-dia">
+        <div style="display:flex;gap:8px;align-items:flex-start;width:100%">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:stretch">
+            <div class="topo-blk lt" style="font-size:.76rem">Source tokens</div>
+            <div class="topo-arr">↓</div>
+            <div class="topo-blk gr" style="font-size:.76rem">Encoder ×N</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;padding-top:30px;gap:1px">
+            <span style="font-size:.72rem;color:var(--orange-hi);font-weight:700">→</span>
+            <span style="font-size:.6rem;color:var(--orange);white-space:nowrap">cross-attn</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:stretch">
+            <div class="topo-blk lt" style="font-size:.76rem">Target tokens</div>
+            <div class="topo-arr">↓</div>
+            <div class="topo-blk or" style="font-size:.76rem">Decoder ×N</div>
+            <div class="topo-arr">↓</div>
+            <div class="topo-blk lt" style="font-size:.76rem">Next Token Distribution</div>
+          </div>
+        </div>
+      </div>
+      <hr class="topo-rule">
+      <p class="topo-explain">The encoder runs first on the full source sequence, producing N precomputed output vectors — one per source token. These are then held fixed. The decoder generates the output sequence token by token, with causal self-attention over the target tokens generated so far, plus cross-attention that queries into the encoder's precomputed vectors. Source and target tokens never occupy the same sequence — they only interact through the cross-attention lookup.</p>
+      <div class="topo-models">T5 · BART · "Attention Is All You Need"</div>
+      <div class="topo-product">📌 Google Translate &amp; DeepL — the encoder reads the source language, the decoder generates the translation token by token</div>
+      <div class="topo-tasks">Translation · Summarization · Seq2Seq · Document Q&amp;A</div>
+    </div>
+
+  </div>
+
+  <h3 class="sec" style="margin-top:24px">Inference in Practice: Concrete Examples</h3>
+  <p class="sm" style="margin-bottom:14px">
+    Regardless of architecture, a transformer always does the same core thing: it takes <strong>N input tokens</strong> and produces <strong>N output vectors</strong> in ℝ<sup>d</sup>, one per token — what differs is which vectors are used, and how.
+    <br><br>
+    N can be very large. In a chat application, every prior message in the conversation is part of the context — by the time you are deep into a long conversation, N might be tens of thousands of tokens. GPT-4 supports up to 128,000 tokens; some models go beyond 1 million. Every one of those tokens is present in the forward pass, which is why long contexts are expensive and why the quadratic cost of attention (the N×N matrix) is such an active research problem.
+  </p>
+
+  <div class="three-col" style="gap:16px;margin-bottom:6px">
+
+    <div class="card" style="padding:16px">
+      <div style="font-size:.9rem;font-weight:700;color:var(--green);margin-bottom:10px">Encoder Only</div>
+      <div style="font-size:.82rem;color:var(--text-mid);display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">[CLS] the cat sat on the mat<br><span style="font-size:.7rem;color:var(--text-light)">N = 7 tokens in ([CLS] prepended)</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--green);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Encoder (N layers)<br><span style="font-size:.7rem;opacity:.7">full bidirectional attention</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">7 vectors in ℝ<sup>d</sup><br><span style="font-size:.7rem;color:var(--text-light)">N vectors out — all at once</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--orange-pale);border:1px solid var(--orange);border-radius:6px;padding:7px 10px;font-size:.78rem">
+          <strong>Task head:</strong><br>
+          • [CLS] vector → classifier (sentiment, topic)<br>
+          • All vectors → label per token (Named Entity Recognition: person, location, etc.)<br>
+          • Query+passage → relevance score (e.g., for search)
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px">
+      <div style="font-size:.9rem;font-weight:700;color:var(--green);margin-bottom:10px">Decoder Only</div>
+      <div style="font-size:.82rem;color:var(--text-mid);display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">"the cat sat"<br><span style="font-size:.7rem;color:var(--text-light)">N = 3 tokens so far</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--orange);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Decoder (N layers)<br><span style="font-size:.7rem;opacity:.7">causal mask: left tokens only</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">3 vectors in ℝ<sup>d</sup><br><span style="font-size:.7rem;color:var(--text-light)">each predicts its next token</span><br><span style="font-size:.7rem;color:var(--text-light)">only the last vector is output</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--orange-pale);border:1px solid var(--orange);border-radius:6px;padding:7px 10px;font-size:.78rem">
+          → sample "on" → <em>append</em> → <em>repeat</em><br>
+          → sample "the" → <em>append</em> → <em>repeat</em><br>
+          → sample "mat" → <em>append</em> → <em>repeat</em><br>
+          → sample <strong>[EOS]</strong> → <em>stop</em><br>
+          <span style="font-size:.7rem;color:var(--text-light)">[EOS] is a learned special token — the model generates it when the output is complete</span><br>
+          <span style="font-size:.7rem;color:var(--text-light)">💡 K and V for previous tokens are cached — only the new token's Q, K, V are computed each step</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:16px">
+      <div style="font-size:.9rem;font-weight:700;color:var(--green);margin-bottom:10px">Encoder–Decoder</div>
+      <div style="font-size:.82rem;color:var(--text-mid);display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">"le chat s'est assis"<br><span style="font-size:.7rem;color:var(--text-light)">source: N tokens — encoder runs first</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--green);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Encoder → N vectors<br><span style="font-size:.7rem;opacity:.7">precomputed once; held fixed</span></div>
+        <div style="text-align:center;color:var(--orangeHi);font-size:.78rem;font-weight:600">↕ cross-attention</div>
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">"the cat sat"<br><span style="font-size:.7rem;color:var(--text-light)">target so far: M = 3 tokens</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--orange);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Decoder (N layers)<br><span style="font-size:.7rem;opacity:.7">causal self-attn + cross-attn to source</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">3 vectors in ℝ<sup>d</sup><br><span style="font-size:.7rem;color:var(--text-light)">each predicts its next token</span><br><span style="font-size:.7rem;color:var(--text-light)">only the last vector is output</span></div>
+        <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
+        <div style="background:var(--orange-pale);border:1px solid var(--orange);border-radius:6px;padding:7px 10px;font-size:.78rem">
+          → sample "on" → <em>append</em> → <em>repeat</em><br>
+          → sample "the" → <em>append</em> → <em>repeat</em><br>
+          → sample "mat" → <em>append</em> → <em>repeat</em><br>
+          → sample <strong>[EOS]</strong> → <em>stop</em><br>
+          <span style="font-size:.7rem;color:var(--text-light)">[EOS] is a learned special token — the model generates it when the output is complete</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div style="margin-top:28px;padding-top:14px;border-top:1px solid var(--border-lt)">
+    <p style="font-size:.76rem;font-weight:700;color:var(--text-mid);margin-bottom:6px">Key References</p>
+    <p style="font-size:.74rem;color:var(--text-light);line-height:1.6">
+      Vaswani, A. et al. (2017). <em>Attention Is All You Need.</em> Advances in Neural Information Processing Systems 30 (NIPS 2017), pp. 5998–6008. <a href="https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html" target="_blank" style="color:var(--green)">NeurIPS proceedings</a><br>
+      Devlin, J. et al. (2019). <em>BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.</em> NAACL-HLT 2019, pp. 4171–4186. <a href="https://aclanthology.org/N19-1423/" target="_blank" style="color:var(--green)">ACL Anthology N19-1423</a><br>
+      Radford, A. et al. (2019). <em>Language Models are Unsupervised Multitask Learners.</em> OpenAI technical report. — GPT-2; no formal venue. <a href="https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf" target="_blank" style="color:var(--green)">OpenAI PDF</a><br>
+      Brown, T. et al. (2020). <em>Language Models are Few-Shot Learners.</em> Advances in Neural Information Processing Systems 33 (NeurIPS 2020). <a href="https://papers.nips.cc/paper/2020/hash/1457c0d6bfcb4967418bfb8ac142f64a-Abstract.html" target="_blank" style="color:var(--green)">NeurIPS proceedings</a><br>
+      Liu, Y. et al. (2019). <em>RoBERTa: A Robustly Optimized BERT Pretraining Approach.</em> — arXiv preprint; no formal conference venue. <a href="https://arxiv.org/abs/1907.11692" target="_blank" style="color:var(--green)">arXiv:1907.11692</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 2 — ATTENTION MECHANISM
+══════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-1">
+  <div class="ph">
+    <h2>Attention Mechanism</h2>
+    <p class="lead">Self-attention lets each token "query" all other tokens to build a contextual representation. All matrix operations shown below use real (toy) numbers computed in your browser — no fake data.</p>
+  </div>
+
+
+  <div class="note" style="margin-top:14px;font-size:.83rem">
+    <strong>What is an attention head, concretely?</strong>
+    A head is nothing more than its own set of three weight matrices: <strong>W<sub>Q</sub></strong>, <strong>W<sub>K</sub></strong>, and <strong>W<sub>V</sub></strong> (each d×d<sub>k</sub>). That's the entire implementation — there is no other structure. For h heads, the model has h×3 such matrices. They are initialized randomly and trained end-to-end; the "concept" a head represents (subject↔verb, determiner↔noun, etc.) is not specified in advance — it emerges from gradient descent because specialization turns out to be useful. After training, a single shared <strong>W<sub>O</sub></strong> matrix (hd<sub>k</sub>×d) projects the concatenated outputs of all heads back into the original d-dimensional space.
+    <br><br>
+    <strong>How to use the controls below:</strong>
+    The <em>sentence</em> is the full input to the transformer — all tokens are processed simultaneously, not one at a time. The attention weights reveal how the model internally relates each token to every other token <em>in the context of that sentence</em>. Select a head, then click a token in the sentence to see, from that token's perspective, which other tokens it attends to most strongly under the concept that head has learned. Switching heads shows how different learned subspaces pick out different relationships within the same sentence.
+    <br><br>
+    <em>Note: the four heads here are hand-crafted illustrations of the kinds of relationships that <strong>might</strong> emerge from training — not a guarantee of what will. Real trained transformers may carve up the space quite differently, and individual heads often don't correspond cleanly to a single human-interpretable concept.</em>
+  </div>
+
+  <div class="card" style="padding:16px;margin-top:14px">
+    <div class="two-col">
+      <div>
+        <label>Sentence <span style="font-weight:400;font-style:italic;color:var(--text-light)">(hypothetical transformer input)</span></label>
+        <select id="sent-sel" onchange="onSentChange()">
+          <option value="0">the cat sat on the mat</option>
+          <option value="1">a large dog ran quickly away</option>
+          <option value="2">the old bird flew over the tree</option>
+        </select>
+      </div>
+      <div>
+        <label>Attention head <span style="font-weight:400;font-style:italic;color:var(--text-light)">(modeled concept relationships among tokens)</span></label>
+        <div class="head-sel" id="head-sel">
+          <button class="hbtn active" onclick="selHead(0,this)">Head 1</button>
+          <button class="hbtn" onclick="selHead(1,this)">Head 2</button>
+          <button class="hbtn" onclick="selHead(2,this)">Head 3</button>
+          <button class="hbtn" onclick="selHead(3,this)">Head 4</button>
+        </div>
+        <div id="head-desc" style="font-size:.78rem;font-style:italic;color:var(--text-light);margin-top:3px;min-height:2.4em"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:18px;align-items:start">
+
+    <!-- LEFT COLUMN: Tokens & Embeddings + Query Token Scores -->
+    <div class="card" style="padding:16px">
+      <h3 class="sec">Tokens &amp; Embeddings</h3>
+      <p class="sm">Click a token to set it as the <em>query</em> — you are selecting a viewpoint within the sentence, not entering a search term. The heatmap and score bars then show how strongly that token attends to every other token in the sentence under the currently selected head.</p>
+      <div class="tok-row" id="tok-row"></div>
+
+      <h3 class="sec" style="margin-top:16px">Query Token: Scores &amp; Weights</h3>
+      <p class="sm">For the selected query token, raw dot-product scores (Q·K / √d<sub>k</sub>) and their softmax-normalized attention weights. The highlighted row in the heatmap shows the same weights.</p>
+      <div id="score-panel"><p style="color:var(--text-light);font-style:italic;font-size:.85rem">Click a token chip above.</p></div>
+    </div>
+
+    <!-- RIGHT COLUMN: Attention Heatmap + Token Embeddings -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" style="padding:16px">
+        <h3 class="sec">Attention Heatmap</h3>
+        <p class="sm">Each cell shows softmax(Q·K<sup>T</sup> / √d<sub>k</sub>) for that query–key pair. Brighter = higher weight. The selected query's row is highlighted in orange — matching the bars on the left.</p>
+        <div class="lgnd">
+          <span><span class="ls" style="background:#FAF7EF;border:1px solid #CECA9A"></span>low</span>
+          <span><span class="ls" style="background:#3B6227"></span>medium</span>
+          <span><span class="ls" style="background:#243D18"></span>high</span>
+          <span><span class="ls" style="background:#D96F1A"></span>selected row</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:5px;margin-top:6px">
+          <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:.82rem;font-weight:700;color:var(--orange);flex-shrink:0;align-self:center">Query</div>
+          <div style="position:relative;flex:1">
+            <canvas id="attn-map" style="border-radius:8px;cursor:crosshair;display:block;width:100%"></canvas>
+            <div id="attn-tip" style="
+              display:none;position:absolute;background:var(--green);color:#fff;
+              font-family:var(--mono);font-size:.74rem;padding:5px 9px;border-radius:6px;
+              pointer-events:none;white-space:nowrap;z-index:50;
+              box-shadow:0 2px 8px rgba(0,0,0,.2)
+            "></div>
+          </div>
+        </div>
+        <p style="font-size:.78rem;color:var(--text-mid);margin-top:6px;font-style:italic">💡 Most rows are flat for a given head — only tokens with the right features show clear patterns. Try clicking "cat" with Head 1, "on" with Head 3, or "old" (sentence 3) with Head 4.</p>
+      </div>
+
+      <div class="card" style="padding:16px">
+        <h3 class="sec">Token Embeddings (toy, 8-dimensional)</h3>
+        <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">Each token is represented as a vector with 8 hand-crafted dimensions. Darker = higher value. These named axes are illustrative only — in a real trained model, embedding dimensions have no human-interpretable labels. They are arbitrary directions in ℝ<sup>d</sup> that gradient descent found useful; interpretable structure (if any) is emergent, not designed.</p>
+        <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">The embedding table connects directly to the attention scores. Here Q and K are matrices — every token's embedding is projected through W<sub>Q</sub> and W<sub>K</sub> respectively to produce one row each. For <strong>Head 1</strong>, W<sub>Q</sub> picks out the <em>animate</em> (×2) and <em>subj</em> (×1) dimensions; W<sub>K</sub> picks out <em>verb</em> (×2). The score for a single (query, key) pair is one cell of the full Q·K<sup>T</sup> matrix — e.g., for "cat" querying "sat":</p>
+        <div class="formula" style="font-size:.76rem;line-height:1.7">Q<sub>cat</sub> = cat·W<sub>Q</sub> = [0.9×2 + 0.8×0 + 0.0×0 + … + 0.8×1 + 0.2×0] = [<strong>2.6</strong>, 0, 0, 0]
+          (W<sub>Q</sub> — animate col: ×2,  subj col: ×1,  all other cols: ×0)
+
+K<sub>sat</sub> = sat·W<sub>K</sub> = [0.0×0 + 0.0×0 + 0.9×2 + 0.0×0 + … + 0.0×0] = [<strong>1.8</strong>, 0, 0, 0]
+          (W<sub>K</sub> — verb col: ×2,  all other cols: ×0)
+
+Q<sub>cat</sub>·K<sub>sat</sub> / √d<sub>k</sub>  =  2.6 × 1.8 / √4  =  <strong>2.34</strong>  ✓  (matches score panel above)</div>
+        <p style="font-size:.8rem;color:var(--text-mid);margin-top:8px">For "the" querying "sat": "the" has animate ≈ 0 and subj ≈ 0.1, giving Q ≈ [0.1, 0, 0, 0], so Q·K / √d<sub>k</sub> ≈ 0.09 — nearly zero, confirming the flat row you see for function words in Head 1.</p>
+        <div style="overflow-x:auto">
+          <canvas id="emb-map" style="display:block;border-radius:6px"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h3 class="sec" style="margin-top:24px">The Database Query Analogy</h3>
+  <p class="sm">Think of attention as a <strong>soft database lookup</strong> — unlike a hard lookup returning exactly one row, attention returns a <em>weighted blend</em> of all values, with weights determined by query–key similarity.</p>
+  <div class="two-col" style="margin-top:10px">
+    <div>
+      <p style="font-size:.86rem;color:var(--text-mid);margin-bottom:8px"><b style="color:var(--green)">Query (Q)</b> — "What information am I looking for?" A learned projection of the current token into a subspace that encodes what kind of context it needs.</p>
+      <p style="font-size:.86rem;color:var(--text-mid)"><b style="color:var(--green)">Key (K)</b> — "What do I advertise that I contain?" A learned projection of each token into a matching subspace. The dot product Q·Kᵀ scores compatibility — how much a query should attend to each key.</p>
+    </div>
+    <div>
+      <p style="font-size:.86rem;color:var(--text-mid);margin-bottom:8px"><b style="color:var(--green)">Value (V)</b> — "What I actually return when retrieved." A third projection, independent of the scoring. The final output is a weighted sum of all value vectors, with weights given by softmax(Q·Kᵀ / √d<sub>k</sub>).</p>
+      <p style="font-size:.86rem;color:var(--text-mid)">The separation of K and V is what makes this powerful: a token can <em>advertise</em> one thing (key) and <em>return</em> something else (value). The scoring and the content retrieval are deliberately decoupled.</p>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:24px">The Math</h3>
+  <p class="sm" style="margin-bottom:10px">In the full matrix formulation, <strong>Q</strong>, <strong>K</strong>, and <strong>V</strong> are matrices — every token's embedding is projected through W<sub>Q</sub>, W<sub>K</sub>, and W<sub>V</sub> respectively, producing one row per token. Q·K<sup>T</sup> is an N×N matrix of all pairwise raw scores; after dividing by √d<sub>k</sub> and applying softmax row-wise, each row sums to 1 — these normalized weights are what the Attention Heatmap above shows. Multiplying by V then produces one output vector per token.</p>
+  <div class="two-col">
+    <div>
+      <div class="formula">Attention(Q, K, V) = softmax( Q·Kᵀ / √dₖ ) · V</div>
+      <p style="font-size:.83rem;color:var(--text-mid);margin-top:5px">
+        <b>√dₖ scaling:</b> dot products grow in magnitude with dimension, pushing softmax toward near-one-hot distributions with vanishingly small gradients. Dividing by √dₖ keeps the variance stable.
+      </p>
+    </div>
+    <div>
+      <div class="formula">Multi-Head:
+  concat(head₁,…,headₕ) · W_o
+  headᵢ = Attention(Q·Wᵢᵠ, K·Wᵢᵏ, V·Wᵢᵛ)</div>
+      <p style="font-size:.83rem;color:var(--text-mid);margin-top:5px">
+        Each head projects into a <em>different learned subspace</em>, allowing different heads to capture different relationship types simultaneously — syntactic, semantic, positional, co-reference, etc.
+      </p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:14px">
+    <strong>Why multiple heads?</strong>
+    In "The bank near the river overflowed its banks," the word <em>bank</em> is ambiguous. One head might track subject–verb relationships, another might disambiguate nouns via surrounding context, another might track long-distance dependencies. Multiple heads let the model hold several structural hypotheses simultaneously without committing to one projection subspace.
+  </div>
+
+  <div class="note" style="margin-top:14px">
+    <strong>Inductive biases: CNN vs. RNN vs. Transformer.</strong>
+    Every architecture encodes assumptions about where useful structure lives in the input:
+    <ul style="margin-top:8px;padding-left:18px;display:flex;flex-direction:column;gap:7px">
+      <li><strong>CNN</strong> — assumes features are <em>local and spatially invariant</em>. Nearby tokens matter most; the same pattern is worth detecting anywhere. Works well for images and short n-gram features, but capturing global context requires stacking many layers.</li>
+      <li><strong>RNN</strong> — assumes inputs arrive <em>sequentially</em> and compresses all prior history into a fixed-size hidden state. <strong>LSTMs</strong> partially address the memory bottleneck with learned <em>gates</em> that adaptively control what to write, keep, and forget.</li>
+      <li><strong>Transformer</strong> — makes almost no structural assumption. Any token can attend to any other token regardless of distance, with weights computed fresh for each input. Attention weights play the same functional role as LSTM gates — both adaptively route information — but unlike an RNN, the transformer has <em>no persistent state between inputs</em>: all context must fit in the window. Maximum flexibility, but needs large data to learn where to look, and scales quadratically in sequence length.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 3 — SELF-SUPERVISION
+══════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-2">
+  <div class="ph">
+    <h2>Self-Supervised Pre-Training</h2>
+    <p class="lead">One of the transformer's most powerful features: training labels are generated automatically from raw text — no human annotation required. This is the connection to <em>latent learning</em>: mere exposure to structured experience drives the formation of rich internal representations.</p>
+  </div>
+
+  <div class="callout">
+    <strong>The key insight:</strong> Language carries its own supervision signal. By hiding parts of the input and training the model to recover them, we force it to build an internal model of grammar, semantics, and world knowledge — all from raw text, without any labeled data.
+  </div>
+
+  <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:14px 0 6px">
+    <div>
+      <label>Training objective</label>
+      <div class="mode-tog">
+        <button class="mbtn active" id="mlm-btn" onclick="setSSMode('mlm')">MLM — BERT-style</button>
+        <button class="mbtn" id="clm-btn" onclick="setSSMode('clm')">Causal LM — GPT-style</button>
+      </div>
+    </div>
+    <div>
+      <label for="ss-sent-sel">Sentence</label>
+      <select id="ss-sent-sel" style="width:auto" onchange="onSSSentChange()">
+        <option value="0">the cat sat on the warm mat</option>
+        <option value="1">a large dog ran quickly past the house</option>
+        <option value="2">the old owl slept in the hollow tree</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- MLM PANEL -->
+  <div id="mlm-panel">
+    <h3 class="sec">Masked Language Modeling (MLM)</h3>
+    <p class="sm">Click tokens to mask them (toggle). In BERT-style MLM, 15% of tokens are randomly <em>selected</em> for prediction. Of those selected tokens: 80% are replaced with the special <code>[MASK]</code> token, 10% are replaced with a random vocabulary token, and 10% are left unchanged. All 15% of selected tokens contribute to the training loss — the remaining 85% pass through the forward pass but produce no loss. The three-way split prevents the model from over-specializing to inputs containing <code>[MASK]</code>, since at fine-tuning and inference time no such tokens appear. All selected positions are predicted <em>simultaneously</em> in a single forward pass — the full corrupted sequence is processed once and predictions for all selected positions are made together.</p>
+    <div class="ss-sent" id="ss-toks-mlm"></div>
+    <div id="mlm-preds" style="margin-top:10px"></div>
+    <div class="note" style="margin-top:14px">
+      <strong>Bidirectional context:</strong> Because masks are placed randomly and the model sees the full sequence around each mask, BERT-style models learn deeply contextualized representations. They excel at understanding tasks (question answering, classification, named entity recognition) but cannot straightforwardly generate text — you can't unmask one token, then the next, because the masks were the training signal, not a generation procedure.
+    </div>
+    <h3 class="sec" style="margin-top:18px">MLM Attention Mask</h3>
+    <p class="sm">Every position can attend to every other position — there is no blocking. Columns for masked tokens are highlighted orange: every row attending to a <code>[M]</code> column is attending to a substituted token, not the real word. Green rows are the 15% of <em>selected</em> positions whose predictions contribute to the training loss — this includes all three substitution types (80% <code>[MASK]</code>, 10% random token, 10% unchanged). The remaining 85% of unselected positions pass through the forward pass but produce no training loss.</p>
+    <canvas id="mlm-canvas" style="border-radius:8px;display:block;max-width:100%;margin-top:8px"></canvas>
+    <div class="lgnd" style="margin-top:6px">
+      <span><span class="ls" style="background:#EBE3CF;border:1px solid #CECA9A"></span>normal → normal</span>
+      <span><span class="ls" style="background:#E5EFD8;border:1px solid #BBCFA0"></span>[M] row → normal col</span>
+      <span><span class="ls" style="background:#FEF3E8;border:1px solid #D96F1A"></span>normal row → [M] col</span>
+      <span><span class="ls" style="background:#FAE8D0;border:1px solid #D96F1A"></span>[M] row → [M] col</span>
+    </div>
+  </div>
+
+  <!-- CLM PANEL -->
+  <div id="clm-panel" style="display:none">
+    <h3 class="sec">Causal Language Modeling (CLM / Autoregressive)</h3>
+    <p class="sm">Each token predicts the <em>next</em> token, using only prior context. Click any token (except the first) to see what it tries to predict and what context it has.</p>
+    <div class="ss-sent" id="ss-toks-clm"></div>
+    <div id="clm-preds" style="margin-top:10px"></div>
+    <div class="note" style="margin-top:14px">
+      <strong>Autoregressive generation:</strong> Because each token only sees its past, CLM models naturally generate text token-by-token at inference time — the same causal structure used during training. GPT, LLaMA, and Claude all use this approach. The causal mask that enforces left-only context during training is the structural reason generation works.
+      <br><br>
+      <strong>KV cache:</strong> At inference time, recomputing K and V for all previous tokens on every generation step would be wasteful — but the causal mask means past tokens' K and V representations never change when new tokens are appended. So they can be <em>cached</em>. Each new generation step only computes Q, K, V for the one new token, then attends into the cached K/V bank — O(N) per step rather than O(N²). The memory cost grows linearly with context length, which is why very long contexts are expensive even at inference time.
+    </div>
+    <h3 class="sec" style="margin-top:18px">Causal Attention Mask</h3>
+    <p class="sm">For each (query, key) pair involving a future token, the raw attention score — Q·K<sup>T</sup>/√d<sub>k</sub> — is set to −∞ before softmax, so softmax(−∞) = 0 and those positions contribute nothing to the weighted sum. The tokens themselves and their K and V vectors are all computed normally; the blocking happens only at the scoring step. Note: this use of "mask" is different from MLM's token masking — here no tokens are substituted; they remain in the sequence but their attention scores are zeroed out. The column header "Key" refers to the K in Q/K/V — the columns represent which tokens are being attended <em>to</em>. The highlighted row (outlined in orange) is the selected prediction position. Switch to MLM mode above to compare.</p>
+    <canvas id="clm-canvas" style="border-radius:8px;display:block;max-width:100%"></canvas>
+    <div class="lgnd" style="margin-top:6px">
+      <span><span class="ls" style="background:#E8E2D0;border:1px solid #CECA9A"></span>blocked (✕)</span>
+      <span><span class="ls" style="background:rgba(86,122,56,.15)"></span>allowed</span>
+      <span><span class="ls" style="background:#243D18"></span>selected row (attending tokens)</span>
+    </div>
+  </div>
+
+  <hr class="div">
+  <h3 class="sec">Connection to Latent Learning</h3>
+  <div class="two-col">
+    <div class="card">
+      <h3 style="font-size:.92rem;font-weight:700;color:var(--green);margin-bottom:8px">🐀 Latent Learning (Tolman, 1948)</h3>
+      <p style="font-size:.85rem;color:var(--text-mid)">Rats explore a maze without reward, apparently building no useful associations. When reward is introduced, they immediately exploit a near-optimal path — revealing that a rich <em>cognitive map</em> had been forming silently from exposure to structure alone.</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:.92rem;font-weight:700;color:var(--green);margin-bottom:8px">🤖 Self-Supervised Pre-Training</h3>
+      <p style="font-size:.85rem;color:var(--text-mid)">A transformer is exposed to billions of tokens without task-specific labels. Internal representations form solely from statistical structure. When fine-tuned on a downstream task, the model immediately leverages its pre-trained representations — the latent structure it built during pre-training.</p>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:22px">Self-Supervised vs. Supervised: A Parallel Controversy</h3>
+  <div class="note" style="font-size:.84rem">
+    <p style="margin-bottom:10px">The debate about whether self-supervised learning is genuinely different from supervised learning has a striking parallel in the history of psychology. <strong>Associative learning</strong> — encompassing both classical conditioning (Pavlov, Watson) and operant conditioning (Skinner) — argues that all learning reduces to connections formed through reinforcement or pairing. In <em>classical conditioning</em>, the organism already produces the correct response; training pairs it with a new stimulus. In <em>operant conditioning</em>, a consequence (reward or punishment) shapes the frequency of a behavior. Supervised learning maps onto both: the loss function acts like continuous negative reinforcement removed when the correct output is produced, while the pairing of input contexts with target outputs mirrors classical associative pairing. In all cases, an <em>external agent</em> decides what the correct response is and applies a signal that drives behavior toward it.</p>
+    <p style="margin-bottom:10px"><strong>Tolman</strong> countered that animals build internal cognitive maps through mere exposure, without reinforcement, and that these latent representations transfer flexibly to new tasks. Behaviorists pushed back: isn't "latent learning" just associative learning with internal states as hidden mediators? The argument has never been fully resolved and remains live in behavioral neuroscience today.</p>
+    <p style="margin-bottom:10px">The same spirit animates the supervised vs. self-supervised debate. <strong>The mechanistic skeptic's view:</strong> self-supervised learning is just supervised learning where the labels are auto-generated — inputs, targets, loss, backprop. <strong>The key distinction</strong> is where the labels come from: in supervised learning they are produced by an external agent at real cost; in self-supervised learning they emerge automatically from the structure of the data itself, with no external agent deciding what is correct.</p>
+    <p style="margin-bottom:10px">This matters for <em>scale</em> — you can train on all text ever written — and for <em>generality</em> — predicting the next token forces the model to implicitly learn grammar, facts, coreference, and reasoning, not just whatever a human decided to label.</p>
+    <p style="margin-bottom:10px"><strong>Causal LM (GPT-style) is the most borderline case.</strong> In MLM (BERT-style), the masking is random and artificially imposed — the model can't anticipate which tokens will be masked, making it feel more like genuine exploration. In causal LM, the targets are entirely predictable from the data structure: previous tokens in, next token out. The strongest defenses are: (1) <strong>no label file exists</strong> — the supervision signal is a mechanical consequence of sequential structure, not a human decision; (2) <strong>density</strong> — a sentence of N tokens yields N−1 training signals in one pass; (3) <strong>the targets aren't chosen by the researcher</strong> — you predict whatever natural language produces next, which encodes everything.</p>
+    <p>The honest conclusion, much like in the associative vs. latent learning debate: the line is real but blurry. Self-supervised is a genuinely different <em>paradigm</em> — annotation-free, scale-unlimited, general-purpose, and driven by environmental structure rather than an external agent — even if the gradient math is not fundamentally different from supervised learning.</p>
+    <p style="margin-top:10px"><strong>Contrastive learning</strong> (SimCLR, MoCo, CLIP, DINO) takes this further by making the representational goal explicit: <em>similar inputs should produce similar [CLS] vectors; dissimilar inputs should not.</em> CLIP trains two encoders — one for images, one for text — so that matching image-caption pairs are close in the joint embedding space and mismatched pairs are far apart. The supervision signal comes entirely from naturally occurring image-caption pairs on the internet, with no human labels. This is self-supervised learning in its purest form: the structure of the world (images tend to co-occur with descriptive captions) provides the signal.</p>
+  </div>
+  <div style="margin-top:28px;padding-top:14px;border-top:1px solid var(--border-lt)">
+    <p style="font-size:.76rem;font-weight:700;color:var(--text-mid);margin-bottom:6px">Key References</p>
+    <p style="font-size:.74rem;color:var(--text-light);line-height:1.6">
+      Devlin, J. et al. (2019). <em>BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding.</em> NAACL-HLT 2019, pp. 4171–4186. <a href="https://aclanthology.org/N19-1423/" target="_blank" style="color:var(--green)">ACL Anthology N19-1423</a><br>
+      Liu, Y. et al. (2019). <em>RoBERTa: A Robustly Optimized BERT Pretraining Approach.</em> — arXiv preprint; no formal conference venue. <a href="https://arxiv.org/abs/1907.11692" target="_blank" style="color:var(--green)">arXiv:1907.11692</a><br>
+      Chen, T. et al. (2020). <em>A Simple Framework for Contrastive Learning of Visual Representations.</em> ICML 2020, PMLR 119:1597–1607. <a href="https://proceedings.mlr.press/v119/chen20j.html" target="_blank" style="color:var(--green)">PMLR proceedings</a><br>
+      Radford, A. et al. (2021). <em>Learning Transferable Visual Models From Natural Language Supervision.</em> ICML 2021, PMLR 139:8748–8763. <a href="https://proceedings.mlr.press/v139/radford21a.html" target="_blank" style="color:var(--green)">PMLR proceedings</a><br>
+      Tolman, E.C. (1948). <em>Cognitive maps in rats and men.</em> Psychological Review, 55(4), 189–208. <a href="https://doi.org/10.1037/h0061626" target="_blank" style="color:var(--green)">doi:10.1037/h0061626</a>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 4 — VISION TRANSFORMER
+══════════════════════════════════════════════════════ -->
+<div class="tab-panel" id="tab-3">
+  <div class="ph">
+    <h2>Vision Transformer (ViT)</h2>
+    <p class="lead">A Vision Transformer applies the <em>exact same</em> self-attention from Tab ② — but to image patches instead of words. An image is split into a grid of patches, each flattened into a vector ("patch token"), and then processed by a standard transformer encoder.</p>
+  </div>
+
+  <div class="callout">
+    <strong>The key insight:</strong> There is nothing inherently linguistic about self-attention. Any collection of objects that might have meaningful relationships to each other can be processed with it — image patches, graph nodes, protein residues, musical notes, simulation grid cells. The mechanism is modality-agnostic.
+  </div>
+
+  <div class="two-col" style="margin:14px 0">
+    <div>
+      <label>Image</label>
+      <div class="btn-row">
+        <button class="btn btn-ol" id="vbtn-0" onclick="selVitImg(0)">Colorful Shapes</button>
+        <button class="btn btn-ol" id="vbtn-1" onclick="selVitImg(1)">Landscape</button>
+        <button class="btn btn-ol" id="vbtn-2" onclick="selVitImg(2)">Checkerboard</button>
+      </div>
+    </div>
+    <div>
+      <label>Patch grid: <span id="patch-lbl">4×4</span></label>
+      <input type="range" id="patch-slider" min="2" max="6" value="4" oninput="onPatchChange(+this.value)">
+    </div>
+  </div>
+
+  <div class="vit-layout">
+    <div>
+      <h3 class="sec">Image + Patch Grid <span style="font-size:.75rem;font-weight:400;color:var(--text-light)">(click a patch to select)</span></h3>
+      <canvas id="vit-orig" class="vc" width="240" height="240" style="cursor:pointer"></canvas>
+    </div>
+    <div>
+      <h3 class="sec">Attention Map for Selected Patch</h3>
+      <div class="head-sel" id="vit-head-sel">
+        <button class="hbtn active" onclick="selVitHead(0,this)">Head 1</button>
+        <button class="hbtn" onclick="selVitHead(1,this)">Head 2</button>
+        <button class="hbtn" onclick="selVitHead(2,this)">Head 3</button>
+        <button class="hbtn" onclick="selVitHead(3,this)">Head 4</button>
+      </div>
+      <div id="vit-head-desc" style="font-size:.8rem;color:var(--text-light);font-style:italic;margin:5px 0 8px"></div>
+      <canvas id="vit-attn" class="vc" width="240" height="240"></canvas>
+      <div class="note" style="margin-top:14px">
+        <strong>ViT vs. CNN:</strong> A CNN builds global context gradually through depth, with a strong <em>inductive bias</em> toward local spatial structure. A ViT can attend globally from layer one but must learn all spatial relationships from data. On large datasets ViT tends to match or beat CNNs; on smaller datasets the CNN's built-in locality assumption is an advantage — less to learn.
+      </div>
+    </div>
+  </div>
+
+  <h3 class="sec" style="margin-top:20px">Token Sequence Input to the Transformer</h3>
+  <p class="sm">Patches are numbered in <em>raster scan order</em> — left to right, row by row (like reading text). Without positional encodings, self-attention is permutation-invariant and the model would have no way of knowing that patch 3 is to the right of patch 2. A learned positional encoding vector is added to each patch token before the transformer so the model knows where each patch came from spatially. The original ViT paper (Dosovitskiy et al., 2020) found that these learned encodings spontaneously develop a 2D grid structure — nearby patches end up with similar positional embeddings.</p>
+  <p class="sm" style="margin-top:8px">A <strong>[CLS]</strong> token is prepended; its output is used for classification. In supervised ViT training, [CLS]'s output feeds a linear classifier trained on labeled images. In self-supervised ViT training (DINO), no labels are used — instead, two differently augmented views of the same image are passed through the network and their [CLS] outputs are trained to be similar, while [CLS] outputs from different images are pushed apart. This is <em>contrastive learning</em> applied to vision — the same principle as CLIP (Tab ③), but within a single modality.</p>
+  <canvas id="vit-seq" style="border-radius:8px;display:block;max-width:100%"></canvas>
+  <div style="margin-top:28px;padding-top:14px;border-top:1px solid var(--border-lt)">
+    <p style="font-size:.76rem;font-weight:700;color:var(--text-mid);margin-bottom:6px">Key References</p>
+    <p style="font-size:.74rem;color:var(--text-light);line-height:1.6">
+      Dosovitskiy, A. et al. (2021). <em>An Image is Worth 16×16 Words: Transformers for Image Recognition at Scale.</em> ICLR 2021. <a href="https://openreview.net/forum?id=YicbFdNTTy" target="_blank" style="color:var(--green)">OpenReview</a><br>
+      Caron, M. et al. (2021). <em>Emerging Properties in Self-Supervised Vision Transformers.</em> ICCV 2021. <a href="https://openaccess.thecvf.com/content/ICCV2021/html/Caron_Emerging_Properties_in_Self-Supervised_Vision_Transformers_ICCV_2021_paper.html" target="_blank" style="color:var(--green)">CVF proceedings</a><br>
+      Radford, A. et al. (2021). <em>Learning Transferable Visual Models From Natural Language Supervision.</em> ICML 2021, PMLR 139:8748–8763. <a href="https://proceedings.mlr.press/v139/radford21a.html" target="_blank" style="color:var(--green)">PMLR proceedings</a><br>
+      Clark, K. et al. (2019). <em>What Does BERT Look at? An Analysis of BERT's Attention.</em> ACL 2019 BlackboxNLP Workshop. <a href="https://aclanthology.org/W19-4828/" target="_blank" style="color:var(--green)">ACL Anthology W19-4828</a>
+    </p>
+  </div>
+</div>
+
+</main>
+
+<footer class="ftr">
+  <span>&copy; 2026 Theodore P. Pavlic<span class="ftr-sep"> &middot; </span><br class="ftr-br"><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a></span>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════ -->
+<script>
+// ── Palette (hex — CSS vars can't be used in canvas) ─────
+const C = {
+  bg:        '#FAF7EF',
+  surface:   '#F3EDE0',
+  surface2:  '#EBE3CF',
+  surface3:  '#DDD5BC',
+  green:     '#243D18',
+  greenMid:  '#3B6227',
+  greenLt:   '#567A38',
+  greenPale: '#E5EFD8',
+  orange:    '#B85A10',
+  orangeHi:  '#D96F1A',
+  orangePale:'#FAE8D0',
+  text:      '#1C1C12',
+  textMid:   '#48483A',
+  textLt:    '#78786A',
+  border:    '#CECA9A',
+  borderLt:  '#E0DAC0',
+  white:     '#FFFFFF',
+};
+
+// ── State ────────────────────────────────────────────────
+let curTab = 0;
+let curSent = 0, curHead = 0, selTok = 1;
+let ssSent = 0, ssMode = 'mlm';
+let maskedSet = new Set();
+let clmSel = 1;
+let vitImg = 0, vitPatch = 4, vitHead = 0, vitSelPatch = 0;
+let vitSeqHitRegions = []; // [{x, w, patchIdx}] populated by drawVitSeq
+
+// ── Tab switching ────────────────────────────────────────
+function switchTab(i) {
+  document.querySelectorAll('.tab-panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+  document.querySelectorAll('.tbtn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  const sel=document.getElementById('tab-select'); if(sel) sel.value=i;
+  curTab = i;
+  if(i===1){renderAttnTab(); drawEmbMap();}
+  if(i===2){renderSSTab();}
+  if(i===3){renderVitTab()}
+}
+
+// ════════════════════════════════════════════════════════
+// TAB 1: ARCHITECTURE
+// ════════════════════════════════════════════════════════
+const ARCH = {
+  inp:{title:'Input Tokens',html:`
+    <p>Raw text is split into <strong>tokens</strong> — subword units produced by algorithms like <span class="tip" data-tip="Iteratively merges the most frequent adjacent character pairs to build a subword vocabulary. Used by GPT-2, RoBERTa, and LLaMA. Balances coverage of rare words with compact vocabulary size."><em>Byte-Pair Encoding</em> (BPE)</span> or <span class="tip" data-tip="Similar to BPE but merges pairs that maximize the likelihood of the training corpus. Used by BERT and its variants. The '##' prefix marks subword continuations — '##able' means this piece continues the previous token."><em>WordPiece</em></span>. Each token is an integer index into a vocabulary (typically 30k–100k entries).</p>
+    <p>Example: "unbelievable" might tokenize as <code>["un","##believ","##able"]</code> in WordPiece.</p>
+    <p>Importantly, this is a <em>lossless</em> representation of arbitrary text without needing a fixed vocabulary of whole words. Rare or novel words are handled gracefully as combinations of more common subwords.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">❄️ <strong>Frozen</strong> — input tokens are fixed integer indices, not parameters.</p>`
+  },
+  emb:{title:'Token Embeddings',html:`
+    <p>Each token index is looked up in a learned embedding matrix <span class="math-inline">E ∈ ℝ<sup>vocab×d</sup></span> to produce a dense vector in <span class="math-inline">ℝ<sup>d</sup></span>. For GPT-2, d = 768; for GPT-3, d = 12,288.</p>
+    <div class="math">E ∈ ℝ<sup>vocab_size × d_model</sup></div>
+    <p>At initialization, nearby words are not necessarily nearby in embedding space — that geometric structure emerges during training. Words with similar roles end up close together; grammatical categories cluster; arithmetic relationships become vector arithmetic.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> all entries of <strong>E</strong> (vocab_size × d_model parameters). This is where semantic geometry emerges.</p>`
+  },
+  pe:{title:'Positional Encoding',html:`
+    <p>Self-attention is <strong>permutation-invariant</strong> by default: "cat ate the mouse" and "mouse ate the cat" would be indistinguishable. Positional encoding injects order information.</p>
+    <p>The original transformer used <em>sinusoidal encodings</em>:</p>
+    <div class="math">PE(pos, 2i)   = sin(pos / 10000<sup>2i/d</sup>)
+PE(pos, 2i+1) = cos(pos / 10000<sup>2i/d</sup>)</div>
+    <p>The multi-frequency design means each position gets a unique fingerprint and relative distances are encoded in phase differences. Modern models often use learned positional embeddings, or relative schemes like <span class="tip" data-tip="Rotary Position Embedding: encodes position by rotating the Q and K vectors in their embedding space by an angle proportional to position. Unlike absolute encodings, RoPE naturally encodes relative distances and generalizes to sequences longer than seen during training. Used in LLaMA, PaLM, and GPT-NeoX."><strong>RoPE</strong></span> and <span class="tip" data-tip="Attention with Linear Biases: rather than adding positional encodings to the embeddings, ALiBi adds a fixed negative bias to attention scores proportional to the distance between query and key positions. Simpler than RoPE and extrapolates well to longer sequences, but doesn't rotate the embedding space."><strong>ALiBi</strong></span> that generalize better to longer sequences than seen during training.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">❄️ <strong>Frozen</strong> in the original transformer (sinusoidal, no parameters). 🔥 <strong>Trained</strong> in most modern models (BERT, GPT-2+) — a learnable matrix of shape max_seq_len × d_model.</p>`
+  },
+  mha:{title:'Multi-Head Self-Attention',html:`
+    <p>The core engine of the transformer. The <strong>"self"</strong> in self-attention means the queries, keys, and values all come from the <em>same</em> sequence — each token attends to other tokens in the same input. This distinguishes it from <em>cross-attention</em> (used in encoder-decoder models), where queries come from one sequence (the decoder's partial output) and keys/values come from a different sequence (the encoder's output).</p>
+    <p>Each token produces three vectors — <strong>Query</strong>, <strong>Key</strong>, <strong>Value</strong> — by projecting its current representation through learned weight matrices (see <strong>Tab ②</strong> for an interactive walkthrough of the full computation).</p>
+    <div class="math">Attention(Q,K,V) = softmax(QKᵀ / √dₖ)·V</div>
+    <p>The <strong>√d<sub>k</sub> scaling hyperparameter</strong> acts as a <em>temperature</em> in the Boltzmann sense — softmax(x/T) with T = √d<sub>k</sub>. Without it, dot products grow in magnitude with dimension: if Q and K have unit-variance components, each dot product sums d<sub>k</sub> terms, giving variance d<sub>k</sub> and std dev √d<sub>k</sub>. Dividing by √d<sub>k</sub> normalizes variance back to 1, keeping softmax outputs away from near-one-hot distributions where gradients vanish. d<sub>k</sub> is fixed by architecture (typically d<sub>k</sub> = d<sub>model</sub> / num_heads) before training begins, not learned — but the choice matters: larger d<sub>k</sub> gives each head a richer subspace to work in (and a higher temperature, producing flatter attention) while smaller d<sub>k</sub> forces more heads with sharper, more selective attention per head.</p>
+    <p><strong>Multiple heads</strong> run this operation in parallel, each using its own learned W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> matrices that project the d-dimensional token representation into a different d<sub>k</sub>-dimensional subspace. The heads are not pre-assigned roles — they are initialized randomly and specialize through training, discovering that attending to different structural relationships is more useful than redundancy. In effect, each head can develop a different <em>inductive bias</em>: some heads in trained models attend locally (almost CNN-like), some track long-range syntactic dependencies, some do co-reference resolution. The final W<sub>O</sub> projection then learns to combine these different "viewpoints" into a single updated representation. The multi-head structure is therefore a way of letting the model learn an <em>ensemble of inductive biases</em> over the same input — none dictated by the architecture, all emerging from training.</p>
+    <p>→ Explore interactively in <strong>Tab ②</strong>.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> (each d×d<sub>k</sub>) and W<sub>O</sub> (hd<sub>k</sub>×d) — one set per head per layer. The √d<sub>k</sub> scaling is parameter-free (d<sub>k</sub> is a hyperparameter); softmax itself has no learned weights&nbsp;(❄️).</p>`
+  },
+  n1:{title:'Add &amp; Norm (1)',html:`
+    <p>Two stabilizing operations applied after the Multi-Head Self-Attention (MHSA) sub-layer:</p>
+    <p><strong>Residual connection (Add):</strong> the token representation entering MHSA is added directly back to the MHSA output, bypassing the sub-layer entirely. This creates a skip pathway that allows gradients to flow to early layers without passing through the attention computation, and frames learning as <em>refining</em> a representation rather than constructing one from scratch.</p>
+    <div class="math">x ← x + MHSA(x)</div>
+    <p><strong>Layer Normalization:</strong> normalizes each token's representation across its own d feature dimensions — not across the batch. For a token with representation <span class="math-inline">x ∈ ℝ<sup>d</sup></span>, μ and σ are the mean and standard deviation of that token's d values: μ = (1/d)Σxᵢ, σ = √((1/d)Σ(xᵢ−μ)²). This is what makes it <em>Layer</em> Norm rather than <em>Batch</em> Norm — batch norm computes μ and σ across all examples in the batch for each feature dimension, making it dependent on batch size and poorly suited to variable-length sequences. Layer norm is computed per token, per layer, independently of everything else in the batch. The learned scale (γ) and shift (β) parameters allow the network to undo normalization if needed.</p>
+    <div class="math">LayerNorm(x) = γ · (x − μ) / σ + β</div>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> γ and β (2×d parameters per norm layer). The residual addition itself has no parameters&nbsp;(❄️).</p>`
+  },
+  ffn:{title:'Feed-Forward Network (FFN)',html:`
+    <p>After attention has mixed information <em>across</em> tokens, a pointwise FFN processes each token <em>independently</em> through two linear layers with a nonlinearity:</p>
+    <div class="math">FFN(x) = max(0, xW₁ + b₁)W₂ + b₂</div>
+    <p><code>max(0, ·)</code> is the <strong>ReLU</strong> nonlinearity — the simplest choice and the one used in the original paper. Most modern transformers substitute <strong>GELU</strong> (Gaussian Error Linear Unit, used in BERT and GPT-2) or <strong>SwiGLU</strong> (used in LLaMA, PaLM), which have smoother activation profiles and tend to train better in practice.</p>
+    <p>Typically expands to 4× the model dimension and projects back. For GPT-3 (d=12,288): 12,288 → 49,152 → 12,288 per token per layer.</p>
+    <p>The FFN is believed to act as a <strong>key–value memory</strong> — note this uses "key" and "value" as a <em>metaphor</em>, not the same K and V matrices from attention. The idea (Geva et al., 2021) is that W<sub>1</sub> rows act as "keys" that pattern-match features in the input, and W<sub>2</sub> columns act as "values" that produce the associated output when a key is activated. About ⅔ of a transformer's parameters live in FFN layers.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> W₁ (d×4d), b₁ (4d), W₂ (4d×d), b₂ (d) — one set per layer. This is where most of the model's parameters live.</p>`
+  },
+  n2:{title:'Add &amp; Norm (2)',html:`
+    <p>Identical structure to Add &amp; Norm (1), applied after the FFN sub-layer. Two variants exist with importantly different behavior:</p>
+    <p><strong>Post-Norm</strong> (original "Attention Is All You Need" paper):</p>
+    <div class="math">x ← x + FFN(x)
+x ← LayerNorm(x)</div>
+    <p>Residual addition first, then the sum is normalized. Every addition passes through normalization, which can squeeze gradient magnitudes at depth and typically requires learning rate warmup to train stably.</p>
+    <p><strong>Pre-Norm</strong> (LLaMA, PaLM, most modern models):</p>
+    <div class="math">x ← x + FFN(LayerNorm(x))</div>
+    <p>The token representation is normalized <em>before</em> entering the FFN, and the un-normalized residual is added back directly. The residual stream itself is never normalized, so it can grow freely across layers — keeping gradients well-conditioned at depth and removing the need for learning rate warmup.</p>
+    <p>These <span class="tip" data-tip="The sub-layer's input is added directly to its output (x ← x + sub-layer(x)), creating a shortcut path. Without this, gradient flow degrades rapidly with depth in deep networks.">residual connections</span> are critical to training deep transformers regardless of which variant is used — without them, gradient flow degrades rapidly with depth.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> γ and β (2×d parameters, same structure as Add &amp; Norm (1)). Residual addition is parameter-free&nbsp;(❄️).</p>`
+  },
+  xattn:{title:'Cross-Attention (optional)',html:`
+    <p>This sub-layer only exists in <strong>encoder-decoder models</strong> (T5, BART, the original "Attention Is All You Need"). In this configuration there are two token sequences: <strong>source tokens</strong> (e.g., a sentence to be translated) and <strong>target tokens</strong> (the translation being generated so far). The encoder runs first on the source tokens, producing N precomputed output vectors — one per source token. These are then held fixed while the decoder generates target tokens one by one, incorporating cross-attention between the two groups at each step.</p>
+    <p>The cross-attention sub-layer receives <strong>two separate inputs</strong>:</p>
+    <div class="math">Q  ←  target-side token representations (from causal self-attention above)
+K, V  ←  precomputed encoder output vectors from the source tokens</div>
+    <p>The target tokens flow through the layer as normal. The source-derived K and V vectors are injected separately — source and target tokens never occupy the same sequence, only interacting through this Q→K,V lookup. This lets the decoder ask "which source tokens are most relevant to what I'm generating right now?" at every decoding step.</p>
+    <p><strong>On dimensionality:</strong> Q has shape M×d<sub>k</sub> (M target tokens) and K has shape N×d<sub>k</sub> (N source tokens). They don't need the same number of tokens — only the same projection dimension d<sub>k</sub>. Q·K<sup>T</sup> is then M×N, giving a relevance score between every target query and every source key, which is exactly what cross-attention needs.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained (end-to-end):</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> — all three projection matrices are part of the decoder's parameters and are trained jointly with the rest of the model.<br>❄️ <strong>Precomputed and fixed during decoding:</strong> the encoder output vectors themselves — computed once from the source tokens before decoding begins and not updated during generation.</p>`
+  },
+  out:{title:'Output Representations',html:`
+    <p>After N encoder layers, each token position in the input sequence holds a rich contextual representation in <span class="math-inline">ℝ<sup>d</sup></span> — that is, for every input token, the encoder produces one d-dimensional output vector whose meaning reflects that token <em>in the context of the full sequence</em>. The token "bank" will have a different output vector depending on whether it appeared near "river" or "money."</p>
+    <p><strong>For language modeling (GPT-style):</strong> the representation at each position is projected through a d×vocab matrix + softmax to produce a probability distribution over the next token. In most models this matrix is not learned separately — it is the transpose of the token embedding matrix <strong>E</strong> from the earlier embedding layer; this approach is called <em>weight tying</em>.</p>
+    <p><strong>For classification (BERT-style):</strong> while outputs from each individual token can be used to classify named entities within a sequence (e.g., "Paris" → location), the model will learn to aggregate sequence-level information into the specially prepended <code>[CLS]</code> token (short for "classification"), which can be used for sequence-level classification. Its final representation feeds a linear classifier. During BERT pre-training, [CLS] receives its training signal from the Next Sentence Prediction (NSP) objective — predicting whether two segments are consecutive — rather than from MLM. Later work (RoBERTa) dropped NSP and found [CLS] still develops useful sequence-level representations as a side effect of bidirectional attention. In contrastive self-supervised methods like CLIP and DINO, [CLS] is trained more directly: matched pairs (e.g., an image and its caption) should produce similar [CLS] vectors, while unmatched pairs should be far apart in the embedding space.</p>
+    <p><strong>For ViT (Tab ④):</strong> same [CLS] trick — the [CLS] output feeds an image classification head.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">This is the output of the final encoder layer. A task-specific head may be applied here (e.g., classifier, language model head) and separately trained using this output representation as an input.</p>`
+  }
+};
+
+function archSel(key) {
+  document.querySelectorAll('.ab').forEach(b=>b.classList.remove('sel'));
+  const el = document.getElementById('ab-'+key);
+  if(el) el.classList.add('sel');
+  const d = ARCH[key]; if(!d) return;
+  document.getElementById('arch-panel').innerHTML =
+    `<h3>${d.title}</h3>${d.html}`;
+}
+
+// ════════════════════════════════════════════════════════
+// TAB 2: ATTENTION MECHANISM
+// ════════════════════════════════════════════════════════
+
+// Vocabulary: 8-dim embeddings
+// Dims: [animate, concrete-noun, verb/action, function/prep, adjective/adv, location, subj-ish, obj-ish]
+const VOCAB = {
+  'the':    [0.0,0.1,0.0,0.9,0.0,0.0,0.1,0.1],
+  'a':      [0.0,0.1,0.0,0.9,0.0,0.0,0.1,0.1],
+  'cat':    [0.9,0.8,0.0,0.0,0.0,0.0,0.8,0.2],
+  'dog':    [0.9,0.7,0.0,0.0,0.0,0.0,0.7,0.2],
+  'bird':   [0.9,0.7,0.0,0.0,0.0,0.0,0.6,0.3],
+  'owl':    [0.9,0.6,0.0,0.0,0.0,0.0,0.6,0.3],
+  'sat':    [0.0,0.0,0.9,0.0,0.0,0.0,0.0,0.0],
+  'ran':    [0.0,0.0,0.9,0.0,0.1,0.0,0.0,0.0],
+  'flew':   [0.0,0.0,0.8,0.0,0.0,0.0,0.0,0.0],
+  'slept':  [0.0,0.0,0.7,0.0,0.0,0.0,0.0,0.0],
+  'on':     [0.0,0.0,0.0,0.8,0.0,0.1,0.0,0.1],
+  'over':   [0.0,0.0,0.0,0.8,0.0,0.1,0.0,0.1],
+  'past':   [0.0,0.0,0.0,0.8,0.0,0.1,0.0,0.1],
+  'in':     [0.0,0.0,0.0,0.8,0.0,0.1,0.0,0.1],
+  'mat':    [0.0,0.7,0.0,0.0,0.0,0.9,0.0,0.7],
+  'house':  [0.0,0.8,0.0,0.0,0.0,0.9,0.0,0.5],
+  'tree':   [0.0,0.8,0.0,0.0,0.0,0.9,0.0,0.5],
+  'hollow': [0.0,0.0,0.0,0.0,0.9,0.3,0.0,0.3],
+  'large':  [0.0,0.0,0.0,0.0,0.9,0.0,0.0,0.0],
+  'old':    [0.0,0.0,0.0,0.0,0.8,0.0,0.0,0.0],
+  'warm':   [0.0,0.0,0.0,0.0,0.7,0.0,0.0,0.0],
+  'quickly':[0.0,0.0,0.1,0.0,0.6,0.0,0.0,0.0],
+  'away':   [0.0,0.0,0.0,0.4,0.0,0.3,0.0,0.0],
+};
+
+// 4 heads × Wq and Wk (8×4 matrices)
+// Embedding dims: [animate(0), concrete(1), verb(2), function/prep(3), adj/adv(4), location(5), subj-ish(6), obj-ish(7)]
+// Key design rule: WQ[h] and WK[h] must write to the SAME output dimension for Q·K to be non-zero
+// Head 0: animate/subjects query (dim0) → verbs respond (dim0)
+// Head 1: determiners/function query (dim1) → concrete nouns respond (dim1)
+// Head 2: prepositions/function query (dim2) → location words respond (dim2)
+// Head 3: adjectives/adverbs query (dim3) → animate+concrete entities respond (dim3)
+const WQ = [
+  [[2,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[1,0,0,0],[0,0,0,0]],
+  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,2,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,2],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+];
+const WK = [
+  [[0,0,0,0],[0,0,0,0],[2,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+  [[0,0,0,0],[0,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+  [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,2,0],[0,0,0,0],[0,0,0,0]],
+  [[0,0,0,2],[0,0,0,1],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]],
+];
+const HEAD_DESC = [
+  'Living subject tokens <strong>attend to</strong> their associated verb',
+  'Determiners and function words <strong>attend to</strong> the concrete nouns they introduce',
+  'Prepositions <strong>attend to</strong> the location or object words they govern',
+  'Adjectives and adverbs <strong>attend to</strong> the entities they modify',
+];
+const SENTS = [
+  ['the','cat','sat','on','the','mat'],
+  ['a','large','dog','ran','quickly','away'],
+  ['the','old','bird','flew','over','the','tree'],
+];
+
+function getEmb(w){ return (VOCAB[w]||new Array(8).fill(0.1)).slice(); }
+function matmul(A,B){
+  return A.map(row=>B[0].map((_,j)=>row.reduce((s,v,k)=>s+v*B[k][j],0)));
+}
+function softmax(row){
+  const mx=Math.max(...row), ex=row.map(v=>Math.exp(v-mx));
+  const sm=ex.reduce((a,b)=>a+b,0); return ex.map(v=>v/sm);
+}
+function computeAttn(toks,h){
+  const E=toks.map(getEmb);
+  const Q=matmul(E,WQ[h]), K=matmul(E,WK[h]);
+  const dk=4, N=toks.length;
+  const scores=Q.map(qi=>K.map(kj=>qi.reduce((s,v,i)=>s+v*kj[i],0)/Math.sqrt(dk)));
+  const weights=scores.map(r=>softmax(r));
+  return {scores,weights};
+}
+
+function onSentChange(){
+  curSent=+document.getElementById('sent-sel').value;
+  selTok=1; renderAttnTab();
+  if(document.getElementById('emb-panel').style.display!=='none') drawEmbMap();
+}
+function selHead(i,btn){
+  curHead=i;
+  document.querySelectorAll('#head-sel .hbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('head-desc').innerHTML=HEAD_DESC[i];
+  drawHeatmap(); renderScores();
+}
+
+function renderAttnTab(){
+  const toks=SENTS[curSent];
+  renderTokChips(toks);
+  document.getElementById('head-desc').innerHTML=HEAD_DESC[curHead];
+  drawHeatmap(); renderScores();
+}
+
+function renderTokChips(toks){
+  const row=document.getElementById('tok-row');
+  row.innerHTML='';
+  toks.forEach((t,i)=>{
+    const c=document.createElement('span');
+    c.className='tok'+(i===selTok?' sel':'');
+    c.textContent=t;
+    c.onclick=()=>{selTok=i;renderTokChips(toks);drawHeatmap();renderScores();};
+    row.appendChild(c);
+  });
+}
+
+function drawHeatmap(){
+  const toks=SENTS[curSent], N=toks.length;
+  const {weights}=computeAttn(toks,curHead);
+  const canvas=document.getElementById('attn-map');
+  const wrap=canvas.parentElement;
+  const sz=Math.min(320, wrap.clientWidth-10);
+  const topPad=10;
+  const cell=Math.floor(sz/(N+1));
+  const off=cell+topPad;
+  const canvasW=off+N*cell+2; // exact fit: row-label col + matrix + 1px border
+  const canvasH=off+N*cell+2;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvasW*dpr; canvas.height=canvasH*dpr;
+  canvas.style.width=canvasW+'px'; canvas.style.height=canvasH+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  ctx.clearRect(0,0,canvasW,canvasH);
+
+  for(let i=0;i<N;i++){
+    for(let j=0;j<N;j++){
+      const w=weights[i][j];
+      let r,g,b;
+      if(i===selTok){
+        r=Math.round(250+(217-250)*w);
+        g=Math.round(247+(111-247)*w);
+        b=Math.round(239+(26-239)*w);
+      } else {
+        r=Math.round(250+(36-250)*w);
+        g=Math.round(247+(61-247)*w);
+        b=Math.round(239+(24-239)*w);
+      }
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.fillRect(off+j*cell+1, off+i*cell+1, cell-2, cell-2);
+
+      // Value label inside cell
+      const brightness = 0.299*r + 0.587*g + 0.114*b;
+      ctx.fillStyle = brightness < 140 ? 'rgba(255,255,255,.9)' : 'rgba(28,28,18,.55)';
+      const vfs = Math.max(7, Math.min(10, cell * .38));
+      ctx.font = `${vfs}px 'IBM Plex Mono',monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(w.toFixed(2), off+j*cell+cell*.5, off+i*cell+cell*.5);
+    }
+  }
+
+  // Token labels
+  ctx.fillStyle=C.textMid;
+  const fs=Math.max(7,Math.min(10,cell*.5));
+  ctx.font=`${fs}px 'IBM Plex Mono',monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<N;i++){
+    ctx.fillText(toks[i], cell*.5, off+i*cell+cell*.5);
+    ctx.save();
+    ctx.translate(off+i*cell+cell*.5, off-cell*.5);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillText(toks[i],0,0);
+    ctx.restore();
+  }
+
+  // "Key" label centered over columns
+  const axfs=Math.max(8,Math.min(11,cell*.48));
+  ctx.fillStyle=C.orangeHi;
+  ctx.font=`700 ${axfs}px 'Outfit',sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Key', off + N*cell/2, Math.max(6, cell*.1));
+
+  // Highlight selected row
+  ctx.strokeStyle=C.orangeHi; ctx.lineWidth=2;
+  ctx.strokeRect(off+.5, off+selTok*cell+.5, N*cell-1, cell-1);
+
+  const tip = document.getElementById('attn-tip');
+  canvas.onmousemove=e=>{
+    const rc=canvas.getBoundingClientRect();
+    const x=(e.clientX-rc.left)*(sz/rc.width);
+    const y=(e.clientY-rc.top)*(sz/rc.height);
+    const col=Math.floor((x-off)/cell), row=Math.floor((y-off)/cell);
+    if(row>=0&&row<N&&col>=0&&col<N){
+      tip.style.display='block';
+      tip.textContent=`${toks[row]} → ${toks[col]}: ${weights[row][col].toFixed(3)}`;
+      tip.style.left=(col*cell+off+cell/2)+'px';
+      tip.style.top=(row*cell+off-28)+'px';
+    } else {
+      tip.style.display='none';
+    }
+  };
+  canvas.onmouseleave=()=>{ tip.style.display='none'; };
+}
+
+function renderScores(){
+  const toks=SENTS[curSent];
+  const {scores,weights}=computeAttn(toks,curHead);
+  const rawR=scores[selTok], wR=weights[selTok];
+  const maxR=Math.max(...rawR), minR=Math.min(...rawR);
+  const panel=document.getElementById('score-panel');
+  panel.innerHTML=`
+    <p style="font-size:.76rem;color:var(--text-light);margin-bottom:8px;font-family:var(--mono)">
+      Query: <strong style="color:var(--green)">${toks[selTok]}</strong>
+    </p>
+    <p style="font-size:.76rem;font-weight:600;color:var(--text-mid);margin-bottom:4px">Raw Q·K / √dₖ scores:</p>
+    ${toks.map((t,j)=>{
+      const pct=maxR===minR?50:((rawR[j]-minR)/(maxR-minR)*100);
+      return `<div class="score-wrap">
+        <div class="score-labels"><span>${t}</span><span>${rawR[j].toFixed(3)}</span></div>
+        <div class="score-outer"><div class="score-inner bar-green" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('')}
+    <p style="font-size:.76rem;font-weight:600;color:var(--text-mid);margin:12px 0 4px">softmax(Q·K<sup>T</sup> / √d<sub>k</sub>) — attention weights:</p>
+    ${toks.map((t,j)=>{
+      return `<div class="score-wrap">
+        <div class="score-labels"><span>${t}</span><span>${wR[j].toFixed(3)}</span></div>
+        <div class="score-outer"><div class="score-inner bar-orange" style="width:${wR[j]*100}%"></div></div>
+      </div>`;
+    }).join('')}`;
+}
+
+// ════════════════════════════════════════════════════════
+// TAB 3: SELF-SUPERVISION
+// ════════════════════════════════════════════════════════
+const SS_SENTS=[
+  ['the','cat','sat','on','the','warm','mat'],
+  ['a','large','dog','ran','quickly','past','the','house'],
+  ['the','old','owl','slept','in','the','hollow','tree'],
+];
+// SS_PREDS: {word: [[candidate, prob], ...]}
+const SS_PREDS=[
+  { // "the cat sat on the warm mat"
+    the:  [['a',0.58],['that',0.25],['this',0.12]],
+    cat:  [['dog',0.52],['cat',0.31],['rabbit',0.11]],
+    sat:  [['sat',0.61],['lay',0.24],['rested',0.10]],
+    on:   [['on',0.72],['upon',0.17],['over',0.08]],
+    warm: [['warm',0.55],['soft',0.28],['old',0.11]],
+    mat:  [['mat',0.63],['rug',0.22],['floor',0.09]],
+  },
+  { // "a large dog ran quickly past the house"
+    a:       [['a',0.54],['the',0.30],['one',0.11]],
+    large:   [['big',0.48],['large',0.34],['old',0.12]],
+    dog:     [['dog',0.57],['cat',0.26],['wolf',0.10]],
+    ran:     [['ran',0.64],['walked',0.21],['trotted',0.09]],
+    quickly: [['quickly',0.59],['swiftly',0.27],['fast',0.09]],
+    past:    [['past',0.53],['by',0.31],['around',0.10]],
+    the:     [['the',0.68],['a',0.19],['that',0.08]],
+    house:   [['house',0.61],['yard',0.24],['door',0.09]],
+  },
+  { // "the old owl slept in the hollow tree"
+    the:    [['the',0.65],['an',0.22],['a',0.09]],
+    old:    [['wise',0.47],['old',0.36],['great',0.12]],
+    owl:    [['owl',0.58],['bird',0.28],['hawk',0.09]],
+    slept:  [['slept',0.62],['rested',0.25],['sat',0.08]],
+    in:     [['in',0.70],['inside',0.19],['within',0.07]],
+    hollow: [['hollow',0.54],['old',0.29],['ancient',0.11]],
+    tree:   [['tree',0.66],['oak',0.22],['branch',0.08]],
+  },
+];
+
+function setSSMode(m){
+  ssMode=m;
+  document.getElementById('mlm-btn').classList.toggle('active',m==='mlm');
+  document.getElementById('clm-btn').classList.toggle('active',m==='clm');
+  document.getElementById('mlm-panel').style.display=m==='mlm'?'':'none';
+  document.getElementById('clm-panel').style.display=m==='clm'?'':'none';
+  maskedSet.clear(); clmSel=1;
+  renderSSTab();
+}
+function onSSSentChange(){
+  ssSent=+document.getElementById('ss-sent-sel').value;
+  maskedSet.clear(); clmSel=1; renderSSTab();
+}
+function renderSSTab(){
+  if(ssMode==='mlm'){renderMLM();}else{renderCLM();}
+}
+
+// MLM
+function renderMLM(){
+  const toks=SS_SENTS[ssSent];
+  const el=document.getElementById('ss-toks-mlm');
+  el.innerHTML='';
+  toks.forEach((t,i)=>{
+    const s=document.createElement('span');
+    const m=maskedSet.has(i);
+    s.className='ss-tok '+(m?'ss-mask':'ss-norm');
+    s.textContent=m?'[MASK]':t;
+    s.title=m?`unmask pos ${i+1} ("${t}")`:`mask pos ${i+1} ("${t}")`;
+    s.onclick=()=>{ if(maskedSet.has(i))maskedSet.delete(i);else maskedSet.add(i); renderSSTab(); };
+    el.appendChild(s);
+  });
+  renderMLMPreds(toks);
+  drawMLMCanvas(toks);
+}
+function renderMLMPreds(toks){
+  const panel=document.getElementById('mlm-preds');
+  if(maskedSet.size===0){
+    panel.innerHTML='<p style="font-size:.82rem;color:var(--text-light);font-style:italic">Click tokens above to mask them — see how the model would predict them.</p>';
+    return;
+  }
+  const P=SS_PREDS[ssSent];
+  let h='<div style="display:flex;flex-wrap:wrap;gap:10px">';
+  for(let idx=0; idx<toks.length; idx++){
+    if(!maskedSet.has(idx)) continue;
+    const word=toks[idx];
+    const cands=(P[word]||[[word,0.70],['?',0.20],['?',0.08]]);
+    h+=`<div class="card" style="padding:12px;min-width:130px">
+      <div style="font-family:var(--mono);font-size:.74rem;color:var(--text-light);margin-bottom:4px">pos ${idx+1}</div>
+      <div style="font-size:.88rem;font-weight:700;color:var(--green);margin-bottom:7px">[MASK] → ?</div>
+      ${cands.map(([c,p],i)=>{
+        return `<div style="display:flex;justify-content:space-between;font-size:.78rem;font-family:var(--mono);margin:2px 0">
+          <span style="color:${i===0?'var(--orange-hi)':'var(--text-mid)'}">${c}</span>
+          <span style="color:var(--text-light)">${p.toFixed(2)}</span>
+        </div>`;
+      }).join('')}
+      <div style="font-size:.7rem;color:var(--green-lt);margin-top:5px">✓ actual: "${word}"</div>
+    </div>`;
+  }
+  h+='</div>';
+  panel.innerHTML=h;
+}
+function drawMLMCanvas(toks){
+  const canvas=document.getElementById('mlm-canvas');
+  if(!canvas) return;
+  canvas.style.display='block';
+  const N=toks.length;
+  const W=Math.min(320, canvas.parentElement.clientWidth-10);
+  const topPad=10;
+  const cell=Math.floor(W/(N+1));
+  const off=cell+topPad;
+  const canvasW=off+N*cell+2;
+  const canvasH=off+N*cell+2;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvasW*dpr; canvas.height=canvasH*dpr;
+  canvas.style.width=canvasW+'px'; canvas.style.height=canvasH+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,canvasW,canvasH);
+
+  // Draw cells
+  for(let i=0;i<N;i++){
+    for(let j=0;j<N;j++){
+      const rowMasked=maskedSet.has(i);
+      const colMasked=maskedSet.has(j);
+      let fill;
+      if(rowMasked && colMasked) fill='#FAE8D0';  // mask attends to mask
+      else if(colMasked)         fill='#FEF3E8';  // normal attends to [M] column
+      else if(rowMasked)         fill='#E5EFD8';  // mask attends to normal
+      else                       fill=C.surface2; // normal attends to normal
+      ctx.fillStyle=fill;
+      ctx.fillRect(off+j*cell+1, off+i*cell+1, cell-2, cell-2);
+
+      // ✓ in all cells
+      ctx.fillStyle=(rowMasked||colMasked)?'rgba(184,90,16,.4)':'rgba(86,122,56,.3)';
+      ctx.font=`${Math.max(7,Math.min(10,cell*.45))}px 'IBM Plex Mono',monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('✓', off+j*cell+cell/2, off+i*cell+cell/2);
+    }
+  }
+
+  // Token labels
+  const fs=Math.max(7,Math.min(10,cell*.5));
+  for(let i=0;i<N;i++){
+    const isMasked=maskedSet.has(i);
+    ctx.fillStyle=isMasked?C.orange:C.textMid;
+    ctx.font=`${isMasked?'700 ':''}${fs}px 'IBM Plex Mono',monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(isMasked?'[M]':toks[i], cell*.5, off+i*cell+cell*.5);
+    ctx.save();
+    ctx.translate(off+i*cell+cell*.5, off-cell*.5+topPad/2);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillText(isMasked?'[M]':toks[i], 0, 0);
+    ctx.restore();
+  }
+
+  ctx.fillStyle=C.orangeHi;
+  ctx.font=`700 ${Math.max(8,Math.min(11,cell*.48))}px 'Outfit',sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Key', off+N*cell/2, Math.max(6,cell*.1));
+}
+
+function drawCLMCanvas(toks){
+  const canvas=document.getElementById('clm-canvas');
+  const N=toks.length;
+  const sz=Math.min(N*46,320);
+  const topPad=10;
+  const cell=Math.floor(sz/(N+1)), off=cell+topPad;
+  const canvasW=off+N*cell+2, canvasH=off+N*cell+2;
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvasW*dpr; canvas.height=canvasH*dpr;
+  canvas.style.width=canvasW+'px'; canvas.style.height=canvasH+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,canvasW,canvasH);
+
+  for(let i=0;i<N;i++){
+    for(let j=0;j<N;j++){
+      const allowed=j<=i, isCurRow=i===clmSel;
+      if(!allowed){
+        ctx.fillStyle='#E8E2D0';
+        ctx.fillRect(off+j*cell+1,off+i*cell+1,cell-2,cell-2);
+        ctx.fillStyle=C.border;
+        ctx.font=`${Math.max(7,cell*.4)}px 'IBM Plex Mono',monospace`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('✕',off+j*cell+cell/2,off+i*cell+cell/2);
+      } else {
+        const w=isCurRow?(1-j/N*.5):.3;
+        if(isCurRow){
+          const rv=Math.round(36+(250-36)*(1-w));
+          const gv=Math.round(61+(247-61)*(1-w));
+          const bv=Math.round(24+(239-24)*(1-w));
+          ctx.fillStyle=`rgb(${rv},${gv},${bv})`;
+        } else {
+          ctx.fillStyle=`rgba(86,122,56,${w*.5})`;
+        }
+        ctx.fillRect(off+j*cell+1,off+i*cell+1,cell-2,cell-2);
+      }
+    }
+  }
+
+  // Labels
+  const fs=Math.max(8,Math.min(11,cell*.5));
+  ctx.fillStyle=C.textMid;
+  ctx.font=`${fs}px 'IBM Plex Mono',monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<N;i++){
+    ctx.fillText(toks[i].substring(0,5),cell*.5,off+i*cell+cell*.5);
+    ctx.save();
+    ctx.translate(off+i*cell+cell*.5, off-cell*.5+topPad/2);
+    ctx.rotate(-Math.PI/4);
+    ctx.fillText(toks[i].substring(0,5),0,0);
+    ctx.restore();
+  }
+
+  // Key label
+  ctx.fillStyle=C.orangeHi;
+  ctx.font=`700 ${Math.max(8,Math.min(11,cell*.48))}px 'Outfit',sans-serif`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('Key', off+N*cell/2, Math.max(6,cell*.1));
+
+  // Highlight selected row with orange outline
+  ctx.strokeStyle=C.orangeHi; ctx.lineWidth=2;
+  ctx.strokeRect(off+0.5, off+clmSel*cell+0.5, N*cell-1, cell-1);
+}
+// CLM
+function renderCLM(){
+  const toks=SS_SENTS[ssSent];
+  const el=document.getElementById('ss-toks-clm');
+  el.innerHTML='';
+  toks.forEach((t,i)=>{
+    const s=document.createElement('span');
+    const isPast=i<clmSel, isCur=i===clmSel, isFut=i>clmSel;
+    s.className='ss-tok '+(isCur?'ss-pred':isPast?'ss-ctx':'ss-fut');
+    s.textContent=t;
+    s.title=isFut?'future (masked)':(isCur?'to predict':'available context');
+    if(i>0) s.onclick=()=>{ clmSel=i; renderSSTab(); };
+    el.appendChild(s);
+  });
+  renderCLMPreds(toks);
+  drawCLMCanvas(toks);
+}
+function renderCLMPreds(toks){
+  const panel=document.getElementById('clm-preds');
+  if(clmSel>=toks.length)return;
+  const target=toks[clmSel];
+  const P=SS_PREDS[ssSent];
+  const ctx=toks.slice(0,clmSel).join(' ');
+  const cands=(P[target]||[[target,0.67],['?',0.22],['?',0.08]]);
+  panel.innerHTML=`<div class="card" style="padding:13px;max-width:440px">
+    <div style="font-size:.76rem;color:var(--text-light);font-family:var(--mono);margin-bottom:3px">Context so far:</div>
+    <div style="font-family:var(--mono);font-size:.88rem;color:var(--green);margin-bottom:10px">"${ctx||'(start of sequence)'}"</div>
+    <div style="font-size:.76rem;color:var(--text-light);font-family:var(--mono);margin-bottom:4px">Next-token distribution:</div>
+    ${cands.map(([c,p],i)=>{
+      return `<div style="display:flex;justify-content:space-between;font-size:.8rem;font-family:var(--mono);margin:3px 0">
+        <span style="color:${i===0?'var(--orange-hi)':'var(--text-mid)'}">${c}</span>
+        <span style="color:var(--text-light)">${p.toFixed(2)}</span>
+      </div>`;
+    }).join('')}
+    <div style="font-size:.7rem;color:var(--green-lt);margin-top:5px">✓ actual next token: "${target}"</div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// TAB 4: VISION TRANSFORMER
+// ════════════════════════════════════════════════════════
+const VIT_HEAD_DESC=[
+  'Head 1 — proximity: patches attend to their spatial neighbors',
+  'Head 2 — horizontal: patches attend to others in the same row',
+  'Head 3 — vertical: patches attend to others in the same column',
+  'Head 4 — texture: patches attend to regions with similar color structure',
+];
+
+let vitPatchColors = []; // [{r,g,b}] per patch, recomputed when image/patch changes
+
+function computePatchColors(P){
+  const tmp=document.createElement('canvas');
+  const sz=P*40;
+  tmp.width=tmp.height=sz;
+  const tc=tmp.getContext('2d');
+  drawBaseImage(tc,vitImg,P,sz,sz);
+  const pw=40;
+  vitPatchColors=[];
+  for(let i=0;i<P*P;i++){
+    const r=Math.floor(i/P), c=i%P;
+    const d=tc.getImageData(c*pw,r*pw,pw,pw).data;
+    let rs=0,gs=0,bs=0; const cnt=d.length/4;
+    for(let p=0;p<d.length;p+=4){rs+=d[p];gs+=d[p+1];bs+=d[p+2];}
+    vitPatchColors.push({r:rs/cnt,g:gs/cnt,b:bs/cnt});
+  }
+}
+
+function makeVitAttn(head, P){
+  const N=P*P;
+  const w=Array.from({length:N},(_,i)=>Array.from({length:N},(_,j)=>{
+    const ri=Math.floor(i/P),ci=i%P, rj=Math.floor(j/P),cj=j%P;
+    if(head===0){ const d=Math.abs(ri-rj)+Math.abs(ci-cj); return Math.exp(-d*.9); }
+    if(head===1){ return ri===rj?1.0:.08; }
+    if(head===2){ return ci===cj?1.0:.08; }
+    // Head 4: color similarity — patches with similar average color attend to each other
+    if(vitPatchColors.length===N){
+      const a=vitPatchColors[i], b=vitPatchColors[j];
+      const dist=Math.sqrt((a.r-b.r)**2+(a.g-b.g)**2+(a.b-b.b)**2);
+      return Math.exp(-dist/60);
+    }
+    return 1;
+  }));
+  return w.map(row=>{ const s=row.reduce((a,b)=>a+b,0); return row.map(v=>v/s); });
+}
+
+function drawBaseImage(ctx, imgIdx, P, W, H){
+  const pw=W/P, ph=H/P;
+  if(imgIdx===0){
+    // Colorful shapes
+    ctx.fillStyle='#EEEADC'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#C05E12'; ctx.beginPath(); ctx.arc(W*.24,H*.28,W*.14,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#3B6227'; ctx.fillRect(W*.54,H*.08,W*.34,W*.34);
+    ctx.fillStyle='#BF9818'; ctx.beginPath(); ctx.moveTo(W*.5,H*.58); ctx.lineTo(W*.18,H*.93); ctx.lineTo(W*.82,H*.93); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#3A5FA0'; ctx.beginPath(); ctx.arc(W*.83,H*.64,W*.09,0,Math.PI*2); ctx.fill();
+  } else if(imgIdx===1){
+    const sky=ctx.createLinearGradient(0,0,0,H*.55);
+    sky.addColorStop(0,'#6AA8C8'); sky.addColorStop(1,'#B8D8EC');
+    ctx.fillStyle=sky; ctx.fillRect(0,0,W,H*.55);
+    ctx.fillStyle='#72924A'; ctx.fillRect(0,H*.55,W,H*.45);
+    ctx.fillStyle='#F0C030'; ctx.beginPath(); ctx.arc(W*.77,H*.19,W*.1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#527A30'; ctx.beginPath(); ctx.arc(W*.3,H*.58,W*.36,Math.PI,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#3A2810'; ctx.fillRect(W*.12,H*.44,W*.04,H*.2);
+    ctx.fillStyle='#3B6227'; ctx.beginPath(); ctx.arc(W*.14,H*.4,W*.1,0,Math.PI*2); ctx.fill();
+  } else {
+    // Fixed 8×8 checkerboard independent of patch grid size
+    const cols=['#C05E12','#3B6227','#BF9818','#3A5FA0'];
+    const tiles=8;
+    const tw=W/tiles, th=H/tiles;
+    for(let r=0;r<tiles;r++) for(let c=0;c<tiles;c++){
+      ctx.fillStyle=cols[(r+c)%cols.length];
+      ctx.fillRect(c*tw,r*th,tw,th);
+    }
+  }
+}
+
+function drawVitOrig(){
+  const canvas=document.getElementById('vit-orig');
+  const dpr=window.devicePixelRatio||1;
+  const W=240, H=240;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  drawBaseImage(ctx,vitImg,vitPatch,W,H);
+  // Grid
+  const pw=W/vitPatch, ph=H/vitPatch;
+  ctx.strokeStyle='rgba(255,255,255,.75)'; ctx.lineWidth=1.5;
+  for(let i=1;i<vitPatch;i++){
+    ctx.beginPath(); ctx.moveTo(i*pw,0); ctx.lineTo(i*pw,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*ph); ctx.lineTo(W,i*ph); ctx.stroke();
+  }
+  // Highlight selected patch
+  const sr=Math.floor(vitSelPatch/vitPatch), sc=vitSelPatch%vitPatch;
+  ctx.strokeStyle=C.orangeHi; ctx.lineWidth=3;
+  ctx.strokeRect(sc*pw+1.5, sr*ph+1.5, pw-3, ph-3);
+}
+
+function drawVitAttn(){
+  const canvas=document.getElementById('vit-attn');
+  const dpr=window.devicePixelRatio||1;
+  const W=240, H=240;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+  // Base image faded
+  drawBaseImage(ctx,vitImg,vitPatch,W,H);
+  ctx.fillStyle='rgba(250,247,239,.5)'; ctx.fillRect(0,0,W,H);
+
+  const P=vitPatch, N=P*P;
+  const pw=W/P, ph=H/P;
+  const attn=makeVitAttn(vitHead,P);
+  const row=attn[vitSelPatch];
+  const mx=Math.max(...row);
+
+  for(let i=0;i<N;i++){
+    const r=Math.floor(i/P), c=i%P, w=row[i]/mx;
+    const rv=Math.round(36+(224-36)*w);
+    const gv=Math.round(61+(117-61)*w);
+    ctx.fillStyle=`rgba(${rv},${gv},24,${.18+.6*w})`;
+    ctx.fillRect(c*pw,r*ph,pw,ph);
+  }
+  // Grid
+  ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=1;
+  for(let i=1;i<P;i++){
+    ctx.beginPath(); ctx.moveTo(i*pw,0); ctx.lineTo(i*pw,H); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,i*ph); ctx.lineTo(W,i*ph); ctx.stroke();
+  }
+  // Labels
+  ctx.font=`${Math.max(7,Math.min(10,pw*.35))}px 'IBM Plex Mono',monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<N;i++){
+    const r=Math.floor(i/P), c=i%P, w=row[i];
+    ctx.fillStyle=w>.08?'#fff':'rgba(255,255,255,.5)';
+    ctx.fillText(w.toFixed(2),c*pw+pw/2,r*ph+ph/2);
+  }
+  // Selected patch border
+  const sr=Math.floor(vitSelPatch/P), sc=vitSelPatch%P;
+  ctx.strokeStyle=C.orangeHi; ctx.lineWidth=3;
+  ctx.strokeRect(sc*pw+1.5,sr*ph+1.5,pw-3,ph-3);
+}
+
+function buildPatchGrid(){
+  const P=vitPatch, N=P*P;
+  const grid=document.getElementById('patch-grid');
+  grid.innerHTML='';
+  // Extract average color per patch from a temp canvas
+  const tmp=document.createElement('canvas');
+  tmp.width=tmp.height=P*40;
+  const tc=tmp.getContext('2d');
+  drawBaseImage(tc,vitImg,P,P*40,P*40);
+  for(let i=0;i<N;i++){
+    const r=Math.floor(i/P), c=i%P, pw=40;
+    const d=tc.getImageData(c*pw,r*pw,pw,pw).data;
+    let rs=0,gs=0,bs=0; const cnt=d.length/4;
+    for(let p=0;p<d.length;p+=4){rs+=d[p];gs+=d[p+1];bs+=d[p+2];}
+    const div=document.createElement('div');
+    div.className='ptok'+(i===vitSelPatch?' sel':'');
+    div.style.background=`rgb(${Math.round(rs/cnt)},${Math.round(gs/cnt)},${Math.round(bs/cnt)})`;
+    div.title=`Patch #${i+1} (row ${r+1}, col ${c+1})`;
+    div.onclick=()=>{ vitSelPatch=i; renderVitTab(); };
+    grid.appendChild(div);
+  }
+}
+
+function drawVitSeq(){
+  const canvas=document.getElementById('vit-seq');
+  const dpr=window.devicePixelRatio||1;
+  const P=vitPatch, N=P*P;
+  const W=Math.min(700,canvas.parentElement.clientWidth-10);
+  const H=60;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  const tw=Math.min(36,(W-16)/(N+1.5));
+  const th=28, sy=14, sx=6;
+
+  // CLS
+  ctx.fillStyle=C.orange; ctx.beginPath();
+  ctx.roundRect(sx,sy,tw-2,th,3); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='7px IBM Plex Mono';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('[CLS]',sx+(tw-2)/2,sy+th/2);
+
+  // Arrow
+  ctx.fillStyle=C.border;
+  ctx.fillRect(sx+tw,sy+th/2-1,5,2);
+
+  // Patch tokens
+  const tmp=document.createElement('canvas');
+  tmp.width=tmp.height=P*40;
+  const tc=tmp.getContext('2d');
+  drawBaseImage(tc,vitImg,P,P*40,P*40);
+  const pw2=40;
+  vitSeqHitRegions=[];
+  for(let i=0;i<N;i++){
+    const r=Math.floor(i/P), c=i%P;
+    const d=tc.getImageData(c*pw2,r*pw2,pw2,pw2).data;
+    let rs=0,gs=0,bs=0; const cnt=d.length/4;
+    for(let p=0;p<d.length;p+=4){rs+=d[p];gs+=d[p+1];bs+=d[p+2];}
+    const x=sx+tw+7+i*(tw+2);
+    vitSeqHitRegions.push({x, w:tw-2, patchIdx:i});
+    ctx.fillStyle=`rgb(${Math.round(rs/cnt)},${Math.round(gs/cnt)},${Math.round(bs/cnt)})`;
+    ctx.fillRect(x,sy,tw-2,th);
+    ctx.strokeStyle=i===vitSelPatch?C.orangeHi:'rgba(200,200,200,.45)';
+    ctx.lineWidth=i===vitSelPatch?2:1;
+    ctx.strokeRect(x,sy,tw-2,th);
+    ctx.fillStyle='rgba(255,255,255,.85)';
+    ctx.font=`${Math.max(6,Math.min(9,tw*.38))}px IBM Plex Mono`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(i+1),x+(tw-2)/2,sy+th/2);
+  }
+  ctx.fillStyle=C.textLt; ctx.font='9px Outfit,sans-serif';
+  ctx.textAlign='left'; ctx.fillText('←CLS   Patch tokens in raster order (color = avg patch color; actual token encodes full patch content) →',sx,H-4);
+}
+
+function selVitImg(i){
+  vitImg=i; vitSelPatch=0;
+  ['vbtn-0','vbtn-1','vbtn-2'].forEach((id,j)=>{
+    document.getElementById(id).className='btn '+(j===i?'btn-g':'btn-ol');
+  });
+  renderVitTab();
+}
+function onPatchChange(v){
+  vitPatch=v; vitSelPatch=0;
+  document.getElementById('patch-lbl').textContent=`${v}×${v}`;
+  renderVitTab();
+}
+function selVitHead(i,btn){
+  vitHead=i;
+  document.querySelectorAll('#vit-head-sel .hbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('vit-head-desc').textContent=VIT_HEAD_DESC[i];
+  drawVitAttn();
+}
+function renderVitTab(){
+  computePatchColors(vitPatch);
+  drawVitOrig();
+  drawVitAttn();
+  document.getElementById('vit-head-desc').textContent=VIT_HEAD_DESC[vitHead];
+  drawVitSeq();
+}
+
+function initVitCanvas(){
+  const orig=document.getElementById('vit-orig');
+  orig.addEventListener('click', e=>{
+    const rect=orig.getBoundingClientRect();
+    const x=e.clientX-rect.left, y=e.clientY-rect.top;
+    const W=rect.width, H=rect.height;
+    const col=Math.floor(x/W*vitPatch);
+    const row=Math.floor(y/H*vitPatch);
+    vitSelPatch=row*vitPatch+col;
+    renderVitTab();
+  });
+
+  const seq=document.getElementById('vit-seq');
+  seq.style.cursor='pointer';
+  seq.addEventListener('click', e=>{
+    const rect=seq.getBoundingClientRect();
+    const x=e.clientX-rect.left;
+    const scaleX=seq.clientWidth/rect.width;
+    for(const {x:hx, w, patchIdx} of vitSeqHitRegions){
+      if(x>=hx && x<=hx+w){
+        vitSelPatch=patchIdx;
+        renderVitTab();
+        return;
+      }
+    }
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// ── Tooltip click toggle ─────────────────────────────────
+document.addEventListener('click', e => {
+  const t = e.target.closest('.tip');
+  document.querySelectorAll('.tip.tip-open').forEach(el => { if(el !== t) el.classList.remove('tip-open'); });
+  if(t) t.classList.toggle('tip-open');
+});
+
+// ── Embedding heatmap ────────────────────────────────────
+const EMB_DIMS = ['animate','concrete','verb','func/prep','adj/adv','location','subj','obj'];
+
+function drawEmbMap(){
+  const toks = SENTS[curSent];
+  const canvas = document.getElementById('emb-map');
+  if(!canvas) return;
+  const N = toks.length, D = EMB_DIMS.length;
+  const wrap = canvas.parentElement;
+  const cellW = Math.max(30, Math.floor((wrap.clientWidth - 70) / D));
+  const cellH = 24;
+  const offX = 68, offY = 56; // extra top headroom for rotated labels
+  const W = offX + D * cellW + 2;
+  const H = offY + N * cellH + 2;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // Cells
+  toks.forEach((tok, i) => {
+    const emb = getEmb(tok);
+    emb.forEach((v, j) => {
+      const rv = Math.round(250 + (36-250)*v);
+      const gv = Math.round(247 + (61-247)*v);
+      const bv = Math.round(239 + (24-239)*v);
+      ctx.fillStyle = `rgb(${rv},${gv},${bv})`;
+      ctx.fillRect(offX + j*cellW + 1, offY + i*cellH + 1, cellW-2, cellH-2);
+      const brightness = 0.299*rv + 0.587*gv + 0.114*bv;
+      ctx.fillStyle = brightness < 140 ? 'rgba(255,255,255,.9)' : 'rgba(28,28,18,.5)';
+      ctx.font = `${Math.max(7,Math.min(10,cellW*.32))}px 'IBM Plex Mono',monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(v.toFixed(1), offX + j*cellW + cellW/2, offY + i*cellH + cellH/2);
+    });
+    // row label
+    ctx.fillStyle = i === selTok ? C.green : C.textMid;
+    ctx.font = `${i===selTok?'700 ':''}10px 'IBM Plex Mono',monospace`;
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(tok, offX - 5, offY + i*cellH + cellH/2);
+  });
+
+  // Column labels (rotated, with ample headroom)
+  ctx.fillStyle = C.textMid;
+  ctx.font = `9px 'IBM Plex Mono',monospace`;
+  EMB_DIMS.forEach((d, j) => {
+    ctx.save();
+    ctx.translate(offX + j*cellW + cellW/2, offY - 4);
+    ctx.rotate(-Math.PI/2.5);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(d, 0, 0);
+    ctx.restore();
+  });
+}
+
+// INIT & RESIZE
+// ════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  renderAttnTab();
+  renderSSTab();
+  renderVitTab();
+  drawEmbMap();
+  initVitCanvas();
+  document.getElementById('vbtn-0').className='btn btn-g';
+});
+window.addEventListener('resize',()=>{
+  if(curTab===1){drawHeatmap(); drawEmbMap();}
+  if(curTab===2){renderSSTab();}
+  if(curTab===3){renderVitTab();}
+});
+</script>
+</body>
+</html>
