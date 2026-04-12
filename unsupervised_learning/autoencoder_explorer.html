@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoencoder Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+<style>
+:root {
+  --cream:#fdf8f2; --cream-d:#ede4d3; --forest:#2d5016; --forest2:#3a6b1d; --forest3:#4e8a28;
+  --orange:#d97020; --orange2:#e8892e; --text:#1c1c1c; --muted:#666; --border:#d2c7b4;
+  --white:#fff; --font:'Outfit',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--cream);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.65;}
+
+/* ─── HEADER ─────────────────────────────────────────── */
+header {
+  background:var(--forest);color:#fff;
+  padding:.85rem 1.75rem;
+  display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;
+}
+.hdr-main { flex:1; min-width:0; }
+header h1 { font-size:1.2rem;font-weight:600;letter-spacing:-.02em;line-height:1.3; }
+.hdr-sub  { font-family:var(--mono);font-size:.67rem;opacity:.6;margin-top:.18rem; }
+/* two-line copyright block (wide >780px) */
+.hdr-copy-wide {
+  font-family:var(--mono);font-size:.62rem;opacity:.58;text-align:right;
+  flex-shrink:0;line-height:1.7;
+}
+.hdr-copy-wide a{color:rgba(255,255,255,.75);text-decoration:underline;}
+/* one-line copyright under subtitle (medium 420–780px) */
+.hdr-copy-inline {
+  display:none;font-family:var(--mono);font-size:.62rem;opacity:.55;margin-top:.32rem;
+}
+.hdr-copy-inline a{color:rgba(255,255,255,.7);text-decoration:underline;}
+/* two-line copyright under subtitle (narrow <420px) */
+.hdr-copy-narrow {
+  display:none;font-family:var(--mono);font-size:.62rem;opacity:.55;margin-top:.32rem;line-height:1.7;
+}
+.hdr-copy-narrow a{color:rgba(255,255,255,.7);text-decoration:underline;}
+
+@media(max-width:419px){
+  header{flex-direction:column;gap:.25rem;}
+  .hdr-copy-wide{display:none;}
+  .hdr-copy-narrow{display:block;}
+}
+@media(min-width:420px) and (max-width:780px){
+  .hdr-copy-wide{display:none;}
+  .hdr-copy-inline{display:block;}
+}
+
+/* ─── TABS ───────────────────────────────────────────── */
+.tab-bar{background:var(--forest);display:flex;padding:0 1.75rem;}
+.tab-btn{background:none;border:none;border-bottom:3px solid transparent;
+  color:rgba(255,255,255,.5);font-family:var(--font);font-size:.875rem;font-weight:500;
+  padding:.5rem 1.1rem;cursor:pointer;transition:color .15s,border-color .15s;margin-bottom:-1px;}
+.tab-btn.active{color:#fff;border-bottom-color:var(--orange);}
+.tab-btn:hover:not(.active){color:rgba(255,255,255,.85);}
+.tab-panel{display:none;padding:1.4rem 1.75rem 2rem;}
+.tab-panel.active{display:block;}
+/* Tab dropdown for narrow screens */
+.tab-select-wrap{display:none;background:var(--forest);padding:.5rem 1.1rem;}
+.tab-select-wrap select{
+  font-family:var(--font);font-size:.875rem;font-weight:500;
+  background:rgba(255,255,255,.12);color:#fff;
+  border:1px solid rgba(255,255,255,.3);border-radius:5px;
+  padding:.4rem .75rem;width:100%;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(255,255,255,.7)' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .65rem center;padding-right:2rem;
+}
+.tab-select-wrap select option{background:var(--forest);color:#fff;}
+@media(max-width:400px){
+  .tab-bar{display:none;}
+  .tab-select-wrap{display:block;}
+}
+
+/* ─── LOADING ─────────────────────────────────────────── */
+#loading-overlay{position:fixed;inset:0;background:rgba(253,248,242,.94);display:flex;
+  flex-direction:column;align-items:center;justify-content:center;z-index:200;gap:.9rem;}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--forest);
+  border-radius:50%;animation:spin .75s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loading-msg{font-family:var(--mono);font-size:.8rem;color:var(--muted);text-align:center;max-width:300px;}
+
+/* ─── SHARED ─────────────────────────────────────────── */
+.card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;}
+.ctitle{font-size:.71rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--forest);margin-bottom:.7rem;}
+.note-box{background:#f0f7ea;border-left:3px solid var(--forest3);padding:.6rem .85rem;
+  border-radius:0 5px 5px 0;font-size:.81rem;line-height:1.5;margin-top:.7rem;}
+.warn-box{background:#fff5e8;border-left:3px solid var(--orange);padding:.6rem .85rem;
+  border-radius:0 5px 5px 0;font-size:.81rem;line-height:1.5;margin-top:.7rem;}
+.note-box strong,.warn-box strong{font-weight:600;}
+
+/* ─── ARCH TAB ───────────────────────────────────────── */
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:960px;}
+.arch-grid .span2{grid-column:1/-1;}
+@media(max-width:660px){.arch-grid{grid-template-columns:1fr;}.arch-grid .span2{grid-column:1;}}
+#bowtie-svg{width:100%;max-width:740px;display:block;margin:0 auto;}
+table.ltbl{width:100%;border-collapse:collapse;font-size:.81rem;}
+table.ltbl th{text-align:left;font-size:.69rem;font-weight:600;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted);padding:.32rem .5rem;border-bottom:2px solid var(--border);}
+table.ltbl td{padding:.32rem .5rem;border-bottom:1px solid #ece6d8;font-family:var(--mono);font-size:.77rem;}
+table.ltbl td.role{font-family:var(--font);color:var(--muted);font-size:.79rem;}
+table.ltbl tr.bn td{background:#fff6ec;}
+table.ltbl tr.bn td.role{color:var(--orange);font-weight:600;font-family:var(--mono);}
+
+/* ─── TRAIN TAB ──────────────────────────────────────── */
+.tlayout{display:flex;flex-direction:column;gap:1rem;max-width:1100px;overflow-x:clip;}
+
+/* Top row: controls card + mini bowtie card side by side */
+.top-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:stretch;}
+@media(max-width:700px){.top-row{grid-template-columns:1fr;} .mini-bowtie-card{order:-1;}}
+.ctrl-row{display:flex;flex-direction:column;gap:.55rem;
+  padding:.8rem 1rem;background:var(--white);border:1px solid var(--border);border-radius:8px;}
+/* Mini bowtie card */
+.mini-bowtie-card{background:var(--white);border:1px solid var(--border);border-radius:8px;
+  padding:.7rem .9rem;display:flex;flex-direction:column;gap:.3rem;}
+#mini-bowtie-svg{width:100%;display:block;flex:1;}
+.btn{border:none;border-radius:5px;padding:.42rem .95rem;font-family:var(--font);font-size:.82rem;
+  font-weight:500;cursor:pointer;transition:background .14s,opacity .14s;white-space:nowrap;}
+/* Custom instant tooltip */
+.has-tip{position:relative;}
+.has-tip::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+  background:rgba(20,20,20,0.93);color:#fff;
+  font-family:var(--font);font-size:.72rem;font-weight:400;line-height:1.45;
+  padding:.42rem .7rem;border-radius:5px;width:230px;text-align:center;
+  z-index:200;pointer-events:none;white-space:normal;
+  opacity:0;transition:opacity .08s;
+}
+.has-tip::before{
+  content:'';position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(20,20,20,0.93);
+  z-index:201;pointer-events:none;
+  opacity:0;transition:opacity .08s;
+}
+.has-tip:hover::after,.has-tip:hover::before{opacity:1;}
+/* Dashed underline hint on step button */
+#btn-step{text-decoration:underline;text-decoration-style:dashed;
+  text-decoration-color:rgba(255,255,255,0.45);text-underline-offset:3px;}
+.btn-g{background:var(--forest);color:#fff;}.btn-g:hover{background:var(--forest2);}
+.btn-o{background:var(--orange);color:#fff;}.btn-o:hover{background:var(--orange2);}
+.btn-gh{background:var(--cream-d);color:var(--text);}.btn-gh:hover{background:#dfd5c2;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.chip{font-family:var(--mono);font-size:.74rem;padding:.25rem .52rem;background:var(--cream-d);border-radius:4px;color:var(--muted);}
+.chip b{color:var(--text);font-weight:500;}
+.mbadge{padding:.25rem .65rem;border-radius:20px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;}
+.b-idle {background:var(--cream-d);color:var(--muted);}
+.b-train{background:#fff2cc;color:#7a5800;}
+.b-inf  {background:#e0f5e0;color:#1a5c1a;}
+.b-busy {background:#e8f0ff;color:#1a3a7a;}
+
+/* triplet */
+.triplet{display:grid;grid-template-columns:auto 1fr;gap:.9rem;align-items:stretch;}
+/* Input + Reconstruction stacked on the left */
+.img-stack{display:flex;flex-direction:column;gap:.9rem;}
+.img-panel{background:var(--white);border:1px solid var(--border);border-radius:8px;
+  padding:.8rem .95rem;display:flex;flex-direction:column;align-items:center;gap:.35rem;}
+.iplabel{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);}
+.ipdim  {font-family:var(--mono);font-size:.62rem;color:var(--muted);opacity:.75;}
+canvas.mdisp{image-rendering:pixelated;border:1px solid var(--border);border-radius:3px;width:84px;height:84px;}
+.dtag{font-family:var(--mono);font-size:.7rem;color:var(--muted);}
+
+/* encoding space panel (middle of triplet) */
+.enc-panel{background:var(--white);border:1px solid var(--border);border-radius:8px;
+  padding:.75rem 1rem;display:flex;flex-direction:column;gap:.3rem;}
+.enc-subtitle{font-size:.67rem;color:var(--muted);line-height:1.4;text-align:center;}
+.enc-subtitle b{color:var(--orange);}
+/* Canvas + legend side by side inside the panel */
+.enc-inner{display:flex;gap:.5rem;align-items:stretch;flex:1;min-height:180px;}
+/* Wrapper determines layout; canvas fills it absolutely so cv.width/height
+   changes don't feed back into the flex layout (fixes the growing-axes bug) */
+.scat-wrap{flex:1;min-width:0;min-height:200px;position:relative;
+  border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+canvas.mid-scat-cv{position:absolute;inset:0;width:100%;height:100%;
+  cursor:crosshair;display:block;}
+/* HTML legend (clickable class toggles) */
+.enc-leg{display:flex;flex-direction:column;padding:.15rem 0;min-width:54px;}
+.enc-leg-items{flex:1;display:flex;flex-direction:column;justify-content:space-evenly;}
+.leg-ctrl-btn{font-family:var(--font);font-size:.63rem;font-weight:600;
+  background:var(--forest);color:#fff;border:none;border-radius:3px;
+  padding:.22rem .3rem;cursor:pointer;transition:background .14s;white-space:nowrap;width:100%;}
+.leg-ctrl-btn:hover{background:var(--forest2);}
+.leg-ctrl-btn.ghost{background:var(--cream-d);color:var(--text);}
+.leg-ctrl-btn.ghost:hover{background:#dfd5c2;}
+.leg-item{display:flex;align-items:center;gap:5px;cursor:pointer;border-radius:3px;
+  padding:2px 4px;transition:opacity .15s;user-select:none;}
+.leg-item:hover{background:var(--cream-d);}
+.leg-item.off{opacity:.28;}
+.leg-swatch{width:11px;height:11px;border-radius:2px;flex-shrink:0;}
+.leg-num{font-family:var(--font);font-size:.75rem;color:var(--text);}
+.code-coord{font-family:var(--mono);font-size:.75rem;color:var(--text);text-align:center;margin-top:.1rem;}
+.status-ln{font-family:var(--mono);font-size:.68rem;color:var(--muted);text-align:center;padding-top:.15rem;}
+
+/* sample row */
+.samp-lbl{font-size:.77rem;color:var(--muted);}
+.btn-d{min-width:28px;padding:.28rem .42rem;font-size:.77rem;border-radius:4px;color:#fff;
+  border:none;cursor:pointer;font-family:var(--font);transition:opacity .12s;}
+.btn-d:hover:not(:disabled){opacity:.78;}
+.btn-d:disabled{cursor:not-allowed;}
+
+@media(max-width:600px){
+  /* Narrow: input + reconstruction side by side ABOVE the scatter */
+  .triplet{grid-template-columns:1fr;}
+  .img-stack{flex-direction:row;gap:.6rem;}
+  .img-stack .img-panel{flex:1;}
+}
+
+/* loss card (full width below triplet) */
+canvas.losscv{display:block;width:100%;height:130px;}
+
+/* decoded panel */
+#dec-panel{display:none;background:var(--white);border:1px solid var(--orange);border-radius:8px;
+  padding:.8rem 1rem;align-items:center;gap:1rem;flex-wrap:wrap;}
+#dec-panel.vis{display:flex;}
+.dec-coord{font-family:var(--mono);font-size:.8rem;color:var(--orange);font-weight:500;}
+.dec-note{font-size:.78rem;color:var(--muted);line-height:1.5;flex:1;min-width:0;}
+.dec-epoch{font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:.15rem;}
+
+/* footer */
+footer{text-align:center;padding:.65rem 1.75rem;font-family:var(--mono);font-size:.63rem;
+  color:var(--muted);border-top:1px solid var(--border);margin-top:1.5rem;}
+footer a{color:var(--forest2);}
+/* On very narrow screens drop separator, wrap MIT License to own line */
+.foot-sep{margin:0 .3rem;}
+@media(max-width:360px){
+  .foot-sep{display:none;}
+  .foot-lic::before{content:'\a';white-space:pre;}
+}
+</style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-msg">Generating digit samples…</div>
+</div>
+
+<header>
+  <div class="hdr-main">
+    <h1>Autoencoder Explorer</h1>
+    <div class="hdr-sub">Unsupervised representation learning &middot; 2-D bottleneck demo &middot; synthetic handwritten digits</div>
+    <!-- single-line copyright shown at medium widths -->
+    <div class="hdr-copy-inline">&copy; 2026 Theodore P. Pavlic &middot; <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></div>
+    <!-- two-line copyright shown at narrow widths -->
+    <div class="hdr-copy-narrow">&copy; 2026 Theodore P. Pavlic<br><a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></div>
+  </div>
+  <!-- two-line copyright shown at wide widths -->
+  <div class="hdr-copy-wide">
+    &copy; 2026 Theodore P. Pavlic<br>
+    <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+  </div>
+</header>
+
+<div class="tab-bar" id="tab-bar-row">
+  <button class="tab-btn active" id="tbtn-arch" onclick="switchTab('arch',this)">Architecture</button>
+  <button class="tab-btn" id="tbtn-train" onclick="switchTab('train',this)">Train &amp; Explore</button>
+</div>
+<div class="tab-select-wrap">
+  <select id="tab-select" onchange="switchTabBySelect(this.value)">
+    <option value="arch">Architecture</option>
+    <option value="train">Train &amp; Explore</option>
+  </select>
+</div>
+
+<!-- ════════ TAB 1: ARCHITECTURE ════════ -->
+<div id="tab-arch" class="tab-panel active">
+  <div class="arch-grid">
+    <div class="card span2">
+      <div class="ctitle">The "Bowtie" Architecture</div>
+      <!-- viewBox taller to prevent clipping of loss arrow text -->
+      <svg id="bowtie-svg" viewBox="0 0 740 258" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="card">
+      <div class="ctitle">Layer Specification (this widget)</div>
+      <table class="ltbl">
+        <thead><tr><th>Role</th><th>Layer</th><th>Units</th><th>Activation</th></tr></thead>
+        <tbody>
+          <tr><td class="role">Input</td><td>—</td><td>784</td><td>—</td></tr>
+          <tr><td class="role">Encoder</td><td>Dense 1</td><td>128</td><td>ReLU</td></tr>
+          <tr><td class="role">Encoder</td><td>Dense 2</td><td>32</td><td>ReLU</td></tr>
+          <tr class="bn"><td class="role">Bottleneck</td><td>Dense 3</td><td>2</td><td>Linear</td></tr>
+          <tr><td class="role">Decoder</td><td>Dense 4</td><td>32</td><td>ReLU</td></tr>
+          <tr><td class="role">Decoder</td><td>Dense 5</td><td>128</td><td>ReLU</td></tr>
+          <tr><td class="role">Output</td><td>Dense 6</td><td>784</td><td>Sigmoid</td></tr>
+        </tbody>
+      </table>
+      <div class="warn-box">
+        <strong>Instructional constraint:</strong> Forcing the bottleneck to 2 dimensions lets the encoding space be visualized directly as a scatter plot with no secondary dimensionality reduction. In practice autoencoders use much wider bottlenecks (16–512 units). This is analogous to truncating a PCA to exactly 2 principal components: interpretable and plottable, but lossy.
+      </div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Key Concepts</div>
+      <p style="font-size:.83rem;margin-bottom:.6rem;">The <strong>encoder</strong> compresses each 28&times;28 digit image (784 pixel values) to just 2 numbers, (z&#x2081;,&thinsp;z&#x2082;)&thinsp;&isin;&thinsp;&#x211D;&sup2;. The <strong>decoder</strong> reconstructs the original 784-pixel image from those two numbers alone. Mean binary cross-entropy between input and reconstruction is the training signal — no class labels are ever provided.</p>
+      <p style="font-size:.83rem;margin-bottom:.5rem;">After training, the encoder alone is the useful product. The decoder is retained only to interpret what a given code "looks like." The 2-D encoding space can be colored by digit class (labels used <em>only for coloring</em>, not during training) to reveal whether the unsupervised compression captured class structure.</p>
+      <div class="note-box">
+        <strong>Unsupervised, not self-supervised.</strong> All training images are provided upfront; the reconstruction target is the input itself. Self-supervised learning synthesizes pseudo-labels from unlabeled data. Here "auto" in <em>autoencoder</em> means the input serves as its own supervision signal — not that data is generated synthetically.
+      </div>
+      <div class="note-box" style="margin-top:.55rem;">
+        <strong>Relationship to PCA.</strong> A linear autoencoder with an n-D bottleneck is mathematically equivalent to truncated PCA retaining n principal components. The nonlinear version here generalizes PCA to curved manifolds in the input space, though individual axes lose interpretability.
+      </div>
+    </div>
+    <div class="card span2">
+      <div class="ctitle">Loss Function: Binary Cross-Entropy (BCE)</div>
+      <p style="font-size:.83rem;margin-bottom:.65rem;">
+        The decoder's final layer is a sigmoid, so each reconstructed pixel x&#x0302;<sub>i</sub>&thinsp;&isin;&thinsp;(0,1) is a predicted probability that pixel <em>i</em> is "on." The input pixel x<sub>i</sub>&thinsp;&isin;&thinsp;[0,1] is its normalized intensity (raw value &divide; 255). These synthetic digit images are mostly black (0) or white (1) with a small amount of added noise, so each x<sub>i</sub> acts as a soft binary target. BCE measures how well each sigmoid prediction matches its target over all N&thinsp;=&thinsp;784 pixels (the full 28&times;28 input <em>and</em> output):
+      </p>
+      <div style="text-align:center;font-family:var(--mono);font-size:.88rem;background:var(--cream-d);padding:.6rem 1rem;border-radius:6px;margin-bottom:.65rem;line-height:2;">
+        L &nbsp;=&nbsp; &minus;(1/N) &sum;<sub>i</sub> [ x<sub>i</sub> ln x&#x0302;<sub>i</sub> &nbsp;+&nbsp; (1&minus;x<sub>i</sub>) ln(1&minus;x&#x0302;<sub>i</sub>) ]
+      </div>
+      <p style="font-size:.83rem;margin-bottom:.55rem;">
+        This is the cross-entropy H(x,&thinsp;x&#x0302;) = &minus;x&thinsp;ln&thinsp;x&#x0302; &minus; (1&minus;x)&thinsp;ln(1&minus;x&#x0302;) for Bernoulli variables, averaged over all pixels. Shannon entropy H(p) = &minus;p&thinsp;ln&thinsp;p &minus; (1&minus;p)&thinsp;ln(1&minus;p) is the special case where prediction equals target and gives the theoretical minimum loss.
+      </p>
+      <div class="note-box">
+        <strong>Natural log, not log base 2.</strong> Machine learning conventionally uses the natural logarithm (ln, base e) in loss functions because its derivative 1/x simplifies gradient calculations. The unit is <em>nats</em> rather than bits. This is why the baseline loss for a uniform predictor (x&#x0302;&thinsp;&approx;&thinsp;0.5) is ln 2&thinsp;&approx;&thinsp;0.693&thinsp;nats — not 1 bit. TensorFlow's <code>binaryCrossentropy</code> uses natural log internally.
+      </div>
+      <div class="note-box" style="margin-top:.55rem;">
+        <strong>Baseline &amp; what to watch:</strong> A randomly-initialized network outputs x&#x0302;&thinsp;&approx;&thinsp;0.5, giving L&thinsp;&approx;&thinsp;ln 2&thinsp;&approx;&thinsp;0.693. As training proceeds the loss should drop well below this. Because most digit pixels are black (&approx;0), a network that outputs 0 everywhere achieves L&thinsp;&approx;&thinsp;0.1 — so loss alone is not informative; <em>watch the reconstruction images</em> to judge quality.
+      </div>
+      <div class="note-box" style="margin-top:.55rem;">
+        <strong>This loss is specific to this task.</strong> BCE is appropriate here because pixel values in [0,1] pair naturally with the sigmoid output and admit a Bernoulli probability interpretation. It is <em>not</em> a universal property of autoencoders. For continuous-valued inputs (e.g., sensor readings, spectral data) mean squared error (MSE) is the more natural reconstruction loss; for structured or categorical outputs other losses apply. The autoencoder architecture is agnostic to the choice — it is the nature of the data and the decoder&#x2019;s output activation that determine which loss makes sense.
+      </div>
+    </div>
+    <div class="card span2">
+      <div class="ctitle">Wider Bottlenecks, t-SNE, and UMAP</div>
+      <p style="font-size:.83rem;margin-bottom:.6rem;">
+        The 2-D bottleneck in this widget is an instructional choice made so the encoding space can be plotted directly. In practice, autoencoders use bottlenecks of 32–512 dimensions — wide enough to reconstruct faithfully, but far too high-dimensional to visualize directly. This is where <strong>t-SNE</strong> (t-distributed Stochastic Neighbor Embedding) and <strong>UMAP</strong> (Uniform Manifold Approximation and Projection) enter. Both are nonlinear dimensionality reduction methods that project a high-dimensional cloud of points into 2-D while approximately preserving local neighborhood structure.
+      </p>
+      <p style="font-size:.83rem;margin-bottom:.6rem;">
+        A standard pipeline is: train an autoencoder to a wide bottleneck, then apply t-SNE or UMAP to the encodings for visualization. This works better than applying t-SNE or UMAP directly to raw inputs (e.g., pixels) because the encoder has already removed low-level noise and compressed the data into a representation that emphasizes whatever structure was necessary for reconstruction. t-SNE and UMAP then operate on a much cleaner, lower-dimensional signal.
+      </p>
+      <p style="font-size:.83rem;margin-bottom:.5rem;">
+        In this framing, t-SNE or UMAP is a <strong>task-specific head</strong> attached after the encoder — used at evaluation time to understand what the encoder learned, not during training. The encoder itself remains general-purpose and transferable: the same bottleneck representation can feed a classifier, a retrieval system, an anomaly detector, or a downstream generative model, whereas a direct t-SNE projection of raw data produces only a visualization with no reusable intermediate representation.
+      </p>
+      <div class="note-box">
+        <strong>Why not just use t-SNE or UMAP directly?</strong> You can, and for pure visualization it is often fine. The argument for the autoencoder-first approach is: (1) the encoder is trained with a reconstruction objective that preserves all the information needed to recover the input, not just whatever structure happens to separate neighbors; (2) the learned representation is deterministic and fast to evaluate at inference time — t-SNE is neither; (3) the bottleneck can be reused for tasks beyond visualization without retraining. UMAP is faster and more scalable than t-SNE and does produce an out-of-sample transform, so the gap is narrower there — but the autoencoder's representation still tends to be more structured when the data has clear generative factors.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ TAB 2: TRAIN & EXPLORE ════════ -->
+<div id="tab-train" class="tab-panel">
+  <div class="tlayout">
+
+    <div class="top-row">
+      <!-- Controls + sample selection -->
+      <div class="ctrl-row">
+        <!-- Row 1: train controls -->
+        <div style="display:flex;gap:.55rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-g has-tip" id="btn-step" onclick="doStep()" data-tip="1 full pass through all active training samples — backpropagation updates weights after each mini-batch of 128">Step (1 full epoch)</button>
+          <button class="btn btn-o" id="btn-run"   onclick="toggleRun()">&#9654; Train</button>
+          <button class="btn btn-gh" id="btn-reset" onclick="doReset()">Reset</button>
+          <div class="chip">Epoch: <b id="epdisp">0</b></div>
+          <div class="chip">Loss: <b id="lossdisp">—</b></div>
+          <div id="mbadge" class="mbadge b-idle">Idle</div>
+        </div>
+        <!-- Divider -->
+        <hr style="border:none;border-top:1px solid var(--border);margin:0;">
+        <!-- Row 2: sample selection -->
+        <div style="display:flex;gap:.55rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-gh" id="btn-randsamp" style="font-size:.79rem;padding:.32rem .7rem;" onclick="pickRandom()">Random sample</button>
+          <span class="samp-lbl">By class:</span>
+          <div id="dbtns" style="display:flex;gap:.32rem;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+      <!-- Compact bowtie architecture reference -->
+      <div class="mini-bowtie-card">
+        <div class="ctitle" style="margin-bottom:.2rem;">Architecture Reference</div>
+        <svg id="mini-bowtie-svg" viewBox="0 0 380 120" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+    </div>
+
+    <!-- [Input + Reconstruction stacked] | [2-D Encoding Space] -->
+    <div class="triplet">
+      <!-- Left: Input on top, Reconstruction directly below for easy comparison -->
+      <div class="img-stack">
+        <div class="img-panel">
+          <div class="iplabel">Input</div>
+          <canvas id="cv-in" class="mdisp" width="84" height="84"></canvas>
+          <div class="dtag" id="true-lbl">digit: —</div>
+          <div class="ipdim">28&times;28 = 784 px</div>
+        </div>
+        <div class="img-panel">
+          <div class="iplabel">Reconstruction</div>
+          <canvas id="cv-out" class="mdisp" width="84" height="84"></canvas>
+          <div class="dtag" id="recon-tag">—</div>
+          <div class="ipdim">28&times;28 = 784 px</div>
+        </div>
+      </div>
+
+      <!-- Right: Encoding space with current sample highlighted -->
+      <div class="enc-panel">
+        <div class="ctitle" style="margin-bottom:.05rem;">Bowtie Bottleneck &mdash; 2-D Encoding Space</div>
+        <div class="enc-subtitle"><b>2 real values</b> (z&#x2081;, z&#x2082;) &middot; each dot = one encoded training sample &middot; colored by digit class &middot; labels withheld during training</div>
+        <div class="enc-inner">
+          <div class="scat-wrap">
+            <canvas id="mid-scat-cv" class="mid-scat-cv"></canvas>
+          </div>
+          <div class="enc-leg" id="enc-leg"></div>
+        </div>
+        <div class="code-coord" id="code-coord">(z&#x2081;&nbsp;=&nbsp;—&nbsp;,&nbsp;z&#x2082;&nbsp;=&nbsp;—)</div>
+        <div class="status-ln" id="statusln">Ready.</div>
+      </div>
+    </div>
+
+    <!-- Loss chart (full width) -->
+    <div class="card" style="padding:.85rem .95rem;">
+      <div class="ctitle">Training Loss (binary cross-entropy)</div>
+      <canvas id="losscv" class="losscv" width="800" height="130"></canvas>
+    </div>
+
+    <!-- Click-to-decode result -->
+    <div id="dec-panel">
+      <div>
+        <div style="font-size:.69rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.22rem;">Decoded from coordinate</div>
+        <div class="dec-coord" id="dec-coord">(z&#x2081;&nbsp;=&nbsp;—,&nbsp;z&#x2082;&nbsp;=&nbsp;—)</div>
+        <div class="dec-epoch" id="dec-epoch"></div>
+      </div>
+      <canvas id="cv-dec" class="mdisp" width="84" height="84"></canvas>
+      <div class="dec-note">What the decoder produces for the clicked (z&#x2081;,&thinsp;z&#x2082;) coordinate. Near cluster centers the output is a clean digit prototype; between clusters it blends features from neighboring classes — a direct consequence of the continuous compressed representation.</div>
+    </div>
+
+  </div><!-- end tlayout -->
+</div>
+
+<footer>
+  <span class="foot-copy">&copy; 2026 Theodore P. Pavlic</span><span class="foot-sep">&middot;</span><a class="foot-lic" href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+</footer>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════
+const IMG=28, FLAT=784, NC=10, SPP=320, BATCH=128;
+const DCOLORS=['#c0392b','#e67e22','#27ae60','#2980b9','#8e44ad',
+               '#16a085','#d35400','#2c3e50','#1abc9c','#7f8c8d'];
+
+// ═══════════════════════════════════════════════
+// DIGIT GENERATOR
+// ═══════════════════════════════════════════════
+function rr(lo,hi){return lo+Math.random()*(hi-lo);}
+function rn(){
+  let u=0,v=0;
+  while(!u)u=Math.random();while(!v)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+
+function drawDigitStrokes(ctx,d){
+  ctx.lineCap='round';ctx.lineJoin='round';
+  switch(d){
+    case 0:
+      ctx.beginPath();ctx.ellipse(0,0,4.5,7.0,rr(-.18,.18),0,Math.PI*2);ctx.stroke();
+      break;
+    case 1:{
+      const sx=rr(-2,.3);
+      ctx.beginPath();ctx.moveTo(sx,-7);ctx.lineTo(0,-7);ctx.lineTo(0,7);ctx.stroke();
+      break;}
+    case 2:
+      ctx.beginPath();
+      ctx.arc(.5,-3.2,4.0,Math.PI*1.05,Math.PI*.02,false);
+      ctx.lineTo(-4.5,7.5);ctx.lineTo(4.5,7.5);ctx.stroke();
+      break;
+    case 3: {
+      // r = |cy| so the 6-o'clock of the upper arc and the 12-o'clock of the lower arc
+      // meet exactly at (1, 0) — waist at centre-x, zero gap.
+      // tipAng varies how far left the top/bottom serifs reach.
+      const tipAng=rr(0.70,0.78);
+      ctx.beginPath();
+      ctx.arc(1,-3.5,3.5,-Math.PI*tipAng, Math.PI/2, false);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(1, 3.5,3.5,-Math.PI/2,     Math.PI*tipAng, false);
+      ctx.stroke();
+      break;}
+    case 4:
+      ctx.beginPath();
+      ctx.moveTo(-2.5,-7.5);ctx.lineTo(-2.5,.5);ctx.lineTo(5,.5);
+      ctx.moveTo(2,-7.5);ctx.lineTo(2,7.5);
+      ctx.stroke();
+      break;
+    case 5:
+      // Stroke 1: top bar (right to left) + vertical (down to middle-left)
+      ctx.beginPath();
+      ctx.moveTo(4,-7.5);
+      ctx.lineTo(-4,-7.5);   // top bar
+      ctx.lineTo(-4,-1.5);   // vertical stops at middle-left
+      ctx.stroke();
+      // Stroke 2: clockwise arc from ~11 o'clock to ~7 o'clock
+      // Canvas angles (y-down, 0=right): 11pm = -2π/3, 7pm = +2π/3
+      // anticlockwise=false → clockwise → sweeps through 12, 3, 6 o'clock
+      // Center (0,2), r=4.5 → 11pm start ≈ (-2.25,-1.9), near the vertical end
+      ctx.beginPath();
+      ctx.arc(0, 2, 4.5, -2*Math.PI/3, 2*Math.PI/3, false);
+      ctx.stroke();
+      break;
+    case 6:
+      // Full circle body (center below canvas-mid so 6 ≠ 9)
+      ctx.beginPath(); ctx.arc(0,3,4,0,Math.PI*2); ctx.stroke();
+      // Tail: exits upper-left of body and sweeps up+right — long enough to
+      // not look like a fuse.  Start ≈ 11-o'clock on the circle.
+      ctx.beginPath();
+      ctx.moveTo(-3.5, 0.5);
+      ctx.quadraticCurveTo(-0.5,-7.5, 3,-7.5);
+      ctx.stroke();
+      break;
+    case 7:
+      ctx.beginPath();
+      ctx.moveTo(-5,-7.5);ctx.lineTo(5,-7.5);ctx.lineTo(-1.5,7.5);ctx.stroke();
+      if(Math.random()>.45){
+        ctx.beginPath();ctx.moveTo(-1.8,-1);ctx.lineTo(2.5,-1);ctx.stroke();
+      }
+      break;
+    case 8:
+      ctx.beginPath();ctx.arc(0,-3.2,3.5,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.arc(0, 3.2,4.0,0,Math.PI*2);ctx.stroke();
+      break;
+    case 9:
+      ctx.beginPath();ctx.arc(0,-2.8,4.5,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(4.5,-2.8);ctx.lineTo(2.5,7.5);ctx.stroke();
+      break;
+  }
+}
+
+function renderDigit(d){
+  const off=document.createElement('canvas');off.width=IMG;off.height=IMG;
+  const ctx=off.getContext('2d');
+  ctx.fillStyle='#000';ctx.fillRect(0,0,IMG,IMG);
+  ctx.save();
+  ctx.translate(IMG/2+rr(-2.2,2.2),IMG/2+rr(-2.2,2.2));
+  ctx.rotate(rr(-.25,.25));
+  ctx.scale(rr(.85,1.15),rr(.85,1.15));
+  ctx.strokeStyle='#fff';ctx.lineWidth=rr(1.9,2.8);
+  drawDigitStrokes(ctx,d);
+  ctx.restore();
+  const px=ctx.getImageData(0,0,IMG,IMG).data;
+  const out=new Float32Array(FLAT);
+  for(let i=0;i<FLAT;i++) out[i]=Math.max(0,Math.min(1,px[i*4]/255+rn()*.035));
+  return out;
+}
+
+function generateDataset(){
+  const n=NC*SPP;
+  const imgs=new Float32Array(n*FLAT),lbls=new Uint8Array(n);
+  for(let d=0;d<NC;d++) for(let s=0;s<SPP;s++){
+    const idx=d*SPP+s;imgs.set(renderDigit(d),idx*FLAT);lbls[idx]=d;
+  }
+  const ord=Array.from({length:n},(_,i)=>i);
+  for(let i=n-1;i>0;i--){const j=0|Math.random()*(i+1);[ord[i],ord[j]]=[ord[j],ord[i]];}
+  const si=new Float32Array(n*FLAT),sl=new Uint8Array(n);
+  for(let i=0;i<n;i++){si.set(imgs.subarray(ord[i]*FLAT,(ord[i]+1)*FLAT),i*FLAT);sl[i]=lbls[ord[i]];}
+  return{images:si,labels:sl,n};
+}
+
+// ═══════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════
+let DATA=null,AE=null,ENC=null,DEC=null;
+let lossHist=[],epochCount=0,running=false;
+let monitorIdx=0;   // fixed sample shown during training
+let scatData=null;
+let scatHighlight=null; // {z1n,z2n,cls} for current sample
+let activeClasses=new Set([0,1,2,3,4,5,6,7,8,9]);
+let trainTensor=null;  // cached tf.tensor2d for active training data
+let trainTensorDirty=true; // set true whenever activeClasses changes
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+function switchTab(id,btn){
+  // Pause training if leaving the Train tab
+  if(id!=='train' && running){
+    running=false;
+    document.getElementById('btn-run').innerHTML='&#9654; Train';
+    document.getElementById('btn-step').disabled=false;
+    setSampleBtnsDisabled(false);
+    setBadge('inf');
+  }
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  const sel=document.getElementById('tab-select');if(sel)sel.value=id;
+  // If switching to Train tab, redraw scatter after layout — canvas was hidden
+  // so any earlier drawScat() calls were skipped by the visibility guard
+  if(id==='train') requestAnimationFrame(()=>{ drawMiniBowtie(); drawScat(); drawLoss(); });
+}
+function switchTabBySelect(id){
+  switchTab(id,document.getElementById('tbtn-'+id));
+}
+
+// ═══════════════════════════════════════════════
+// MINI BOWTIE (compact version for Tab 2 reference card)
+// ═══════════════════════════════════════════════
+function drawMiniBowtie(){
+  const svg=document.getElementById('mini-bowtie-svg');
+  if(!svg) return;
+  const W=380,H=120,midY=54,MAX_H=78,BW=12,cx=W/2;
+  const sizes=[784,128,32,2,32,128,784];
+  const xs=[10,72,132,cx-BW/2,380-132-BW,380-72-BW,380-10-BW];
+  const bh=s=>Math.max(3,(s/784)*MAX_H);
+  let h='';
+  // Section labels
+  h+=`<text x="${(xs[0]+xs[2]+BW)/2}" y="11" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#3a6b1d" font-weight="600">ENCODER</text>`;
+  h+=`<text x="${xs[3]+BW/2}" y="11" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#d97020" font-weight="700">BOTTLENECK</text>`;
+  h+=`<text x="${(xs[4]+xs[6]+BW)/2}" y="11" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#3a6b1d" font-weight="600">DECODER</text>`;
+  // Trapezoid connectors
+  for(let i=0;i<sizes.length-1;i++){
+    const h1=bh(sizes[i]),h2=bh(sizes[i+1]),x1=xs[i]+BW,x2=xs[i+1];
+    h+=`<polygon points="${x1},${midY-h1/2} ${x2},${midY-h2/2} ${x2},${midY+h2/2} ${x1},${midY+h1/2}" fill="${i<3?'#e8f0e0':'#fff5e8'}" opacity="0.8"/>`;
+  }
+  // Bars + size labels
+  for(let i=0;i<sizes.length;i++){
+    const bhi=bh(sizes[i]),x=xs[i],y=midY-bhi/2;
+    const fill=i===3?'#d97020':'#3a6b1d';
+    const op=i===3?1.0:(i===0||i===6)?.45:.58+(i<3?i/14:(6-i)/14);
+    h+=`<rect x="${x}" y="${y}" width="${BW}" height="${bhi}" rx="2" fill="${fill}" opacity="${op}"/>`;
+    h+=`<text x="${x+BW/2}" y="${y-3}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="7" fill="#555">${sizes[i]}</text>`;
+  }
+  // Compact loss arrow
+  const ax0=xs[0]+BW/2, ax1=xs[6]+BW/2, mid2=(ax0+ax1)/2;
+  const arrowY=H-8, dropY=midY+bh(784)/2+6;
+  h+=`<line x1="${ax0}" y1="${dropY}" x2="${ax0}" y2="${arrowY-1}" stroke="#ccc" stroke-width="1" stroke-dasharray="3,2"/>`;
+  h+=`<line x1="${ax1}" y1="${dropY}" x2="${ax1}" y2="${arrowY-1}" stroke="#ccc" stroke-width="1" stroke-dasharray="3,2"/>`;
+  h+=`<line x1="${ax0}" y1="${arrowY}" x2="${ax1}" y2="${arrowY}" stroke="#bbb" stroke-width="1"/>`;
+  h+=`<polygon points="${mid2-4},${arrowY-6} ${mid2+4},${arrowY-6} ${mid2},${arrowY-1}" fill="#bbb"/>`;
+  h+=`<text x="${mid2}" y="${H-1}" text-anchor="middle" font-family="Outfit,sans-serif" font-size="8.5" fill="#aaa">Loss = BCE(input, reconstruction) &#x2192; trains both encoder &amp; decoder</text>`;
+  svg.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════════
+// BOWTIE SVG  (viewBox 0 0 740 258 — extra room for arrow text)
+// ═══════════════════════════════════════════════
+function drawBowtie(){
+  const svg=document.getElementById('bowtie-svg');
+  const W=740,H=258,midY=104,MAX_H=152,BW=18,cx=W/2;
+  const sizes=[784,128,32,2,32,128,784];
+  const xs=[24,118,212,cx-BW/2,740-212-BW,740-118-BW,740-24-BW];
+  const acts=['','ReLU','ReLU','Linear','ReLU','ReLU','Sigmoid'];
+  const bh=s=>Math.max(5,(s/784)*MAX_H);
+  let h='';
+
+  // Section labels
+  h+=`<text x="${(xs[0]+xs[2]+BW)/2}" y="16" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="#3a6b1d" font-weight="600">ENCODER</text>`;
+  h+=`<text x="${xs[3]+BW/2}" y="16" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="#d97020" font-weight="700">BOTTLENECK</text>`;
+  h+=`<text x="${(xs[4]+xs[6]+BW)/2}" y="16" text-anchor="middle" font-family="Outfit,sans-serif" font-size="12" fill="#3a6b1d" font-weight="600">DECODER</text>`;
+
+  // Trapezoid connectors
+  for(let i=0;i<sizes.length-1;i++){
+    const h1=bh(sizes[i]),h2=bh(sizes[i+1]),x1=xs[i]+BW,x2=xs[i+1];
+    h+=`<polygon points="${x1},${midY-h1/2} ${x2},${midY-h2/2} ${x2},${midY+h2/2} ${x1},${midY+h1/2}" fill="${i<3?'#e8f0e0':'#fff5e8'}" opacity="0.75"/>`;
+  }
+
+  // Bars
+  for(let i=0;i<sizes.length;i++){
+    const bhi=bh(sizes[i]),x=xs[i],y=midY-bhi/2;
+    const fill=i===3?'#d97020':'#3a6b1d';
+    const op=i===3?1.0:(i===0||i===6)?.48:.6+(i<3?i/12:(6-i)/12);
+    h+=`<rect x="${x}" y="${y}" width="${BW}" height="${bhi}" rx="3" fill="${fill}" opacity="${op}"/>`;
+    h+=`<text x="${x+BW/2}" y="${y-4}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#444">${sizes[i]}</text>`;
+    if(acts[i]) h+=`<text x="${x+BW/2}" y="${midY+bhi/2+13}" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="9" fill="#888">${acts[i]}</text>`;
+  }
+
+  // Loss arrow — placed well within the extended viewBox
+  const dropY=midY+bh(784)/2+16;  // bottom of input bar + small gap
+  const arrowY=H-28;               // arrow line y
+  const ax0=xs[0]+BW/2, ax1=xs[6]+BW/2, mid=(ax0+ax1)/2;
+  h+=`<line x1="${ax0}" y1="${dropY}" x2="${ax0}" y2="${arrowY}" stroke="#ccc" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+  h+=`<line x1="${ax1}" y1="${dropY}" x2="${ax1}" y2="${arrowY}" stroke="#ccc" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+  h+=`<line x1="${ax0}" y1="${arrowY}" x2="${ax1}" y2="${arrowY}" stroke="#bbb" stroke-width="1.5"/>`;
+  h+=`<polygon points="${mid-5},${arrowY-8} ${mid+5},${arrowY-8} ${mid},${arrowY-1}" fill="#bbb"/>`;
+  h+=`<text x="${mid}" y="${arrowY+14}" text-anchor="middle" font-family="Outfit,sans-serif" font-size="11" fill="#999">Loss = BCE(input, reconstruction) &#x2192; trains encoder &amp; decoder jointly</text>`;
+
+  svg.innerHTML=h;
+}
+
+// ═══════════════════════════════════════════════
+// MODEL
+// ═══════════════════════════════════════════════
+function buildModel(){
+  if(AE){try{AE.dispose();}catch(e){} AE=null;ENC=null;DEC=null;}
+
+  const inp=tf.input({shape:[FLAT]});
+  const e1 =tf.layers.dense({units:128,activation:'relu',   name:'enc1'}).apply(inp);
+  const e2 =tf.layers.dense({units:32, activation:'relu',   name:'enc2'}).apply(e1);
+  const bn =tf.layers.dense({units:2,  activation:'linear', name:'bottleneck'}).apply(e2);
+  const d1 =tf.layers.dense({units:32, activation:'relu',   name:'dec1'}).apply(bn);
+  const d2 =tf.layers.dense({units:128,activation:'relu',   name:'dec2'}).apply(d1);
+  const out=tf.layers.dense({units:FLAT,activation:'sigmoid',name:'aout'}).apply(d2);
+
+  AE =tf.model({inputs:inp,outputs:out});
+  AE.compile({optimizer:tf.train.adam(0.001),loss:'binaryCrossentropy'});
+  ENC=tf.model({inputs:inp,outputs:bn});
+
+  // Decoder sub-model sharing trained weights
+  const di  =tf.input({shape:[2]});
+  const dd1 =AE.getLayer('dec1').apply(di);
+  const dd2 =AE.getLayer('dec2').apply(dd1);
+  const dout=AE.getLayer('aout').apply(dd2);
+  DEC=tf.model({inputs:di,outputs:dout});
+  trainTensorDirty=true;
+}
+
+// Run a single tiny forward+backward pass to trigger WebGL shader compilation
+// so the first real Step/Train click feels instant rather than stalling 2-5s
+async function warmupModel(){
+  if(!AE||!DATA) return;
+  const tiny=tf.tensor2d(DATA.images.slice(0,BATCH*FLAT),[BATCH,FLAT]);
+  await AE.fit(tiny,tiny,{batchSize:BATCH,epochs:1,verbose:0});
+  tiny.dispose();
+}
+
+// ═══════════════════════════════════════════════
+// TRAINING
+// ═══════════════════════════════════════════════
+async function oneEpoch(){
+  setBadge('train');  // confirm we are now actually running (repaint already happened)
+  // Rebuild training tensor only when active classes changed (avoids per-epoch GPU upload)
+  if(trainTensorDirty || !trainTensor){
+    if(trainTensor){try{trainTensor.dispose();}catch(e){} trainTensor=null;}
+    const activeIdx=[];
+    for(let i=0;i<DATA.n;i++) if(activeClasses.has(DATA.labels[i])) activeIdx.push(i);
+    const nA=activeIdx.length;
+    const actBuf=new Float32Array(nA*FLAT);
+    for(let i=0;i<nA;i++) actBuf.set(DATA.images.subarray(activeIdx[i]*FLAT,(activeIdx[i]+1)*FLAT),i*FLAT);
+    trainTensor=tf.tensor2d(actBuf,[nA,FLAT]);
+    trainTensorDirty=false;
+  }
+  const nA=trainTensor.shape[0];
+  const hist=await AE.fit(trainTensor,trainTensor,{batchSize:BATCH,epochs:1,shuffle:true,verbose:0});
+  const loss=hist.history.loss[0];
+  epochCount++;lossHist.push(loss);
+  document.getElementById('epdisp').textContent   =epochCount;
+  document.getElementById('lossdisp').textContent =loss.toFixed(4);
+  drawLoss();
+  // refresh scatter every 2 epochs (expensive)
+  if(epochCount%5===0||epochCount<=3) await refreshScatter();
+  // Rotate monitor sample within active classes
+  { const pool=[];for(let i=0;i<DATA.n;i++) if(activeClasses.has(DATA.labels[i])) pool.push(i);
+    if(pool.length) monitorIdx=pool[0|Math.random()*pool.length]; }
+  await showSample(monitorIdx);
+  // Override status to clarify epoch = full pass through all active samples in batches
+  const nA2=Array.from({length:DATA.n},(_,i)=>i).filter(i=>activeClasses.has(DATA.labels[i])).length;
+  const nBatches=Math.ceil(nA2/BATCH);
+  document.getElementById('statusln').textContent=
+    `Epoch\u00a0${epochCount}\u00a0\u2014\u00a0${nA2}\u00a0samples\u00a0\u00d7\u00a01\u00a0pass\u00a0(${nBatches}\u00a0mini-batches\u00a0of\u00a0${BATCH})\u00a0\u00b7\u00a0monitoring digit\u00a0${DATA.labels[monitorIdx]}`;
+}
+
+function setSampleBtnsDisabled(dis){
+  document.getElementById('btn-randsamp').disabled=dis;
+  document.querySelectorAll('.btn-d').forEach(b=>{
+    const d=parseInt(b.getAttribute('data-digit'));
+    if(dis){
+      // Training in progress — disable everything
+      b.disabled=true; b.style.opacity='.35';
+    } else {
+      // Restore: only re-enable buttons whose class is active
+      const active=activeClasses.has(d);
+      b.disabled=!active;
+      b.style.opacity=active?'':'.28';
+    }
+  });
+}
+async function doStep(){
+  setBadge('busy');                   // immediate visual on click
+  document.getElementById('btn-step').disabled=true;
+  document.getElementById('btn-run').disabled=true;
+  setSampleBtnsDisabled(true);
+  hideDecoded();                       // decoded image is stale once weights change
+  await tf.nextFrame();               // force repaint before blocking work starts
+  await oneEpoch();
+  document.getElementById('btn-step').disabled=false;
+  document.getElementById('btn-run').disabled=false;
+  setSampleBtnsDisabled(false);
+  setBadge('inf');
+}
+
+async function toggleRun(){
+  if(running){
+    running=false;
+    document.getElementById('btn-run').innerHTML='&#9654; Train';
+    document.getElementById('btn-step').disabled=false;
+    setSampleBtnsDisabled(false);
+    setBadge('inf');
+    return;
+  }
+  running=true;
+  document.getElementById('btn-run').innerHTML='&#9646;&#9646; Pause';
+  document.getElementById('btn-step').disabled=true;
+  setSampleBtnsDisabled(true);
+  hideDecoded();                       // decoded image is stale once weights change
+  setBadge('busy');                   // immediate visual on click
+  await tf.nextFrame();               // force repaint before blocking work starts
+  while(running){
+    // Two epochs per frame yield for ~2× throughput without freezing the UI
+    await oneEpoch();
+    if(running) await oneEpoch();
+    await tf.nextFrame();
+  }
+  document.getElementById('btn-step').disabled=false;
+  setSampleBtnsDisabled(false);
+  setBadge('inf');
+}
+
+async function doReset(){
+  running=false;
+  document.getElementById('btn-run').innerHTML='&#9654; Train';
+  document.getElementById('btn-step').disabled=true;
+  document.getElementById('btn-run').disabled=true;
+  document.getElementById('btn-reset').disabled=true;
+  setSampleBtnsDisabled(true);
+  epochCount=0;lossHist=[];scatData=null;scatHighlight=null;
+  if(trainTensor){try{trainTensor.dispose();}catch(e){} trainTensor=null;}
+  trainTensorDirty=true;
+  activeClasses=new Set([0,1,2,3,4,5,6,7,8,9]);
+  buildLegend();
+  document.querySelectorAll('.btn-d').forEach(b=>{b.disabled=false;b.style.opacity='';});
+  buildModel();
+  document.getElementById('epdisp').textContent   ='0';
+  document.getElementById('lossdisp').textContent ='—';
+  clrCv('cv-in');clrCv('cv-out');clrCv('cv-dec');
+  document.getElementById('true-lbl').textContent ='digit: —';
+  document.getElementById('recon-tag').textContent='—';
+  hideDecoded();
+  document.getElementById('code-coord').textContent='(z\u2081\u00a0=\u00a0—\u00a0,\u00a0z\u2082\u00a0=\u00a0—)';
+  drawLoss();
+  // Recompute initial encodings from fresh random weights (same as startup)
+  setBadge('busy');
+  document.getElementById('statusln').textContent='Computing initial encodings…';
+  await tf.nextFrame();
+  await refreshScatter();
+  monitorIdx=0|Math.random()*DATA.n;
+  await showSample(monitorIdx);
+  document.getElementById('btn-step').disabled=false;
+  document.getElementById('btn-run').disabled=false;
+  document.getElementById('btn-reset').disabled=false;
+  setSampleBtnsDisabled(false);
+  setBadge('idle');
+  document.getElementById('statusln').textContent=
+    'Model reset \u00b7 showing untrained encodings \u00b7 press Train or Step to begin.';
+}
+
+// ═══════════════════════════════════════════════
+// SCATTER (large)
+// ═══════════════════════════════════════════════
+async function refreshScatter(){
+  if(!ENC)return;
+  const SN=Math.min(800,DATA.n);
+  const xs=tf.tensor2d(DATA.images.slice(0,SN*FLAT),[SN,FLAT]);
+  const cd=ENC.predict(xs);const cdata=await cd.data();
+  xs.dispose();cd.dispose();
+  const rz1=[],rz2=[],cls=[];
+  for(let i=0;i<SN;i++){rz1.push(cdata[i*2]);rz2.push(cdata[i*2+1]);cls.push(DATA.labels[i]);}
+  // Compute axis range from ACTIVE classes only so toggled-off outliers don't distort axes
+  const az1=[],az2=[];
+  for(let i=0;i<SN;i++) if(activeClasses.has(cls[i])){ az1.push(rz1[i]); az2.push(rz2[i]); }
+  const z1src=az1.length?az1:rz1, z2src=az2.length?az2:rz2;
+  const z1lo=Math.min(...z1src),z1hi=Math.max(...z1src);
+  const z2lo=Math.min(...z2src),z2hi=Math.max(...z2src);
+  const pad1=(z1hi-z1lo||1)*0.07, pad2=(z2hi-z2lo||1)*0.07;
+  const z1min=z1lo-pad1,z1max=z1hi+pad1;
+  const z2min=z2lo-pad2,z2max=z2hi+pad2;
+  // Normalize ALL points using active-class range (inactive points may fall outside [0,1])
+  const z1n=rz1.map(v=>(v-z1min)/(z1max-z1min));
+  const z2n=rz2.map(v=>(v-z2min)/(z2max-z2min));
+  scatData={z1:z1n,z2:z2n,cls,z1min,z1max,z2min,z2max};
+  drawScat();
+}
+
+function drawScat(clkZ1n,clkZ2n){
+  const cv=document.getElementById('mid-scat-cv');
+  if(!cv)return;
+  const dpr=window.devicePixelRatio||1;
+  // Measure the WRAPPER, not the canvas — setting cv.width/height must not affect layout
+  const wrap=cv.parentElement;
+  const rect=wrap.getBoundingClientRect();
+  const cssW=rect.width, cssH=rect.height;
+  // Skip when hidden (tab not active)
+  if(cssW<10||cssH<10) return;
+  if(cv.width!==Math.round(cssW*dpr)||cv.height!==Math.round(cssH*dpr)){
+    cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+  }
+  const ctx=cv.getContext('2d');
+  const W=cssW, H=cssH;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#fdf8f2';ctx.fillRect(0,0,W,H);
+  if(!scatData){
+    ctx.fillStyle='#bbb';ctx.font='13px Outfit,sans-serif';ctx.textAlign='center';
+    ctx.fillText('Train the model to populate the encoding space.',W/2,H/2);return;
+  }
+  const P={t:20,r:20,b:24,l:32},pw=W-P.l-P.r,ph=H-P.t-P.b;
+  // Grid
+  ctx.strokeStyle='#e8e0d2';ctx.lineWidth=1;
+  for(const v of[0,.25,.5,.75,1]){
+    ctx.beginPath();ctx.moveTo(P.l+v*pw,P.t);ctx.lineTo(P.l+v*pw,H-P.b);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(P.l,H-P.b-v*ph);ctx.lineTo(P.l+pw,H-P.b-v*ph);ctx.stroke();
+  }
+  // Axes
+  ctx.strokeStyle='#bbb';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(P.l,P.t);ctx.lineTo(P.l,H-P.b);ctx.lineTo(P.l+pw,H-P.b);ctx.stroke();
+  // Axis tick labels (actual z-range)
+  const fmtZ=v=>{const a=Math.abs(v);return a<10?v.toFixed(1):Math.round(v).toString();};
+  ctx.fillStyle='#aaa';ctx.font='9px IBM Plex Mono,monospace';
+  for(const v of[0,.5,1]){
+    const z1v=scatData.z1min+v*(scatData.z1max-scatData.z1min);
+    const z2v=scatData.z2min+v*(scatData.z2max-scatData.z2min);
+    ctx.textAlign='center';ctx.fillText(fmtZ(z1v),P.l+v*pw,H-P.b+12);
+    ctx.textAlign='right'; ctx.fillText(fmtZ(z2v),P.l-3,H-P.b-v*ph+3);
+  }
+  ctx.fillStyle='#999';ctx.font='10px IBM Plex Mono,monospace';ctx.textAlign='center';
+  ctx.fillText('z\u2081',P.l+pw/2,H-3);
+  ctx.save();ctx.translate(10,P.t+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText('z\u2082',0,0);ctx.restore();
+  // Points
+  const n=scatData.z1.length,r=Math.max(1.8,Math.min(2.8,3600/n));
+  for(let i=0;i<n;i++){
+    if(!activeClasses.has(scatData.cls[i])) continue;
+    ctx.globalAlpha=.5;ctx.fillStyle=DCOLORS[scatData.cls[i]];
+    ctx.beginPath();ctx.arc(P.l+scatData.z1[i]*pw,H-P.b-scatData.z2[i]*ph,r,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  // Legend is rendered as HTML outside the canvas
+  // Current sample highlight
+  if(scatHighlight){
+    const hx=P.l+scatHighlight.z1n*pw, hy=H-P.b-scatHighlight.z2n*ph;
+    // Faint crosshair
+    ctx.strokeStyle='rgba(217,112,32,.25)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(P.l,hy);ctx.lineTo(P.l+pw,hy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(hx,P.t);ctx.lineTo(hx,H-P.b);ctx.stroke();
+    // White halo for contrast against the point cloud
+    ctx.fillStyle='rgba(255,255,255,0.85)';ctx.globalAlpha=1;
+    ctx.beginPath();ctx.arc(hx,hy,10,0,Math.PI*2);ctx.fill();
+    // Filled dot in the digit's class color
+    ctx.fillStyle=DCOLORS[scatHighlight.cls];
+    ctx.beginPath();ctx.arc(hx,hy,7,0,Math.PI*2);ctx.fill();
+    // Thin dark border so it reads on any background
+    ctx.strokeStyle='rgba(0,0,0,0.35)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.arc(hx,hy,7,0,Math.PI*2);ctx.stroke();
+  }
+  // Click-to-decode crosshair
+  if(clkZ1n!==undefined){
+    const px=P.l+clkZ1n*pw,py=H-P.b-clkZ2n*ph;
+    ctx.strokeStyle='#d97020';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px-14,py);ctx.lineTo(px+14,py);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(px,py-14);ctx.lineTo(px,py+14);ctx.stroke();
+  }
+}
+function clearScat(){scatData=null;scatHighlight=null;drawScat();}
+function hideDecoded(){
+  document.getElementById('dec-panel').classList.remove('vis');
+  clrCv('cv-dec');
+  document.getElementById('dec-coord').textContent='(z₁ = —, z₂ = —)';
+  document.getElementById('dec-epoch').textContent='';
+}
+
+// Click-to-decode on large scatter
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('mid-scat-cv').addEventListener('click',async(e)=>{
+    if(!DEC)return;
+    const cv=e.target;
+    const wrap=cv.parentElement;
+    const rect=wrap.getBoundingClientRect();
+    const cx=(e.clientX-rect.left);
+    const cy=(e.clientY-rect.top);
+    const W=rect.width, H=rect.height;
+    const P={t:20,r:20,b:24,l:32},pw=W-P.l-P.r,ph=H-P.t-P.b;
+    const z1n=Math.max(0,Math.min(1,(cx-P.l)/pw));
+    const z2n=Math.max(0,Math.min(1,1-(cy-P.t)/ph));
+    // Un-normalize to actual bottleneck values (linear activation)
+    const z1 = scatData ? scatData.z1min + z1n*(scatData.z1max-scatData.z1min) : z1n;
+    const z2 = scatData ? scatData.z2min + z2n*(scatData.z2max-scatData.z2min) : z2n;
+    const code=tf.tensor2d([[z1,z2]]);
+    const recon=DEC.predict(code);const rd=await recon.data();
+    code.dispose();recon.dispose();
+    renderTo(rd,document.getElementById('cv-dec'));
+    document.getElementById('dec-coord').textContent=`(z\u2081\u00a0=\u00a0${z1.toFixed(3)},\u00a0z\u2082\u00a0=\u00a0${z2.toFixed(3)})`;
+    document.getElementById('dec-epoch').textContent=epochCount>0?`decoder weights from epoch\u00a0${epochCount}`:'(untrained decoder)';
+    document.getElementById('dec-panel').classList.add('vis');
+    drawScat(z1n,z2n);
+  });
+});
+
+// ═══════════════════════════════════════════════
+// IMAGE RENDERING
+// ═══════════════════════════════════════════════
+function renderTo(pix,canvas){
+  const W=canvas.width,H=canvas.height,ctx=canvas.getContext('2d');
+  const id=ctx.createImageData(IMG,IMG);
+  for(let i=0;i<FLAT;i++){const v=0|pix[i]*255;id.data[i*4]=v;id.data[i*4+1]=v;id.data[i*4+2]=v;id.data[i*4+3]=255;}
+  const tmp=document.createElement('canvas');tmp.width=IMG;tmp.height=IMG;
+  tmp.getContext('2d').putImageData(id,0,0);
+  ctx.clearRect(0,0,W,H);ctx.imageSmoothingEnabled=false;ctx.drawImage(tmp,0,0,W,H);
+}
+function clrCv(id){
+  const c=document.getElementById(id),ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#ede4d3';ctx.fillRect(0,0,c.width,c.height);
+}
+
+// ═══════════════════════════════════════════════
+// SAMPLE DISPLAY
+// ═══════════════════════════════════════════════
+async function showSample(idx){
+  if(!DATA||idx<0||idx>=DATA.n)return;
+  const raw=DATA.images.slice(idx*FLAT,(idx+1)*FLAT);
+  renderTo(raw,document.getElementById('cv-in'));
+  const cls=DATA.labels[idx];
+  document.getElementById('true-lbl').textContent='digit: '+cls;
+  window._curClass=cls;
+
+  if(AE&&ENC){
+    const xs=tf.tensor2d([Array.from(raw)],[1,FLAT]);
+    const rT=AE.predict(xs), cT=ENC.predict(xs);
+    const[rd,cd]=await Promise.all([rT.data(),cT.data()]);
+    xs.dispose();rT.dispose();cT.dispose();
+
+    renderTo(rd,document.getElementById('cv-out'));
+    const z1=cd[0],z2=cd[1];
+    // Normalize using current scatter range; fall back to ±2 window before first scatter
+    let z1lo,z1hi,z2lo,z2hi;
+    if(scatData){
+      z1lo=scatData.z1min;z1hi=scatData.z1max;
+      z2lo=scatData.z2min;z2hi=scatData.z2max;
+    } else {
+      const m=2;z1lo=z1-m;z1hi=z1+m;z2lo=z2-m;z2hi=z2+m;
+    }
+    const z1n01=Math.max(0,Math.min(1,(z1-z1lo)/(z1hi-z1lo)));
+    const z2n01=Math.max(0,Math.min(1,(z2-z2lo)/(z2hi-z2lo)));
+    scatHighlight={z1n:z1n01,z2n:z2n01,cls};
+    drawScat();  // redraw scatter with new highlight position
+    document.getElementById('code-coord').textContent=
+      `(z\u2081\u00a0=\u00a0${z1.toFixed(3)}\u00a0,\u00a0z\u2082\u00a0=\u00a0${z2.toFixed(3)})`;
+
+    const loss=bce(Array.from(raw),Array.from(rd));
+    document.getElementById('recon-tag').textContent=`BCE:\u00a0${loss.toFixed(4)}`;
+    document.getElementById('statusln').textContent=
+      `Epoch\u00a0${epochCount}\u00a0\u2014\u00a0monitoring digit\u00a0${cls}`;
+  } else {
+    scatHighlight=null;
+    drawScat();
+  }
+}
+
+function bce(x,xh){
+  let s=0;
+  for(let i=0;i<x.length;i++){
+    const xi=Math.max(1e-7,Math.min(1-1e-7,x[i]));
+    const xhi=Math.max(1e-7,Math.min(1-1e-7,xh[i]));
+    s-=xi*Math.log(xhi)+(1-xi)*Math.log(1-xhi);
+  }
+  return s/x.length;
+}
+
+function pickRandom(){
+  if(!DATA)return;
+  const pool=[];for(let i=0;i<DATA.n;i++) if(activeClasses.has(DATA.labels[i])) pool.push(i);
+  if(!pool.length)return;
+  monitorIdx=pool[0|Math.random()*pool.length];
+  showSample(monitorIdx);
+}
+function pickClass(cls){
+  if(!DATA)return;
+  const pool=[];for(let i=0;i<DATA.n;i++)if(DATA.labels[i]===cls)pool.push(i);
+  if(!pool.length)return;
+  monitorIdx=pool[0|Math.random()*pool.length];
+  showSample(monitorIdx);
+}
+
+// ═══════════════════════════════════════════════
+// LOSS CHART
+// ═══════════════════════════════════════════════
+function drawLoss(){
+  const cv=document.getElementById('losscv');
+  // HDPI: size buffer to physical pixels, draw in CSS pixels via setTransform
+  const dpr=window.devicePixelRatio||1;
+  const rect=cv.getBoundingClientRect();
+  const cssW=rect.width, cssH=rect.height;
+  if(cssW<10||cssH<10) return;
+  if(cv.width!==Math.round(cssW*dpr)||cv.height!==Math.round(cssH*dpr)){
+    cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+  }
+  const ctx=cv.getContext('2d');
+  const W=cssW, H=cssH;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fdf8f2'; ctx.fillRect(0,0,W,H);
+
+  if(!lossHist.length){
+    ctx.fillStyle='#ccc';
+    ctx.font='13px Outfit,sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('Loss curve will appear here after the first training step.',W/2,H/2+5);
+    return;
+  }
+
+  const P={t:8,r:7,b:22,l:42},pw=W-P.l-P.r,ph=H-P.t-P.b;
+  const mn=Math.min(...lossHist)*.97,mx=Math.max(...lossHist)*1.03;
+  ctx.strokeStyle='#eee';ctx.lineWidth=1;
+  for(let i=0;i<=3;i++){
+    const y=P.t+(i/3)*ph;ctx.beginPath();ctx.moveTo(P.l,y);ctx.lineTo(P.l+pw,y);ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='8px IBM Plex Mono,monospace';ctx.textAlign='right';
+    ctx.fillText((mx-(i/3)*(mx-mn)).toFixed(3),P.l-3,y+3);
+  }
+  ctx.fillStyle='#bbb';ctx.font='9px Outfit,sans-serif';ctx.textAlign='center';
+  ctx.fillText('epoch',P.l+pw/2,H-3);
+  const nL=lossHist.length;
+  ctx.strokeStyle='#2d5016';ctx.lineWidth=2;ctx.beginPath();
+  for(let i=0;i<nL;i++){
+    const xp=P.l+(i/Math.max(1,nL-1))*pw;
+    const yp=P.t+ph-((lossHist[i]-mn)/(mx-mn))*ph;
+    i===0?ctx.moveTo(xp,yp):ctx.lineTo(xp,yp);
+  }
+  ctx.stroke();
+  if(nL>0){
+    const lx=P.l+(nL>1?pw:0),ly=P.t+ph-((lossHist[nL-1]-mn)/(mx-mn))*ph;
+    ctx.fillStyle='#d97020';ctx.beginPath();ctx.arc(lx,ly,4,0,Math.PI*2);ctx.fill();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════
+function setBadge(m){
+  const b=document.getElementById('mbadge');b.className='mbadge';
+  if(m==='busy') {b.classList.add('b-busy'); b.textContent='● Starting\u2026';}
+  else if(m==='train'){b.classList.add('b-train');b.textContent='● Training';}
+  else if(m==='inf'){b.classList.add('b-inf');b.textContent='● Inference';}
+  else{b.classList.add('b-idle');b.textContent='Idle';}
+}
+function buildDigitButtons(){
+  const cont=document.getElementById('dbtns');
+  for(let d=0;d<10;d++){
+    const btn=document.createElement('button');
+    btn.className='btn-d';btn.textContent=d;btn.style.background=DCOLORS[d];
+    btn.setAttribute('data-digit',d);
+    btn.onclick=()=>pickClass(d);cont.appendChild(btn);
+  }
+}
+
+function buildLegend(){
+  const cont=document.getElementById('enc-leg');
+  cont.innerHTML='';
+  // Control buttons
+  const r2=document.createElement('button');
+  r2.className='leg-ctrl-btn has-tip';
+  r2.textContent='Random 2';
+  r2.setAttribute('data-tip','Pick 2 random digit classes and hide the rest — good for a quick demo');
+  r2.style.marginBottom='3px';
+  r2.onclick=pickRandomTwo;
+  cont.appendChild(r2);
+  const all=document.createElement('button');
+  all.className='leg-ctrl-btn ghost';
+  all.textContent='All 10';
+  all.title='Re-enable all digit classes';
+  all.style.marginBottom='5px';
+  all.onclick=enableAllClasses;
+  cont.appendChild(all);
+  // Hint
+  const hint=document.createElement('div');
+  hint.style.cssText='font-size:.59rem;color:var(--muted);text-align:center;margin-bottom:2px;line-height:1.3;';
+  hint.innerHTML='click to<br>show/hide';
+  cont.appendChild(hint);
+  // Digit items
+  const wrap=document.createElement('div');
+  wrap.className='enc-leg-items';
+  for(let d=0;d<10;d++){
+    const item=document.createElement('div');
+    item.className='leg-item';item.id='leg-item-'+d;
+    item.title='Click to toggle digit '+d+' in training';
+    item.innerHTML=`<div class="leg-swatch" style="background:${DCOLORS[d]}"></div><span class="leg-num">${d}</span>`;
+    item.onclick=()=>toggleClass(d);
+    wrap.appendChild(item);
+  }
+  cont.appendChild(wrap);
+}
+
+function pickRandomTwo(){
+  const all=[0,1,2,3,4,5,6,7,8,9];
+  // Fisher-Yates shuffle then take first 2
+  for(let i=all.length-1;i>0;i--){const j=0|Math.random()*(i+1);[all[i],all[j]]=[all[j],all[i]];}
+  activeClasses=new Set([all[0],all[1]]);
+  syncClassUI();
+}
+function enableAllClasses(){
+  activeClasses=new Set([0,1,2,3,4,5,6,7,8,9]);
+  syncClassUI();
+}
+// Shared sync for both pickRandomTwo and enableAllClasses
+function syncClassUI(){
+  for(let d=0;d<10;d++){
+    const item=document.getElementById('leg-item-'+d);
+    if(item) item.classList.toggle('off',!activeClasses.has(d));
+    const btn=document.querySelector(`.btn-d[data-digit="${d}"]`);
+    if(btn){btn.disabled=!activeClasses.has(d);btn.style.opacity=activeClasses.has(d)?'':'.28';}
+  }
+  trainTensorDirty=true;
+  if(DATA&&!activeClasses.has(DATA.labels[monitorIdx])) pickRandom();
+  drawScat();
+}
+function toggleClass(d){
+  if(activeClasses.has(d)){
+    if(activeClasses.size<=2) return; // enforce minimum 2 classes
+    activeClasses.delete(d);
+  } else {
+    activeClasses.add(d);
+  }
+  // Update legend item
+  const item=document.getElementById('leg-item-'+d);
+  if(item) item.classList.toggle('off',!activeClasses.has(d));
+  // Update class buttons in sample row
+  const btn=document.querySelector(`.btn-d[data-digit="${d}"]`);
+  if(btn){ btn.disabled=!activeClasses.has(d); btn.style.opacity=activeClasses.has(d)?'':'0.28'; }
+  // If current monitor sample is now inactive, pick a new one
+  if(DATA && !activeClasses.has(DATA.labels[monitorIdx])) pickRandom();
+  trainTensorDirty=true;  // force tensor rebuild on next epoch
+  // Redraw scatter (inactive class points hidden)
+  drawScat();
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+async function init(){
+  drawBowtie();drawMiniBowtie();buildDigitButtons();buildLegend();clearScat();
+
+  document.getElementById('loading-msg').textContent='Generating digit samples (no download needed)…';
+  await new Promise(r=>setTimeout(r,60));
+  DATA=generateDataset();
+
+  document.getElementById('loading-msg').textContent='Initializing TensorFlow.js…';
+  await new Promise(r=>setTimeout(r,60));
+  buildModel();
+
+  clrCv('cv-in');clrCv('cv-out');clrCv('cv-dec');
+  monitorIdx=0|Math.random()*DATA.n;
+
+  // Compute initial scatter from the randomly-initialised encoder so students
+  // can see the pre-training distribution as soon as they open the Train tab
+  document.getElementById('loading-msg').textContent='Warming up (compiling shaders)…';
+  await warmupModel();         // compiles WebGL shaders now so first Step feels instant
+  document.getElementById('loading-msg').textContent='Computing initial encodings…';
+  await refreshScatter();      // populates scatData (draw is skipped — tab hidden)
+  await showSample(monitorIdx); // populates scatHighlight
+
+  document.getElementById('loading-overlay').style.display='none';
+  document.getElementById('statusln').textContent=
+    `${DATA.n} samples ready \u00b7 showing untrained encodings \u00b7 press Train or Step to begin.`;
+}
+init();
+</script>
+</body>
+</html>
