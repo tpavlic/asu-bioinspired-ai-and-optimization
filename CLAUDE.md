@@ -195,6 +195,7 @@ Add a row to the appropriate table under `## Contents`:
 - `hebbian_learning/hebbian_competitive_clustering.html`
 - `recurrent_neural_networks/rnn_explorer.html`
 - `reservoir_computing/esn_explorer.html`
+- `unsupervised_learning/autoencoder_explorer.html`
 
 ### Cellular Automata
 
