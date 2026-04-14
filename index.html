@@ -29,11 +29,77 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background: #fff;
       color: #1a1a1a;
-      padding: 2rem 1.25rem 3rem;
       font-size: 15px;
       line-height: 1.5;
-      max-width: 780px;
+    }
+
+    /* ── Page layout ─────────────────────────────────────── */
+    .layout {
+      display: flex;
+      max-width: 980px;
       margin: 0 auto;
+    }
+
+    /* ── Sidebar nav ─────────────────────────────────────── */
+    .side-nav {
+      width: 168px;
+      flex-shrink: 0;
+      padding: 2rem 0.75rem 3rem 1rem;
+      position: sticky;
+      top: 0;
+      align-self: flex-start;
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+
+    .side-nav-label {
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #aaa;
+      padding: 0 0.4rem 0.55rem;
+      border-bottom: 1.5px solid #c4d8c4;
+      display: block;
+    }
+
+    .side-nav ul {
+      list-style: none;
+      margin-top: 0.35rem;
+    }
+
+    .side-nav li { margin-bottom: 0.05rem; }
+
+    .side-nav a {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #999;
+      text-decoration: none;
+      padding: 0.3rem 0.4rem;
+      border-radius: 4px;
+      line-height: 1.3;
+      transition: color 0.12s, background 0.12s;
+    }
+
+    .side-nav a:hover {
+      color: #2e7d32;
+      background: #f2f9f2;
+      text-decoration: none;
+    }
+
+    .side-nav a.active {
+      color: #2e7d32;
+      background: #e8f4e8;
+      font-weight: 700;
+    }
+
+    /* ── Main content ────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      min-width: 0;
+      padding: 2rem 1.25rem 3rem;
+      border-left: 1.5px solid #e8f0e8;
     }
 
     /* ── Header ─────────────────────────────────────────── */
@@ -61,6 +127,7 @@
     /* ── Sections ───────────────────────────────────────── */
     .demo-section {
       margin-bottom: 2.25rem;
+      scroll-margin-top: 1rem;
     }
 
     .demo-section h2 {
@@ -138,11 +205,6 @@
       line-height: 1.45;
     }
 
-    /* Hide thumbnails on very narrow screens */
-    @media (max-width: 400px) {
-      .demo-thumb { display: none; }
-    }
-
     /* ── Footer ─────────────────────────────────────────── */
     footer {
       margin-top: 2rem;
@@ -151,9 +213,92 @@
       font-size: 0.8rem;
       color: #888;
     }
+
+    /* ── Mobile FAB ──────────────────────────────────────── */
+    #nav-fab {
+      display: none;
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 200;
+      background: #2e7d32;
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 0.5rem 0.9rem 0.5rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+      font-family: inherit;
+      gap: 0.35rem;
+      align-items: center;
+      transition: background 0.12s;
+    }
+    #nav-fab:hover { background: #1b5e20; }
+
+    #nav-drawer {
+      display: none;
+      position: fixed;
+      bottom: 3.85rem;
+      right: 1.25rem;
+      z-index: 199;
+      background: #fff;
+      border: 1.5px solid #c4d8c4;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+      padding: 0.4rem 0;
+      min-width: 210px;
+    }
+    #nav-drawer.open { display: block; }
+    #nav-drawer ul { list-style: none; }
+    #nav-drawer a {
+      display: block;
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      text-decoration: none;
+      padding: 0.45rem 1.1rem;
+      transition: background 0.1s, color 0.1s;
+    }
+    #nav-drawer a:hover {
+      background: #f2f9f2;
+      color: #2e7d32;
+      text-decoration: none;
+    }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .side-nav { display: none; }
+      #nav-fab   { display: flex; }
+      .main-content { border-left: none; }
+    }
+
+    /* Hide thumbnails on very narrow screens */
+    @media (max-width: 400px) {
+      .demo-thumb { display: none; }
+    }
   </style>
 </head>
 <body>
+
+  <div class="layout">
+
+    <nav class="side-nav" aria-label="Section navigation">
+      <span class="side-nav-label">Sections</span>
+      <ul>
+        <li><a href="#genetic-algorithms">Genetic Algorithms</a></li>
+        <li><a href="#evolution-strategies">Evolution Strategies</a></li>
+        <li><a href="#evol-prog-ais">Evol. Prog. &amp; AIS</a></li>
+        <li><a href="#physics-inspired">Physics-Inspired</a></li>
+        <li><a href="#swarm-intelligence">Swarm Intelligence</a></li>
+        <li><a href="#neural-networks">Neural Networks</a></li>
+        <li><a href="#cellular-automata">Cellular Automata</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
 
   <header>
     <h1>Bio-Inspired AI &amp; Optimization — Course Visualizations</h1>
@@ -172,7 +317,7 @@
   <!-- ══════════════════════════════════════════════════════
        Genetic Algorithms
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="genetic-algorithms" class="demo-section">
     <h2>Genetic Algorithms</h2>
     <ul class="demo-list">
 
@@ -236,7 +381,7 @@
   <!-- ══════════════════════════════════════════════════════
        Evolution Strategies
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="evolution-strategies" class="demo-section">
     <h2>Evolution Strategies</h2>
     <ul class="demo-list">
 
@@ -274,7 +419,7 @@
   <!-- ══════════════════════════════════════════════════════
        Evolutionary Programming & Artificial Immune Systems
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="evol-prog-ais" class="demo-section">
     <h2>Evolutionary Programming &amp; Artificial Immune Systems</h2>
     <ul class="demo-list">
 
@@ -312,7 +457,7 @@
   <!-- ══════════════════════════════════════════════════════
        Physics-Inspired Methods
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="physics-inspired" class="demo-section">
     <h2>Physics-Inspired Methods</h2>
     <ul class="demo-list">
 
@@ -415,7 +560,7 @@
   <!-- ══════════════════════════════════════════════════════
        Swarm Intelligence
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="swarm-intelligence" class="demo-section">
     <h2>Swarm Intelligence</h2>
     <ul class="demo-list">
 
@@ -506,7 +651,7 @@
        Neural Networks
        Add demos: backprop, etc.
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="neural-networks" class="demo-section">
     <h2>Neural Networks</h2>
     <ul class="demo-list">
 
@@ -662,7 +807,7 @@
        Cellular Automata
        Add demos: other CA models, etc.
   ═══════════════════════════════════════════════════════ -->
-  <section class="demo-section">
+  <section id="cellular-automata" class="demo-section">
     <h2>Cellular Automata</h2>
     <ul class="demo-list">
 
@@ -704,6 +849,66 @@
       &mdash; Released under the <a href="LICENSE" target="_blank">MIT License</a>.
     </p>
   </footer>
+
+    </main><!-- /.main-content -->
+  </div><!-- /.layout -->
+
+  <!-- Mobile section nav -->
+  <button id="nav-fab" aria-label="Jump to section" aria-expanded="false">&#9776; Sections</button>
+  <nav id="nav-drawer" aria-label="Section navigation">
+    <ul>
+      <li><a href="#genetic-algorithms">Genetic Algorithms</a></li>
+      <li><a href="#evolution-strategies">Evolution Strategies</a></li>
+      <li><a href="#evol-prog-ais">Evol. Prog. &amp; AIS</a></li>
+      <li><a href="#physics-inspired">Physics-Inspired</a></li>
+      <li><a href="#swarm-intelligence">Swarm Intelligence</a></li>
+      <li><a href="#neural-networks">Neural Networks</a></li>
+      <li><a href="#cellular-automata">Cellular Automata</a></li>
+    </ul>
+  </nav>
+
+  <script>
+    // ── Highlight active section in sidebar via IntersectionObserver ──
+    const sections  = document.querySelectorAll('section[id]');
+    const sideLinks = document.querySelectorAll('.side-nav a[href^="#"]');
+
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          sideLinks.forEach(a =>
+            a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id)
+          );
+        }
+      });
+    }, { rootMargin: '-10% 0px -75% 0px' });
+
+    sections.forEach(s => io.observe(s));
+
+    // ── Mobile FAB toggle ─────────────────────────────────────────────
+    const fab    = document.getElementById('nav-fab');
+    const drawer = document.getElementById('nav-drawer');
+
+    fab.addEventListener('click', () => {
+      const open = drawer.classList.toggle('open');
+      fab.setAttribute('aria-expanded', open);
+    });
+
+    // Close drawer when a link is tapped
+    drawer.addEventListener('click', e => {
+      if (e.target.tagName === 'A') {
+        drawer.classList.remove('open');
+        fab.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Close drawer on outside click
+    document.addEventListener('click', e => {
+      if (!fab.contains(e.target) && !drawer.contains(e.target)) {
+        drawer.classList.remove('open');
+        fab.setAttribute('aria-expanded', 'false');
+      }
+    });
+  </script>
 
 </body>
 </html>
