@@ -435,6 +435,16 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
     A full <em>encoder-decoder</em> model (the original "Attention Is All You Need" architecture, T5, BART) uses both halves connected by a cross-attention bridge, letting a generated output sequence attend to an encoded input sequence.
   </div>
 
+  <div style="background:var(--surface-2);border:1px solid var(--border-lt);border-radius:var(--r);padding:12px 16px;margin-top:14px;font-size:.82rem;color:var(--text-mid)">
+    <strong>Key dimensions</strong> — used throughout this explorer:
+    <span style="display:inline-block;margin-top:4px;line-height:1.8">
+      <strong>d</strong> (= d<sub>model</sub>) — the dimensionality every token's representation lives in at every layer. Input embeddings, layer outputs, and the FFN all operate in ℝ<sup>d</sup>. BERT-base: d = 768; GPT-3: d = 12,288.<br>
+      <strong>d<sub>k</sub></strong> — the smaller dimension each attention head projects down to for computing Q and K. Typically d<sub>k</sub> = d / h, where h is the number of heads. BERT-base: d<sub>k</sub> = 64. The √d<sub>k</sub> scaling in softmax(Q·K<sup>T</sup>/√d<sub>k</sub>) normalises dot-product variance in this space.<br>
+      <strong>d<sub>v</sub></strong> — the value projection dimension, also typically d / h. After all h heads are combined by W<sub>O</sub>, the output is projected back to ℝ<sup>d</sup>.<br>
+      <strong>h</strong> — number of attention heads. BERT-base: h = 12. More heads allow the model to attend to multiple relationship types simultaneously.
+    </span>
+  </div>
+
   <h3 class="sec" style="margin-top:20px">Parameter Count at a Glance</h3>
   <div class="card" style="margin-bottom:20px">
     <p style="font-size:.86rem;color:var(--text-mid);margin-bottom:12px">
