@@ -779,7 +779,7 @@ const INFO={
 <p style="color:var(--txt3);font-style:italic">For K≪N, the RBFNN works in a restricted K-dimensional subspace that may not contain the representer-optimal solution. SVMs always start with the full N-dimensional span; the KKT conditions of the max-margin optimization then force the weights of non-critical training points to exactly zero, leaving only the S support vectors — the geometrically essential points nearest the margin — with nonzero weight.</p>`,
 
   centers:`<h4>◎ Center selection strategies</h4>
-<div class="pill" style="color:#ffd700"><b>Random subsampling (used here)</b>Select K random training points as centers. Simple, fast, effective when data is well-distributed.</div>
+<div class="pill" style="color:#c07818"><b>Random subsampling (used here)</b>Select K random training points as centers. Simple, fast, effective when data is well-distributed.</div>
 <div class="pill" style="color:#4facfe"><b>K-means clustering</b>Use cluster centroids. Covers the input space efficiently without redundant centers.</div>
 <div class="pill" style="color:#56d364"><b>All N training points</b>Maximum expressiveness — the setting where RBFNN and RBF-SVM operate in the same function space. The SVM then prunes to only the support vectors via the margin optimization; the RBFNN retains all N with nonzero weights.</div>
 <div class="pill" style="color:#f77062"><b>Learned via backprop</b>Optimize center positions jointly with weights. Expensive but optimal; this blurs into a general MLP with Gaussian activations.</div>
