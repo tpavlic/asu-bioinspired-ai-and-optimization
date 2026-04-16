@@ -263,19 +263,19 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
 
         <!-- PATCH 1 (blue): x=290 y=6 w=130 h=42, center x=355 y=27, right=420 bottom=48 -->
         <rect x="290" y="6" width="130" height="42" rx="12" fill="#e6eff8" stroke="#1d6fa4" stroke-width="1.5"/>
-        <text x="355" y="20" text-anchor="middle" font-size="9" font-weight="600" fill="#1b3a6a">PATCH 1 <tspan font-size="8" fill="#1d6fa4" id="d2role0">(Richest)</tspan></text>
+        <text x="355" y="20" text-anchor="middle" font-size="9" font-weight="600" fill="#1b3a6a">PATCH 1</text>
         <text x="355" y="32" text-anchor="middle" font-size="8.5" fill="#1d6fa4" font-family="IBM Plex Mono,monospace">h₁<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2h0">—</tspan></text>
         <text x="355" y="43" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g₁(h₁<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d2g0">—</tspan></text>
 
         <!-- PATCH 2 (green): x=290 y=68 w=130 h=42, center x=355 y=89 -->
         <rect x="290" y="68" width="130" height="42" rx="12" fill="#e8f4ee" stroke="#2a8c5e" stroke-width="1.5"/>
-        <text x="355" y="82" text-anchor="middle" font-size="9" font-weight="600" fill="#1a3d2a">PATCH 2 <tspan font-size="8" fill="#2a8c5e" id="d2role1">(OK)</tspan></text>
+        <text x="355" y="82" text-anchor="middle" font-size="9" font-weight="600" fill="#1a3d2a">PATCH 2</text>
         <text x="355" y="94" text-anchor="middle" font-size="8.5" fill="#2a8c5e" font-family="IBM Plex Mono,monospace">h₂<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2h1">—</tspan></text>
         <text x="355" y="105" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g₂(h₂<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d2g1">—</tspan></text>
 
         <!-- PATCH 3 (brown): x=290 y=130 w=130 h=42, center x=355 y=151, bottom=172 -->
         <rect x="290" y="130" width="130" height="42" rx="12" fill="#f5f0e4" stroke="#8c6e2a" stroke-width="1.5"/>
-        <text x="355" y="144" text-anchor="middle" font-size="9" font-weight="600" fill="#3d2e10">PATCH 3 <tspan font-size="8" fill="#8c6e2a" id="d2role2">(Poor)</tspan></text>
+        <text x="355" y="144" text-anchor="middle" font-size="9" font-weight="600" fill="#3d2e10">PATCH 3</text>
         <text x="355" y="156" text-anchor="middle" font-size="8.5" fill="#8c6e2a" font-family="IBM Plex Mono,monospace">h₃<tspan baseline-shift="super" font-size="6.5">*</tspan> = <tspan id="d2h2">—</tspan></text>
         <text x="355" y="167" text-anchor="middle" font-size="8.5" fill="#c8571f" font-family="IBM Plex Mono,monospace">g₃(h₃<tspan baseline-shift="super" font-size="6.5">*</tspan>) = <tspan id="d2g2">—</tspan></text>
 
@@ -357,11 +357,11 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
       <div class="cl">Patch Types</div>
       <div class="lgd">
         <div class="li"><div class="lsw" style="background:#1d6fa4"></div>
-          <span><span id="lbl0">Richest</span>&ensp;G<sub>max</sub>=<span id="lgm0">14.5</span>&ensp;τ=<span id="ltau0">8.0</span></span></div>
+          <span>Patch 1 &ensp;G<sub>max</sub>=<span id="lgm0">14.5</span>&ensp;τ=<span id="ltau0">8.0</span></span></div>
         <div class="li"><div class="lsw" style="background:#2a8c5e"></div>
-          <span><span id="lbl1">OK</span>&ensp;G<sub>max</sub>=<span id="lgm1">11.0</span>&ensp;τ=<span id="ltau1">5.0</span></span></div>
+          <span>Patch 2 &ensp;G<sub>max</sub>=<span id="lgm1">11.0</span>&ensp;τ=<span id="ltau1">5.0</span></span></div>
         <div class="li"><div class="lsw" style="background:#8c6e2a"></div>
-          <span><span id="lbl2">Poor</span>&ensp;G<sub>max</sub>=<span id="lgm2">8.5</span>&ensp;τ=<span id="ltau2">3.0</span></span></div>
+          <span>Patch 3 &ensp;G<sub>max</sub>=<span id="lgm2">8.5</span>&ensp;τ=<span id="ltau2">3.0</span></span></div>
         <div class="li" style="margin-top:2px">
           <div class="lsw" style="background:#6e3ea8"></div>
           <span style="color:#6e3ea8;font-style:italic;font-size:.74rem">Tangent slope = R<sup>*</sup> (all equal)</span>
@@ -431,12 +431,6 @@ function portfolioR(pats,s,ps){
   return(lo+hi)/2;
 }
 
-function getRoles(gArr){
-  const idx=[0,1,2].sort((a,b)=>gArr[b]-gArr[a]);
-  const r=['','',''];
-  r[idx[0]]='Richest';r[idx[1]]='OK';r[idx[2]]='Poor';
-  return r;
-}
 function currentPats2(){
   return taus2.map((tau,i)=>({Gmax:gMaxes2[i],tau,c:PAT_COLORS[i]}));
 }
@@ -855,15 +849,17 @@ function renderPortfolio(){
   }
   c.restore();
 
-  // Curve labels auto-positioned to avoid overlap
-  const roles=getRoles(gMaxes2);
+  // Numbered badge circles at right end of each curve
   const hLbl=19.5;
-  const entries=pats.map((p,i)=>({y:plotP.ty(gF(hLbl,p)),label:roles[i],col:pats[i].c}))
-    .sort((a,b)=>a.y-b.y);
-  for(let k=1;k<entries.length;k++)
-    if(entries[k].y-entries[k-1].y<13)entries[k].y=entries[k-1].y+13;
-  c.save();c.font=`600 11px 'Outfit',sans-serif`;c.textAlign='right';
-  for(const e of entries){c.fillStyle=e.col;c.fillText(e.label,plotP.tx(hLbl)-3,e.y-5);}
+  c.save();
+  for(let i=0;i<3;i++){
+    const bx=plotP.tx(hLbl)+10, by=plotP.ty(gF(hLbl,pats[i]));
+    const r=9;
+    c.fillStyle=pats[i].c;
+    c.beginPath();c.arc(bx,by,r,0,2*Math.PI);c.fill();
+    c.fillStyle='#fff';c.font=`bold 10px 'Outfit',sans-serif`;c.textAlign='center';
+    c.fillText(i+1,bx,by+3.5);
+  }
   c.restore();
 
   // Rotary dial — top-left of plot, close to where curves start
@@ -878,10 +874,8 @@ function renderPortfolio(){
   }
   document.getElementById('pt-spr').textContent=(hStars[0]-hStars[2]).toFixed(2);
 
-  // Legend
-  const roleArr=getRoles(gMaxes2);
+  // Legend — just update the numeric values (names are static in HTML)
   for(let i=0;i<3;i++){
-    document.getElementById('lbl'+i).textContent=roleArr[i];
     document.getElementById('lgm'+i).textContent=gMaxes2[i].toFixed(1);
     document.getElementById('ltau'+i).textContent=taus2[i].toFixed(1);
     document.getElementById('tp'+i).textContent=props2[i].toFixed(2);
@@ -893,8 +887,6 @@ function renderPortfolio(){
     document.getElementById('d2h'+i).textContent=hStars[i].toFixed(2);
     document.getElementById('d2g'+i).textContent=gStars[i].toFixed(2);
     document.getElementById('d2p'+i).textContent=props2[i].toFixed(2);
-    const roleLabel=roleArr[i];
-    document.getElementById('d2role'+i).textContent='('+roleLabel+')';
   }
 }
 
@@ -910,7 +902,11 @@ function evtPos(e,canvas){
 
 function hitTest1(px,py){
   const ax=plotS.tx(-s1),ay=plotS.ty(0);
+  // Anchor dot
   if(Math.hypot(px-ax,py-ay)<24)return'anchor';
+  // Dashed vertical line — same drag as anchor, wider y range
+  if(Math.abs(px-ax)<12&&py>=plotS.mT&&py<=plotS.mT+plotS.pH)return'anchor';
+  // Curve
   const dx=plotS.invX(px);
   if(dx>=0&&dx<=21){
     const cy=plotS.ty(gF(dx,{Gmax:gMax1,tau:tau1}));
