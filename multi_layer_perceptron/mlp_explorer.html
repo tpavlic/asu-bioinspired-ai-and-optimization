@@ -117,6 +117,13 @@ body{
 .card-header{
   display:flex;align-items:baseline;justify-content:space-between;
   gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap;
+  /* Match the natural height of a header that contains both a title and
+     an acc-pill (the pill is ~1.4rem tall, taller than the title alone
+     because of its padding). With this min-height, a header carrying
+     just a title takes the same vertical space as one with a pill — so
+     canvases in sibling cards (e.g., Input Space and Hidden-Unit Space
+     on Tab 2) start at the same y and line up visually. */
+  min-height:1.4rem;
 }
 .card-header .card-title{margin-bottom:0}
 /* When a .card-hint sits inside a .card-header (not below a .card-title),
@@ -2017,7 +2024,9 @@ svg.bp-map{
       </div>
 
       <div class="card plot-wrap xor-hidden">
-        <div class="card-title" id="cv-hidden-title">Hidden-unit space (h&#8321;, h&#8322;)</div>
+        <div class="card-header">
+          <div class="card-title" id="cv-hidden-title">Hidden-unit space (h&#8321;, h&#8322;)</div>
+        </div>
         <canvas class="plot" id="cv-hidden" width="480" height="480"></canvas>
         <div class="cvh-3d-ctrl" id="cvh-3d-ctrl" style="display:none">
           <label class="cvh-lock-lbl">
