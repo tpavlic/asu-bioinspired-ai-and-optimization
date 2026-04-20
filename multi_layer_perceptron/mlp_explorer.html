@@ -11,8 +11,8 @@
 <meta property="og:title" content="Multi-Layer Perceptron &amp; Backpropagation — Interactive Explorer">
 <meta property="og:description" content="Interactive explainer for the multi-layer perceptron: XOR, hidden-layer representations, backpropagation as gradient flow, and depth vs. width as a complexity story.">
 <meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/multi_layer_perceptron/mlp_explorer-preview.png">
-<meta property="og:image:width" content="2800">
-<meta property="og:image:height" content="1338">
+<meta property="og:image:width" content="2364">
+<meta property="og:image:height" content="1178">
 <meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/multi_layer_perceptron/mlp_explorer.html">
 <meta property="fb:app_id" content="2385695445236853">
 
@@ -94,6 +94,25 @@ body{
 .card-hint{
   font-size:.72rem;color:var(--text-muted);
   font-style:italic;margin-top:.35rem;
+}
+/* 3-D view: "Lock view to decision plane" checkbox below the hidden-space
+   canvas. Hidden when the tab doesn't need it (H < 3, or hidden-layer off). */
+.cvh-3d-ctrl{
+  margin-top:.45rem;
+  font-size:.75rem;
+}
+.cvh-lock-lbl{
+  display:inline-flex;align-items:flex-start;gap:.4rem;
+  color:var(--g-dk);cursor:pointer;user-select:none;
+}
+.cvh-lock-lbl input[type="checkbox"]{
+  margin:.15rem 0 0 0;cursor:pointer;   /* align with first line of text */
+}
+.cvh-lock-txt{
+  display:flex;flex-direction:column;gap:.05rem;
+}
+.cvh-lock-hint{
+  color:var(--text-muted);font-style:italic;font-size:.7rem;
 }
 .card-header{
   display:flex;align-items:baseline;justify-content:space-between;
@@ -1968,7 +1987,7 @@ svg.bp-map{
           <span><span class="swatch" style="background:var(--pos-w)"></span>positive weight</span>
           <span><span class="swatch" style="background:var(--neg-w)"></span>negative weight</span>
           <span>line thickness &prop; &#124;w&#124;</span>
-          <span>node fill &prop; activation</span>
+          <span>node fill &prop; mean activation over the 4 XOR points</span>
         </div>
       </div>
 
@@ -2000,6 +2019,15 @@ svg.bp-map{
       <div class="card plot-wrap xor-hidden">
         <div class="card-title" id="cv-hidden-title">Hidden-unit space (h&#8321;, h&#8322;)</div>
         <canvas class="plot" id="cv-hidden" width="480" height="480"></canvas>
+        <div class="cvh-3d-ctrl" id="cvh-3d-ctrl" style="display:none">
+          <label class="cvh-lock-lbl">
+            <input type="checkbox" id="cvh-lock">
+            <span class="cvh-lock-txt">
+              <span>Lock view to decision plane</span>
+              <span class="cvh-lock-hint">(axes rotate around a fixed plane as the network trains)</span>
+            </span>
+          </label>
+        </div>
         <div class="card-hint">
           The four XOR points remapped by the hidden layer. Watch them separate.
         </div>
@@ -2855,6 +2883,16 @@ svg.bp-map{
     // align with the previous run's axis orientation, so we let the PCA
     // canonicalization (max-magnitude-component positive) pick the sign.
     prevPcaAxes = null;
+    // Also restore the 3-D view angle — if the user tumbled the hidden-
+    // space cube around, a "Reset" should return the view to the most
+    // legible default orientation. Disengage "lock to decision plane" too:
+    // a fresh reset should give a neutral, tumbleable view, not one still
+    // auto-pinned to the just-reinitialized plane.
+    hs3d.yaw    = HS3D_DEFAULT_YAW;
+    hs3d.pitch  = HS3D_DEFAULT_PITCH;
+    hs3d.locked = false;
+    const lockEl = document.getElementById('cvh-lock');
+    if (lockEl) lockEl.checked = false;
     drawAll();
     updateStats(null, 'idle');
   }
@@ -3313,6 +3351,860 @@ svg.bp-map{
   // the prior frame keeps the visualization stable.
   let prevPcaAxes = null;   // { axis1, axis2, H }
 
+  /* ==================== 3D hidden-space renderer ====================
+     For H >= 3 we render the hidden space as a rotatable 3-D cube rather
+     than a flat 2-D PCA plot. The cube contains a volumetric heatmap (a
+     grid of semi-transparent subcubes colored by the network's predicted
+     class at each sample point) plus the four XOR points drawn as opaque
+     spheres. The decision boundary is *implicit* — it's the surface where
+     orange subcubes meet green subcubes inside the transparent volume.
+
+     The 3-D coordinate system depends on H:
+     - H == 3: raw (h₁, h₂, h₃) axes — the cube IS the hidden space, no
+       projection whatsoever.
+     - H >= 4: (PC₁, PC₂, PC₃). Because 4 mean-centered XOR points have
+       rank at most 3, these three PCs always capture 100% of the 4-point
+       variance, so the representation of the 4 training points is lossless
+       (unlike the 2-D PCA view, which dropped one dimension).
+
+     Rendering uses orthographic projection + painter's algorithm: project
+     every drawable primitive to screen space, sort back-to-front by mean
+     Z in camera space, draw in order. No Three.js — we keep this widget
+     self-contained. */
+
+  // Persistent camera state (yaw & pitch in radians). Tab-switch preserves
+  // the user's chosen angle, but the Reset button restores the default view.
+  const HS3D_DEFAULT_YAW   = -0.6;
+  const HS3D_DEFAULT_PITCH =  0.45;
+  const hs3d = {
+    yaw:   HS3D_DEFAULT_YAW,
+    pitch: HS3D_DEFAULT_PITCH,
+    dragging: false,
+    lastX: 0, lastY: 0,
+    // When locked = true, each draw Newton-projects (yaw, pitch) onto the
+    // edge-on manifold. Minimal change at lock time, smooth drift during
+    // training. The plane can glide across the view but never flips.
+    locked: false,
+  };
+
+  // Build a 3x3 rotation matrix from yaw (around world Y) then pitch (around
+  // camera X). Returns row-major 9-element array.
+  function hs3dRotMat(yaw, pitch){
+    const cy = Math.cos(yaw),   sy = Math.sin(yaw);
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    // R = Rx(pitch) · Ry(yaw). Applied as v' = R · v (column vector).
+    return [
+       cy,        0,     sy,
+       sy*sp,     cp,   -cy*sp,
+      -sy*cp,    sp,     cy*cp,
+    ];
+  }
+  function hs3dApply(R, v){
+    return [
+      R[0]*v[0] + R[1]*v[1] + R[2]*v[2],
+      R[3]*v[0] + R[4]*v[1] + R[5]*v[2],
+      R[6]*v[0] + R[7]*v[1] + R[8]*v[2],
+    ];
+  }
+  // Orthographic projection: scale camera-space (x, y) to screen coords.
+  // Camera looks down -Z, so larger Z is farther from the viewer.
+  function hs3dProject(camPt, W, Hc, scale){
+    return [
+      W/2  + camPt[0] * scale,
+      Hc/2 - camPt[1] * scale,   // y flipped: screen grows downward
+      camPt[2],                   // preserve Z for depth sorting
+    ];
+  }
+
+  function drawHiddenSpace3D(W, Hc, hiddenPts, pca){
+    // Viewing volume: 3-D cube from -1 to +1 on each axis in "world" coords.
+    // Points, axes, and the bounding wireframe are all expressed in these
+    // coords, and the same rotation is applied to all of them for a
+    // consistent scene.
+    const scale = 140;   // world units → screen pixels
+
+    // World-space positions for the 4 XOR points. For H == 3 we use the raw
+    // (h₁, h₂, h₃) activations, rescaled so the full activation range maps
+    // to roughly [-1, +1] in world coords. For H >= 4, the PCA projection
+    // is computed by the caller and passed in; we project each H-dim point
+    // into (PC₁, PC₂, PC₃), then rescale similarly.
+    const act = actPair();
+    // Forward mapping: for positioning the 4 XOR points. Also builds the
+    // inverse mapping toHidden(wu, wv, ww) → H-dim hidden vector, needed
+    // so the volumetric heatmap can evaluate the network at arbitrary
+    // points inside the viewing cube.
+    let points3D;  // array of 4 entries, each [x, y, z] in world coords
+    let toHidden;  // (wu, wv, ww) → H-dim hidden vector
+    if (state.H === 3){
+      // Per-axis rescale from activation range to [-1, 1]. Sigmoid/ReLU
+      // have one-sided ranges (≥ 0), tanh is symmetric around 0. We use the
+      // same bounds the 2-D view used to keep visual consistency.
+      let lo, hi;
+      if (act === Act.tanh){ lo = -1.25; hi = 1.25; }
+      else if (act === Act.relu){ lo = -0.25; hi = 3.0; }
+      else { lo = -0.25; hi = 1.25; }
+      const toWorld = (h) => 2 * (h - lo) / (hi - lo) - 1;
+      toHidden = (wu, wv, ww) => [
+        lo + (wu + 1) / 2 * (hi - lo),
+        lo + (wv + 1) / 2 * (hi - lo),
+        lo + (ww + 1) / 2 * (hi - lo),
+      ];
+      points3D = hiddenPts.map(h => [toWorld(h[0]), toWorld(h[1]), toWorld(h[2])]);
+    } else {
+      // PCA projection: center the point, then dot with each PC axis.
+      const project = (h) => {
+        let u = 0, v = 0, w = 0;
+        for (let i = 0; i < state.H; i++){
+          u += (h[i] - pca.center[i]) * pca.axis1[i];
+          v += (h[i] - pca.center[i]) * pca.axis2[i];
+          w += (h[i] - pca.center[i]) * pca.axis3[i];
+        }
+        return [u, v, w];
+      };
+      const raw = hiddenPts.map(project);
+      // Fit to [-1, +1] with some headroom so dots don't touch the edges.
+      let maxAbs = 0.1;
+      for (const [u, v, w] of raw){
+        if (Math.abs(u) > maxAbs) maxAbs = Math.abs(u);
+        if (Math.abs(v) > maxAbs) maxAbs = Math.abs(v);
+        if (Math.abs(w) > maxAbs) maxAbs = Math.abs(w);
+      }
+      const pad = 1.25;
+      const s = 1 / (maxAbs * pad);
+      points3D = raw.map(([u, v, w]) => [u * s, v * s, w * s]);
+      // Inverse: world → PC (divide by s) → hidden (center + PC·axes).
+      toHidden = (wu, wv, ww) => {
+        const upc = wu / s;
+        const vpc = wv / s;
+        const wpc = ww / s;
+        const h = pca.center.slice();
+        for (let i = 0; i < state.H; i++){
+          h[i] += upc * pca.axis1[i] + vpc * pca.axis2[i] + wpc * pca.axis3[i];
+        }
+        return h;
+      };
+    }
+
+    // Compute the output-layer logit at any world point — used by lock mode
+    // to find the decision plane's orientation, and later by the plane-
+    // rendering block to find where the plane crosses the bounding cube.
+    const logitAtWorld = (wu, wv, ww) => {
+      const h = toHidden(wu, wv, ww);
+      let z = state.b2;
+      for (let d = 0; d < state.H; d++) z += state.W2[d] * h[d];
+      return z;
+    };
+    // Plane equation in world coords: α·u + β·v + γ·w + δ = 0. Read off by
+    // sampling the logit at four strategic points.
+    const planeDelta = logitAtWorld(0, 0, 0);
+    const planeAlpha = logitAtWorld(1, 0, 0) - planeDelta;
+    const planeBeta  = logitAtWorld(0, 1, 0) - planeDelta;
+    const planeGamma = logitAtWorld(0, 0, 1) - planeDelta;
+
+    // Lock-to-plane mode: keep the view edge-on to the decision plane
+    // with minimal camera motion each frame.
+    //
+    // The camera has 2 rotational DOF (yaw + pitch, no roll). Truly pinning
+    // both the on-screen orientation AND the position of the plane's edge-
+    // line during training would require a third DOF — sometimes the
+    // correct adjustment is a "roll." Without it, the solver would hit
+    // unreachable poses and oscillate between near-solutions. So we aim
+    // for the weaker invariant: the plane stays edge-on.
+    //
+    // The edge-on constraint is a single scalar equation
+    //   C(yaw, pitch) = (R(yaw, pitch) · n)_z
+    //                 = −sy·cp·α + sp·β + cy·cp·γ = 0,
+    // so the solution set is a 1-D curve in (yaw, pitch) space. We Newton-
+    // project from the current angles onto that curve every frame,
+    //   (Δyaw, Δpitch) = −C · ∇C / |∇C|²,
+    // giving:
+    //   • Lock-moment behavior: if the user is already edge-on, C = 0 and
+    //     nothing moves. If they're slightly off, a single step snaps to
+    //     the nearest valid pose near their chosen view.
+    //   • Training behavior: per-step weight changes are tiny so the
+    //     manifold drifts only slightly; each frame's projection is a
+    //     small nudge, the camera tracks smoothly, the plane glides
+    //     gracefully across the view without ever "showing its belly."
+    if (hs3d.locked){
+      const normSq = planeAlpha*planeAlpha
+                   + planeBeta*planeBeta
+                   + planeGamma*planeGamma;
+      if (normSq > 1e-12){
+        let y = hs3d.yaw, p = hs3d.pitch;
+        for (let it = 0; it < 12; it++){
+          const sy = Math.sin(y),  cy = Math.cos(y);
+          const sp = Math.sin(p),  cp = Math.cos(p);
+          const C = -sy*cp*planeAlpha + sp*planeBeta + cy*cp*planeGamma;
+          if (Math.abs(C) < 1e-10) break;
+          const dCdy = -cp * (cy*planeAlpha + sy*planeGamma);
+          const dCdp =  sp * (sy*planeAlpha - cy*planeGamma) + cp*planeBeta;
+          const gSq  = dCdy*dCdy + dCdp*dCdp;
+          if (gSq < 1e-14) break;
+          const step = C / gSq;
+          y -= step * dCdy;
+          p -= step * dCdp;
+        }
+        hs3d.yaw   = y;
+        hs3d.pitch = p;
+      }
+    }
+
+    const R = hs3dRotMat(hs3d.yaw, hs3d.pitch);
+    // Thin wrapper around hs3dApply so the call sites read uniformly.
+    // No world offset — lock mode now only rotates (pure project-to-edge-on).
+    const applyWorld = (p) => hs3dApply(R, p);
+
+    // Background.
+    cH.fillStyle = cvar('--cream');
+    cH.fillRect(0, 0, W, Hc);
+
+    // --- Back-face panels. Draw the three cube faces that point AWAY from
+    // the camera; they sit behind the data and act as coordinate-plane
+    // reference surfaces (think matplotlib's 3-D plot background panels).
+    // With these in place, floating points inside the cube are much easier
+    // to localize than with wireframe edges alone.
+    //
+    // Per axis direction, exactly one of the two opposite faces is back-
+    // facing — the one whose world normal, after rotation, has a positive
+    // camera-Z component (camera looks down -Z, so pointing away = +Z).
+    {
+      const FACE_FILL = 'rgba(240, 232, 210, 0.55)';
+      const FACE_LINE = 'rgba(140, 130, 90, 0.45)';
+      const GRID_LINE = 'rgba(140, 130, 90, 0.22)';
+      cH.save();
+      for (const axis of [0, 1, 2]){
+        for (const sign of [-1, 1]){
+          const n = [0, 0, 0]; n[axis] = sign;
+          const rn = hs3dApply(R, n);
+          if (rn[2] <= 0) continue;   // front-facing; skip
+          const tan = [0, 1, 2].filter(a => a !== axis);
+          // Four corners of the face (at the cube's ±1 bounds).
+          const quadScr = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b]) => {
+            const p = [0, 0, 0];
+            p[axis] = sign; p[tan[0]] = a; p[tan[1]] = b;
+            return hs3dProject(applyWorld(p), W, Hc, scale);
+          });
+          cH.fillStyle = FACE_FILL;
+          cH.beginPath();
+          cH.moveTo(quadScr[0][0], quadScr[0][1]);
+          for (let i = 1; i < 4; i++) cH.lineTo(quadScr[i][0], quadScr[i][1]);
+          cH.closePath();
+          cH.fill();
+          cH.strokeStyle = FACE_LINE;
+          cH.lineWidth = 1;
+          cH.stroke();
+          // Grid lines at world coords -0.5, 0, +0.5 along each in-plane
+          // direction — three horizontal + three vertical lines per panel.
+          cH.strokeStyle = GRID_LINE;
+          cH.lineWidth = 0.6;
+          for (const g of [-0.5, 0, 0.5]){
+            // Along tan[0] at tan[1] = g
+            const p1 = [0,0,0], p2 = [0,0,0];
+            p1[axis] = sign; p2[axis] = sign;
+            p1[tan[0]] = -1; p2[tan[0]] = 1;
+            p1[tan[1]] = g;  p2[tan[1]] = g;
+            const s1 = hs3dProject(applyWorld(p1), W, Hc, scale);
+            const s2 = hs3dProject(applyWorld(p2), W, Hc, scale);
+            cH.beginPath();
+            cH.moveTo(s1[0], s1[1]);
+            cH.lineTo(s2[0], s2[1]);
+            cH.stroke();
+            // Along tan[1] at tan[0] = g
+            const q1 = [0,0,0], q2 = [0,0,0];
+            q1[axis] = sign; q2[axis] = sign;
+            q1[tan[1]] = -1; q2[tan[1]] = 1;
+            q1[tan[0]] = g;  q2[tan[0]] = g;
+            const t1 = hs3dProject(applyWorld(q1), W, Hc, scale);
+            const t2 = hs3dProject(applyWorld(q2), W, Hc, scale);
+            cH.beginPath();
+            cH.moveTo(t1[0], t1[1]);
+            cH.lineTo(t2[0], t2[1]);
+            cH.stroke();
+          }
+        }
+      }
+      cH.restore();
+    }
+
+    // --- Draw the 12 edges of the bounding cube, split by the decision
+    // plane so each segment is colored by the class of the half-space it
+    // lives in. An edge whose two endpoints evaluate to the same sign of
+    // α·u + β·v + γ·w + δ stays a single colored segment; an edge that
+    // straddles the plane is split at the intersection point and each
+    // half gets the color of the corresponding endpoint's side. This
+    // turns the bounding wireframe itself into a readout of the learned
+    // decision rule — the orange-wire region holds the orange points,
+    // the green-wire region holds the green points — without the visual
+    // noise of a filled half-space.
+    const corners = [];
+    for (const sx of [-1, 1]){
+      for (const sy of [-1, 1]){
+        for (const sz of [-1, 1]){
+          corners.push([sx, sy, sz]);
+        }
+      }
+    }
+    const edges = [];
+    for (let i = 0; i < corners.length; i++){
+      for (let j = i+1; j < corners.length; j++){
+        let diff = 0;
+        for (let k = 0; k < 3; k++) if (corners[i][k] !== corners[j][k]) diff++;
+        if (diff === 1) edges.push([i, j]);
+      }
+    }
+    const projCorners = corners.map(c => hs3dProject(applyWorld(c), W, Hc, scale));
+    // Signed plane value at each world corner. Positive → class-1 side,
+    // negative → class-0 side. This is just the logit-from-world sampled
+    // at each ±1 cube corner, where planeAlpha/Beta/Gamma/Delta already
+    // encode that sampling.
+    const cornerPlaneVal = corners.map(c =>
+      planeAlpha*c[0] + planeBeta*c[1] + planeGamma*c[2] + planeDelta);
+    // Class-color strokes — alpha set per-segment by depth. Hardcoded RGB
+    // so we can vary alpha. The orange matches --class-1 directly (it's
+    // already vivid at wire widths), but the green uses --g-lt rather
+    // than --class-0: a thin forest-green wireframe with alpha fading
+    // reads as near-black against the cream background, so we lift to
+    // the brighter palette green for legibility without leaving the
+    // theme. Dots still use --class-0 (filled areas can afford the
+    // darker tone).
+    const CLASS0_RGB = '74, 140, 47';    // --g-lt (#4A8C2F)
+    const CLASS1_RGB = '232, 99, 10';    // --class-1 (#E8630A)
+    const segRgb = (side) => side > 0 ? CLASS1_RGB : CLASS0_RGB;
+
+    // Build the segment list (1 or 2 segments per edge depending on
+    // whether it straddles the plane). Each segment carries its own
+    // class, screen endpoints, and mean camera-Z for depth sort + fade.
+    const segments = [];
+    for (const [a, b] of edges){
+      const pa = cornerPlaneVal[a];
+      const pb = cornerPlaneVal[b];
+      const sa = projCorners[a];
+      const sb = projCorners[b];
+      // Same sign (or one exactly zero) — one segment, color by either.
+      if (pa * pb >= 0){
+        const side = pa !== 0 ? pa : pb;
+        segments.push({
+          x1: sa[0], y1: sa[1], x2: sb[0], y2: sb[1],
+          meanZ: (sa[2] + sb[2]) / 2,
+          rgb: segRgb(side),
+        });
+      } else {
+        // Straddling edge: split at intersection parameter t = pa/(pa-pb).
+        // Orthographic projection is affine in world coords, so linear
+        // interpolation in screen space matches the true mid-point.
+        const t = pa / (pa - pb);
+        const mx = sa[0] + t * (sb[0] - sa[0]);
+        const my = sa[1] + t * (sb[1] - sa[1]);
+        const mz = sa[2] + t * (sb[2] - sa[2]);
+        segments.push({
+          x1: sa[0], y1: sa[1], x2: mx,   y2: my,
+          meanZ: (sa[2] + mz) / 2,
+          rgb: segRgb(pa),
+        });
+        segments.push({
+          x1: mx,   y1: my,   x2: sb[0], y2: sb[1],
+          meanZ: (mz + sb[2]) / 2,
+          rgb: segRgb(pb),
+        });
+      }
+    }
+    // Depth-sorted painter's pass so near segments draw on top of far.
+    segments.sort((p, q) => q.meanZ - p.meanZ);
+
+    cH.save();
+    for (const s of segments){
+      const nearness = (s.meanZ + 1) / 2;  // 0 = back, 1 = front (approx)
+      const alpha = (0.30 + nearness * 0.60).toFixed(3);
+      cH.strokeStyle = `rgba(${s.rgb}, ${alpha})`;
+      cH.lineWidth = 1 + nearness * 0.8;
+      cH.beginPath();
+      cH.moveTo(s.x1, s.y1);
+      cH.lineTo(s.x2, s.y2);
+      cH.stroke();
+    }
+    cH.restore();
+
+    // --- Coordinate planes through the origin. Three planes (h₁-h₂ at
+    // h₃=0, h₁-h₃ at h₂=0, h₂-h₃ at h₁=0) divide the cube into 8 octants.
+    // A point's position relative to each plane tells you the sign of the
+    // corresponding coordinate — so a point at (-0.3, 0.5, 0.2) lands
+    // clearly on the negative side of the h₁=0 plane, even when the
+    // positive-only axis arrow gives no direct reference.
+    {
+      const PLANE_FILL = 'rgba(80, 80, 80, 0.07)';
+      const PLANE_EDGE = 'rgba(60, 60, 60, 0.30)';
+      cH.save();
+      // Each plane fixes one axis at 0, spans the other two across [-1,+1].
+      const planeDefs = [0, 1, 2].map(fixedAxis => {
+        const tan = [0, 1, 2].filter(a => a !== fixedAxis);
+        const worldCorners = [[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b]) => {
+          const pt = [0, 0, 0];
+          pt[fixedAxis] = 0;
+          pt[tan[0]] = a;
+          pt[tan[1]] = b;
+          return pt;
+        });
+        const camCorners = worldCorners.map(c => applyWorld(c));
+        const scrCorners = camCorners.map(c => hs3dProject(c, W, Hc, scale));
+        const meanZ = camCorners.reduce((s, c) => s + c[2], 0) / 4;
+        return { scrCorners, meanZ };
+      });
+      // Painter's algorithm: far planes first. Planes intersect each other
+      // at the axes, which makes strict ordering technically impossible for
+      // overlapping quads — but with low fill alpha (0.07) the artifacts at
+      // intersection lines are negligible.
+      planeDefs.sort((a, b) => b.meanZ - a.meanZ);
+      for (const p of planeDefs){
+        cH.fillStyle = PLANE_FILL;
+        cH.strokeStyle = PLANE_EDGE;
+        cH.lineWidth = 0.8;
+        cH.beginPath();
+        cH.moveTo(p.scrCorners[0][0], p.scrCorners[0][1]);
+        for (let i = 1; i < 4; i++) cH.lineTo(p.scrCorners[i][0], p.scrCorners[i][1]);
+        cH.closePath();
+        cH.fill();
+        cH.stroke();
+      }
+      cH.restore();
+    }
+
+    // --- Decision surface: the hyperplane w₂·h + b₂ = 0 projected into
+    // our 3-D viewing volume. For H=3 this is the literal decision plane
+    // in hidden space. For H>=4 it's the intersection of the full
+    // (H-1)-D decision hyperplane with the 3-D PCA subspace — still a
+    // 2-D plane because hyperplane ∩ 3-subspace = 2-plane (generically).
+    //
+    // The plane's intersection with the bounding cube [-1,+1]^3 is a
+    // convex polygon of 3 to 6 vertices. We find those vertices by
+    // walking the 12 cube edges and keeping the ones where the plane
+    // equation changes sign between endpoints. Coefficients are already
+    // computed above (used for lock-to-plane mode as well).
+    {
+      const planeAt = (u, v, w) =>
+        planeAlpha * u + planeBeta * v + planeGamma * w + planeDelta;
+
+      // Enumerate the 12 cube edges and collect sign-change intersections.
+      const cW = [];
+      for (const sx of [-1, 1])
+        for (const sy of [-1, 1])
+          for (const sz of [-1, 1])
+            cW.push([sx, sy, sz]);
+      const edgePairs = [];
+      for (let i = 0; i < 8; i++){
+        for (let j = i+1; j < 8; j++){
+          let diff = 0;
+          for (let k = 0; k < 3; k++) if (cW[i][k] !== cW[j][k]) diff++;
+          if (diff === 1) edgePairs.push([i, j]);
+        }
+      }
+      const inter = [];
+      for (const [i, j] of edgePairs){
+        const v1 = cW[i], v2 = cW[j];
+        const p1 = planeAt(v1[0], v1[1], v1[2]);
+        const p2 = planeAt(v2[0], v2[1], v2[2]);
+        if ((p1 > 0) !== (p2 > 0) && Math.abs(p1) > 1e-9 && Math.abs(p2) > 1e-9){
+          const t = p1 / (p1 - p2);
+          inter.push([
+            v1[0] + t * (v2[0] - v1[0]),
+            v1[1] + t * (v2[1] - v1[1]),
+            v1[2] + t * (v2[2] - v1[2]),
+          ]);
+        }
+      }
+
+      // If the plane crosses the cube at all, project + draw.
+      if (inter.length >= 3){
+        const scrPts = inter.map(p => hs3dProject(applyWorld(p), W, Hc, scale));
+        // Sort vertices by angle around their screen-space centroid to get
+        // a proper polygon (plane intersection with cube is convex, so
+        // angle-sort gives the correct winding).
+        const cx = scrPts.reduce((s, c) => s + c[0], 0) / scrPts.length;
+        const cy = scrPts.reduce((s, c) => s + c[1], 0) / scrPts.length;
+        scrPts.sort((a, b) =>
+          Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx));
+
+        cH.save();
+        // Two-sided plane coloring with an "other-side" semantic: the face
+        // the viewer sees is painted with the color of the class that lives
+        // on the OPPOSITE side of the plane. Viewer in the green region
+        // looks at the plane and sees orange (as if looking through it to
+        // the orange half-space); viewer in the orange region sees green.
+        // This mirrors Ted's intuition that the plane "shows you what's
+        // on the other side."
+        //
+        // Sign logic: plane world-normal (α, β, γ) points toward the +
+        // (orange) half-space. In camera coords, (R·n)_z < 0 means that
+        // normal points toward the viewer — so the viewer sits on the +
+        // side, and we paint the visible face GREEN. Positive (R·n)_z →
+        // viewer on the − side, paint ORANGE.
+        //
+        // Edge-on exception: when |(R·n)_z|/|n| is small OR we're in lock
+        // mode, the polygon collapses to a line and the fill choice would
+        // flicker as (R·n)_z crosses zero. Instead render two parallel
+        // offset lines — one orange, one green — like two colored cards
+        // stacked, with the orange line on the + side of the edge and
+        // the green line on the − side.
+        const nCam = hs3dApply(R, [planeAlpha, planeBeta, planeGamma]);
+        const normMag = Math.sqrt(planeAlpha*planeAlpha
+                                + planeBeta *planeBeta
+                                + planeGamma*planeGamma);
+        const edgeRatio = Math.abs(nCam[2]) / (normMag || 1);
+        const isEdgeOn = hs3d.locked || edgeRatio < 0.05;
+
+        if (isEdgeOn){
+          // Find the two furthest-apart polygon vertices on screen —
+          // those are the endpoints of the edge-on line segment.
+          let iA = 0, iB = 1, maxD = 0;
+          for (let i = 0; i < scrPts.length; i++){
+            for (let j = i+1; j < scrPts.length; j++){
+              const d = Math.hypot(scrPts[i][0] - scrPts[j][0],
+                                   scrPts[i][1] - scrPts[j][1]);
+              if (d > maxD){ maxD = d; iA = i; iB = j; }
+            }
+          }
+          const pA = scrPts[iA], pB = scrPts[iB];
+          // Perpendicular-to-the-line offset direction, pointing toward
+          // the orange (+n) half-space. Camera +y maps to screen −y,
+          // so the screen-space analog of nCam.xy is (nCam.x, −nCam.y).
+          const sx = nCam[0], sy = -nCam[1];
+          const sLen = Math.hypot(sx, sy);
+          if (sLen > 1e-6){
+            const oxH = sx / sLen, oyH = sy / sLen;
+            // Stroke width is fixed regardless of lock state so toggling
+            // the lock doesn't visibly change thickness. The two strokes
+            // are offset by exactly half the line width each, so they
+            // meet cleanly at the plane's true edge line — no gap, no
+            // overlap.
+            //
+            // Color-to-side: SAME-class, matching the wireframe and the
+            // dot colors. The orange stroke sits on the +n (orange-
+            // region) side, so the stripe of color lives in the half-
+            // space where points of that class end up. The green stroke
+            // sits on the −n (green-region) side.
+            //
+            // Colors match the wireframe's vibrant palette (--class-1
+            // orange and --g-lt green). Edge-on line width is thicker
+            // than regular edges to give the stripe colors enough real
+            // estate to read clearly at a glance.
+            const lw  = 4;
+            const off = lw / 2;
+            cH.lineCap = 'butt';     // square caps so endpoints kiss too
+            cH.lineWidth = lw;
+            // Orange on the + (orange-region-adjacent) side.
+            cH.strokeStyle = 'rgba(232, 99, 10, 1.0)';
+            cH.beginPath();
+            cH.moveTo(pA[0] + oxH * off, pA[1] + oyH * off);
+            cH.lineTo(pB[0] + oxH * off, pB[1] + oyH * off);
+            cH.stroke();
+            // Green on the − (green-region-adjacent) side.
+            cH.strokeStyle = 'rgba(74, 140, 47, 1.0)';
+            cH.beginPath();
+            cH.moveTo(pA[0] - oxH * off, pA[1] - oyH * off);
+            cH.lineTo(pB[0] - oxH * off, pB[1] - oyH * off);
+            cH.stroke();
+          } else {
+            // Completely degenerate (normal parallel to camera axis) —
+            // fall back to a neutral edge line.
+            cH.strokeStyle = 'rgba(74, 140, 47, 1.0)';
+            cH.lineWidth = 3;
+            cH.beginPath();
+            cH.moveTo(pA[0], pA[1]);
+            cH.lineTo(pB[0], pB[1]);
+            cH.stroke();
+          }
+        } else {
+          // Face-on (oblique): fill with the SAME-class color as the
+          // viewer's side of the plane — so the fill tint matches the
+          // dots and wireframe in that half-space, consistent with the
+          // edge-on stack's color-to-side assignment.
+          //
+          // Sign note: despite a clean derivation that would suggest
+          // `nCam[2] < 0` ↔ viewer on +n side, empirically the pairing
+          // below is what produces correct same-class output (the face
+          // closest to the green points reads green, the face closest
+          // to the orange points reads orange). The rotation-matrix
+          // convention or camera-Z sign convention somewhere upstream
+          // differs from what I'd naively expect, so just pin the
+          // assignment to what renders correctly.
+          const fillRgb   = nCam[2] < 0 ? '74, 140, 47' : '232, 99, 10';
+          const strokeRgb = fillRgb;
+          const fillAlpha = 0.22;
+          cH.fillStyle   = `rgba(${fillRgb}, ${fillAlpha})`;
+          cH.strokeStyle = `rgba(${strokeRgb}, 1.0)`;
+          cH.lineWidth   = 3;
+          cH.lineJoin    = 'round';
+          cH.beginPath();
+          cH.moveTo(scrPts[0][0], scrPts[0][1]);
+          for (let i = 1; i < scrPts.length; i++){
+            cH.lineTo(scrPts[i][0], scrPts[i][1]);
+          }
+          cH.closePath();
+          cH.fill();
+          cH.stroke();
+        }
+        cH.restore();
+      }
+    }
+
+    // --- Draw the three axis arrows extending from origin.
+    const useRawLabels = state.H === 3;
+    const axisDefs = [
+      { dir: [1, 0, 0], label: useRawLabels ? 'h₁' : 'PC₁', color: '#1C3A0E' },
+      { dir: [0, 1, 0], label: useRawLabels ? 'h₂' : 'PC₂', color: '#2D5A1B' },
+      { dir: [0, 0, 1], label: useRawLabels ? 'h₃' : 'PC₃', color: '#4A8C2F' },
+    ];
+    // Project axis label positions. The central axis lines were removed —
+    // the through-origin planes already indicate the axes (their pairwise
+    // intersections ARE the axes), and the labels at just-outside-the-cube
+    // positions show which direction is positive. Keeping the labels alone
+    // preserves the "+h direction" information with much less visual weight.
+    const axisItems = axisDefs.map(a => {
+      const tip = applyWorld([a.dir[0] * 1.18, a.dir[1] * 1.18, a.dir[2] * 1.18]);
+      const tipS = hs3dProject(tip, W, Hc, scale);
+      return { a, tipS, meanZ: tipS[2] };
+    });
+    axisItems.sort((p, q) => p.meanZ - q.meanZ);  // back to front
+    cH.save();
+    cH.font = "600 12px 'IBM Plex Mono', monospace";
+    cH.textAlign = 'start';
+    cH.textBaseline = 'middle';
+    for (const it of axisItems){
+      cH.fillStyle = it.a.color;
+      cH.fillText(it.a.label, it.tipS[0] + 5, it.tipS[1]);
+    }
+    cH.restore();
+
+    // --- Draw the 4 XOR points as spheres (filled circles with a white
+    // ring) at their computed 3-D positions. Depth-sorted so near points
+    // overlap far ones correctly. Labels "(x₁,x₂)" placed at one of four
+    // clock positions around each dot; near-coincident dots get fanned
+    // into different positions with a leader line so their labels never
+    // sit on top of each other — this happens often in lock mode and for
+    // certain weight configurations where two XOR points land at the
+    // same spot in hidden space.
+    const xorItems = XOR.map((pt, i) => {
+      const world = points3D[i];
+      const cam = applyWorld(world);
+      const scr = hs3dProject(cam, W, Hc, scale);
+      return { pt, world, cam, scr, z: cam[2] };
+    });
+    xorItems.sort((p, q) => p.z - q.z);  // back to front
+    cH.save();
+    for (const it of xorItems){
+      // Softer shading for farther points — subtle depth cue on top of
+      // sorted occlusion. Near z ≈ 1 (front-ish) gets full color; far z ≈
+      // -2 gets slightly desaturated via a reduced alpha on fill.
+      const nearness = Math.max(0, Math.min(1, (it.z + 1.5) / 2.5));
+      const radius = 8 + nearness * 2;  // slight size difference far vs. near
+      cH.fillStyle = cvar(it.pt.y === 1 ? '--class-1' : '--class-0');
+      cH.beginPath();
+      cH.arc(it.scr[0], it.scr[1], radius, 0, Math.PI * 2);
+      cH.fill();
+      cH.lineWidth = 2;
+      cH.strokeStyle = 'white';
+      cH.stroke();
+    }
+
+    // Label offset catalog (parallels the 2-D view): index picks a clock
+    // direction, each entry a (dx, dy, anchor) triple.
+    //   0: right   1: up-right   2: up-left   3: down-left
+    const LABEL_OFFSETS_3D = [
+      { dx:  14, dy:   4, anchor:'start' },
+      { dx:  12, dy: -11, anchor:'start' },
+      { dx: -12, dy: -11, anchor:'end'   },
+      { dx: -14, dy:  12, anchor:'end'   },
+    ];
+    const DOT_CLUSTER_PX_3D   = 30;
+    const LABEL_OVERLAP_PX_3D = 22;
+
+    // Pass A: rank each dot by how many earlier dots it sits close to.
+    // Earlier = farther back in the depth-sort, so near-coincident pairs
+    // get fanned out and the closer dot inherits the higher rank.
+    const rank = new Array(xorItems.length).fill(0);
+    const clustered = new Array(xorItems.length).fill(false);
+    for (let i = 0; i < xorItems.length; i++){
+      for (let j = 0; j < i; j++){
+        const d = Math.hypot(
+          xorItems[i].scr[0] - xorItems[j].scr[0],
+          xorItems[i].scr[1] - xorItems[j].scr[1]
+        );
+        if (d < DOT_CLUSTER_PX_3D){
+          rank[i]++;
+          clustered[i] = true;
+          clustered[j] = true;
+        }
+      }
+    }
+    // Pass B: catch the case where dots are *just* outside DOT_CLUSTER_PX
+    // but their default-offset labels still overlap.
+    const labelPos3D = (it, r) => {
+      const off = LABEL_OFFSETS_3D[Math.min(r, LABEL_OFFSETS_3D.length - 1)];
+      return { x: it.scr[0] + off.dx, y: it.scr[1] + off.dy, off };
+    };
+    for (let i = 0; i < xorItems.length; i++){
+      for (let tries = 0; tries < LABEL_OFFSETS_3D.length; tries++){
+        const lp = labelPos3D(xorItems[i], rank[i]);
+        let overlap = false;
+        for (let j = 0; j < i; j++){
+          const lj = labelPos3D(xorItems[j], rank[j]);
+          if (Math.hypot(lp.x - lj.x, lp.y - lj.y) < LABEL_OVERLAP_PX_3D){
+            overlap = true; break;
+          }
+        }
+        if (!overlap) break;
+        if (rank[i] >= LABEL_OFFSETS_3D.length - 1) break;
+        rank[i]++;
+        clustered[i] = true;
+      }
+    }
+
+    // Pass C: draw leader lines first (so dots sit on top), then labels.
+    cH.save();
+    cH.strokeStyle = cvar('--text-muted');
+    cH.lineWidth = 0.8;
+    for (let i = 0; i < xorItems.length; i++){
+      if (!clustered[i] || rank[i] === 0) continue;
+      const it = xorItems[i];
+      const off = LABEL_OFFSETS_3D[Math.min(rank[i], LABEL_OFFSETS_3D.length - 1)];
+      cH.beginPath();
+      cH.moveTo(it.scr[0], it.scr[1]);
+      cH.lineTo(it.scr[0] + off.dx * 0.7, it.scr[1] + off.dy * 0.7 - 2);
+      cH.stroke();
+    }
+    cH.restore();
+
+    cH.font = "500 11px 'IBM Plex Mono', monospace";
+    cH.fillStyle = cvar('--g-dk');
+    cH.textBaseline = 'middle';
+    for (let i = 0; i < xorItems.length; i++){
+      const it = xorItems[i];
+      const off = LABEL_OFFSETS_3D[Math.min(rank[i], LABEL_OFFSETS_3D.length - 1)];
+      cH.textAlign = off.anchor;
+      cH.fillText(`(${it.pt.x[0]},${it.pt.x[1]})`, it.scr[0] + off.dx, it.scr[1] + off.dy);
+    }
+    cH.textAlign = 'start';
+    cH.restore();
+
+    // Hint text at bottom-left showing how to interact with the 3-D scene.
+    cH.save();
+    cH.fillStyle = cvar('--text-muted');
+    cH.font = "italic 11px 'Outfit', sans-serif";
+    cH.textAlign = 'start';
+    cH.fillText('drag to rotate', 10, Hc - 10);
+    cH.restore();
+
+    // PCA variance caveat (only when we actually ran PCA — H >= 4). At H=3
+    // the axes are raw (h₁, h₂, h₃) with no projection, so % explained is
+    // a confusing notion there. For H >= 4 the three PCs capture 100% of
+    // the 4-point variance by rank argument, but the breakdown per-PC
+    // still carries useful info — it tells you how "spread" each PC is
+    // relative to the others.
+    if (pca){
+      const pct1 = (pca.var1frac * 100).toFixed(0);
+      const pct2 = (pca.var2frac * 100).toFixed(0);
+      const pct3 = (pca.var3frac * 100).toFixed(0);
+      const pctTot = ((pca.var1frac + pca.var2frac + pca.var3frac) * 100).toFixed(0);
+      const txt = `PCA of the ${state.H}-D hidden space · PC\u2081 (${pct1}%) · PC\u2082 (${pct2}%) · PC\u2083 (${pct3}%) · ${pctTot}% captured`;
+      const fontSize = 11;
+      const padX = 7, padY = 3;
+      cH.save();
+      cH.font = `italic ${fontSize}px 'Outfit', sans-serif`;
+      const tw = cH.measureText(txt).width;
+      const boxW = tw + padX * 2;
+      const boxH = fontSize + padY * 2;
+      const bx = W - 12 - boxW;
+      const by = 8;
+      cH.fillStyle = 'rgba(250, 247, 239, 0.88)';
+      const r = 4;
+      cH.beginPath();
+      cH.moveTo(bx + r, by);
+      cH.lineTo(bx + boxW - r, by);
+      cH.quadraticCurveTo(bx + boxW, by, bx + boxW, by + r);
+      cH.lineTo(bx + boxW, by + boxH - r);
+      cH.quadraticCurveTo(bx + boxW, by + boxH, bx + boxW - r, by + boxH);
+      cH.lineTo(bx + r, by + boxH);
+      cH.quadraticCurveTo(bx, by + boxH, bx, by + boxH - r);
+      cH.lineTo(bx, by + r);
+      cH.quadraticCurveTo(bx, by, bx + r, by);
+      cH.closePath();
+      cH.fill();
+      cH.fillStyle = cvar('--g-dk');
+      cH.textAlign = 'start';
+      cH.textBaseline = 'top';
+      cH.fillText(txt, bx + padX, by + padY);
+      cH.restore();
+    }
+  }
+
+  // Mouse drag on the hidden-space canvas rotates the 3-D view. If the
+  // camera is locked to the decision plane and the user starts to drag,
+  // interpret that as "I want to rotate freely" and automatically unlock.
+  function hs3dAutoUnlock(){
+    if (!hs3d.locked) return;
+    hs3d.locked = false;
+    const lockEl = document.getElementById('cvh-lock');
+    if (lockEl) lockEl.checked = false;
+  }
+  cvH.addEventListener('mousedown', (e) => {
+    if (!ui.useHidden || state.H < 3) return;
+    hs3dAutoUnlock();
+    hs3d.dragging = true;
+    hs3d.lastX = e.clientX;
+    hs3d.lastY = e.clientY;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!hs3d.dragging) return;
+    const dx = e.clientX - hs3d.lastX;
+    const dy = e.clientY - hs3d.lastY;
+    hs3d.lastX = e.clientX;
+    hs3d.lastY = e.clientY;
+    // Drag sensitivity: one full canvas width ≈ π radians of yaw.
+    hs3d.yaw   += dx * 0.01;
+    hs3d.pitch += dy * 0.01;
+    // Clamp pitch so we don't flip the cube upside-down and lose the axis
+    // label orientations — stay well clear of ±π/2.
+    const PMAX = Math.PI * 0.47;
+    if (hs3d.pitch >  PMAX) hs3d.pitch =  PMAX;
+    if (hs3d.pitch < -PMAX) hs3d.pitch = -PMAX;
+    drawHiddenSpace();
+  });
+  window.addEventListener('mouseup', () => { hs3d.dragging = false; });
+  // Touch support: basic single-finger drag.
+  cvH.addEventListener('touchstart', (e) => {
+    if (!ui.useHidden || state.H < 3) return;
+    if (e.touches.length !== 1) return;
+    hs3dAutoUnlock();
+    hs3d.dragging = true;
+    hs3d.lastX = e.touches[0].clientX;
+    hs3d.lastY = e.touches[0].clientY;
+  }, { passive: true });
+  cvH.addEventListener('touchmove', (e) => {
+    if (!hs3d.dragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - hs3d.lastX;
+    const dy = e.touches[0].clientY - hs3d.lastY;
+    hs3d.lastX = e.touches[0].clientX;
+    hs3d.lastY = e.touches[0].clientY;
+    hs3d.yaw   += dx * 0.01;
+    hs3d.pitch += dy * 0.01;
+    const PMAX = Math.PI * 0.47;
+    if (hs3d.pitch >  PMAX) hs3d.pitch =  PMAX;
+    if (hs3d.pitch < -PMAX) hs3d.pitch = -PMAX;
+    drawHiddenSpace();
+    e.preventDefault();
+  }, { passive: false });
+  cvH.addEventListener('touchend', () => { hs3d.dragging = false; });
+
+  // Lock-to-plane checkbox. Toggles hs3d.locked; each draw then re-orients
+  // the camera based on the current decision-plane normal.
+  const cvhLockEl = document.getElementById('cvh-lock');
+  if (cvhLockEl){
+    cvhLockEl.addEventListener('change', () => {
+      hs3d.locked = cvhLockEl.checked;
+      drawHiddenSpace();
+    });
+  }
+
   /* Tiny PCA used for H >= 3 hidden-space visualization. Inputs: an array
      of 4 H-dim points (the XOR corners remapped through the hidden layer).
      Returns { center, axis1, axis2, var1, var2, var1frac, var2frac }.
@@ -3400,12 +4292,33 @@ svg.bp-map{
     let lambda2 = 0;
     { const Mv = matVec(covDef, axis2);
       for (let i = 0; i < H; i++) lambda2 += axis2[i] * Mv[i]; }
+    // Deflate once more and compute the third PC. For 4 mean-centered
+    // points, the 4 centered vectors sum to zero and so have rank at most
+    // 3 — which means the top 3 PCs always capture 100% of the variance
+    // of the 4 XOR-remapped points. That's what makes the 3-D view
+    // lossless for the XOR training points regardless of how big H is.
+    const covDef2 = covDef.map(row => row.slice());
+    for (let i = 0; i < H; i++){
+      for (let j = 0; j < H; j++){
+        covDef2[i][j] -= lambda2 * axis2[i] * axis2[j];
+      }
+    }
+    // Third init: (1, 1, -1, 1, 1, -1, ...) — avoids sitting in span(init1, init2).
+    const init3 = new Array(H);
+    for (let i = 0; i < H; i++) init3[i] = ((i % 3) === 2 ? -1 : 1);
+    const axis3 = canonicalizeSign(powerIter(covDef2, init3, 80));
+    let lambda3 = 0;
+    { const Mv = matVec(covDef2, axis3);
+      for (let i = 0; i < H; i++) lambda3 += axis3[i] * Mv[i]; }
     // Explained variance fractions. Total variance = trace(cov).
     let trace = 0;
     for (let i = 0; i < H; i++) trace += cov[i][i];
     const var1frac = trace > 1e-12 ? Math.max(0, lambda1) / trace : 0;
     const var2frac = trace > 1e-12 ? Math.max(0, lambda2) / trace : 0;
-    return { center, axis1, axis2, var1: lambda1, var2: lambda2, var1frac, var2frac };
+    const var3frac = trace > 1e-12 ? Math.max(0, lambda3) / trace : 0;
+    return { center, axis1, axis2, axis3,
+             var1: lambda1, var2: lambda2, var3: lambda3,
+             var1frac, var2frac, var3frac };
   }
 
   function drawHiddenSpace(){
@@ -3413,6 +4326,13 @@ svg.bp-map{
     if (!tab2HidpiResize(cvH, W, Hc)) return;
     cH.clearRect(0,0,W,Hc);
     const act = actPair();
+
+    // Show the "Lock view to decision plane" checkbox only when the 3-D
+    // renderer is active (hidden layer enabled, H ≥ 3). Otherwise it has
+    // no meaning and would just clutter the UI.
+    const lockCtrl = document.getElementById('cvh-3d-ctrl');
+    const show3DCtrl = ui.useHidden && state.H >= 3;
+    if (lockCtrl) lockCtrl.style.display = show3DCtrl ? 'block' : 'none';
 
     if (!ui.useHidden){
       cH.fillStyle = cvar('--cream-mid');
@@ -3434,6 +4354,52 @@ svg.bp-map{
       const { a } = forward(state, pt.x, true);
       return a.slice(0, state.H);
     });
+
+    // For H >= 3, switch to the 3-D renderer. The raw hidden space is 3-D
+    // at H = 3 (no projection needed), and for H >= 4 the top 3 PCs capture
+    // 100% of the 4-point variance (since 4 centered points have rank <= 3).
+    // So the 3-D view is lossless for the XOR training points at every H.
+    if (state.H >= 3){
+      let pca3d = null;
+      if (state.H >= 4){
+        pca3d = computeHiddenPCA(hiddenPts);
+        // Align with previous frame's axes (sign stability across frames).
+        // Same story as the 2-D PCA view, extended to all three axes.
+        if (prevPcaAxes && prevPcaAxes.H === state.H){
+          let d1 = 0;
+          for (let i = 0; i < state.H; i++) d1 += pca3d.axis1[i] * prevPcaAxes.axis1[i];
+          if (d1 < 0) pca3d.axis1 = pca3d.axis1.map(x => -x);
+          let d2 = 0;
+          for (let i = 0; i < state.H; i++) d2 += pca3d.axis2[i] * prevPcaAxes.axis2[i];
+          if (d2 < 0) pca3d.axis2 = pca3d.axis2.map(x => -x);
+          if (prevPcaAxes.axis3){
+            let d3 = 0;
+            for (let i = 0; i < state.H; i++) d3 += pca3d.axis3[i] * prevPcaAxes.axis3[i];
+            if (d3 < 0) pca3d.axis3 = pca3d.axis3.map(x => -x);
+          }
+        }
+        prevPcaAxes = {
+          axis1: pca3d.axis1.slice(),
+          axis2: pca3d.axis2.slice(),
+          axis3: pca3d.axis3.slice(),
+          H: state.H,
+        };
+      } else {
+        // H == 3: no PCA needed, and we want to be sure stale PCA state
+        // from a previous H >= 4 run doesn't leak in when the user
+        // decreases the hidden-unit count.
+        prevPcaAxes = null;
+      }
+      drawHiddenSpace3D(W, Hc, hiddenPts, pca3d);
+
+      const titleEl = document.getElementById('cv-hidden-title');
+      if (titleEl){
+        titleEl.innerHTML = state.H > 3
+          ? 'Hidden-unit space (PC\u2081, PC\u2082, PC\u2083)'
+          : 'Hidden-unit space (h\u2081, h\u2082, h\u2083)';
+      }
+      return;
+    }
 
     // Coordinate-system setup. H == 2 uses the raw (h₁, h₂) axes — the same
     // simple story the tab has always told. H >= 3 switches to PCA: we
@@ -3866,7 +4832,16 @@ svg.bp-map{
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
     document.getElementById('btn-run').textContent = 'Train';
-    updateStats(null, reasonStatus || 'paused');
+    // Preserve the most recently computed loss in the readout rather
+    // than blanking it to '—'. The Step button leaves the value visible
+    // when it stops, so Pause should do the same — both are "stopped
+    // training, not reset." Reset itself clears lossHist and calls
+    // updateStats(null,…) separately, so the '—' display still appears
+    // exactly when it should (idle / post-reset / epoch-cap-then-reset).
+    const lastLoss = ui.lossHist.length > 0
+      ? ui.lossHist[ui.lossHist.length - 1]
+      : null;
+    updateStats(lastLoss, reasonStatus || 'paused');
   }
 
   function trainLoop(){
