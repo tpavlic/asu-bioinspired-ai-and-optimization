@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RMS Voltage — Power Dissipation Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --maroon:#8C1D40; --gold:#FFC627; --gold-dk:#8A6900; --gold-bg:#FFFBEF;
+  --black:#191919;
+  --g50:#FAFAFA; --g100:#F3F3F3; --g200:#E2E2E2; --g400:#AAAAAA; --g600:#666666;
+  --ac:#B32818; --ac-lt:#FAEAE7; --ac-bd:#D98878;
+  --dc:#14426A; --dc-lt:#E4EEF6; --dc-bd:#6A9EC0;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#fff;color:var(--black);font-size:14px;}
+#w{max-width:740px;margin:0 auto;padding:0 0 12px;}
+
+/* ── Header ── */
+.hdr{background:var(--maroon);padding:13px 18px 11px;margin-bottom:14px;
+     display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.hdr-left{flex:1;min-width:0;}
+.hdr h1{font-size:19px;font-weight:700;color:#fff;letter-spacing:-.02em;line-height:1.2;margin-bottom:3px;}
+.hdr p{font-size:12px;color:rgba(255,255,255,.72);line-height:1.4;}
+.hdr-copy{font-size:10.5px;color:rgba(255,255,255,.58);text-align:right;white-space:nowrap;flex-shrink:0;padding-top:2px;}
+.hdr-copy a{color:rgba(255,255,255,.7);text-decoration:underline;}
+.hdr-copy a:hover{color:#fff;}
+
+/* ── Circuit row ── */
+.row{display:flex;gap:10px;align-items:flex-start;margin:0 16px 10px;}
+.panel{flex:1;min-width:0;border:1px solid var(--g200);border-radius:4px;overflow:hidden;}
+.phead{padding:7px 11px;font-size:11px;font-weight:600;letter-spacing:.06em;
+       text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;}
+.psub{display:inline;font-size:.68em;vertical-align:sub;line-height:0;}
+.phead .badge{font-size:9px;padding:2px 6px;background:rgba(255,255,255,.22);border-radius:3px;
+              font-weight:400;letter-spacing:0;text-transform:none;flex-shrink:0;margin-left:6px;}
+.ac .phead{background:var(--ac);color:#fff;}
+.dc .phead{background:var(--dc);color:#fff;}
+
+.pbody{padding:7px 8px 9px;display:flex;flex-direction:column;align-items:center;background:#fff;}
+.circ-svg{width:100%;max-width:118px;height:auto;display:block;}
+
+.mini-wrap{width:100%;border:1px solid var(--g200);border-radius:3px;overflow:hidden;margin-top:6px;}
+.mini-wrap canvas{display:block;width:100%;height:82px;}
+.mini-wrap.dc-mini canvas{height:82px;}
+
+.vread-row{width:100%;display:flex;gap:4px;margin-top:6px;}
+.vread-row span{flex:1;text-align:center;font-family:'DM Mono',monospace;font-size:11px;
+                padding:2px 4px;border-radius:3px;line-height:1.4;}
+.ac .vread-row span{background:var(--ac-lt);color:var(--ac);border:1px solid var(--ac-bd);}
+.dc .vread-row span{background:var(--dc-lt);color:var(--dc);border:1px solid var(--dc-bd);}
+
+.eqd{display:flex;flex-direction:column;align-items:center;justify-content:center;
+     padding-top:52px;min-width:30px;flex-shrink:0;}
+.eqsym{font-size:20px;font-weight:700;color:var(--g400);line-height:1;}
+.eqlbl{font-size:8px;color:var(--g400);text-align:center;margin-top:3px;
+       text-transform:uppercase;letter-spacing:.05em;line-height:1.3;}
+
+/* ── Power graph ── */
+.psec{border:1px solid var(--g200);border-radius:4px;overflow:hidden;margin:0 16px 12px;}
+.psec-hdr{background:var(--g100);padding:5px 12px;font-size:10.5px;font-weight:600;
+          color:var(--g600);text-transform:uppercase;letter-spacing:.05em;
+          display:flex;justify-content:space-between;align-items:center;
+          border-bottom:1px solid var(--g200);}
+.psec-hdr .fmla{font-family:'DM Mono',monospace;font-size:10px;font-weight:400;
+                color:var(--g400);text-transform:none;letter-spacing:0;}
+/* canvas: touch-action:none prevents browser scrolling from intercepting drags */
+#pcanvas{display:block;width:100%;height:118px;cursor:ew-resize;touch-action:none;}
+#cwac{touch-action:none;cursor:ew-resize;}
+.pleg{padding:5px 12px;display:flex;gap:16px;font-size:11px;color:var(--g600);
+      background:var(--g50);border-top:1px solid var(--g200);flex-wrap:wrap;}
+.litem{display:flex;align-items:center;gap:6px;}
+.lsw{width:22px;height:3px;border-radius:2px;flex-shrink:0;}
+.lsw.ac-s{background:var(--ac);}
+.lsw.dc-s{background:var(--dc);}
+.drag-hint{text-align:center;font-size:10.5px;color:var(--g400);padding:4px 12px 5px;
+           background:var(--g50);border-top:1px solid var(--g200);font-style:italic;}
+
+/* ── Waveform control ── */
+.ctrl{background:var(--g50);border:1px solid var(--g200);border-radius:4px;
+      padding:10px 12px;margin:0 16px 12px;}
+.ctrl-top{display:flex;align-items:center;gap:12px;}
+.ctrl-top label{font-size:11px;font-weight:600;color:var(--g600);white-space:nowrap;
+                text-transform:uppercase;letter-spacing:.05em;}
+.ctrl-top select{flex:1;padding:4px 8px;border:1px solid var(--g200);border-radius:3px;
+                 font-family:'DM Sans',sans-serif;font-size:12.5px;background:#fff;color:var(--black);}
+.ctrl-note{font-size:10px;color:var(--g400);font-style:italic;margin-top:7px;
+           padding-top:7px;border-top:1px solid var(--g200);line-height:1.5;}
+
+/* ── Formula box ── */
+.fbox{border:1px solid var(--gold);border-left:4px solid var(--gold);background:var(--gold-bg);
+      border-radius:4px;padding:10px 13px;margin:0 16px 12px;}
+.fbox-ttl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+          color:var(--gold-dk);margin-bottom:8px;}
+.frow{font-family:'DM Mono',monospace;font-size:12.5px;color:var(--black);
+      margin-bottom:5px;display:flex;align-items:center;flex-wrap:wrap;gap:5px;}
+.fval{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--maroon);
+      background:rgba(140,29,64,.09);padding:1px 7px;border-radius:3px;}
+.frow2{font-family:'DM Mono',monospace;font-size:12.5px;color:var(--black);display:flex;align-items:center;
+       flex-wrap:wrap;gap:4px;font-family:'DM Mono',monospace;}
+.fval2{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--dc);
+       background:var(--dc-lt);padding:1px 7px;border-radius:3px;}
+/* P̂ hat: CSS overlay is more reliable than combining Unicode chars in most fonts */
+.hv{position:relative;display:inline-block;}
+.hv::after{content:'^';position:absolute;top:-0.42em;left:0;right:0;
+           text-align:center;font-size:0.75em;line-height:1;pointer-events:none;}
+
+/* ── Context cards ── */
+.ctx-section{padding:0 16px 4px;}
+.ctx-ttl{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+         color:var(--g400);margin-bottom:7px;padding-bottom:4px;border-bottom:1px solid var(--g200);}
+.cctx{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.card{border:1px solid var(--g200);border-radius:4px;padding:9px 10px;}
+.card-ico{font-size:18px;margin-bottom:3px;}
+.card-t{font-size:12.5px;font-weight:600;color:var(--maroon);margin-bottom:3px;}
+.card-d{font-size:11.5px;color:var(--g600);line-height:1.48;}
+
+/* ── Responsive ── */
+.eqlbl-sep{display:none;}
+@media(max-width:520px){
+  .row{flex-direction:column;align-items:stretch;margin:0 10px 10px;}
+  .eqd{flex-direction:row;padding-top:0;padding:0;width:100%;
+       align-items:stretch;}
+  .eqsym{display:none;}
+  .eqlbl{display:none;}
+  .eqlbl-sep{
+    display:flex;align-items:center;justify-content:center;
+    width:100%;padding:7px 12px;
+    background:var(--g50);border:1px solid var(--g200);border-radius:4px;
+    font-size:11.5px;font-weight:600;color:var(--g600);
+    text-align:center;letter-spacing:.01em;gap:6px;
+  }
+  .psec,.ctrl,.fbox{margin-left:10px;margin-right:10px;}
+  .ctx-section{padding:0 10px 4px;}
+  .cctx{grid-template-columns:1fr;}
+  .ctrl-top{flex-direction:column;align-items:stretch;}
+}
+</style>
+</head>
+<body>
+<div id="w">
+
+<!-- ═══ HEADER (sans-serif, copyright top-right, solid maroon) ═══ -->
+<div class="hdr">
+  <div class="hdr-left">
+    <h1>Root Mean Square (RMS) Voltage</h1>
+    <p>The DC voltage that dissipates the same average power in a resistor as the AC signal</p>
+  </div>
+  <div class="hdr-copy">
+    &copy; 2026 Theodore P. Pavlic<br>
+    <a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT License</a>
+  </div>
+</div>
+
+<!-- ═══ CIRCUITS ═══ -->
+<div class="row">
+
+  <!-- AC panel -->
+  <div class="panel ac">
+    <div class="phead">
+      <span class="ptitle">AC Source</span>
+      <span class="badge">V(t) varies</span>
+    </div>
+    <div class="pbody">
+      <!-- Parallel circuit: source left ∥ bulb right. + at top = load side. -->
+      <svg class="circ-svg" viewBox="0 0 148 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="ggac" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="#FFE840" stop-opacity="1"/>
+            <stop offset="50%"  stop-color="#FFAA00" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#FF7700" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <line x1="36" y1="22" x2="112" y2="22" stroke="#333" stroke-width="2"/>
+        <line x1="36" y1="22"  x2="36"  y2="70"  stroke="#333" stroke-width="2"/>
+        <line x1="36" y1="130" x2="36"  y2="172" stroke="#333" stroke-width="2"/>
+        <line x1="112" y1="22"  x2="112" y2="76"  stroke="#333" stroke-width="2"/>
+        <line x1="112" y1="124" x2="112" y2="172" stroke="#333" stroke-width="2"/>
+        <line x1="36" y1="172" x2="112" y2="172" stroke="#333" stroke-width="2"/>
+        <!-- Ground: vertical stub connects bottom wire to the stacked horizontal lines -->
+        <line x1="74" y1="172" x2="74" y2="184" stroke="#333" stroke-width="1.8"/>
+        <line x1="58" y1="184" x2="90" y2="184" stroke="#333" stroke-width="1.8"/>
+        <line x1="63" y1="190" x2="85" y2="190" stroke="#333" stroke-width="1.4"/>
+        <line x1="68" y1="196" x2="80" y2="196" stroke="#333" stroke-width="1"/>
+        <text x="23" y="69"  text-anchor="middle" font-size="13" fill="#B32818" font-weight="bold">+</text>
+        <text x="23" y="136" text-anchor="middle" font-size="13" fill="#B32818">&#8722;</text>
+        <circle cx="36" cy="100" r="30" fill="#fff" stroke="#B32818" stroke-width="2.2"/>
+        <path d="M16,100 C20,91 32,91 36,100 C40,109 52,109 56,100"
+              fill="none" stroke="#B32818" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <ellipse id="bgac" cx="112" cy="100" rx="44" ry="44" fill="url(#ggac)" opacity="0"/>
+        <circle  id="bfac" cx="112" cy="100" r="23"  fill="#FFF9A0" opacity="0"/>
+        <circle cx="112" cy="100" r="24" fill="none" stroke="#555" stroke-width="1.8"/>
+        <line x1="96"  y1="84"  x2="128" y2="116" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="128" y1="84"  x2="96"  y2="116" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+        <text x="139" y="104" text-anchor="start" font-size="11" fill="#666"
+              font-family="DM Sans,sans-serif" font-style="italic">R</text>
+      </svg>
+      <!-- AC waveform: 2 cycles, cursor draggable -->
+      <div class="mini-wrap"><canvas id="cwac"></canvas></div>
+      <div class="vread-row">
+        <span id="avr">V(t) = 0 V</span>
+        <span id="apr">(V/Vpk)&#178; = 0.000</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="eqd">
+    <div class="eqsym">&#8801;</div>
+    <div class="eqlbl">same<br>avg P</div>
+    <div class="eqlbl-sep">&#x2191; Same Average Power in AC &amp; DC &#x2193;</div>
+  </div>
+
+  <!-- DC panel -->
+  <div class="panel dc">
+    <div class="phead">
+      <span class="ptitle">DC Source (V<span class="psub">RMS</span>)</span>
+      <span class="badge">constant</span>
+    </div>
+    <div class="pbody">
+      <svg class="circ-svg" viewBox="0 0 148 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="ggdc" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="#FFE840" stop-opacity="1"/>
+            <stop offset="50%"  stop-color="#FFAA00" stop-opacity=".55"/>
+            <stop offset="100%" stop-color="#FF7700" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <line x1="36" y1="22" x2="112" y2="22" stroke="#333" stroke-width="2"/>
+        <line x1="36" y1="22"  x2="36"  y2="70"  stroke="#333" stroke-width="2"/>
+        <line x1="36" y1="130" x2="36"  y2="172" stroke="#333" stroke-width="2"/>
+        <line x1="112" y1="22"  x2="112" y2="76"  stroke="#333" stroke-width="2"/>
+        <line x1="112" y1="124" x2="112" y2="172" stroke="#333" stroke-width="2"/>
+        <line x1="36" y1="172" x2="112" y2="172" stroke="#333" stroke-width="2"/>
+        <!-- Ground: vertical stub connects bottom wire to the stacked horizontal lines -->
+        <line x1="74" y1="172" x2="74" y2="184" stroke="#333" stroke-width="1.8"/>
+        <line x1="58" y1="184" x2="90" y2="184" stroke="#333" stroke-width="1.8"/>
+        <line x1="63" y1="190" x2="85" y2="190" stroke="#333" stroke-width="1.4"/>
+        <line x1="68" y1="196" x2="80" y2="196" stroke="#333" stroke-width="1"/>
+        <text x="23" y="69"  text-anchor="middle" font-size="13" fill="#14426A" font-weight="bold">+</text>
+        <text x="23" y="136" text-anchor="middle" font-size="13" fill="#14426A">&#8722;</text>
+        <circle cx="36" cy="100" r="30" fill="#fff" stroke="#14426A" stroke-width="2.2"/>
+        <line x1="20" y1="96" x2="52" y2="96" stroke="#14426A" stroke-width="3"/>
+        <line x1="26" y1="104" x2="46" y2="104" stroke="#14426A" stroke-width="1.5"/>
+        <ellipse id="bgdc" cx="112" cy="100" rx="44" ry="44" fill="url(#ggdc)" opacity="0"/>
+        <circle  id="bfdc" cx="112" cy="100" r="23"  fill="#FFF9A0" opacity="0"/>
+        <circle cx="112" cy="100" r="24" fill="none" stroke="#555" stroke-width="1.8"/>
+        <line x1="96"  y1="84"  x2="128" y2="116" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="128" y1="84"  x2="96"  y2="116" stroke="#777" stroke-width="1.5" stroke-linecap="round"/>
+        <text x="139" y="104" text-anchor="start" font-size="11" fill="#666"
+              font-family="DM Sans,sans-serif" font-style="italic">R</text>
+      </svg>
+      <div class="mini-wrap dc-mini"><canvas id="cwdc"></canvas></div>
+      <div class="vread-row">
+        <span id="dvr">V<sub>RMS</sub> = 0 V</span>
+        <span id="dpr">(Vrms/Vpk)&#178; = 0.000</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- .row -->
+
+<!-- ═══ POWER GRAPH (draggable cursor) ═══ -->
+<div class="psec">
+  <div class="psec-hdr">
+    <span>Normalized Instantaneous Power &mdash; 2 Cycles</span>
+    <span class="fmla"><span class="hv">P</span>(t) = [V(t)/V<sub>pk</sub>]&#178;</span>
+  </div>
+  <canvas id="pcanvas"></canvas>
+  <div class="pleg">
+    <div class="litem"><div class="lsw ac-s"></div>
+      <span><span class="hv">P</span><sub>AC</sub>(t) &mdash; instantaneous</span></div>
+    <div class="litem"><div class="lsw dc-s"></div>
+      <span><span class="hv">P</span><sub>DC</sub> = (V<sub>RMS</sub>/V<sub>pk</sub>)&#178; &mdash; constant, equals average of AC</span></div>
+  </div>
+  <!-- Drag hint: lives here so it's clearly associated with the interactive graph -->
+  <div class="drag-hint">&#x2194;&#xFE0E; drag either graph to move through the cycle</div>
+</div>
+
+<!-- ═══ WAVEFORM SELECTOR ═══ -->
+<div class="ctrl">
+  <div class="ctrl-top">
+    <label for="wsel">Waveform:</label>
+    <select id="wsel">
+      <option value="sine">Sine  (Vrms = Vpk / &#8730;2 &#8776; 0.707 Vpk)</option>
+      <option value="square">Square  (Vrms = Vpk)</option>
+      <option value="triangle">Triangle  (Vrms = Vpk / &#8730;3 &#8776; 0.577 Vpk)</option>
+      <option value="sawtooth">Sawtooth  (Vrms = Vpk / &#8730;3 &#8776; 0.577 Vpk)</option>
+    </select>
+  </div>
+  <div class="ctrl-note">
+    V<sub>pk</sub>&nbsp;=&nbsp;120&#8730;2&nbsp;&#8776;&nbsp;170&nbsp;V &mdash;
+    matching the North American 120&nbsp;V<sub>RMS</sub> standard for a sine wave.
+    Changing the waveform shape shows how V<sub>RMS</sub>/V<sub>pk</sub>
+    depends only on shape, not on amplitude or resistance.
+  </div>
+</div>
+
+<!-- ═══ FORMULA BOX ═══ -->
+<div class="fbox">
+  <div class="fbox-ttl">RMS Definition &amp; Current Values</div>
+  <div class="frow">
+    <span>V<sub>RMS</sub> = &#8730;(&thinsp;<sup>1</sup>&frasl;<sub>T</sub>&thinsp;&#8747;<sub>0</sub><sup>T</sup>&thinsp;V(t)&#178;&thinsp;dt&thinsp;)</span>
+  </div>
+  <div class="frow">
+    <span id="fform">Sine:&nbsp; V<sub>RMS</sub> = V<sub>pk</sub>/&#8730;2 =</span>
+    <span class="fval" id="vrmsv">120.0 V</span>
+  </div>
+  <div class="frow2">
+    <span><span class="hv">P</span><sub>avg</sub>&nbsp;=&nbsp;(V<sub>RMS</sub>/V<sub>pk</sub>)&#178;&nbsp;=</span>
+    <span class="fval2" id="pavgv">0.5000</span>
+    <span id="pavgnote">&nbsp;=&nbsp;(1/2)&thinsp;<span class="hv">P</span><sub>pk</sub>&nbsp;(sine)</span>
+  </div>
+</div>
+
+<!-- ═══ OTHER CONTEXTS ═══ -->
+<div class="ctx-section">
+  <div class="ctx-ttl">RMS in other contexts</div>
+  <div class="cctx">
+    <div class="card">
+      <div class="card-ico">&#x1F508;</div>
+      <div class="card-t">Audio Engineering</div>
+      <div class="card-d">Audio meters display RMS amplitude because perceived loudness tracks average power. A peak reading can be misleading; the RMS value reflects what you hear.</div>
+    </div>
+    <div class="card">
+      <div class="card-ico">&#x1F4D0;</div>
+      <div class="card-t">Statistics (RMSE)</div>
+      <div class="card-d">Root Mean Square Error is the RMS of residuals. For zero-mean errors it equals the standard deviation &mdash; the typical size of a single prediction error.</div>
+    </div>
+    <div class="card">
+      <div class="card-ico">&#x269B;&#xFE0F;</div>
+      <div class="card-t">Kinetic Theory</div>
+      <div class="card-d">RMS molecular speed v<sub>rms</sub>&thinsp;=&thinsp;&#8730;(3k<sub>B</sub>T/m) &mdash; the speed whose kinetic energy equals the mean kinetic energy of the gas ensemble.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- #w -->
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONSTANTS & STATE
+═══════════════════════════════════════════════ */
+const DPR = window.devicePixelRatio || 1;
+const VP  = 120 * Math.SQRT2;   // peak ≈ 169.7 V
+
+const S = { wave: 'sine', phase: 0 };  // phase: 0–359 degrees
+
+/* ═══════════════════════════════════════════════
+   WAVEFORM MATH
+═══════════════════════════════════════════════ */
+function waveVal(theta) {
+  const t = ((theta / (2 * Math.PI)) % 1 + 1) % 1;
+  switch (S.wave) {
+    case 'sine':     return Math.sin(theta);
+    case 'square':   return Math.sin(theta) >= 0 ? 1 : -1;
+    case 'triangle': return (2 / Math.PI) * Math.asin(Math.sin(theta));
+    case 'sawtooth': return 2 * t - 1;
+  }
+  return 0;
+}
+function getRMS() {
+  switch (S.wave) {
+    case 'sine':     return VP / Math.sqrt(2);
+    case 'square':   return VP;
+    case 'triangle': return VP / Math.sqrt(3);
+    case 'sawtooth': return VP / Math.sqrt(3);
+  }
+  return VP / Math.sqrt(2);
+}
+function getRMSFormula() {
+  switch (S.wave) {
+    case 'sine':     return 'Sine:&nbsp; V<sub>RMS</sub> = V<sub>pk</sub>/&#8730;2 =';
+    case 'square':   return 'Square:&nbsp; V<sub>RMS</sub> = V<sub>pk</sub> =';
+    case 'triangle': return 'Triangle:&nbsp; V<sub>RMS</sub> = V<sub>pk</sub>/&#8730;3 =';
+    case 'sawtooth': return 'Sawtooth:&nbsp; V<sub>RMS</sub> = V<sub>pk</sub>/&#8730;3 =';
+  }
+}
+function getPavgNote() {
+  switch (S.wave) {
+    case 'sine':     return '= (1/2)&thinsp;<span class="hv">P</span><sub>pk</sub>&nbsp;(sine)';
+    case 'square':   return '= <span class="hv">P</span><sub>pk</sub>&nbsp;(square &mdash; always full power)';
+    case 'triangle': return '= (1/3)&thinsp;<span class="hv">P</span><sub>pk</sub>&nbsp;(triangle)';
+    case 'sawtooth': return '= (1/3)&thinsp;<span class="hv">P</span><sub>pk</sub>&nbsp;(sawtooth)';
+  }
+}
+function fmtVShort(v) {
+  const a = Math.abs(v);
+  return a >= 100 ? v.toFixed(0) + 'V' : a >= 10 ? v.toFixed(1) + 'V' : v.toFixed(2) + 'V';
+}
+function fmtV(v) {
+  const a = Math.abs(v);
+  return a >= 100 ? v.toFixed(1) + ' V' : a >= 10 ? v.toFixed(2) + ' V' : v.toFixed(3) + ' V';
+}
+
+/* ═══════════════════════════════════════════════
+   HIDPI CANVAS
+═══════════════════════════════════════════════ */
+const cwAC = document.getElementById('cwac');
+const cwDC = document.getElementById('cwdc');
+const pcv  = document.getElementById('pcanvas');
+
+function setupHiDPI(canvas) {
+  const r = canvas.getBoundingClientRect();
+  const w = Math.round(r.width), h = Math.round(r.height);
+  if (!w || !h) return null;
+  if (canvas._W === w && canvas._H === h) return canvas.getContext('2d');
+  canvas.width  = w * DPR;
+  canvas.height = h * DPR;
+  canvas._W = w; canvas._H = h;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  return ctx;
+}
+
+/* ═══════════════════════════════════════════════
+   DRAW: AC waveform
+   2 full cycles on absolute-voltage y-axis.
+   Phase cursor in cycle 1 only (no ghost in cycle 2).
+   Also draggable — see drag handlers below.
+═══════════════════════════════════════════════ */
+function drawAC(ctx, W, H) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#FAFAFA'; ctx.fillRect(0, 0, W, H);
+
+  const pl = 36, pr = 4, pt = 8, pb = 9;
+  const dW = W - pl - pr, dH = H - pt - pb;
+  const LBL = '9px "DM Mono","Courier New",monospace';
+  const toY = v => pt + dH * (1 - (v / VP + 1) / 2);
+
+  // Grid
+  ctx.strokeStyle = '#E8E8E8'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(pl, toY(VP));  ctx.lineTo(W - pr, toY(VP));  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pl, toY(-VP)); ctx.lineTo(W - pr, toY(-VP)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#D5D5D5'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pl, toY(0)); ctx.lineTo(W - pr, toY(0)); ctx.stroke();
+
+  // Vrms reference (dashed blue)
+  const Vrms = getRMS();
+  ctx.strokeStyle = 'rgba(20,66,106,.38)'; ctx.lineWidth = 1.2; ctx.setLineDash([3, 3]);
+  ctx.beginPath(); ctx.moveTo(pl, toY(Vrms)); ctx.lineTo(W - pr, toY(Vrms)); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Cycle divider
+  ctx.strokeStyle = '#DADADA'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(pl + dW / 2, pt); ctx.lineTo(pl + dW / 2, H - pb); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Y-axis labels
+  ctx.font = LBL; ctx.textAlign = 'right'; ctx.fillStyle = '#999';
+  ctx.fillText('+pk', pl - 3, toY(VP)  + 3.5);
+  ctx.fillText('0',   pl - 3, toY(0)   + 3.5);
+  ctx.fillText('-pk', pl - 3, toY(-VP) + 3.5);
+
+  // Vrms label (right side, avoiding edges)
+  const yVr = toY(Vrms), yVp = toY(VP);
+  ctx.fillStyle = 'rgba(20,66,106,.65)';
+  ctx.font = '8px "DM Mono","Courier New",monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('Vrms=' + fmtVShort(Vrms), W - pr - 2, (yVr - yVp > 13) ? yVr - 2 : yVr + 10);
+
+  // Waveform (2 cycles, 2× oversampled)
+  const N = dW * 2;
+  ctx.strokeStyle = '#B32818'; ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const frac = i / N;
+    const x = pl + frac * dW;
+    const y = toY(VP * waveVal(frac * 4 * Math.PI));
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Cursor — spans full 2-cycle display (S.phase 0–719)
+  const pf = S.phase / 720;               // 0→1 over full display
+  const xC = pl + pf * dW;               // cursor moves through both cycles
+  const vC = VP * waveVal(S.phase * Math.PI / 180);
+  const yC = toY(vC);
+
+  ctx.strokeStyle = 'rgba(179,40,24,.28)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(xC, pt); ctx.lineTo(xC, H - pb); ctx.stroke();
+
+  // Dot with interactive ring
+  ctx.strokeStyle = 'rgba(179,40,24,.22)'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(xC, yC, 7, 0, 2 * Math.PI); ctx.stroke();
+  ctx.fillStyle = '#B32818';
+  ctx.beginPath(); ctx.arc(xC, yC, 4, 0, 2 * Math.PI); ctx.fill();
+
+  // Floating V(t) label
+  const vStr = 'V\u2009=\u2009' + (vC >= 0 ? '+' : '') + vC.toFixed(0) + 'V';
+  ctx.font = '9.5px "DM Mono","Courier New",monospace';
+  const vLW = ctx.measureText(vStr).width;
+  const vLX = (xC + 6 + vLW > W - pr - 2) ? xC - vLW - 6 : xC + 6;
+  ctx.fillStyle = 'rgba(179,40,24,.8)';
+  ctx.textAlign = 'left';
+  ctx.fillText(vStr, vLX, H - pb - 10);
+
+  // Cycle labels
+  ctx.fillStyle = '#CCCCCC';
+  ctx.font = '8px "DM Sans",sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('cycle 1', pl + dW / 4,     H - 1);
+  ctx.fillText('cycle 2', pl + 3 * dW / 4, H - 1);
+}
+
+/* ═══════════════════════════════════════════════
+   DRAW: DC waveform (flat line at Vrms)
+═══════════════════════════════════════════════ */
+function drawDC(ctx, W, H) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#FAFAFA'; ctx.fillRect(0, 0, W, H);
+
+  const pl = 36, pr = 4, pt = 8, pb = 8;
+  const dW = W - pl - pr, dH = H - pt - pb;
+  const LBL = '9px "DM Mono","Courier New",monospace';
+  const toY = v => pt + dH * (1 - v / VP);
+  const Vrms = getRMS();
+
+  ctx.strokeStyle = '#E8E8E8'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(pl, toY(VP)); ctx.lineTo(W - pr, toY(VP)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = '#D5D5D5'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pl, toY(0)); ctx.lineTo(W - pr, toY(0)); ctx.stroke();
+
+  ctx.strokeStyle = '#14426A'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.moveTo(pl, toY(Vrms)); ctx.lineTo(W - pr, toY(Vrms)); ctx.stroke();
+
+  ctx.font = LBL; ctx.textAlign = 'right'; ctx.fillStyle = '#999';
+  ctx.fillText('pk', pl - 3, toY(VP) + 3.5);
+  ctx.fillText('0',  pl - 3, toY(0)  + 3.5);
+
+  const yVr = toY(Vrms), yVp = toY(VP);
+  ctx.fillStyle = '#14426A';
+  ctx.font = '8px "DM Mono","Courier New",monospace'; ctx.textAlign = 'right';
+  ctx.fillText('Vrms=' + fmtVShort(Vrms), W - pr - 2, (yVr - yVp > 13) ? yVr - 2 : yVr + 10);
+}
+
+/* ═══════════════════════════════════════════════
+   DRAW: Power graph
+   Red filled curve: AC instantaneous P̂(t)
+   Solid blue line:  DC average
+   Single cursor in cycle 1; no ghost in cycle 2.
+═══════════════════════════════════════════════ */
+function drawPower(ctx, W, H) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+
+  const pl = 36, pb = 18, pt = 6;
+  const dW = W - pl, dH = H - pb - pt;
+  const Vrms = getRMS();
+  const Pavg = (Vrms / VP) ** 2;
+
+  const toX = f => pl + f * dW;
+  const toY = p => pt + dH * (1 - Math.min(p, 1.05) / 1.05);
+
+  // Grid
+  const LBL = '9px "DM Mono","Courier New",monospace';
+  ctx.font = LBL; ctx.textAlign = 'right';
+  for (const p of [0, 0.25, 0.5, 0.75, 1.0]) {
+    const y = toY(p);
+    ctx.strokeStyle = '#EEEEEE'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pl, y); ctx.lineTo(W, y); ctx.stroke();
+    ctx.fillStyle = '#AAAAAA'; ctx.fillText(p.toFixed(2), pl - 3, y + 3);
+  }
+
+  // Cycle divider
+  ctx.strokeStyle = '#DEDEDE'; ctx.lineWidth = 1; ctx.setLineDash([2, 3]);
+  ctx.beginPath(); ctx.moveTo(toX(.5), pt); ctx.lineTo(toX(.5), H - pb + 3); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // X-axis labels
+  ctx.strokeStyle = '#CCC'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pl, H - pb); ctx.lineTo(W, H - pb); ctx.stroke();
+  ctx.font = '8px "DM Sans",sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#BBB';
+  ctx.fillText('T',  toX(.5), H - pb + 11);
+  ctx.fillText('2T', toX(1),  H - pb + 11);
+  ctx.font = '9px "DM Sans",sans-serif'; ctx.fillStyle = '#AAA'; ctx.textAlign = 'right';
+  ctx.fillText('Time \u2192', W - 2, H - 3);
+
+  // Y-axis label
+  ctx.save();
+  ctx.translate(11, pt + dH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#AAA'; ctx.font = '9px "DM Sans",sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Norm. Power', 0, 0);
+  ctx.restore();
+
+  // AC power curve (2 cycles, 2× oversampled)
+  const N = dW * 2;
+  ctx.fillStyle = 'rgba(179,40,24,.09)';
+  ctx.beginPath(); ctx.moveTo(toX(0), toY(0));
+  for (let i = 0; i <= N; i++) {
+    const f = i / N;
+    ctx.lineTo(toX(f), toY(waveVal(f * 4 * Math.PI) ** 2));
+  }
+  ctx.lineTo(toX(1), toY(0)); ctx.closePath(); ctx.fill();
+
+  ctx.strokeStyle = '#B32818'; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const f = i / N;
+    i === 0 ? ctx.moveTo(toX(f), toY(waveVal(f * 4 * Math.PI) ** 2))
+             : ctx.lineTo(toX(f), toY(waveVal(f * 4 * Math.PI) ** 2));
+  }
+  ctx.stroke();
+
+  // DC average: SOLID blue line
+  const yAvg = toY(Pavg);
+  ctx.strokeStyle = '#14426A'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(pl, yAvg); ctx.lineTo(W, yAvg); ctx.stroke();
+  ctx.fillStyle = '#14426A';
+  ctx.font = '9.5px "DM Mono",monospace'; ctx.textAlign = 'left';
+  ctx.fillText('avg\u2009=\u2009' + Pavg.toFixed(3), pl + 4, yAvg - 4);
+
+  // Cursor — spans full 2-cycle display (S.phase 0–719)
+  const pf = S.phase / 720;              // 0→1 over full display
+  const xC = toX(pf);                   // moves through both cycles
+  const pC = waveVal(S.phase * Math.PI / 180) ** 2;
+
+  // Cursor vertical line
+  ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(xC, pt); ctx.lineTo(xC, H - pb); ctx.stroke();
+
+  // Red dot with ring (affordance indicating draggability)
+  ctx.strokeStyle = 'rgba(179,40,24,.22)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(xC, toY(pC), 8, 0, 2 * Math.PI); ctx.stroke();
+  ctx.fillStyle = '#B32818';
+  ctx.beginPath(); ctx.arc(xC, toY(pC), 4.5, 0, 2 * Math.PI); ctx.fill();
+
+  // Blue dot on DC average line
+  ctx.fillStyle = '#14426A';
+  ctx.beginPath(); ctx.arc(xC, yAvg, 3.5, 0, 2 * Math.PI); ctx.fill();
+
+  // Floating phase label — shows angle within the current cycle (0–360°)
+  // Floating P̂ label: draw P, then small ^ above it, then = value
+  const phSuffix = '\u2009=\u2009' + pC.toFixed(4);
+  ctx.font = '10px "DM Mono","Courier New",monospace';
+  ctx.fillStyle = 'rgba(179,40,24,.82)';
+  const pW    = ctx.measureText('P').width;
+  const phTot = pW + ctx.measureText(phSuffix).width;
+  const phX   = (xC + 8 + phTot > W - 4) ? xC - phTot - 8 : xC + 8;
+  const phY   = toY(0.875);
+  ctx.textAlign = 'left';
+  ctx.fillText('P', phX, phY);
+  ctx.fillText(phSuffix, phX + pW, phY);
+  ctx.font = '7px "DM Mono","Courier New",monospace';
+  const hatW = ctx.measureText('^').width;
+  ctx.fillText('^', phX + (pW - hatW) / 2, phY - 6);
+  ctx.font = '10px "DM Mono","Courier New",monospace';
+}
+
+/* ═══════════════════════════════════════════════
+   UPDATE ALL
+═══════════════════════════════════════════════ */
+function updateAll() {
+  const ctxAC = setupHiDPI(cwAC);
+  const ctxDC = setupHiDPI(cwDC);
+  const ctxP  = setupHiDPI(pcv);
+  if (!ctxAC || !ctxDC || !ctxP) return;
+
+  const theta = S.phase * Math.PI / 180;
+  const V     = VP * waveVal(theta);
+  const Vrms  = getRMS();
+  const Pn    = waveVal(theta) ** 2;
+  const Pa    = (Vrms / VP) ** 2;
+
+  const setOp = (id, op) =>
+    document.getElementById(id).setAttribute('opacity', Math.min(Math.max(op, 0), 1).toFixed(3));
+  setOp('bgac', Pn * 0.90);  setOp('bfac', Pn * 0.80);
+  setOp('bgdc', Pa * 0.90);  setOp('bfdc', Pa * 0.80);
+
+  document.getElementById('avr').textContent = 'V(t) = ' + (V >= 0 ? '+' : '') + V.toFixed(1) + ' V';
+  document.getElementById('apr').textContent = '(V/Vpk)\u00B2 = ' + Pn.toFixed(4);
+  document.getElementById('dvr').innerHTML   = 'V<sub>RMS</sub> = ' + fmtV(Vrms);
+  document.getElementById('dpr').innerHTML   = '(Vrms/Vpk)&#178; = ' + Pa.toFixed(4);
+
+  document.getElementById('fform').innerHTML    = getRMSFormula();
+  document.getElementById('vrmsv').textContent  = fmtV(Vrms);
+  document.getElementById('pavgv').textContent  = Pa.toFixed(4);
+  document.getElementById('pavgnote').innerHTML = getPavgNote();
+
+  drawAC(ctxAC, cwAC._W, cwAC._H);
+  drawDC(ctxDC, cwDC._W, cwDC._H);
+  drawPower(ctxP, pcv._W, pcv._H);
+}
+
+/* ═══════════════════════════════════════════════
+   DRAG INTERACTION
+   Both the power canvas and AC waveform canvas are
+   draggable. Dragging sets the phase by mapping the
+   x position within cycle 1 (left half) to 0–359°.
+   touch-action:none on the canvas elements prevents
+   the browser from intercepting the touch for scrolling.
+═══════════════════════════════════════════════ */
+let dragSrc = null;   // { el, pl, pr } for the canvas being dragged
+
+// Map clientX on a canvas to phase 0–719° (covering 2 full cycles of the display)
+// pl: left margin (CSS px), pr: right margin (CSS px)
+function setPhaseFromEvent(canvasEl, clientX, pl, pr) {
+  const rect   = canvasEl.getBoundingClientRect();
+  const cssW   = canvasEl._W || Math.round(rect.width);
+  const cssX   = clientX - rect.left;
+  const fullW  = cssW - pl - (pr || 0);   // full 2-cycle display width
+  const fx     = Math.max(0, Math.min(1, (cssX - pl) / fullW));
+  S.phase      = Math.min(719, Math.round(fx * 719));   // 0–719 for 2 full cycles
+  updateAll();
+}
+
+function addDragListeners(canvasEl, pl, pr) {
+  canvasEl.addEventListener('mousedown', e => {
+    dragSrc = { el: canvasEl, pl, pr };
+    setPhaseFromEvent(canvasEl, e.clientX, pl, pr);
+  });
+  canvasEl.addEventListener('touchstart', e => {
+    e.preventDefault();
+    dragSrc = { el: canvasEl, pl, pr };
+    setPhaseFromEvent(canvasEl, e.touches[0].clientX, pl, pr);
+  }, { passive: false });
+  canvasEl.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (dragSrc) setPhaseFromEvent(dragSrc.el, e.touches[0].clientX, dragSrc.pl, dragSrc.pr);
+  }, { passive: false });
+  canvasEl.addEventListener('touchend', () => { dragSrc = null; });
+}
+
+// Global handlers so dragging outside canvas bounds still works
+window.addEventListener('mousemove', e => {
+  if (dragSrc) setPhaseFromEvent(dragSrc.el, e.clientX, dragSrc.pl, dragSrc.pr);
+});
+window.addEventListener('mouseup', () => { dragSrc = null; });
+
+addDragListeners(pcv,  36, 0);   // power canvas: pr=0
+addDragListeners(cwAC, 36, 4);   // AC waveform canvas: pr=4
+
+/* ═══════════════════════════════════════════════
+   WAVEFORM SELECTOR
+═══════════════════════════════════════════════ */
+document.getElementById('wsel').addEventListener('change', function () {
+  S.wave = this.value;
+  updateAll();
+});
+
+/* ═══════════════════════════════════════════════
+   RESIZE + INIT
+═══════════════════════════════════════════════ */
+let _rt;
+window.addEventListener('resize', () => {
+  clearTimeout(_rt);
+  _rt = setTimeout(() => {
+    [cwAC, cwDC, pcv].forEach(c => { c._W = 0; c._H = 0; });
+    updateAll();
+  }, 150);
+});
+
+window.addEventListener('load', () =>
+  requestAnimationFrame(() => requestAnimationFrame(updateAll))
+);
+</script>
+</body>
+</html>
