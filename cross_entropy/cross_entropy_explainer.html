@@ -3,7 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cross-Entropy: An Information-Theoretic View</title>
+<title>Cross-Entropy — An Information-Theoretic View — interactive explainer</title>
+<meta name="description" content="Step from logit scores through softmax and entropy to cross-entropy loss and binary BCE — an interactive build-up of the information-theoretic foundation behind neural network classification.">
+
+<!-- Open Graph (Facebook, LinkedIn, Slack, iMessage, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cross-Entropy — An Information-Theoretic View — interactive explainer">
+<meta property="og:description" content="Step from logit scores through softmax and entropy to cross-entropy loss and binary BCE — an interactive build-up of the information-theoretic foundation behind neural network classification.">
+<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/cross_entropy/cross_entropy_explainer-preview.png">
+<meta property="og:image:width" content="1662">
+<meta property="og:image:height" content="822">
+<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/cross_entropy/cross_entropy_explainer.html">
+<meta property="fb:app_id" content="2385695445236853">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cross-Entropy — An Information-Theoretic View — interactive explainer">
+<meta name="twitter:description" content="Step from logit scores through softmax and entropy to cross-entropy loss and binary BCE — an interactive build-up of the information-theoretic foundation behind neural network classification.">
+<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/cross_entropy/cross_entropy_explainer-preview.png">
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
 <style>
@@ -857,6 +875,12 @@ function initAll() {
     else if (id === 'bcyh' || id === 'bcy')      updateBCE();
   });
 });
+</script>
+<footer id="course-nav-footer" style="margin-top:0;padding:0.75rem 0 0 1rem;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;text-align:left;">
+  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+</footer>
+<script>
+if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 </body>
 </html>

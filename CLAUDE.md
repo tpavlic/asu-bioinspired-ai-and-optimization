@@ -191,6 +191,7 @@ Add a row to the appropriate table under `## Contents`:
 - `single_layer_perceptron/slp_explainer.html`
 - `radial_basis_function_nn/rbfnn_explorer.html`
 - `multi_layer_perceptron/mlp_explorer.html`
+- `cross_entropy/cross_entropy_explainer.html`
 - `optimal_foraging_theory/mvt_explorer.html`
 - `unsupervised_learning/autoencoder_explorer.html`
 - `spiking_neural_networks/snn_explorer.html`
