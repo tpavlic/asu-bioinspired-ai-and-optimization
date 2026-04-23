@@ -3,7 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RMS Voltage — Power Dissipation Explorer</title>
+<title>RMS Voltage — Power Dissipation Explorer — interactive explainer</title>
+<meta name="description" content="Switch between sine, square, triangle, and sawtooth waveforms to see how RMS voltage depends only on waveform shape — not amplitude — and equals the DC voltage that delivers the same power.">
+
+<!-- Open Graph (Facebook, LinkedIn, Slack, iMessage, etc.) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="RMS Voltage — Power Dissipation Explorer — interactive explainer">
+<meta property="og:description" content="Switch between sine, square, triangle, and sawtooth waveforms to see how RMS voltage depends only on waveform shape — not amplitude — and equals the DC voltage that delivers the same power.">
+<meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/root_mean_square/rms_explorer-preview.png">
+<meta property="og:image:width" content="1442">
+<meta property="og:image:height" content="686">
+<meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/root_mean_square/rms_explorer.html">
+<meta property="fb:app_id" content="2385695445236853">
+
+<!-- Twitter/X card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RMS Voltage — Power Dissipation Explorer — interactive explainer">
+<meta name="twitter:description" content="Switch between sine, square, triangle, and sawtooth waveforms to see how RMS voltage depends only on waveform shape — not amplitude — and equals the DC voltage that delivers the same power.">
+<meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/root_mean_square/rms_explorer-preview.png">
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -755,6 +773,12 @@ window.addEventListener('resize', () => {
 window.addEventListener('load', () =>
   requestAnimationFrame(() => requestAnimationFrame(updateAll))
 );
+</script>
+<footer id="course-nav-footer" style="margin-top:0;padding:0.75rem 0 0 1rem;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;text-align:left;">
+  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+</footer>
+<script>
+if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 </body>
 </html>

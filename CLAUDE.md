@@ -192,12 +192,13 @@ Add a row to the appropriate table under `## Contents`:
 - `radial_basis_function_nn/rbfnn_explorer.html`
 - `multi_layer_perceptron/mlp_explorer.html`
 - `optimal_foraging_theory/mvt_explorer.html`
+- `unsupervised_learning/autoencoder_explorer.html`
 - `spiking_neural_networks/snn_explorer.html`
 - `memristors/memristor_stdp_array.html`
 - `hebbian_learning/hebbian_competitive_clustering.html`
 - `recurrent_neural_networks/rnn_explorer.html`
 - `reservoir_computing/esn_explorer.html`
-- `unsupervised_learning/autoencoder_explorer.html`
+- `root_mean_square/rms_explorer.html`
 - `transformers/transformer_explorer.html`
 - `transformers/toward_multimodal_AI.html`
 
