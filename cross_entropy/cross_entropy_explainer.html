@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cross-Entropy: An Information-Theoretic View</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root {
+  --maroon: #8C1D40;
+  --gold:   #FFC627;
+  --gold-lt:#FFF8E1;
+  --dark:   #191919;
+  --gray:   #5a5a5a;
+  --lgray:  #f4f4f4;
+  --blue:   #00A3E0;
+  --red2:   #b01030;
+  --white:  #fff;
+  --border: #ddd;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Arial, "Helvetica Neue", sans-serif;
+  background: #fff;
+  color: var(--dark);
+  font-size: 15px;
+  line-height: 1.65;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── HEADER ── */
+.hdr {
+  background: var(--maroon);
+  color: #fff;
+  padding: 22px 30px 16px;
+  border-bottom: 5px solid var(--gold);
+  position: relative;
+}
+.hdr-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hdr-titles { flex: 1; min-width: 0; }
+.hdr h1 { font-size: 23px; font-weight: 700; line-height: 1.2; margin-bottom: 6px; }
+.hdr .sub { font-size: 13px; color: rgba(255,255,255,.75); margin-top: 4px; }
+.hdr-copy {
+  font-size: 11px;
+  color: rgba(255,255,255,.55);
+  white-space: nowrap;
+  padding-top: 3px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.hdr-copy a {
+  color: rgba(255,255,255,.55);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.hdr-copy a:hover { color: var(--gold); }
+@media(max-width:520px) {
+  .hdr-top { flex-direction: column; }
+  .hdr-copy { text-align: left; white-space: normal; padding-top: 6px; }
+}
+
+/* ── TAB BAR ── */
+.tab-nav {
+  background: #ececec;
+  border-bottom: 3px solid var(--maroon);
+}
+.tab-bar {
+  display: flex;
+  padding: 0 10px;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.tab-btn:hover { color: var(--maroon); background: rgba(140,29,64,.06); }
+.tab-btn.active {
+  color: var(--maroon);
+  border-bottom-color: var(--maroon);
+  background: #fff;
+}
+.tab-select-wrap {
+  display: none;
+  padding: 8px 12px;
+}
+.tab-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  border: 2px solid var(--maroon);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--dark);
+  cursor: pointer;
+}
+@media(max-width:560px) {
+  .tab-bar { display: none; }
+  .tab-select-wrap { display: block; }
+}
+
+/* ── SECTIONS / PANELS ── */
+.sec {
+  padding: 30px 30px;
+  display: none;
+}
+.sec.active { display: block; }
+.sec-tag {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--maroon);
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+h2 { font-size: 20px; color: var(--maroon); margin-bottom: 13px; font-weight: 700; }
+h3 { font-size: 15.5px; color: var(--dark); margin: 18px 0 8px; font-weight: 700; }
+p  { margin-bottom: 11px; }
+ul { margin: 8px 0 12px 22px; }
+li { margin-bottom: 5px; }
+
+/* ── FORMULA BOXES ── */
+.fbox {
+  background: var(--gold-lt);
+  border-left: 4px solid var(--gold);
+  padding: 14px 18px;
+  margin: 14px 0;
+  border-radius: 0 6px 6px 0;
+}
+.fbox.key { background: #fff0f5; border-left-color: var(--maroon); }
+.flabel {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--maroon);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.fnote { font-size: 12px; color: var(--gray); margin-top: 8px; }
+
+/* ── INSIGHT BOX ── */
+.ibox {
+  background: #eef5ff;
+  border-left: 4px solid var(--maroon);
+  padding: 12px 16px;
+  margin: 14px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+}
+.ibox strong { color: var(--maroon); }
+
+/* ── STEP LIST ── */
+.step { display: flex; align-items: flex-start; gap: 12px; margin: 9px 0; }
+.snum {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--maroon); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  flex-shrink: 0; margin-top: 2px;
+}
+.scnt { flex: 1; padding-top: 3px; }
+
+/* ── INTERACTIVE AREA ── */
+.iact {
+  background: #fff;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  margin: 18px 0;
+}
+.iact-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gray);
+  margin-bottom: 12px;
+}
+.hint { font-size: 13px; color: var(--gray); margin-bottom: 12px; }
+
+/* ── SLIDERS ── */
+.srow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.slabel { font-size: 13px; min-width: 115px; color: var(--dark); }
+input[type=range] { flex: 1; accent-color: var(--maroon); cursor: pointer; }
+.sval {
+  font-size: 13px; font-weight: 700;
+  min-width: 44px; text-align: right;
+  color: var(--maroon);
+  font-family: 'Courier New', monospace;
+}
+
+/* ── METRIC CARDS ── */
+.mgrid { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+.mcard {
+  flex: 1; min-width: 100px;
+  background: var(--lgray);
+  border-radius: 6px;
+  padding: 10px 14px;
+  text-align: center;
+}
+.mcard.hi { background: var(--maroon); color: #fff; }
+.mlabel {
+  font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .8px; color: var(--gray); margin-bottom: 3px;
+}
+.mcard.hi .mlabel { color: rgba(255,255,255,.75); }
+.mval { font-size: 21px; font-weight: 700; font-family: 'Courier New', monospace; }
+.munit { font-size: 10.5px; color: var(--gray); }
+.mcard.hi .munit { color: rgba(255,255,255,.65); }
+
+/* ── LEGEND ── */
+.leg { display: flex; gap: 14px; margin-bottom: 8px; flex-wrap: wrap; }
+.li  { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+.lsw { width: 15px; height: 15px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── TABLE ── */
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
+th { background: var(--maroon); color: #fff; padding: 9px 13px; text-align: left; }
+td { padding: 8px 13px; border-bottom: 1px solid #ddd; }
+tr:nth-child(even) td { background: #fafafa; }
+
+/* ── CHARTS ── */
+.chart-wrap { width: 100%; margin: 12px 0; }
+svg { overflow: visible; }
+svg text { font-family: Arial, sans-serif; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--maroon); color: #fff;
+  padding: 14px 30px; font-size: 12.5px; text-align: center;
+}
+footer .fsub { color: rgba(255,255,255,.6); }
+
+@media(max-width:600px) {
+  .sec { padding: 20px 14px; }
+  .srow { flex-wrap: wrap; }
+  .slabel { min-width: 80px; }
+  .mval { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     HEADER
+═════════════════════════════════════════════════════ -->
+<header class="hdr">
+  <div class="hdr-top">
+    <div class="hdr-titles">
+      <h1>From Squared Error to Cross-Entropy</h1>
+      <div class="sub">From logit scores to cross-entropy loss: The natural information-theoretic loss function for classification</div>
+    </div>
+    <div class="hdr-copy">
+      &copy;&nbsp;2026 Theodore&nbsp;P.&nbsp;Pavlic<br>
+      <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
+    </div>
+  </div>
+</header>
+
+<div class="tab-nav">
+  <div class="tab-bar" role="tablist">
+    <button class="tab-btn active" data-tab="s1" role="tab" aria-selected="true"  aria-controls="s1">1 Logit Scores</button>
+    <button class="tab-btn"        data-tab="s2" role="tab" aria-selected="false" aria-controls="s2">2 Entropy</button>
+    <button class="tab-btn"        data-tab="s3" role="tab" aria-selected="false" aria-controls="s3">3 Cross-Entropy</button>
+    <button class="tab-btn"        data-tab="s4" role="tab" aria-selected="false" aria-controls="s4">4 Classification</button>
+    <button class="tab-btn"        data-tab="s5" role="tab" aria-selected="false" aria-controls="s5">5 Binary BCE</button>
+  </div>
+  <div class="tab-select-wrap">
+    <select class="tab-select" aria-label="Select section">
+      <option value="s1">1 — Logit Scores</option>
+      <option value="s2">2 — Entropy</option>
+      <option value="s3">3 — Cross-Entropy</option>
+      <option value="s4">4 — Classification</option>
+      <option value="s5">5 — Binary BCE</option>
+    </select>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 1 — SETUP
+═════════════════════════════════════════════════════ -->
+<section class="sec active" id="s1">
+  <h2>From Regression Outputs to Class Probabilities</h2>
+
+  <p>When you train a neural network for <strong>function approximation or linear regression</strong>, you aim to make the output of the neural network reproduce as closely as possible the input–output pairs from your training data. A natural choice of loss function for this is the <strong>mean squared error (MSE)</strong>, but it is possible to imagine other ways to minimize the error between the neural network's output and an output in training data. However, it can be shown that outputs with minimal MSE also happen to be <strong>maximum-likelihood estimates</strong> when the noise in the training data is normally distributed (Gaussian noise).</p>
+
+  <p>But what do you do when you don't want to approximate a function (or fit a curve) but you want to <strong>classify</strong> an input as one of K different possible discrete labels? For such <strong>K-class classification</strong>, we structure the neural network to have K separate output neurons (one per class). Each neuron produces an unbounded real number called a <strong>logit score</strong> that represents how consistent the input data are with that particular class:</p>
+
+  <div class="fbox">
+    <div class="flabel">Logit Scores</div>
+    <div id="f-logits"></div>
+    <div class="fnote">z<sub>k</sub> is a continuous-valued evidence variable for class k — think of it as the network's raw "vote" for that class. There is no constraint on its sign or magnitude; it can be any real number. These are exactly the kind of outputs regression already gives you.</div>
+  </div>
+
+  <p>To decide which class to predict, we can't just pick the largest z<sub>k</sub> in a differentiable way — we need a smooth, probabilistic assignment so that gradients flow during training. The <strong>softmax</strong> converts the relative evidence across all K scores into a proper probability distribution:</p>
+
+  <div class="fbox key">
+    <div class="flabel">Softmax with Temperature</div>
+    <div id="f-softmax"></div>
+    <div class="fnote">The <strong>temperature</strong> &tau; &gt; 0 controls how sharply the distribution peaks. The standard softmax uses &tau;&nbsp;=&nbsp;1. The entropy tab lets you explore this directly — the temperature slider there uses exactly this formula with the same underlying logit scores.</div>
+  </div>
+
+  <div class="step">
+    <div class="snum">&tau;&darr;</div>
+    <div class="scnt"><strong>Low temperature</strong> — probabilities sharpen toward the highest-scoring class; in the limit &tau;&rarr;0 the output becomes a one-hot argmax.</div>
+  </div>
+  <div class="step">
+    <div class="snum">&tau;=1</div>
+    <div class="scnt"><strong>Unit temperature</strong> — the standard softmax. Model outputs reflect the raw relative magnitude of the logit scores.</div>
+  </div>
+  <div class="step">
+    <div class="snum">&tau;&uarr;</div>
+    <div class="scnt"><strong>High temperature</strong> — probabilities flatten toward a uniform distribution over all classes; even a dominant logit scores barely more than the others.</div>
+  </div>
+
+  <p>We call the resulting output distribution <strong>Q</strong>. The true class is encoded as distribution <strong>P</strong> — for labeled training data this is a one-hot vector. We now need a loss that measures how far Q is from P, which is where information theory comes in.</p>
+
+  <div class="ibox">
+    <strong>Why not MSE on the probabilities?</strong> You could minimize &sum;(p<sub>i</sub>&minus;q<sub>i</sub>)<sup>2</sup> directly. It sometimes works, but it treats probabilities as plain numbers, ignores the probabilistic geometry of the problem, and — crucially — creates vanishing gradients when the softmax output saturates near 0 or 1. Information theory gives us the principled alternative, which is cross-entropy.
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 2 — ENTROPY
+═════════════════════════════════════════════════════ -->
+<section class="sec" id="s2">
+  <h2>Entropy: Measuring Uncertainty in a Distribution</h2>
+
+  <p><strong>Shannon entropy</strong> H(P) measures the average amount of information (or uncertainty) in a distribution. Equivalently, it is the minimum average number of bits required to encode samples drawn from P.</p>
+
+  <div class="fbox">
+    <div class="flabel">Shannon Entropy</div>
+    <div id="f-entropy"></div>
+    <div class="fnote">Base-2 log &rarr; bits. Base-e log &rarr; nats. Convention: 0&nbsp;&middot;&nbsp;log&nbsp;0 = 0. Units differ only by a constant factor.</div>
+  </div>
+
+  <p><strong>Perplexity</strong> is a closely related quantity that is often easier to interpret — it re-expresses entropy as an <em>effective number of equally likely outcomes</em>:</p>
+
+  <div class="fbox">
+    <div class="flabel">Perplexity</div>
+    <div id="f-perplexity"></div>
+    <div class="fnote">For a uniform distribution over K classes, perplexity = K exactly. For a one-hot distribution, perplexity = 1. You can think of perplexity as "how many choices does this distribution <em>behave like</em> it has?" — it is always between 1 and K, making it more concretely interpretable than entropy in bits. In language modeling, for example, a perplexity of 50 means the model's uncertainty at each step is equivalent to picking uniformly from 50 equally likely words — lower perplexity means less uncertainty, i.e., a more confident (and hopefully more accurate) model.</div>
+  </div>
+
+  <div class="step">
+    <div class="snum" style="background:#555">&#8593;</div>
+    <div class="scnt"><strong>High entropy / high perplexity</strong> &mdash; near-uniform distribution; high uncertainty; many bits needed per sample.</div>
+  </div>
+  <div class="step">
+    <div class="snum" style="background:#555">&#8595;</div>
+    <div class="scnt"><strong>Low entropy / low perplexity</strong> &mdash; peaked distribution; low uncertainty; you nearly know the answer before looking.</div>
+  </div>
+
+  <!-- Interactive entropy -->
+  <div class="iact">
+    <div class="iact-title">&#127897; Interactive — Entropy &amp; Perplexity Explorer (K = 4 classes)</div>
+    <p class="hint">The distribution is produced by a softmax over fixed logit scores using temperature &tau;. Drag left for low &tau; (peaked, low entropy) or right for high &tau; (flat, high entropy). At &tau;&nbsp;=&nbsp;1 you get the standard softmax.</p>
+    <div class="srow">
+      <span class="slabel">Temperature &tau;</span>
+      <input type="range" id="ec" min="0" max="100" value="50" step="1">
+      <span class="sval">&tau;&nbsp;=&nbsp;<span id="ec-lbl">1.00</span></span>
+    </div>
+    <p style="font-size:13px;text-align:center;margin-bottom:0">
+      <strong style="color:var(--maroon)">Softmax output Q over {Cat, Dog, Bird, Fish}</strong><br>
+      <em style="font-size:12px;color:var(--gray)">logit scores: z<sub>Cat</sub>&nbsp;=&nbsp;2.4, z<sub>Dog</sub>&nbsp;=&nbsp;1.1, z<sub>Bird</sub>&nbsp;=&nbsp;0.7, z<sub>Fish</sub>&nbsp;=&nbsp;0.1</em>
+    </p>
+    <div class="chart-wrap" style="margin-top:4px">
+      <svg id="echart" viewBox="0 0 600 195" width="100%" height="195" aria-label="Bar chart of probability distribution P"></svg>
+    </div>
+    <div class="mgrid">
+      <div class="mcard hi"><div class="mlabel">H(P)</div><div class="mval" id="ec-h">—</div><div class="munit">bits</div></div>
+      <div class="mcard hi"><div class="mlabel">Perplexity 2<sup style="font-size:13px">H(P)</sup></div><div class="mval" id="ec-perp">—</div><div class="munit">eff. classes</div></div>
+      <div class="mcard"><div class="mlabel">Max H(P)</div><div class="mval">2.000</div><div class="munit">bits (uniform)</div></div>
+      <div class="mcard"><div class="mlabel">Max perplexity</div><div class="mval">4.000</div><div class="munit">= K (uniform)</div></div>
+    </div>
+    <p style="font-size:12.5px;color:var(--gray)">For K classes: H ranges 0&ndash;log<sub>2</sub>(K) bits; perplexity ranges 1&ndash;K. Both hit their extremes at the same distributions (one-hot and uniform), but perplexity's scale is concrete &mdash; it always equals K for a uniform distribution over K classes.</p>
+  </div>
+
+  <div class="fbox key">
+    <div class="flabel">One-Hot Entropy — The Case That Matters for Classification</div>
+    <div id="f-oh-ent"></div>
+    <div class="fnote">When the true label is known with certainty, the entropy of P is zero. This will simplify things dramatically in Section 5.</div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 3 — CROSS-ENTROPY
+═════════════════════════════════════════════════════ -->
+<section class="sec" id="s3">
+  <h2>Cross-Entropy: Measuring Decoder Quality</h2>
+
+  <p>A neural network trained for K-class classification acts as the final component in an <strong>information channel</strong>: it <strong>decodes</strong> class-label information that has been <strong>encoded</strong> into the input data vector fed to the network.</p>
+
+  <!-- Channel diagram -->
+  <div style="margin:18px 0">
+    <svg viewBox="0 0 620 110" width="100%" style="max-height:110px;display:block" aria-label="Information channel diagram">
+      <!-- True label box -->
+      <rect x="2" y="30" width="110" height="50" rx="6" fill="#8C1D40"/>
+      <text x="57" y="51" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">True Label</text>
+      <text x="57" y="67" text-anchor="middle" font-size="12" fill="#FFC627">k* ~ P</text>
+      <!-- Arrow 1 -->
+      <line x1="112" y1="55" x2="158" y2="55" stroke="#888" stroke-width="2"/>
+      <polygon points="158,50 168,55 158,60" fill="#888"/>
+      <!-- Encoder box -->
+      <rect x="168" y="30" width="100" height="50" rx="6" fill="#555"/>
+      <text x="218" y="51" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">Encoder</text>
+      <text x="218" y="67" text-anchor="middle" font-size="11" fill="#ddd">(data vector x)</text>
+      <!-- Arrow 2 -->
+      <line x1="268" y1="55" x2="314" y2="55" stroke="#888" stroke-width="2"/>
+      <polygon points="314,50 324,55 314,60" fill="#888"/>
+      <!-- Decoder box -->
+      <rect x="324" y="30" width="120" height="50" rx="6" fill="#555"/>
+      <text x="384" y="51" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">Neural Net</text>
+      <text x="384" y="67" text-anchor="middle" font-size="11" fill="#ddd">(decoder)</text>
+      <!-- Arrow 3 -->
+      <line x1="444" y1="55" x2="490" y2="55" stroke="#888" stroke-width="2"/>
+      <polygon points="490,50 500,55 490,60" fill="#888"/>
+      <!-- Output box -->
+      <rect x="500" y="30" width="118" height="50" rx="6" fill="#8C1D40"/>
+      <text x="559" y="51" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">Output Dist.</text>
+      <text x="559" y="67" text-anchor="middle" font-size="12" fill="#FFC627">Q over K classes</text>
+      <!-- Goal label -->
+      <text x="310" y="105" text-anchor="middle" font-size="12" fill="#8C1D40" font-weight="bold">Goal: Q = P</text>
+    </svg>
+  </div>
+
+  <p>For any given input, the distribution <strong>P</strong> represents the true probability that the input belongs to each of the K classes. In <strong>Tab 4</strong> we will see that in standard labeled training data, P concentrates 100% of its probability on a single known label — but in principle it need not.</p>
+
+  <p>If the network is a perfect decoder its output distribution <strong>Q</strong> will match <strong>P</strong> exactly. If it is insensitive to the input, or has biases that make it over-confident in certain outputs, Q will deviate from P. We want a single scalar that measures how well Q matches P — specifically, how many bits per sample are needed on average if we use a code optimized for Q to encode class labels that are actually distributed as P. This is the <strong>cross-entropy H(P,&thinsp;Q)</strong>, which degenerates into the entropy H(P) of P when Q&nbsp;=&nbsp;P. When Q is some other distribution, H(P,&thinsp;Q)&nbsp;&ge;&nbsp;H(P), implying that the lossy decoder has corrupted the signal and thus introduced more uncertainty than was associated with the original encoding.</p>
+
+  <div class="fbox key">
+    <div class="flabel">Cross-Entropy</div>
+    <div id="f-xent"></div>
+    <div class="fnote">When Q = P, H(P,&thinsp;Q) = H(P) — no extra cost, the code is optimal. When Q &ne; P, H(P,&thinsp;Q) &gt; H(P) — there is always a penalty for using the wrong code. <strong>Training the network means adjusting its weights to minimize H(P,&thinsp;Q)</strong>, driving Q as close to P as possible. <em>Note on units: throughout this widget we use log<sub>2</sub>, giving units of bits. In practice, cross-entropy loss is computed with the natural logarithm ln, giving units of nats. The two differ only by a constant factor (log<sub>2</sub> e &asymp; 1.44), so the loss surface and its gradients are identical up to rescaling.</em></div>
+  </div>
+
+  <div class="ibox">
+    <strong>Connection to KL divergence:</strong> The gap H(P,&thinsp;Q)&nbsp;&minus;&nbsp;H(P) is called the <em>Kullback&ndash;Leibler divergence</em> KL(P&Vert;Q) — the extra bits wasted by using Q's code instead of P's optimal code. Because H(P) depends only on the data and not on the model, minimizing H(P,&thinsp;Q) over the network weights is identical to minimizing KL(P&Vert;Q). This equivalence also connects cross-entropy training directly to <em>maximum likelihood estimation</em>. You will encounter KL divergence frequently in probabilistic machine learning, variational inference, and information theory.
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 4 — CLASSIFICATION / ONE-HOT
+═════════════════════════════════════════════════════ -->
+<section class="sec" id="s4">
+  <h2>The Classification Case: One-Hot Labels</h2>
+
+  <p>In standard supervised classification, the true distribution P is a <strong>one-hot vector</strong>: probability 1 on the correct class k*, zero everywhere else.</p>
+
+  <div class="fbox">
+    <div class="flabel">One-Hot Label</div>
+    <div id="f-oh"></div>
+  </div>
+
+  <p>Plugging this one-hot P into the cross-entropy formula, every term with p<sub>i</sub> = 0 vanishes, leaving only the single term for the correct class k*:</p>
+
+  <div class="fbox key">
+    <div class="flabel" style="color:var(--maroon)">Classification Cross-Entropy Loss (per sample)</div>
+    <div id="f-ce-cls"></div>
+    <div class="fnote">The loss is the negative log-probability the model assigns to the correct class. Minimizing this loss pushes q<sub>k*</sub> toward 1. Note that when the decoder is perfect (q<sub>k*</sub> = 1), H(P,&thinsp;Q) = &minus;log<sub>2</sub>(1) = 0 — which equals H(P), the entropy of the deterministic one-hot distribution. Any deviation from perfect classification inflates the loss.</div>
+  </div>
+
+  <!-- Interactive one-hot -->
+  <div class="iact">
+    <div class="iact-title">&#127897; Interactive — One-Hot Loss (K = 4)</div>
+    <p class="hint">Assume a training example's true class is Cat (i.e., k* corresponds to the Cat label). Use the slider to adjust the probability q<sub>Cat</sub> that the network assigns to the correct class. The remaining probability is split equally among the other classes.</p>
+    <div class="srow">
+      <span class="slabel">q<sub>Cat</sub></span>
+      <input type="range" id="ohq" min="1" max="99" value="50" step="1">
+      <span class="sval" id="ohq-v">0.50</span>
+    </div>
+    <div class="chart-wrap">
+      <svg id="ohchart" viewBox="0 0 600 200" width="100%" height="200" aria-label="Bar chart of model's predicted distribution for classification"></svg>
+    </div>
+    <div class="mgrid">
+      <div class="mcard hi"><div class="mlabel">Loss = &minus;log&#8322; q<sub>Cat</sub></div><div class="mval" id="oh-loss">—</div><div class="munit">bits</div></div>
+    </div>
+  </div>
+
+  <div class="ibox">
+    <strong>Intuition:</strong> If the model assigns q<sub>Cat</sub> = 0.90 and the true class is Cat, the loss is &minus;log<sub>2</sub>(0.90) &asymp; 0.15&nbsp;bits — small. If q<sub>Cat</sub> = 0.02, the loss is &minus;log<sub>2</sub>(0.02) &asymp; 5.6&nbsp;bits — large. The logarithm grows without bound as q<sub>k*</sub> approaches zero, providing a strong gradient signal exactly when the model is most confidently wrong.
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 5 — BINARY CROSS-ENTROPY
+═════════════════════════════════════════════════════ -->
+<section class="sec" id="s5">
+  <h2>Binary Cross-Entropy (BCE)</h2>
+
+  <p>For <strong>binary classification</strong> (K = 2), the true label is either class 0 or class 1. Using the notation from Tab 3, the true distribution P is fully described by a single number y &isin; {0, 1}: P&nbsp;=&nbsp;[y,&nbsp;1&minus;y]. The network produces a single probability via a sigmoid activation, which we write &ycirc;&nbsp;=&nbsp;q<sub>1</sub>, giving Q&nbsp;=&nbsp;[&ycirc;,&nbsp;1&minus;&ycirc;]. Plugging these directly into the cross-entropy formula:</p>
+
+  <div class="fbox key">
+    <div class="flabel" style="color:var(--maroon)">Binary Cross-Entropy</div>
+    <div id="f-bce"></div>
+    <div class="fnote">This is H(P,&thinsp;Q) with K=2, P&nbsp;=&nbsp;[y, 1&minus;y], Q&nbsp;=&nbsp;[&ycirc;, 1&minus;&ycirc;], written using the natural logarithm (nats) as is standard in practice. The y and (1&minus;y) factors act as switches — only one term survives per sample: when y&nbsp;=&nbsp;1, the loss is &minus;ln(&ycirc;); when y&nbsp;=&nbsp;0, it is &minus;ln(1&minus;&ycirc;).</div>
+  </div>
+
+  <!-- Interactive BCE -->
+  <div class="iact">
+    <div class="iact-title">&#127897; Interactive — BCE Loss Curves</div>
+    <p class="hint">Select the true label y, then drag &ycirc;. The gold dot tracks your position on the active curve.</p>
+    <div class="srow">
+      <span class="slabel">True label y</span>
+      <label style="font-size:14px;margin-right:14px;cursor:pointer">
+        <input type="radio" name="bcy" value="1" checked style="accent-color:var(--maroon)"> y = 1
+      </label>
+      <label style="font-size:14px;cursor:pointer">
+        <input type="radio" name="bcy" value="0" style="accent-color:var(--maroon)"> y = 0
+      </label>
+    </div>
+    <div class="srow">
+      <span class="slabel">Model output &ycirc;</span>
+      <input type="range" id="bcyh" min="1" max="99" value="50" step="1">
+      <span class="sval" id="bcyh-v">0.50</span>
+    </div>
+    <div class="leg">
+      <div class="li"><div class="lsw" style="background:var(--maroon)"></div><span>y = 1: &minus;ln(&ycirc;)</span></div>
+      <div class="li"><div class="lsw" style="background:var(--blue)"></div><span>y = 0: &minus;ln(1&minus;&ycirc;)</span></div>
+      <div class="li"><div class="lsw" style="background:var(--gold);border:1px solid #bbb"></div><span>Current (&ycirc;, loss)</span></div>
+    </div>
+    <div class="chart-wrap">
+      <svg id="bcechart" viewBox="0 0 600 260" width="100%" height="260" aria-label="BCE loss curves for y=0 and y=1"></svg>
+    </div>
+    <div class="mgrid">
+      <div class="mcard"><div class="mlabel">y (true label)</div><div class="mval" id="bcy-d">1</div><div class="munit"></div></div>
+      <div class="mcard"><div class="mlabel">&ycirc; (predicted prob.)</div><div class="mval" id="bcyh-d">0.500</div><div class="munit"></div></div>
+      <div class="mcard hi"><div class="mlabel">BCE Loss</div><div class="mval" id="bce-l">—</div><div class="munit">nats</div></div>
+    </div>
+  </div>
+
+  <h3>MSE vs. Cross-Entropy — Why the choice matters</h3>
+  <table>
+    <tr><th>Property</th><th>MSE Loss</th><th>Cross-Entropy Loss</th></tr>
+    <tr><td>Appropriate for</td><td>Continuous regression targets</td><td>Probability outputs (classification)</td></tr>
+    <tr><td>Output activation</td><td>Linear</td><td>Sigmoid (K=2) or Softmax (K&gt;2)</td></tr>
+    <tr><td>Gradient at saturation</td><td>Vanishes &mdash; multiplied by &sigma;'(z) &asymp; 0</td><td>Linear in error &mdash; no vanishing gradient</td></tr>
+    <tr><td>Probabilistic meaning</td><td>MLE under Gaussian likelihood</td><td>MLE under Bernoulli / Categorical likelihood</td></tr>
+    <tr><td>Information-theoretic meaning</td><td>None direct</td><td>Minimizes KL divergence from data to model</td></tr>
+  </table>
+
+  <div class="ibox">
+    <strong>The gradient advantage in detail:</strong> For a logistic unit with sigmoid &sigma;(z) and BCE loss, &part;L/&part;z = &ycirc;&nbsp;&minus;&nbsp;y — clean and linear in the prediction error. With MSE instead, the gradient picks up a factor of &sigma;'(z) = &ycirc;(1&minus;&ycirc;), which vanishes when &ycirc; &asymp; 0 or &ycirc; &asymp; 1 — exactly the regime where a confident-but-wrong model lives, and where you most need a strong corrective signal. Cross-entropy cancels this saturation effect entirely.
+  </div>
+</section>
+
+
+<footer>
+  <div class="fsub">&copy; 2026 Theodore P. Pavlic &nbsp;&middot;&nbsp; <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:rgba(255,255,255,.55);text-decoration:underline;text-underline-offset:2px">MIT License</a></div>
+</footer>
+
+
+<!-- ════════════════════════════════════════════════════
+     JAVASCRIPT
+═════════════════════════════════════════════════════ -->
+<script>
+// ── KaTeX rendering ──────────────────────────────────────────────────────────
+(function tryRender() {
+  if (typeof katex === 'undefined') { setTimeout(tryRender, 150); return; }
+  const R = (id, tex, block) => {
+    const el = document.getElementById(id);
+    if (el) katex.render(tex, el, { displayMode: !!block, throwOnError: false });
+  };
+  R('f-logits',
+    'z_1,\\; z_2,\\; \\ldots,\\; z_K \\;\\in\\; \\mathbb{R}', true);
+  R('f-softmax',
+    'Q_k(\\tau) = \\dfrac{e^{z_k/\\tau}}{\\displaystyle\\sum_{j=1}^{K} e^{z_j/\\tau}}, \\qquad \\tau > 0,\\quad k=1,\\ldots,K', true);
+  R('f-entropy',
+    'H(P) = -\\sum_{i=1}^{K} p_i \\log_2 p_i', true);
+  R('f-perplexity',
+    '\\text{Perplexity}(P) = 2^{H(P)} = 2^{-\\sum_i p_i \\log_2 p_i}', true);
+  R('f-oh-ent',
+    'H(P) = 0 \\quad\\text{when } P \\text{ is a one-hot vector}', true);
+  R('f-xent',
+    'H(P,Q) = -\\sum_{i=1}^{K} p_i \\log_2 q_i', true);
+  R('f-oh',
+    'p_i = \\begin{cases} 1 & \\text{if } i = k^* \\\\ 0 & \\text{otherwise} \\end{cases}', true);
+  R('f-ce-cls',
+    '\\begin{aligned} H(P,Q) &= -\\sum_i p_i \\log_2 q_i \\\\ &= -1\\cdot\\log_2 q_{k^*} + 0 + \\cdots \\\\ &= -\\log_2 q_{k^*} \\end{aligned}', true);
+  R('f-bce',
+    '\\mathcal{L}_{\\mathrm{BCE}}(\\hat{y},\\,y) = -\\bigl[\\,y\\ln\\hat{y} + (1-y)\\ln(1-\\hat{y})\\,\\bigr]', true);
+
+  initAll();
+})();
+
+// ── SVG utilities ─────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  return e;
+}
+function clearSVG(id) { document.getElementById(id).innerHTML = ''; }
+
+// Draw Y-gridlines and axes for a chart with viewBox 600×H,
+// using inner area [ml, mt, ml+W, mt+CH].
+function drawAxes(svg, ml, mt, W, CH, ymax) {
+  const yticks = [0, 0.25, 0.5, 0.75, 1.0].map(f => f * ymax);
+  for (const v of yticks) {
+    const y = mt + CH - (v / ymax) * CH;
+    svg.appendChild(svgEl('line', { x1: ml, y1: y, x2: ml + W, y2: y, stroke: '#e6e6e6', 'stroke-width': 1 }));
+    const t = svgEl('text', { x: ml - 5, y: y + 4, 'text-anchor': 'end', 'font-size': '11', fill: '#777' });
+    t.textContent = v.toFixed(v < 1 ? 2 : 0);
+    svg.appendChild(t);
+  }
+  svg.appendChild(svgEl('line', { x1: ml, y1: mt, x2: ml, y2: mt + CH, stroke: '#aaa', 'stroke-width': 1 }));
+  svg.appendChild(svgEl('line', { x1: ml, y1: mt + CH, x2: ml + W, y2: mt + CH, stroke: '#aaa', 'stroke-width': 1 }));
+}
+
+
+// ── ENTROPY CHART ─────────────────────────────────────────────────────────────
+function updateEntropy() {
+  const c = parseInt(document.getElementById('ec').value);
+  // Two-segment log scale: c=0→τ=0.1, c=50→τ=1.0, c=100→τ=20
+  const tau = c <= 50
+    ? Math.pow(10, -1 + c / 50)
+    : Math.pow(20, (c - 50) / 50);
+  const labs = ['Cat', 'Dog', 'Bird', 'Fish'];
+  const logits = [2.4, 1.1, 0.7, 0.1];
+  const sc = logits.map(v => v / tau);
+  const mx = Math.max(...sc);
+  const ex = sc.map(v => Math.exp(v - mx));
+  const sm = ex.reduce((a, b) => a + b, 0);
+  const P = ex.map(v => v / sm);
+  const H = -P.reduce((a, p) => a + (p > 1e-12 ? p * Math.log2(p) : 0), 0);
+
+  document.getElementById('ec-h').textContent    = H.toFixed(3);
+  document.getElementById('ec-perp').textContent = Math.pow(2, H).toFixed(3);
+  document.getElementById('ec-lbl').textContent  = tau.toFixed(2);
+
+  const svg = document.getElementById('echart');
+  clearSVG('echart');
+  const ml = 45, mt = 15, W = 520, CH = 155, bw = 68;
+  drawAxes(svg, ml, mt, W, CH, 1.0);
+
+  P.forEach((p, i) => {
+    const bx = ml + i * (W / 4) + (W / 4 - bw) / 2;
+    const bh = p * CH;
+    const by = mt + CH - bh;
+    svg.appendChild(svgEl('rect', { x: bx, y: by, width: bw, height: Math.max(bh, 1), fill: '#8C1D40', rx: 3 }));
+    const tv = svgEl('text', { x: bx + bw / 2, y: by - 4, 'text-anchor': 'middle', 'font-size': '11', 'font-weight': 'bold', fill: '#333' });
+    tv.textContent = p.toFixed(3);
+    svg.appendChild(tv);
+    const tl = svgEl('text', { x: bx + bw / 2, y: mt + CH + 17, 'text-anchor': 'middle', 'font-size': '12', fill: '#333' });
+    tl.textContent = labs[i];
+    svg.appendChild(tl);
+  });
+}
+
+
+// ── ONE-HOT CHART ─────────────────────────────────────────────────────────────
+function updateOnehot() {
+  const qc = parseInt(document.getElementById('ohq').value) / 100;
+  const r  = (1 - qc) / 3;
+  const Q  = [qc, r, r, r];
+  const labs = ['Cat ★', 'Dog', 'Bird', 'Fish'];
+  const cols = ['#8C1D40', '#aaaaaa', '#aaaaaa', '#aaaaaa'];
+
+  document.getElementById('ohq-v').textContent   = qc.toFixed(2);
+  document.getElementById('oh-loss').textContent = (-Math.log2(qc)).toFixed(3);
+
+  const svg = document.getElementById('ohchart');
+  clearSVG('ohchart');
+  const ml = 45, mt = 25, W = 520, CH = 148, bw = 68;
+  drawAxes(svg, ml, mt, W, CH, 1.0);
+
+  // "true class" annotation above first bar
+  const annx = ml + (W / 4 - bw) / 2 + bw / 2;
+  const ta = svgEl('text', { x: annx, y: mt - 8, 'text-anchor': 'middle', 'font-size': '11', fill: '#8C1D40', 'font-weight': 'bold' });
+  ta.textContent = '↑ true class (P = 1)';
+  svg.appendChild(ta);
+
+  Q.forEach((q, i) => {
+    const bx = ml + i * (W / 4) + (W / 4 - bw) / 2;
+    const bh = q * CH;
+    const by = mt + CH - bh;
+    svg.appendChild(svgEl('rect', { x: bx, y: by, width: bw, height: Math.max(bh, 1), fill: cols[i], rx: 3 }));
+    // Place value label inside bar (white) when bar is tall enough to avoid overlap with annotation
+    const labelInside = i === 0 && bh > CH * 0.82;
+    const tv = svgEl('text', {
+      x: bx + bw / 2,
+      y: labelInside ? by + 16 : by - 4,
+      'text-anchor': 'middle', 'font-size': '11', 'font-weight': 'bold',
+      fill: labelInside ? '#fff' : '#333'
+    });
+    tv.textContent = q.toFixed(3);
+    svg.appendChild(tv);
+    const tl = svgEl('text', {
+      x: bx + bw / 2, y: mt + CH + 17,
+      'text-anchor': 'middle', 'font-size': '12',
+      fill: i === 0 ? '#8C1D40' : '#555',
+      'font-weight': i === 0 ? 'bold' : 'normal'
+    });
+    tl.textContent = labs[i];
+    svg.appendChild(tl);
+  });
+}
+
+
+// ── BCE CURVES ────────────────────────────────────────────────────────────────
+function updateBCE() {
+  const yh = parseInt(document.getElementById('bcyh').value) / 100;
+  const y  = parseInt(document.querySelector('input[name="bcy"]:checked').value);
+
+  document.getElementById('bcyh-v').textContent  = yh.toFixed(2);
+  document.getElementById('bcy-d').textContent   = y;
+  document.getElementById('bcyh-d').textContent  = yh.toFixed(3);
+  const loss = -(y * Math.log(yh) + (1 - y) * Math.log(1 - yh));
+  document.getElementById('bce-l').textContent   = loss.toFixed(3);
+
+  const svg = document.getElementById('bcechart');
+  clearSVG('bcechart');
+
+  const ml = 50, mt = 22, W = 510, CH = 195, maxL = 4.5;
+
+  // Gridlines
+  for (const v of [0, 1, 2, 3, 4]) {
+    const yc = mt + CH - (v / maxL) * CH;
+    svg.appendChild(svgEl('line', { x1: ml, y1: yc, x2: ml + W, y2: yc, stroke: '#e6e6e6', 'stroke-width': 1 }));
+    const t = svgEl('text', { x: ml - 5, y: yc + 4, 'text-anchor': 'end', 'font-size': '11', fill: '#777' });
+    t.textContent = v;
+    svg.appendChild(t);
+  }
+  for (const v of [0, 0.25, 0.5, 0.75, 1.0]) {
+    const xc = ml + v * W;
+    svg.appendChild(svgEl('line', { x1: xc, y1: mt, x2: xc, y2: mt + CH, stroke: '#e6e6e6', 'stroke-width': 1 }));
+    const t = svgEl('text', { x: xc, y: mt + CH + 16, 'text-anchor': 'middle', 'font-size': '11', fill: '#777' });
+    t.textContent = v.toFixed(2);
+    svg.appendChild(t);
+  }
+  // Axes
+  svg.appendChild(svgEl('line', { x1: ml, y1: mt, x2: ml, y2: mt + CH, stroke: '#aaa', 'stroke-width': 1 }));
+  svg.appendChild(svgEl('line', { x1: ml, y1: mt + CH, x2: ml + W, y2: mt + CH, stroke: '#aaa', 'stroke-width': 1 }));
+  // Axis labels
+  const xl = svgEl('text', { x: ml + W / 2, y: mt + CH + 34, 'text-anchor': 'middle', 'font-size': '13', fill: '#444' });
+  xl.textContent = 'Model output ŷ';
+  svg.appendChild(xl);
+  const yl = svgEl('text', {
+    x: 12, y: mt + CH / 2, 'text-anchor': 'middle', 'font-size': '13', fill: '#444',
+    transform: `rotate(-90, 12, ${mt + CH / 2})`
+  });
+  yl.textContent = 'Loss (nats)';
+  svg.appendChild(yl);
+
+  // y = 1 curve: -ln(ŷ)
+  const pts1 = [];
+  for (let i = 1; i <= 99; i++) {
+    const v = i / 100;
+    const l = -Math.log(v);
+    if (l <= maxL) {
+      const px = ml + v * W, py = mt + CH - (l / maxL) * CH;
+      pts1.push((pts1.length === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1));
+    }
+  }
+  svg.appendChild(svgEl('path', { d: pts1.join(' '), fill: 'none', stroke: '#8C1D40', 'stroke-width': 2.5 }));
+
+  // y = 0 curve: -ln(1-ŷ)
+  const pts0 = [];
+  for (let i = 1; i <= 99; i++) {
+    const v = i / 100;
+    const l = -Math.log(1 - v);
+    if (l <= maxL) {
+      const px = ml + v * W, py = mt + CH - (l / maxL) * CH;
+      pts0.push((pts0.length === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1));
+    }
+  }
+  svg.appendChild(svgEl('path', { d: pts0.join(' '), fill: 'none', stroke: '#00A3E0', 'stroke-width': 2.5 }));
+
+  // Curve labels
+  const cl1 = svgEl('text', { x: ml + W * 0.70, y: mt + CH * 0.13, 'font-size': '12', fill: '#8C1D40', 'font-weight': 'bold' });
+  cl1.textContent = 'y = 1: −ln(ŷ)';
+  svg.appendChild(cl1);
+  const cl0 = svgEl('text', { x: ml + W * 0.04, y: mt + CH * 0.13, 'font-size': '12', fill: '#00A3E0', 'font-weight': 'bold' });
+  cl0.textContent = 'y = 0: −ln(1−ŷ)';
+  svg.appendChild(cl0);
+
+  // Current point
+  const cl = Math.min(loss, maxL);
+  const px = ml + yh * W, py = mt + CH - (cl / maxL) * CH;
+  svg.appendChild(svgEl('line', { x1: px, y1: py, x2: px, y2: mt + CH, stroke: '#666', 'stroke-width': 1, 'stroke-dasharray': '4,3' }));
+  svg.appendChild(svgEl('line', { x1: ml, y1: py, x2: px, y2: py, stroke: '#666', 'stroke-width': 1, 'stroke-dasharray': '4,3' }));
+  svg.appendChild(svgEl('circle', {
+    cx: px, cy: py, r: 7,
+    fill: '#FFC627',
+    stroke: y === 1 ? '#8C1D40' : '#00A3E0',
+    'stroke-width': 2.5
+  }));
+  const tpt = svgEl('text', { x: px + 10, y: py - 6, 'font-size': '12', fill: '#333', 'font-weight': 'bold' });
+  tpt.textContent = loss.toFixed(3);
+  svg.appendChild(tpt);
+}
+
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(id) {
+  // Panels
+  document.querySelectorAll('.sec').forEach(s => {
+    s.classList.toggle('active', s.id === id);
+  });
+  // Buttons
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const on = b.dataset.tab === id;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-selected', on);
+  });
+  // Select
+  const sel = document.querySelector('.tab-select');
+  if (sel) sel.value = id;
+  // Re-render charts if the newly visible panel has one
+  // (SVGs have zero size when hidden, so redraw on reveal)
+  if (id === 's2') updateEntropy();
+  else if (id === 's4') updateOnehot();
+  else if (id === 's5') updateBCE();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+document.querySelector('.tab-select').addEventListener('change', function () {
+  switchTab(this.value);
+});
+
+function initAll() {
+  updateEntropy();
+  updateOnehot();
+  updateBCE();
+}
+
+['input', 'change'].forEach(ev => {
+  document.addEventListener(ev, e => {
+    const id = e.target.id || e.target.name;
+    if      (id === 'ec')                        updateEntropy();
+    else if (id === 'ohq')                       updateOnehot();
+    else if (id === 'bcyh' || id === 'bcy')      updateBCE();
+  });
+});
+</script>
+</body>
+</html>
