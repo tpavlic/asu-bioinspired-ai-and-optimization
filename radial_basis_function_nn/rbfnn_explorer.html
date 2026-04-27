@@ -39,12 +39,17 @@
   --pca-bg:#242424;--pca-grid:#353533;--pca-txt:#888884;
 }}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--ff);color:var(--txt);background:transparent;max-width:900px;margin:0 auto;padding:12px}
+body{font-family:var(--ff);color:var(--txt);background:transparent;max-width:900px;margin:0 auto}
 .top{display:flex;align-items:flex-start;flex-wrap:wrap}
-.cv-col{padding:16px;flex-shrink:0;max-width:100%}
+.cv-col{padding:16px;flex-shrink:0;width:492px;max-width:100%;display:flex;flex-direction:column;align-items:center}
 #cv{display:block;width:min(460px,100%);height:auto;border-radius:12px;box-shadow:0 2px 18px rgba(0,0,0,.22)}
 .ctl{padding:14px 16px;border-left:0.5px solid var(--bdr);display:flex;flex-direction:column;gap:12px;flex:1;min-width:260px}
-@media(max-width:600px){.ctl{border-left:none;border-top:0.5px solid var(--bdr);width:100%}}
+@media(max-width:760px){
+  .top{flex-direction:column}
+  .ctl{order:1;border-left:none;border-top:none;width:100%;min-width:0}
+  .cv-col{order:2;width:100%}
+  #cv{margin:0 auto}
+}
 .card{background:var(--bg2);border:0.5px solid var(--bdr);border-radius:var(--rl);padding:12px 14px}
 .slbl{font-size:10.5px;font-weight:500;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
 .mb{flex:1;padding:8px 5px;border-radius:var(--r);border:0.5px solid var(--bdr2);cursor:pointer;font-size:12.5px;font-family:var(--ff);transition:all .18s;background:transparent;color:var(--txt2)}
@@ -627,7 +632,10 @@ function solve(){
 
 function render(){
   const cv=document.getElementById('cv');
+  const dpr=window.devicePixelRatio||1;
+  if(cv.width!==CS*dpr||cv.height!==CS*dpr){cv.width=CS*dpr;cv.height=CS*dpr;}
   const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
   ctx.fillStyle='#161b22';ctx.fillRect(0,0,CS,CS);
   /* Background shading — use lower res for SVM (N=90 evals/pixel) */
   const RES=mode==='svm'?120:200;
