@@ -32,12 +32,6 @@
   --fm:'SF Mono','Fira Code',Consolas,monospace;
   --pca-bg:#f0f0ee;--pca-grid:#d8d8d4;--pca-txt:#555552;
 }
-@media(prefers-color-scheme:dark){:root{
-  --bg:#1e1e1e;--bg2:#282828;--bg3:#333333;
-  --txt:#dedede;--txt2:#a0a0a0;--txt3:#686864;
-  --bdr:#3a3a3a;--bdr2:#545450;
-  --pca-bg:#242424;--pca-grid:#353533;--pca-txt:#888884;
-}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--ff);color:var(--txt);background:transparent;max-width:900px;margin:0 auto}
 .top{display:flex;align-items:flex-start;flex-wrap:wrap}
@@ -593,15 +587,14 @@ function renderPCA(){
   const padH=10,padV=5,rx=5;
   const bx=PL+(PW-tw)/2-padH,by=Math.round((PT-tagFontPx)/2)-padV+1;
   const bw=tw+padH*2,bh=tagFontPx+padV*2;
-  const isDark=bgCol.startsWith('#1')||bgCol.startsWith('#2');
-  ctx.fillStyle=isDark?'rgba(40,40,40,.92)':'rgba(255,255,255,.92)';
+  ctx.fillStyle='rgba(255,255,255,.92)';
   ctx.beginPath();if(ctx.roundRect){ctx.roundRect(bx,by,bw,bh,rx);}else{ctx.rect(bx,by,bw,bh);}ctx.fill();
   ctx.strokeStyle=tagBorder;ctx.lineWidth=1;
   ctx.beginPath();if(ctx.roundRect){ctx.roundRect(bx,by,bw,bh,rx);}else{ctx.rect(bx,by,bw,bh);}ctx.stroke();
   ctx.fillStyle=tagAccent;ctx.textAlign='center';
   ctx.fillText(tagTxt,PL+PW/2,by+padV+tagFontPx-1);
   ctx.save();ctx.font=`9px ${FF}`;
-  ctx.fillStyle=isDark?'rgba(160,160,155,.28)':'rgba(80,80,76,.22)';
+  ctx.fillStyle='rgba(80,80,76,.22)';
   ctx.textAlign='right';ctx.textBaseline='bottom';
   ctx.fillText('© 2026 Theodore P. Pavlic · MIT License',W-PR-4,H-3);ctx.restore();
 }
