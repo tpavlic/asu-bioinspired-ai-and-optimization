@@ -169,10 +169,10 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
         <div class="mode-card-title" style="color:var(--green);">② Hebbian + LI + Normalization</div>
         <p class="mode-card-desc" style="margin:6px 0;">As in Mode ①, the winning output neuron will be updated (and the others will not), but the result will then be normalized. That is:</p>
         <div class="formula" style="font-size:.82rem;padding:8px 12px;margin:6px 0 3px;">
-          w<sub>ij</sub>[k+1] ← w<sub>ij</sub>[k] + η · x<sub>i</sub>[k] · N<sub>j</sub>[k] &nbsp;<span style="font-size:.72rem;color:var(--txt3);">(Hebbian step, all i∈{1,…,n})</span>
+          w<sub>ij</sub>[k+1] ← w<sub>ij</sub>[k] + η · x<sub>i</sub>[k] · N<sub>j</sub>[k] <br><span style="font-size:.72rem;color:var(--txt3);display:block;margin-top:2px;">(Hebbian step, all i∈{1,…,n})</span>
         </div>
         <div class="formula" style="font-size:.82rem;padding:8px 12px;margin:0 0 6px;">
-          w<sub>ij</sub>[k+1] ← w<sub>ij</sub>[k+1] / ‖(w<sub>1j</sub>,…,w<sub>nj</sub>)‖ &nbsp;<span style="font-size:.72rem;color:var(--txt3);">(normalize to unit length)</span>
+          w<sub>ij</sub>[k+1] ← w<sub>ij</sub>[k+1] / ‖(w<sub>1j</sub>,…,w<sub>nj</sub>)‖ <br><span style="font-size:.72rem;color:var(--txt3);display:block;margin-top:2px;">(normalize to unit length)</span>
         </div>
         <p class="mode-card-desc" style="margin:0 0 5px;">Dividing by the L2 norm ensures a unit magnitude after every update, placing the winner on the unit sphere. Strengthening weights toward one cluster's direction forces other directions to shrink — a fixed angular budget, not arbitrary growth. Arrows converge to point at distinct cluster centers.</p>
         <p class="mode-card-desc">As with the implementation of LI in Mode ①, each loser neuron ℓ will have N<sub style="letter-spacing:-.04em">ℓ</sub>=0.</p>
@@ -182,11 +182,11 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
         <div class="mode-card-title" style="color:var(--purple);">③ Hebbian + LI + Anti-Hebbian Losers</div>
         <p class="mode-card-desc" style="margin:6px 0;">As in Mode ①, the winning output neuron will be updated (and the others will not), but losers will also be updated using an anti-Hebbian rule. That is, for the winner neuron j:</p>
         <div class="formula" style="font-size:.82rem;padding:8px 12px;margin:6px 0 3px;">
-          w<sub>ij</sub>[k+1] ← w<sub>ij</sub>[k] + η · x<sub>i</sub>[k] · N<sub>j</sub>[k] &nbsp;<span style="font-size:.72rem;color:var(--txt3);">(Hebbian step, all i∈{1,…,n})</span>
+          w<sub>ij</sub>[k+1] ← w<sub>ij</sub>[k] + η · x<sub>i</sub>[k] · N<sub>j</sub>[k] <br><span style="font-size:.72rem;color:var(--txt3);display:block;margin-top:2px;">(Hebbian step, all i∈{1,…,n})</span>
         </div>
         <p class="mode-card-desc" style="margin:4px 0;">and for each "loser" neuron ℓ:</p>
         <div class="formula" style="font-size:.82rem;padding:8px 12px;margin:4px 0 6px;">
-          w<sub style="letter-spacing:-.04em">iℓ</sub>[k+1] ← w<sub style="letter-spacing:-.04em">iℓ</sub>[k] − α · η · x<sub>i</sub>[k] &nbsp;<span style="font-size:.72rem;color:var(--txt3);">(anti-Hebbian step, all i∈{1,…,n})</span>
+          w<sub style="letter-spacing:-.04em">iℓ</sub>[k+1] ← w<sub style="letter-spacing:-.04em">iℓ</sub>[k] − α · η · x<sub>i</sub>[k] <br><span style="font-size:.72rem;color:var(--txt3);display:block;margin-top:2px;">(anti-Hebbian step, all i∈{1,…,n})</span>
         </div>
         <p class="mode-card-desc" style="margin:0 0 5px;">where α is the anti-Hebbian rate (0 &lt; α ≤ 1; here α=0.4), which controls how strongly losers are depressed relative to the winner's potentiation. Note that the depression is applied to the loser regardless of whether it would have been activated without the LI. As in Modes ① and ②, each loser neuron ℓ will have N<sub style="letter-spacing:-.04em">ℓ</sub>=0.</p>
         <p class="mode-card-desc">Where Mode ② limits growth by rescaling, Mode ③ provides direct competitive depression — losers are weakened proportionally to how strongly each input activated them, as described by <a href="https://doi.org/10.1016/S0364-0213(85)80010-0" target="_blank" style="color:var(--org);" onclick="event.stopPropagation()">Rumelhart &amp; Zipser (1985)</a>. This method is less likely to result in output specialization on input clusters than Mode ② normalization because depression can eliminate a loser's ability to compete before it specializes.</p>
