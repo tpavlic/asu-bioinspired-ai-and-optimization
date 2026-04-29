@@ -624,21 +624,25 @@ function drawCNN(){
   }
 
   if(L>0){
-    // Blur inside RF: deeper layers see an increasingly abstracted view
-    if(L>1){
-      const blurPx=(L*L*0.40).toFixed(1);
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect((cnnSel.x-L)*cw,(cnnSel.y-L)*ch,(2*L+1)*cw,(2*L+1)*ch);
-      ctx.clip();
-      ctx.filter=`blur(${blurPx}px)`;
-      for(let y=0;y<N;y++) for(let x=0;x<N;x++){
-        ctx.fillStyle=getLandscapeColor(x,y);
-        ctx.fillRect(x*cw,y*ch,cw+.5,ch+.5);
-      }
-      ctx.filter='none';
-      ctx.restore();
+    // Blur inside RF: starts at L=1, grows aggressively — deep layers see a heavily
+    // smoothed and abstracted view, as if fine pixel detail is no longer distinguishable
+    const blurPx=(L*L*0.85).toFixed(1);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect((cnnSel.x-L)*cw,(cnnSel.y-L)*ch,(2*L+1)*cw,(2*L+1)*ch);
+    ctx.clip();
+    ctx.filter=`blur(${blurPx}px)`;
+    for(let y=0;y<N;y++) for(let x=0;x<N;x++){
+      ctx.fillStyle=getLandscapeColor(x,y);
+      ctx.fillRect(x*cw,y*ch,cw+.5,ch+.5);
     }
+    ctx.filter='none';
+    // Desaturation overlay: washes color toward neutral gray as depth increases
+    // Simulates loss of fine chromatic detail in deeper feature representations
+    const washAlpha=Math.min(0.62, L*0.09);
+    ctx.fillStyle=`rgba(180,172,158,${washAlpha})`;
+    ctx.fillRect((cnnSel.x-L)*cw,(cnnSel.y-L)*ch,(2*L+1)*cw,(2*L+1)*ch);
+    ctx.restore();
     // Darken outside RF, tint inside
     for(let y=0;y<N;y++) for(let x=0;x<N;x++){
       const dx=Math.abs(x-cnnSel.x),dy=Math.abs(y-cnnSel.y);
