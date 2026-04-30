@@ -62,6 +62,10 @@ Inside `<head>`, include all of the following, filling in the actual values:
 <meta name="twitter:title" content="Demo Title — interactive explainer">
 <meta name="twitter:description" content="One or two sentences describing the demo.">
 <meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/my_demo/my_demo-preview.png">
+
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LH9FR4R4WT"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-LH9FR4R4WT');</script>
 </head>
 ```
 
@@ -247,5 +251,6 @@ course unit vocabulary so students can orient themselves.
 - **Accent color:** `#2e7d32` (dark green) — used in links and section headings
 - **Copyright:** © Theodore P. Pavlic, MIT License (`LICENSE` file at repo root)
 - **fb:app_id:** `2385695445236853` — include in all OG blocks
+- **Google Analytics ID:** `G-LH9FR4R4WT` — include the two-line GA4 snippet in every `<head>`, after the Twitter/X card block and before `</head>`
 - **GitHub Pages base URL:** `https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/`
 - **YouTube channel:** <https://www.youtube.com/@TedPavlic> — linked from the index header
