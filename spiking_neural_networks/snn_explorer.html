@@ -53,7 +53,7 @@ a{text-decoration:none}
 .hdr-copy .cl{white-space:nowrap;color:#88aa72}
 .hdr-copy .cl:hover{color:#c8ddb8}
 @media(max-width:380px){
-  .site-hdr{flex-direction:column;gap:3px}
+  .site-hdr .site-inner{flex-direction:column;gap:3px}
   .hdr-copy{flex-direction:column;align-items:flex-start;gap:1px}
   .hdr-copy .cs{display:none}
 }
@@ -75,13 +75,14 @@ a{text-decoration:none}
 .tab-sel{
   display:none;font-family:'Outfit',sans-serif;font-size:.88rem;
   padding:9px 14px;width:100%;background:#ede8d8;border:none;
-  border-bottom:2px solid #c5bfa8;color:#1e2a14;cursor:pointer;outline:none;
+  color:#1e2a14;cursor:pointer;outline:none;
 }
 @media(max-width:520px){.tab-nav{display:none}.tab-sel{display:block}}
 
 /* ── PANELS ──────────────────────────────────────────────── */
 .tab-panel{display:none}
 .tab-panel.active{display:block}
+.site-inner{max-width:860px;margin:0 auto;padding:0 18px;width:100%;box-sizing:border-box}
 .pbody{max-width:860px;margin:0 auto;padding:18px 18px 32px}
 
 /* ── TYPOGRAPHY ──────────────────────────────────────────── */
@@ -221,7 +222,7 @@ input[type=range]::-moz-range-thumb{
   border-top:1px solid #e8e2d0;margin-top:10px!important;padding-top:8px}
 
 /* ── FOOTER ──────────────────────────────────────────────── */
-.site-ftr{background:#ede8d8;border-top:1px solid #c5bfa8;padding:9px 18px;text-align:center}
+.site-ftr{background:#ede8d8;border-top:1px solid #c5bfa8;padding:9px 0;text-align:center}
 .ftr-copy{font-family:'IBM Plex Mono',monospace;font-size:.63rem;color:#8a9a7a;
   display:inline-flex;flex-wrap:wrap;justify-content:center;align-items:baseline}
 .ftr-copy .cn{white-space:nowrap}
@@ -238,29 +239,37 @@ input[type=range]::-moz-range-thumb{
 
 <!-- HEADER -->
 <header class="site-hdr">
-  <span class="hdr-title">Spiking Neural Networks · Interactive Explorer</span>
-  <div class="hdr-copy">
-    <span class="cn">© 2026 Theodore&nbsp;P.&nbsp;Pavlic</span>
-    <span class="cs" aria-hidden="true">·</span>
-    <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" class="cl">MIT&nbsp;License</a>
+  <div class="site-inner" style="display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 0">
+    <span class="hdr-title">Spiking Neural Networks · Interactive Explorer</span>
+    <div class="hdr-copy">
+      <span class="cn">© 2026 Theodore&nbsp;P.&nbsp;Pavlic</span>
+      <span class="cs" aria-hidden="true">·</span>
+      <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" class="cl">MIT&nbsp;License</a>
+    </div>
   </div>
 </header>
 
 <!-- TAB NAV -->
 <nav class="tab-nav" role="tablist">
-  <button class="tab-btn active" data-tab="0">① LIF Dynamics</button>
-  <button class="tab-btn" data-tab="1">② Rate Coding</button>
-  <button class="tab-btn" data-tab="2">③ STDP</button>
-  <button class="tab-btn" data-tab="3">④ Hardware &amp; Software</button>
-  <button class="tab-btn" data-tab="4">⑤ Learning &amp; Applications</button>
+  <div class="site-inner" style="display:flex;padding:0">
+    <button class="tab-btn active" data-tab="0">① LIF Dynamics</button>
+    <button class="tab-btn" data-tab="1">② Rate Coding</button>
+    <button class="tab-btn" data-tab="2">③ STDP</button>
+    <button class="tab-btn" data-tab="3">④ Hardware &amp; Software</button>
+    <button class="tab-btn" data-tab="4">⑤ Learning &amp; Applications</button>
+  </div>
 </nav>
-<select class="tab-sel" id="tabSel">
-  <option value="0">① LIF Dynamics</option>
-  <option value="1">② Rate Coding</option>
-  <option value="2">③ STDP</option>
-  <option value="3">④ Hardware &amp; Software</option>
-  <option value="4">⑤ Learning &amp; Applications</option>
-</select>
+<div style="background:#ede8d8;border-bottom:2px solid #c5bfa8">
+  <div style="max-width:860px;margin:0 auto;box-sizing:border-box">
+    <select class="tab-sel" id="tabSel">
+      <option value="0">① LIF Dynamics</option>
+      <option value="1">② Rate Coding</option>
+      <option value="2">③ STDP</option>
+      <option value="3">④ Hardware &amp; Software</option>
+      <option value="4">⑤ Learning &amp; Applications</option>
+    </select>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      TAB 1 — LIF MEMBRANE DYNAMICS
@@ -282,9 +291,9 @@ input[type=range]::-moz-range-thumb{
         </div>
       </div>
     </div>
-    <div class="eq-box" style="flex:0 0 auto;margin-bottom:0">
+    <div class="eq-box" style="flex:1 1 220px;margin-bottom:0">
       <div class="eq-lbl">Equivalent RC circuit</div>
-      <svg viewBox="0 0 262 126" xmlns="http://www.w3.org/2000/svg" style="width:255px;max-width:100%;display:block">
+      <svg viewBox="0 0 262 126" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:255px;display:block">
         <!-- Top rail — node V -->
         <line x1="14" y1="15" x2="248" y2="15" stroke="#1a3a0d" stroke-width="1.8"/>
         <!-- Bottom rail — V_rest -->
@@ -754,10 +763,12 @@ input[type=range]::-moz-range-thumb{
 
 <!-- FOOTER -->
 <footer class="site-ftr">
-  <div class="ftr-copy">
-    <span class="cn">© 2026 Theodore&nbsp;P.&nbsp;Pavlic</span>
-    <span class="cs" aria-hidden="true">&nbsp;·&nbsp;</span>
-    <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" class="cl">MIT&nbsp;License</a>
+  <div class="site-inner">
+    <div class="ftr-copy">
+      <span class="cn">© 2026 Theodore&nbsp;P.&nbsp;Pavlic</span>
+      <span class="cs" aria-hidden="true">&nbsp;·&nbsp;</span>
+      <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" class="cl">MIT&nbsp;License</a>
+    </div>
   </div>
 </footer>
 
