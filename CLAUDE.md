@@ -82,13 +82,19 @@ Inside `<head>`, include all of the following, filling in the actual values:
 At the very bottom of `<body>`, before `</body>`, add:
 
 ```html
-<footer id="course-nav-footer" style="margin-top:0;padding:0.75rem 0 0 1rem;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;text-align:left;">
-  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+<footer id="course-nav-footer" style="margin-top:0;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;">
+  <div style="max-width:MAX_WIDTH;margin:0 auto;padding:0.75rem 0 0 1rem;">
+    <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+  </div>
 </footer>
 <script>
 if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 ```
+
+Replace `MAX_WIDTH` with the page's primary content `max-width` (e.g. `860px`). The inner
+`<div>` constrains the link to the same width as the page body so it aligns on wide screens;
+the `border-top` on the outer `<footer>` still spans the full viewport width.
 
 The `<script>` hides the footer when the page is embedded in a Canvas LMS iframe. Use
 `getElementById('course-nav-footer')` rather than `querySelector('footer')` — some demos

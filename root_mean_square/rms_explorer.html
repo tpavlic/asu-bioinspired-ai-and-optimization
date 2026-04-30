@@ -778,8 +778,10 @@ window.addEventListener('load', () =>
   requestAnimationFrame(() => requestAnimationFrame(updateAll))
 );
 </script>
-<footer id="course-nav-footer" style="margin-top:0;padding:0.75rem 0 0 1rem;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;text-align:left;">
-  <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+<footer id="course-nav-footer" style="margin-top:0;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;">
+  <div style="max-width:740px;margin:0 auto;padding:0.75rem 0 0 1rem;">
+    <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+  </div>
 </footer>
 <script>
 if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
