@@ -1270,8 +1270,10 @@ x ← LayerNorm(x)</div>
   xattn:{title:'Cross-Attention (optional)',html:`
     <p>This sub-layer only exists in <strong>encoder-decoder models</strong> (T5, BART, the original "Attention Is All You Need"). In this configuration there are two token sequences: <strong>source tokens</strong> (e.g., a sentence to be translated) and <strong>target tokens</strong> (the translation being generated so far). The encoder runs first on the source tokens, producing N precomputed output vectors — one per source token. These are then held fixed while the decoder generates target tokens one by one, incorporating cross-attention between the two groups at each step.</p>
     <p>The cross-attention sub-layer receives <strong>two separate inputs</strong>:</p>
-    <div class="math">Q  ←  target-side token representations (from causal self-attention above)
-K, V  ←  precomputed encoder output vectors from the source tokens</div>
+    <ul style="font-size:.85rem;color:var(--text-mid);margin:8px 0;padding-left:18px;line-height:1.7">
+      <li><strong>Q</strong> — target-side token representations (from causal self-attention above)</li>
+      <li><strong>K, V</strong> — precomputed encoder output vectors from the source tokens</li>
+    </ul>
     <p>The target tokens flow through the layer as normal. The source-derived K and V vectors are injected separately — source and target tokens never occupy the same sequence, only interacting through this Q→K,V lookup. This lets the decoder ask "which source tokens are most relevant to what I'm generating right now?" at every decoding step.</p>
     <p><strong>On dimensionality:</strong> Q has shape M×d<sub>k</sub> (M target tokens) and K has shape N×d<sub>k</sub> (N source tokens). They don't need the same number of tokens — only the same projection dimension d<sub>k</sub>. Q·K<sup>T</sup> is then M×N, giving a relevance score between every target query and every source key, which is exactly what cross-attention needs.</p>
     <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained (end-to-end):</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> — all three projection matrices are part of the decoder's parameters and are trained jointly with the rest of the model.<br>❄️ <strong>Precomputed and fixed during decoding:</strong> the encoder output vectors themselves — computed once from the source tokens before decoding begins and not updated during generation.</p>`
@@ -2152,14 +2154,6 @@ window.addEventListener('resize',()=>{
   if(curTab===2){renderSSTab();}
   if(curTab===3){renderVitTab();}
 });
-</script>
-<footer id="course-nav-footer" style="margin-top:0;border-top:1px solid #E0DAC0;font-size:0.8rem;color:#78786A;">
-  <div style="max-width:1080px;margin:0 auto;padding:0.75rem 0 0 1rem;">
-    <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
-  </div>
-</footer>
-<script>
-if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 </body>
 </html>
