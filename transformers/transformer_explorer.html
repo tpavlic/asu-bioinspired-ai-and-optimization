@@ -62,6 +62,9 @@ body{
 /* ── HEADER ─────────────────────────────────────────────── */
 .hdr{
   background:var(--green);color:#fff;
+}
+.hdr-inner{
+  max-width:1080px;margin:0 auto;
   padding:16px 28px;display:flex;align-items:flex-start;
   justify-content:space-between;flex-wrap:wrap;gap:8px;
 }
@@ -73,8 +76,12 @@ body{
 
 /* ── TAB BAR ─────────────────────────────────────────────── */
 .tabbar{
-  background:var(--green);display:flex;
-  border-top:1px solid rgba(255,255,255,.12);overflow-x:auto;
+  background:var(--green);
+  border-top:1px solid rgba(255,255,255,.12);
+}
+.tabbar-inner{
+  max-width:1080px;margin:0 auto;
+  display:flex;overflow-x:auto;
   -webkit-overflow-scrolling:touch;
 }
 .tbtn{
@@ -334,7 +341,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
 .hdr-sep{display:inline}.hdr-br{display:none}
 @media(max-width:500px){
   .main{padding:16px 13px 24px}
-  .hdr{padding:13px 16px}
+  .hdr-inner{padding:13px 16px}
   .hdr-sep{display:none}
   .hdr-br{display:inline}
   .hdr-copy{text-align:left}
@@ -345,21 +352,25 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
 
 <!-- ── HEADER ──────────────────────────────────────────── -->
 <header class="hdr">
-  <div class="hdr-title">
-    <h1>Transformer Architecture Explorer</h1>
-    <div class="sub">Attention · Self-Supervision · Vision Transformers</div>
-  </div>
-  <div class="hdr-copy">
-    &copy; 2026 Theodore P. Pavlic<span class="hdr-sep"> &middot; </span><br class="hdr-br"><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
+  <div class="hdr-inner">
+    <div class="hdr-title">
+      <h1>Transformer Architecture Explorer</h1>
+      <div class="sub">Attention · Self-Supervision · Vision Transformers</div>
+    </div>
+    <div class="hdr-copy">
+      &copy; 2026 Theodore P. Pavlic<span class="hdr-sep"> &middot; </span><br class="hdr-br"><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a>
+    </div>
   </div>
 </header>
 
 <!-- ── TAB BAR ─────────────────────────────────────────── -->
 <nav class="tabbar" role="tablist">
-  <button class="tbtn active" role="tab" onclick="switchTab(0)">① Architecture</button>
-  <button class="tbtn" role="tab" onclick="switchTab(1)">② Attention Mechanism</button>
-  <button class="tbtn" role="tab" onclick="switchTab(2)">③ Self-Supervision</button>
-  <button class="tbtn" role="tab" onclick="switchTab(3)">④ Vision Transformer</button>
+  <div class="tabbar-inner">
+    <button class="tbtn active" role="tab" onclick="switchTab(0)">① Architecture</button>
+    <button class="tbtn" role="tab" onclick="switchTab(1)">② Attention Mechanism</button>
+    <button class="tbtn" role="tab" onclick="switchTab(2)">③ Self-Supervision</button>
+    <button class="tbtn" role="tab" onclick="switchTab(3)">④ Vision Transformer</button>
+  </div>
 </nav>
 
 <div class="tab-select-wrap">
