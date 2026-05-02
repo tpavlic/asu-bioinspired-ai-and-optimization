@@ -398,7 +398,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
     <div>
       <div class="arch-dia">
 
-        <div class="ab ab-s" id="ab-inp" onclick="archSel('inp')">Input Tokens</div>
+        <div class="ab ab-s" id="ab-inp" onclick="archSel('inp')">Input ("Context") Tokens</div>
         <div class="aa"></div>
         <div class="ab ab-s" id="ab-emb" onclick="archSel('emb')">Token Embeddings</div>
         <div class="aa"></div>
@@ -452,11 +452,11 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
   <h3 class="sec" style="margin-top:20px">Parameter Count at a Glance</h3>
   <div class="card" style="margin-bottom:20px">
     <p style="font-size:.86rem;color:var(--text-mid);margin-bottom:12px">
-      For a standard encoder with vocabulary size <span class="math-inline">V</span>, model dimension <span class="math-inline">d</span> (also written d<sub>model</sub> — the dimensionality of every token's representation throughout the network), N layers, and learned positional encodings up to sequence length <span class="math-inline">L</span>:
+      For a standard encoder with vocabulary size <span class="math-inline">|𝒱|</span> (number of distinct tokens), model dimension <span class="math-inline">d</span>, N layers, and learned positional encodings up to sequence length <span class="math-inline">L</span>:
     </p>
-    <div class="formula">Total ≈ V·d  +  L·d  +  N·12d²
+    <div class="formula">Total ≈ |𝒱|·d  +  L·d  +  N·12d²
 
-  Token embeddings:      V·d
+  Token embeddings:      |𝒱|·d   (|𝒱| = vocab size)
   Positional encodings:  L·d  (if learned; zero if sinusoidal)
   Per encoder layer:     4d²  (MHSA: W_Q, W_K, W_V, W_O)
                        + 8d²  (FFN:  W_1, W_2, including biases)
@@ -470,7 +470,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
         <thead>
           <tr style="background:var(--surface-2);color:var(--green)">
             <th style="padding:7px 10px;text-align:left;border-bottom:2px solid var(--border)">Model</th>
-            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">V</th>
+            <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">|𝒱|</th>
             <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">d</th>
             <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">N</th>
             <th style="padding:7px 10px;text-align:right;border-bottom:2px solid var(--border)">h</th>
@@ -1210,34 +1210,43 @@ function switchTab(i) {
 // TAB 1: ARCHITECTURE
 // ════════════════════════════════════════════════════════
 const ARCH = {
-  inp:{title:'Input Tokens',html:`
-    <p>Raw text is split into <strong>tokens</strong> — subword units produced by algorithms like <span class="tip" data-tip="Iteratively merges the most frequent adjacent character pairs to build a subword vocabulary. Used by GPT-2, RoBERTa, and LLaMA. Balances coverage of rare words with compact vocabulary size."><em>Byte-Pair Encoding</em> (BPE)</span> or <span class="tip" data-tip="Similar to BPE but merges pairs that maximize the likelihood of the training corpus. Used by BERT and its variants. The '##' prefix marks subword continuations — '##able' means this piece continues the previous token."><em>WordPiece</em></span>. Each token is an integer index into a vocabulary (typically 30k–100k entries).</p>
+  inp:{title:'Input ("Context") Tokens',html:`
+    <p>Raw text is split into <strong>tokens</strong> — subword units produced by algorithms like <span class="tip" data-tip="Iteratively merges the most frequent adjacent character pairs to build a subword vocabulary. Used by GPT-2, RoBERTa, and LLaMA. Balances coverage of rare words with compact vocabulary size."><em>Byte-Pair Encoding</em> (BPE)</span> or <span class="tip" data-tip="Similar to BPE but merges pairs that maximize the likelihood of the training corpus. Used by BERT and its variants. The '##' prefix marks subword continuations — '##able' means this piece continues the previous token."><em>WordPiece</em></span>. Each token is an integer index into a vocabulary — the fixed set of all distinct tokens the model knows (typically 30k–100k entries). The vocabulary set and its size are formally introduced in the next panel.</p>
     <p>Example: "unbelievable" might tokenize as <code>["un","##believ","##able"]</code> in WordPiece.</p>
     <p>Importantly, this is a <em>lossless</em> representation of arbitrary text without needing a fixed vocabulary of whole words. Rare or novel words are handled gracefully as combinations of more common subwords.</p>
     <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">❄️ <strong>Frozen</strong> — input tokens are fixed integer indices, not parameters.</p>`
   },
   emb:{title:'Token Embeddings',html:`
-    <p>Each token index is looked up in a learned embedding matrix <span class="math-inline">E ∈ ℝ<sup>vocab×d</sup></span> to produce a dense vector in <span class="math-inline">ℝ<sup>d</sup></span>. For GPT-2, d = 768; for GPT-3, d = 12,288.</p>
-    <div class="math">E ∈ ℝ<sup>vocab_size × d_model</sup></div>
+    <p>The tokenizer builds a fixed <strong>vocabulary 𝒱</strong> by analyzing a large text corpus <strong>before training begins</strong> — this is not part of the input; it is <em>prior knowledge about the language</em>, baked in before the model ever sees a training example. Think of it as a dictionary of all token pieces the model will ever need. |𝒱| denotes the number of entries in 𝒱 (typically 30k–100k). Once built, 𝒱 never changes. Any text — a sentence, a document, a full conversation — is converted into a sequence of integer indices, each pointing to one entry in 𝒱.</p>
+    <p>The N tokens fed to the model in one forward pass are called the <strong>context</strong> (or <strong>input sequence</strong>). In a chat application the context is the entire conversation history so far, concatenated into one sequence. The maximum N the model can handle is the <strong>context window</strong>. So 𝒱 is the dictionary of all possible tokens; the context is the specific sequence of N tokens the model is currently reading.</p>
+    <p>Every token index is then mapped to a continuous vector by looking it up in a <strong>learned</strong> embedding matrix E — one row per vocabulary entry, each row a d-dimensional vector that is adjusted during training. Looking up token i simply retrieves row i of E:</p>
+    <div class="math">E ∈ ℝ<sup>|𝒱| × d</sup></div>
+    <p><strong>d is a hyperparameter</strong> — you choose the embedding dimension before training. It sets the size of every token's representation throughout the entire network. Common values are d = 768 (BERT-base) and d = 12,288 (GPT-3). Larger d gives the model more capacity to encode nuance but costs more memory and compute.</p>
+    <p><strong>The contents of E are trained directly</strong> as parameters — gradient descent adjusts each of the |𝒱|×d entries so that tokens used in similar contexts end up with similar vectors. This is distinct from W<sub>V</sub> (the value weight matrix in attention), which projects already-embedded token representations into the attention value subspace. W<sub>V</sub> and E are separate learned matrices: E turns a token index into a vector; W<sub>V</sub> then operates on that vector inside each attention head.</p>
     <p>At initialization, nearby words are not necessarily nearby in embedding space — that geometric structure emerges during training. Words with similar roles end up close together; grammatical categories cluster; arithmetic relationships become vector arithmetic.</p>
-    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> all entries of <strong>E</strong> (vocab_size × d_model parameters). This is where semantic geometry emerges.</p>`
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> all |𝒱|×d entries of <strong>E</strong>. ❄️ <strong>Hyperparameter:</strong> d (embedding dimension) and |𝒱| (vocabulary size, fixed by the tokenizer).</p>`
   },
   pe:{title:'Positional Encoding',html:`
-    <p>Self-attention is <strong>permutation-invariant</strong> by default: "cat ate the mouse" and "mouse ate the cat" would be indistinguishable. Positional encoding injects order information.</p>
-    <p>The original transformer used <em>sinusoidal encodings</em>:</p>
+    <p>Self-attention is <strong>permutation-invariant</strong> by default: "cat ate the mouse" and "mouse ate the cat" would be indistinguishable. Positional encoding injects order information by adding a position-dependent vector to each token's embedding before it enters the transformer layers.</p>
+    <p>The positional encoding PE[i] is a vector of the <strong>same dimension d</strong> as the token embedding, and is simply added element-wise:</p>
+    <div class="math">x<sub>i</sub> = E[token<sub>i</sub>] + PE[i]</div>
+    <p>The result x<sub>i</sub> ∈ ℝ<sup>d</sup> encodes both <em>what</em> the token is and <em>where</em> it appears in the sequence, in a single vector. Every subsequent layer operates on these combined representations — position is not a separate input channel, it is woven directly into each token's representation from the start.</p>
+    <p>The original transformer used <em>sinusoidal encodings</em> — a fixed mathematical formula requiring no learned parameters:</p>
     <div class="math">PE(pos, 2i)   = sin(pos / 10000<sup>2i/d</sup>)
 PE(pos, 2i+1) = cos(pos / 10000<sup>2i/d</sup>)</div>
     <p>The multi-frequency design means each position gets a unique fingerprint and relative distances are encoded in phase differences. Modern models often use learned positional embeddings, or relative schemes like <span class="tip" data-tip="Rotary Position Embedding: encodes position by rotating the Q and K vectors in their embedding space by an angle proportional to position. Unlike absolute encodings, RoPE naturally encodes relative distances and generalizes to sequences longer than seen during training. Used in LLaMA, PaLM, and GPT-NeoX."><strong>RoPE</strong></span> and <span class="tip" data-tip="Attention with Linear Biases: rather than adding positional encodings to the embeddings, ALiBi adds a fixed negative bias to attention scores proportional to the distance between query and key positions. Simpler than RoPE and extrapolates well to longer sequences, but doesn't rotate the embedding space."><strong>ALiBi</strong></span> that generalize better to longer sequences than seen during training.</p>
-    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">❄️ <strong>Frozen</strong> in the original transformer (sinusoidal, no parameters). 🔥 <strong>Trained</strong> in most modern models (BERT, GPT-2+) — a learnable matrix of shape max_seq_len × d_model.</p>`
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">❄️ <strong>Frozen</strong> in the original transformer (sinusoidal, no parameters). 🔥 <strong>Trained</strong> in most modern models (BERT, GPT-2+) — a learnable matrix of shape max_seq_len × d.</p>`
   },
   mha:{title:'Multi-Head Self-Attention',html:`
     <p>The core engine of the transformer. The <strong>"self"</strong> in self-attention means the queries, keys, and values all come from the <em>same</em> sequence — each token attends to other tokens in the same input. This distinguishes it from <em>cross-attention</em> (used in encoder-decoder models), where queries come from one sequence (the decoder's partial output) and keys/values come from a different sequence (the encoder's output).</p>
-    <p>Each token produces three vectors — <strong>Query</strong>, <strong>Key</strong>, <strong>Value</strong> — by projecting its current representation through learned weight matrices (see <strong>Tab ②</strong> for an interactive walkthrough of the full computation).</p>
-    <div class="math">Attention(Q,K,V) = softmax(QKᵀ / √dₖ)·V</div>
-    <p>The <strong>√d<sub>k</sub> scaling hyperparameter</strong> acts as a <em>temperature</em> in the Boltzmann sense — softmax(x/T) with T = √d<sub>k</sub>. Without it, dot products grow in magnitude with dimension: if Q and K have unit-variance components, each dot product sums d<sub>k</sub> terms, giving variance d<sub>k</sub> and std dev √d<sub>k</sub>. Dividing by √d<sub>k</sub> normalizes variance back to 1, keeping softmax outputs away from near-one-hot distributions where gradients vanish. d<sub>k</sub> is fixed by architecture (typically d<sub>k</sub> = d<sub>model</sub> / num_heads) before training begins, not learned — but the choice matters: larger d<sub>k</sub> gives each head a richer subspace to work in (and a higher temperature, producing flatter attention) while smaller d<sub>k</sub> forces more heads with sharper, more selective attention per head.</p>
-    <p><strong>Multiple heads</strong> run this operation in parallel, each using its own learned W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> matrices that project the d-dimensional token representation into a different d<sub>k</sub>-dimensional subspace. The heads are not pre-assigned roles — they are initialized randomly and specialize through training, discovering that attending to different structural relationships is more useful than redundancy. In effect, each head can develop a different <em>inductive bias</em>: some heads in trained models attend locally (almost CNN-like), some track long-range syntactic dependencies, some do co-reference resolution. The final W<sub>O</sub> projection then learns to combine these different "viewpoints" into a single updated representation. The multi-head structure is therefore a way of letting the model learn an <em>ensemble of inductive biases</em> over the same input — none dictated by the architecture, all emerging from training.</p>
-    <p>→ Explore interactively in <strong>Tab ②</strong>.</p>
-    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> (each d×d<sub>k</sub>) and W<sub>O</sub> (hd<sub>k</sub>×d) — one set per head per layer. The √d<sub>k</sub> scaling is parameter-free (d<sub>k</sub> is a hyperparameter); softmax itself has no learned weights&nbsp;(❄️).</p>`
+    <p>Each token arrives as a d-dimensional vector <span class="math-inline">x ∈ ℝ<sup>d</sup></span> — the same d used throughout the network. To produce its <strong>Query</strong>, <strong>Key</strong>, and <strong>Value</strong> vectors, the token representation is projected through three learned weight matrices:</p>
+    <div class="math">Q = x · W<sub>Q</sub>,   K = x · W<sub>K</sub>,   V = x · W<sub>V</sub></div>
+    <p>where W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d × d<sub>k</sub></sup> each project from the full d-dimensional token space down to a smaller d<sub>k</sub>-dimensional subspace. The number of heads <strong>h</strong> and the head dimension <strong>d<sub>k</sub> = d / h</strong> are both hyperparameters ❄️ chosen before training — larger h means more heads each working in a smaller subspace; smaller h means fewer heads each with a richer subspace. Over all N tokens these become matrices: Q, K, V ∈ ℝ<sup>N × d<sub>k</sub></sup>.</p>
+    <div class="math">Attention(Q,K,V) = softmax(Q·K<sup>T</sup> / √d<sub>k</sub>) · V</div>
+    <p>Dimensionalities step by step: Q·K<sup>T</sup> is <strong>(N×d<sub>k</sub>) · (d<sub>k</sub>×N) = N×N</strong> — one raw score per (query token, key token) pair. After dividing by √d<sub>k</sub> and applying softmax row-wise, the result is still <strong>N×N</strong> with each row summing to 1 — these are the attention weights (the heatmap on Tab ②). Multiplying by V gives <strong>(N×N) · (N×d<sub>k</sub>) = N×d<sub>k</sub></strong> — one updated vector per token, each a weighted blend of all value vectors.</p>
+    <p>The <strong>√d<sub>k</sub> scaling</strong> acts as a <em>temperature</em> in the Boltzmann sense — softmax(x/T) with T = √d<sub>k</sub>. Without it, dot products grow in magnitude with dimension (if Q and K have unit-variance components, each dot product sums d<sub>k</sub> terms giving std dev √d<sub>k</sub>), pushing softmax toward near-one-hot distributions where gradients vanish. d<sub>k</sub> is a fixed hyperparameter (d / h); it is not learned.</p>
+    <p><strong>Multiple heads</strong> (h of them) run this operation in parallel, each with its own W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub>, projecting into a different d<sub>k</sub>-dimensional subspace. The heads are not pre-assigned roles — they specialize through training. The final W<sub>O</sub> projection combines all h heads' outputs (concatenated: N×(h·d<sub>k</sub>) = N×d) back to ℝ<sup>d</sup>. See <strong>Tab ②</strong> for an interactive walkthrough.</p>
+    <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> (each d×d<sub>k</sub>) and W<sub>O</sub> (h·d<sub>k</sub>×d) — one set per head per layer. The number of heads h and the head dimension d<sub>k</sub> are both fixed hyperparameters ❄️; √d<sub>k</sub> scaling is parameter-free.</p>`
   },
   n1:{title:'Add &amp; Norm (1)',html:`
     <p>Two stabilizing operations applied after the Multi-Head Self-Attention (MHSA) sub-layer:</p>
