@@ -457,6 +457,8 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
       <strong>d<sub>k</sub></strong> — the smaller dimension each attention head projects down to for computing Q and K. Typically d<sub>k</sub> = d / h, where h is the number of heads. BERT-base: d<sub>k</sub> = 64. The √d<sub>k</sub> scaling in softmax(Q·K<sup>T</sup>/√d<sub>k</sub>) normalises dot-product variance in this space.<br>
       <strong>d<sub>v</sub></strong> — the value projection dimension, also typically d / h. After all h heads are combined by W<sub>O</sub>, the output is projected back to ℝ<sup>d</sup>.<br>
       <strong>h</strong> — number of attention heads. BERT-base: h = 12. More heads allow the model to attend to multiple relationship types simultaneously.
+      <br><br>
+      Together, d and h determine the richness of the embedding space: d sets the total capacity, while h partitions it into h parallel d<sub>k</sub>-dimensional subspaces, each acting as an independent "viewpoint." This is structurally analogous to how <em>receptive fields</em> tile representational space in other architectures — a CNN filter responds to a localized spatial pattern, and an RBF neuron fires for inputs near its center. An attention head similarly specializes to a particular relational pattern (subject→verb, modifier→entity), with the temperature controlling how sharply it "fires." The difference is that CNN and RBF receptive fields are defined explicitly by geometry or a center point, while attention head specialization is entirely emergent from training. More concretely: the <em>number</em> of receptive fields in a CNN or RBFNN (how many distinct patterns the network can detect simultaneously) is analogous to h; the <em>size and flexibility</em> of each receptive field (how rich a pattern each unit can represent) is analogous to d<sub>k</sub>. A larger d<sub>k</sub> gives each head more expressive capacity — a wider, more flexible "receptive field" in the relational sense — while more heads h allows the model to track more distinct relationship types in parallel.
     </span>
   </div>
 
@@ -796,7 +798,7 @@ def enc_dec_forward(source_tokens, target_tokens, E, W_pos, enc_layers, dec_laye
 
   <div class="note" style="margin-top:14px;font-size:.83rem">
     <strong>What is an attention head, concretely?</strong>
-    A head is nothing more than its own set of three weight matrices: <strong>W<sub>Q</sub></strong>, <strong>W<sub>K</sub></strong>, and <strong>W<sub>V</sub></strong> (each d×d<sub>k</sub>). That's the entire implementation — there is no other structure. For h heads, the model has h×3 such matrices. They are initialized randomly and trained end-to-end; the "concept" a head represents (subject↔verb, determiner↔noun, etc.) is not specified in advance — it emerges from gradient descent because specialization turns out to be useful. After training, a single shared <strong>W<sub>O</sub></strong> matrix (hd<sub>k</sub>×d) projects the concatenated outputs of all heads back into the original d-dimensional space.
+    A head is nothing more than its own set of three weight matrices: <strong>W<sub>Q</sub></strong>, <strong>W<sub>K</sub></strong>, and <strong>W<sub>V</sub></strong> (each d×d<sub>k</sub>). That's the entire implementation — there is no other structure. For h heads, the model has h×3 such matrices. They are initialized randomly and trained end-to-end; the "concept" a head represents (subject↔verb, determiner↔noun, etc.) is not specified in advance — it emerges from gradient descent because specialization turns out to be useful. In this sense each head is loosely analogous to a <em>receptive field</em> in a CNN or RBF network: h controls how many distinct relational patterns the model can detect simultaneously, and d<sub>k</sub> controls how expressive (how "wide") each head's receptive field is. Crucially, however, an attention head's receptive field need not be <em>local</em> — it is defined entirely in the learned relational space of Q and K, and can connect any two positions regardless of their distance or order in the sequence. This is the key difference from CNNs (whose filters are anchored in spatial neighborhoods) and RBF networks (whose neurons fire for inputs near a fixed center point): those architectures have a strong locality inductive bias built in by design, while a transformer head must learn whatever spatial or relational structure is relevant entirely from data. After training, a single shared <strong>W<sub>O</sub></strong> matrix (hd<sub>k</sub>×d) projects the concatenated outputs of all heads back into the original d-dimensional space.
     <br><br>
     <strong>How to use the controls below:</strong>
     The <em>sentence</em> is the full input to the transformer — all tokens are processed simultaneously, not one at a time. The attention weights reveal how the model internally relates each token to every other token <em>in the context of that sentence</em>. Select a head, then click a token in the sentence to see, from that token's perspective, which other tokens it attends to most strongly under the concept that head has learned. Switching heads shows how different learned subspaces pick out different relationships within the same sentence.
@@ -865,25 +867,19 @@ def enc_dec_forward(source_tokens, target_tokens, E, W_pos, enc_layers, dec_laye
         </div>
         <p style="font-size:.78rem;color:var(--text-mid);margin-top:6px;font-style:italic">💡 Most rows are flat for a given head — only tokens with the right features show clear patterns. Try clicking "cat" with Head 1, "on" with Head 3, or "old" (sentence 3) with Head 4.</p>
       </div>
-
-      <div class="card" style="padding:16px">
-        <h3 class="sec">Token Embeddings (toy, 8-dimensional)</h3>
-        <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">Each token is represented as a vector with 8 hand-crafted dimensions. Darker = higher value. These named axes are illustrative only — in a real trained model, embedding dimensions have no human-interpretable labels. They are arbitrary directions in ℝ<sup>d</sup> that gradient descent found useful; interpretable structure (if any) is emergent, not designed.</p>
-        <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">The embedding table connects directly to the attention scores. Here Q and K are matrices — every token's embedding is projected through W<sub>Q</sub> and W<sub>K</sub> respectively to produce one row each. For <strong>Head 1</strong>, W<sub>Q</sub> picks out the <em>animate</em> (×2) and <em>subj</em> (×1) dimensions; W<sub>K</sub> picks out <em>verb</em> (×2). The score for a single (query, key) pair is one cell of the full Q·K<sup>T</sup> matrix — e.g., for "cat" querying "sat":</p>
-        <div class="formula" style="font-size:.76rem;line-height:1.7">Q<sub>cat</sub> = cat·W<sub>Q</sub> = [0.9×2 + 0.8×0 + 0.0×0 + … + 0.8×1 + 0.2×0] = [<strong>2.6</strong>, 0, 0, 0]
-          (W<sub>Q</sub> — animate col: ×2,  subj col: ×1,  all other cols: ×0)
-
-K<sub>sat</sub> = sat·W<sub>K</sub> = [0.0×0 + 0.0×0 + 0.9×2 + 0.0×0 + … + 0.0×0] = [<strong>1.8</strong>, 0, 0, 0]
-          (W<sub>K</sub> — verb col: ×2,  all other cols: ×0)
-
-Q<sub>cat</sub>·K<sub>sat</sub> / √d<sub>k</sub>  =  2.6 × 1.8 / √4  =  <strong>2.34</strong>  ✓  (matches score panel above)</div>
-        <p style="font-size:.8rem;color:var(--text-mid);margin-top:8px">For "the" querying "sat": "the" has animate ≈ 0 and subj ≈ 0.1, giving Q ≈ [0.1, 0, 0, 0], so Q·K / √d<sub>k</sub> ≈ 0.09 — nearly zero, confirming the flat row you see for function words in Head 1.</p>
-        <div style="overflow-x:auto">
-          <canvas id="emb-map" style="display:block;border-radius:6px"></canvas>
-        </div>
-      </div>
     </div>
 
+  </div>
+
+  <div class="card" style="padding:16px;margin-top:16px">
+    <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">For the sentences used above, here are the toy 8-dimensional embeddings and how they produce the attention scores. Each token is represented as a vector with 8 hand-crafted dimensions (darker = higher value) — these named axes are illustrative only. In a real trained model, embedding dimensions have no human-interpretable labels; they are arbitrary directions in ℝ<sup>d</sup> that gradient descent found useful.</p>
+    <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">In this toy model, <strong>d = 8</strong> (the embedding dimension) and there are <strong>h = 4</strong> heads, so <strong>d<sub>k</sub> = d / h = 2</strong>. W<sub>Q</sub> and W<sub>K</sub> each project from ℝ<sup>8</sup> down to ℝ<sup>2</sup> — this is why Q and K have only 2 entries each in the worked example below, and why only 2 columns of W<sub>Q</sub> and W<sub>K</sub> are non-zero. Each head can only "look for" signal along 2 dimensions — its d<sub>k</sub>-dimensional receptive field in the relational sense. With 4 such heads tiling the 8-dimensional space, the model can simultaneously track 4 distinct relationship types.</p>
+    <p style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px" id="emb-example-intro"></p>
+    <div class="formula" id="emb-example-formula" style="font-size:.76rem;line-height:1.7"></div>
+    <p style="font-size:.8rem;color:var(--text-mid);margin-top:8px" id="emb-example-footer"></p>
+    <div style="overflow-x:auto">
+      <canvas id="emb-map" style="display:block;border-radius:6px"></canvas>
+    </div>
   </div>
 
   <h3 class="sec" style="margin-top:24px">The Database Query Analogy</h3>
@@ -1413,7 +1409,7 @@ function computeAttn(toks,h){
 function onSentChange(){
   curSent=+document.getElementById('sent-sel').value;
   selTok=1; renderAttnTab();
-  if(document.getElementById('emb-panel').style.display!=='none') drawEmbMap();
+  drawEmbMap();
 }
 function selHead(i,btn){
   curHead=i;
@@ -2117,10 +2113,89 @@ document.addEventListener('click', e => {
   if(t) t.classList.toggle('tip-open');
 });
 
+// ── Embedding worked example ─────────────────────────────
+function renderEmbExample(){
+  const intro=document.getElementById('emb-example-intro');
+  const formula=document.getElementById('emb-example-formula');
+  const footer=document.getElementById('emb-example-footer');
+  if(!intro||!formula||!footer) return;
+
+  const toks=SENTS[curSent];
+  const qTok=toks[selTok];
+  const qEmb=getEmb(qTok);
+  const wq=WQ[curHead], wk=WK[curHead];
+  const outCol=curHead;  // each head uses its own output column
+
+  // Compute Q vector for selected token (full d_k-dim vector)
+  const dk=wq[0].length;  // d_k = 4 in this toy
+  const Q=Array.from({length:dk},(_,j)=>qEmb.reduce((s,v,i)=>s+v*wq[i][j],0));
+
+  // Find best key token (highest raw score against Q)
+  let bestScore=-Infinity, bestK=-1;
+  toks.forEach((t,j)=>{
+    const e=getEmb(t);
+    const K=Array.from({length:dk},(_,jj)=>e.reduce((s,v,i)=>s+v*wk[i][jj],0));
+    const score=Q.reduce((s,v,i)=>s+v*K[i],0)/Math.sqrt(dk);
+    if(score>bestScore){bestScore=score;bestK=j;}
+  });
+  const kTok=toks[bestK];
+  const kEmb=getEmb(kTok);
+  const K=Array.from({length:dk},(_,j)=>kEmb.reduce((s,v,i)=>s+v*wk[i][j],0));
+  const dotScore=(Q.reduce((s,v,i)=>s+v*K[i],0)/Math.sqrt(dk)).toFixed(2);
+
+  // Annotation: which INPUT dims are non-zero in active output column
+  const DIM_NAMES=['animate','concrete','verb','func/prep','adj/adv','location','subj','obj'];
+  const wqActive=[], wkActive=[];
+  for(let i=0;i<8;i++){
+    if(Math.abs(wq[i][outCol])>0.01) wqActive.push(`${DIM_NAMES[i]} ×${wq[i][outCol]}`);
+    if(Math.abs(wk[i][outCol])>0.01) wkActive.push(`${DIM_NAMES[i]} ×${wk[i][outCol]}`);
+  }
+
+  // Q expansion: show only non-zero terms
+  const qTerms=qEmb.map((v,i)=>({v,w:wq[i][outCol]})).filter(t=>Math.abs(t.w)>0.01);
+  const qExpand=qTerms.map(t=>`${t.v.toFixed(1)}×${t.w}`).join(' + ');
+  const qResult=Q[outCol].toFixed(1);
+
+  // K expansion: show only non-zero terms
+  const kTerms=kEmb.map((v,i)=>({v,w:wk[i][outCol]})).filter(t=>Math.abs(t.w)>0.01);
+  const kExpand=kTerms.map(t=>`${t.v.toFixed(1)}×${t.w}`).join(' + ');
+  const kResult=K[outCol].toFixed(1);
+
+  intro.innerHTML=`The embedding table connects directly to the attention scores. Q<sub>${qTok}</sub> is computed by projecting the "${qTok}" embedding through W<sub>Q</sub>; the token it attends to most in Head ${curHead+1} is "${kTok}," whose embedding projects through W<sub>K</sub>.`;
+
+  const d=qEmb.length;  // total embedding dimension = 8
+
+  formula.innerHTML=
+`Q<sub>${qTok}</sub> = ${qTok}·W<sub>Q</sub> = [${qExpand}, 0, …] = [<strong>${qResult}</strong>, 0, …]
+  (W<sub>Q</sub> non-zero weights for this head: ${wqActive.join(', ')||'none'} — these are the ×multipliers in the expansion above;
+   all ${d} embedding dimensions are visible to every head; dim names refer to the table below)
+
+K<sub>${kTok}</sub> = ${kTok}·W<sub>K</sub> = [${kExpand}, 0, …] = [<strong>${kResult}</strong>, 0, …]
+  (W<sub>K</sub> non-zero weights for this head: ${wkActive.join(', ')||'none'})
+
+Q<sub>${qTok}</sub>·K<sub>${kTok}</sub> / √d<sub>k</sub>  =  ${qResult} × ${kResult} / √${dk}  =  <strong>${dotScore}</strong>  ✓  (matches score panel above)`;
+
+  // Footer: find a token that gives a flat/near-zero score
+  let flatTok=toks[0], flatScore=Infinity;
+  toks.forEach(t=>{
+    if(t===qTok) return;
+    const e=getEmb(t);
+    const Kf=Array.from({length:dk},(_,j)=>e.reduce((s,v,i)=>s+v*wk[i][j],0));
+    const sc=Math.abs(Q.reduce((s,v,i)=>s+v*Kf[i],0)/Math.sqrt(dk));
+    if(sc<flatScore){flatScore=sc;flatTok=t;}
+  });
+  const flatEmb=getEmb(flatTok);
+  const Qflat=Array.from({length:dk},(_,j)=>flatEmb.reduce((s,v,i)=>s+v*wq[i][j],0));
+  const Kbest=Array.from({length:dk},(_,j)=>kEmb.reduce((s,v,i)=>s+v*wk[i][j],0));
+  const flatDot=(Qflat.reduce((s,v,i)=>s+v*Kbest[i],0)/Math.sqrt(dk)).toFixed(2);
+  footer.innerHTML=`For "${flatTok}" querying "${kTok}": Q ≈ [${Qflat[outCol].toFixed(1)}, 0, …], so Q·K / √d<sub>k</sub> ≈ ${flatDot} — nearly zero, confirming the flat row for that token in Head ${curHead+1}.`;
+}
+
 // ── Embedding heatmap ────────────────────────────────────
 const EMB_DIMS = ['animate','concrete','verb','func/prep','adj/adv','location','subj','obj'];
 
 function drawEmbMap(){
+  renderEmbExample();
   const toks = SENTS[curSent];
   const canvas = document.getElementById('emb-map');
   if(!canvas) return;
