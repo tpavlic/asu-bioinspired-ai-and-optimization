@@ -417,7 +417,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
         <div class="aa"></div>
 
         <div class="arch-n">
-          <div class="arch-n-lbl"><span class="tip" data-tip="N is the number of times this entire block is stacked. In an encoder: MHSA → Add&Norm → FFN → Add&Norm. In a decoder: MHSA → Add&Norm → Cross-Attention (optional) → FFN → Add&Norm. Typical values: N=6 in the original transformer, N=12 in BERT-base, N=96 in GPT-3.">× N layers</span></div>
+          <div class="arch-n-lbl"><span class="tip" data-tip="L is the number of times this entire block is stacked (called 'depth'). In an encoder: MHSA → Add&Norm → FFN → Add&Norm. In a decoder: MHSA → Add&Norm → Cross-Attention (optional) → FFN → Add&Norm. Typical values: L=6 in the original transformer, L=12 in BERT-base, L=96 in GPT-3.">× L layers</span></div>
           <div class="ab ab-gm" id="ab-mha" onclick="archSel('mha')">Multi-Head Self-Attention</div>
           <div class="aa-lbl"><span class="tip" data-tip="The sub-layer's input is added directly to its output — x ← x + sub-layer(x) — creating a shortcut path that keeps gradients flowing to early layers during training.">↓ residual skip connection</span></div>
           <div class="ab ab-s" id="ab-n1" onclick="archSel('n1')">Add &amp; Norm (1)</div>
@@ -463,18 +463,18 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
   <h3 class="sec" style="margin-top:20px">Parameter Count at a Glance</h3>
   <div class="card" style="margin-bottom:20px">
     <p style="font-size:.86rem;color:var(--text-mid);margin-bottom:12px">
-      For a standard encoder with vocabulary size <span class="math-inline">|𝒱|</span> (number of distinct tokens), model dimension <span class="math-inline">d</span>, N layers, and learned positional encodings up to sequence length <span class="math-inline">L</span>:
+      For a standard encoder with vocabulary size <span class="math-inline">|𝒱|</span> (number of distinct tokens), model dimension <span class="math-inline">d</span>, <span class="math-inline">L</span> layers, and learned positional encodings up to sequence length <span class="math-inline">L<sub>max</sub></span>:
     </p>
-    <div class="formula">Total ≈ |𝒱|·d  +  L·d  +  N·12d²
+    <div class="formula">Total ≈ |𝒱|·d  +  L_max·d  +  L·12d²
 
-  Token embeddings:      |𝒱|·d   (|𝒱| = vocab size)
-  Positional encodings:  L·d  (if learned; zero if sinusoidal)
+  Token embeddings:      |𝒱|·d      (|𝒱| = vocab size)
+  Positional encodings:  L_max·d    (if learned; zero if sinusoidal; L_max = max sequence length)
   Per encoder layer:     4d²  (MHSA: W_Q, W_K, W_V, W_O)
                        + 8d²  (FFN:  W_1, W_2, including biases)
                        + 4d   (LayerNorm γ,β ×2  —  negligible)
                        ≈ 12d² per layer</div>
     <p style="font-size:.84rem;color:var(--text-mid);margin:12px 0 8px">
-      The <span class="math-inline">N·12d²</span> term dominates for large models — parameter count scales with depth and the <em>square</em> of model dimension. Doubling <span class="math-inline">d</span> quadruples per-layer cost.
+      The <span class="math-inline">L·12d²</span> term dominates for large models — parameter count scales with depth and the <em>square</em> of model dimension. Doubling <span class="math-inline">d</span> quadruples per-layer cost.
     </p>
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:.82rem;font-family:var(--mono)">
@@ -615,7 +615,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
       <div style="font-size:.82rem;color:var(--text-mid);display:flex;flex-direction:column;gap:8px">
         <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">[CLS] the cat sat on the mat<br><span style="font-size:.7rem;color:var(--text-light)">N = 7 tokens in ([CLS] prepended)</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
-        <div style="background:var(--green);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Encoder (N layers)<br><span style="font-size:.7rem;opacity:.7">full bidirectional attention</span></div>
+        <div style="background:var(--green);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Encoder (L layers)<br><span style="font-size:.7rem;opacity:.7">full bidirectional attention</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
         <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">7 vectors in ℝ<sup>d</sup><br><span style="font-size:.7rem;color:var(--text-light)">N vectors out — all at once</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
@@ -633,7 +633,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
       <div style="font-size:.82rem;color:var(--text-mid);display:flex;flex-direction:column;gap:8px">
         <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">"the cat sat"<br><span style="font-size:.7rem;color:var(--text-light)">N = 3 tokens so far</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
-        <div style="background:var(--orange);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Decoder (N layers)<br><span style="font-size:.7rem;opacity:.7">causal mask: left tokens only</span></div>
+        <div style="background:var(--orange);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Decoder (L layers)<br><span style="font-size:.7rem;opacity:.7">causal mask: left tokens only</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
         <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">3 vectors in ℝ<sup>d</sup><br><span style="font-size:.7rem;color:var(--text-light)">each predicts its next token</span><br><span style="font-size:.7rem;color:var(--text-light)">only the last vector is output</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
@@ -657,7 +657,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
         <div style="text-align:center;color:var(--orangeHi);font-size:.78rem;font-weight:600">↕ cross-attention</div>
         <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">"the cat sat"<br><span style="font-size:.7rem;color:var(--text-light)">target so far: M = 3 tokens</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
-        <div style="background:var(--orange);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Decoder (N layers)<br><span style="font-size:.7rem;opacity:.7">causal self-attn + cross-attn to source</span></div>
+        <div style="background:var(--orange);color:#fff;border-radius:6px;padding:7px 10px;text-align:center;font-size:.78rem">Decoder (L layers)<br><span style="font-size:.7rem;opacity:.7">causal self-attn + cross-attn to source</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
         <div style="background:var(--surface-2);border-radius:6px;padding:7px 10px;text-align:center;font-family:var(--mono);font-size:.78rem">3 vectors in ℝ<sup>d</sup><br><span style="font-size:.7rem;color:var(--text-light)">each predicts its next token</span><br><span style="font-size:.7rem;color:var(--text-light)">only the last vector is output</span></div>
         <div style="text-align:center;color:var(--border);font-size:.9rem">↓</div>
@@ -683,32 +683,36 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
   <div id="pcode-enc">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># Encoder-only forward pass (BERT-style)</span>
 <span style="color:#7FBB5A"># Input: token indices [N]   Output: N contextual vectors in R^d</span>
+<span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
 
 def encoder_forward(tokens, E, W_pos, layers):
-    x = E[tokens] + W_pos[:len(tokens)]   <span style="color:#7FBB5A"># embed + positional encoding  (N, d)</span>
+    x = E[tokens] + W_pos[:len(tokens)]  <span style="color:#7FBB5A"># embed + positional encoding  (N, d)</span>
 
+    <span style="color:#7FBB5A"># For each of L encoder layers:</span>
     for (W_Q, W_K, W_V, W_O, W_1, W_2, b_1, b_2) in layers:
 
         <span style="color:#7FBB5A"># — Multi-Head Self-Attention (all tokens attend to all tokens) —</span>
-        Q, K, V  = x@W_Q, x@W_K, x@W_V          <span style="color:#7FBB5A"># (N,d_k), (N,d_k), (N,d_v)</span>
-        attn_out = softmax(Q@K.T/sqrt(d_k)) @ V  <span style="color:#7FBB5A"># (N,d_v) — no mask</span>
-        x = layer_norm(x + attn_out @ W_O)        <span style="color:#7FBB5A"># Add & Norm (1)</span>
+        Q, K, V  = x@W_Q, x@W_K, x@W_V               <span style="color:#7FBB5A"># (N,d_k), (N,d_k), (N,d_k)</span>
+        attn_out = softmax(Q@K.T/sqrt(d_k)) @ V      <span style="color:#7FBB5A"># (N,d_k) — no mask</span>
+        x = layer_norm(x + attn_out @ W_O)           <span style="color:#7FBB5A"># Add & Norm (1)</span>
 
         <span style="color:#7FBB5A"># — Feed-Forward Network (per token) —</span>
         x = layer_norm(x + relu(x@W_1+b_1)@W_2+b_2)  <span style="color:#7FBB5A"># Add & Norm (2)</span>
 
-    return x   <span style="color:#7FBB5A"># (N, d) — one contextual vector per input token</span>
+    return x  <span style="color:#7FBB5A"># (N, d) — one contextual vector per input token</span>
 
 <span style="color:#7FBB5A"># Task heads:  classification → linear(x[0])   token labels → linear(x)</span></pre>
   </div>
   <div id="pcode-dec" style="display:none">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># Decoder-only forward pass (GPT-style)</span>
 <span style="color:#7FBB5A"># Input: token indices [N]   Output: probability distribution over vocab</span>
+<span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
 
 def decoder_forward(tokens, E, W_pos, layers):
-    x    = E[tokens] + W_pos[:len(tokens)]        <span style="color:#7FBB5A"># (N, d)</span>
-    mask = upper_triangular(-inf, size=len(tokens)) <span style="color:#7FBB5A"># causal mask (N, N)</span>
+    x    = E[tokens] + W_pos[:len(tokens)]           <span style="color:#7FBB5A"># (N, d)</span>
+    mask = upper_triangular(-inf, size=len(tokens))  <span style="color:#7FBB5A"># causal mask (N, N)</span>
 
+    <span style="color:#7FBB5A"># For each of L decoder layers:</span>
     for (W_Q, W_K, W_V, W_O, W_1, W_2, b_1, b_2) in layers:
 
         <span style="color:#7FBB5A"># — Causal Self-Attention (each token sees only its past) —</span>
@@ -719,8 +723,8 @@ def decoder_forward(tokens, E, W_pos, layers):
         <span style="color:#7FBB5A"># — Feed-Forward Network —</span>
         x = layer_norm(x + relu(x@W_1+b_1)@W_2+b_2)
 
-    logits = x[-1] @ E.T      <span style="color:#7FBB5A"># project last token only (weight tying)</span>
-    return softmax(logits)    <span style="color:#7FBB5A"># probability over next token</span>
+    logits = x[-1] @ E.T     <span style="color:#7FBB5A"># project last token only (weight tying)</span>
+    return softmax(logits)   <span style="color:#7FBB5A"># probability over next token</span>
 
 <span style="color:#7FBB5A"># Inference: sample(decoder_forward(tokens)) → append → repeat until [EOS]</span>
 <span style="color:#7FBB5A"># KV cache:  store K,V for prior tokens; recompute only for the new token</span></pre>
@@ -728,34 +732,38 @@ def decoder_forward(tokens, E, W_pos, layers):
   <div id="pcode-encdec" style="display:none">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># Encoder-Decoder forward pass (T5/BART-style)</span>
 <span style="color:#7FBB5A"># source_tokens: source sequence [N]   target_tokens: target so far [M]</span>
+<span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
 
 def enc_dec_forward(source_tokens, target_tokens, E, W_pos, enc_layers, dec_layers,
                     W_Q_x, W_K_x, W_V_x, W_O_x):  <span style="color:#7FBB5A"># cross-attn weights (part of decoder)</span>
 
     <span style="color:#7FBB5A"># ── Step 1: Encode source (run once; output held fixed during decoding) ──</span>
-    enc = E[source_tokens] + W_pos[:len(source_tokens)]   <span style="color:#7FBB5A"># (N, d)</span>
+    enc = E[source_tokens] + W_pos[:len(source_tokens)]  <span style="color:#7FBB5A"># (N, d)</span>
+
+    <span style="color:#7FBB5A"># For each of L encoder layers:</span>
     for (W_Q, W_K, W_V, W_O, W_1, W_2, b_1, b_2) in enc_layers:
-        Q, K, V  = enc@W_Q, enc@W_K, enc@W_V
+        Q, K, V = enc@W_Q, enc@W_K, enc@W_V
         enc = layer_norm(enc + softmax(Q@K.T/sqrt(d_k))@V @ W_O)
         enc = layer_norm(enc + relu(enc@W_1+b_1)@W_2+b_2)
-    <span style="color:#7FBB5A"># enc is now (N, d) — precomputed source representations</span>
+    <span style="color:#7FBB5A"># enc is now (N, d) — precomputed source representations, held fixed</span>
 
     <span style="color:#7FBB5A"># ── Step 2: Decode target token by token ──</span>
-    x    = E[target_tokens] + W_pos[:len(target_tokens)]  <span style="color:#7FBB5A"># (M, d)</span>
+    x    = E[target_tokens] + W_pos[:len(target_tokens)]   <span style="color:#7FBB5A"># (M, d)</span>
     mask = upper_triangular(-inf, size=len(target_tokens)) <span style="color:#7FBB5A"># causal mask (M, M)</span>
 
+    <span style="color:#7FBB5A"># For each of L decoder layers:</span>
     for (W_Q, W_K, W_V, W_O, W_1, W_2, b_1, b_2) in dec_layers:
 
         <span style="color:#7FBB5A"># — Causal Self-Attention over target tokens —</span>
-        Q, K, V  = x@W_Q, x@W_K, x@W_V
+        Q, K, V = x@W_Q, x@W_K, x@W_V
         x = layer_norm(x + softmax(Q@K.T/sqrt(d_k)+mask)@V @ W_O)
 
         <span style="color:#7FBB5A"># — Cross-Attention: Q from decoder, K and V from encoder output —</span>
-        Q_x = x   @ W_Q_x   <span style="color:#7FBB5A"># (M, d_k)  — queries from target side</span>
-        K_x = enc @ W_K_x   <span style="color:#7FBB5A"># (N, d_k)  — keys from source (precomputed)</span>
-        V_x = enc @ W_V_x   <span style="color:#7FBB5A"># (N, d_v)  — values from source (precomputed)</span>
+        Q_x = x   @ W_Q_x  <span style="color:#7FBB5A"># (M, d_k) — queries from target side</span>
+        K_x = enc @ W_K_x  <span style="color:#7FBB5A"># (N, d_k) — keys from source (precomputed)</span>
+        V_x = enc @ W_V_x  <span style="color:#7FBB5A"># (N, d_k) — values from source (precomputed)</span>
         x = layer_norm(x + softmax(Q_x@K_x.T/sqrt(d_k))@V_x @ W_O_x)
-        <span style="color:#7FBB5A"># Q·K^T is (M×N): every target token queries every source token</span>
+        <span style="color:#7FBB5A"># Q_x@K_x.T is (M×N): every target query scores against every source key</span>
 
         <span style="color:#7FBB5A"># — Feed-Forward Network —</span>
         x = layer_norm(x + relu(x@W_1+b_1)@W_2+b_2)
@@ -1036,8 +1044,9 @@ Q<sub>cat</sub>·K<sub>sat</sub> / √d<sub>k</sub>  =  2.6 × 1.8 / √4  =  <s
     </div>
     <div id="sscode-mlm">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># MLM pre-training loop (BERT-style)</span>
-<span style="color:#7FBB5A"># For each batch of sequences:</span>
+<span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
 
+<span style="color:#7FBB5A"># For each sequence in corpus:</span>
 for sequence in corpus:
     tokens = tokenize(sequence)         <span style="color:#7FBB5A"># e.g. ["the","cat","sat",...]</span>
     tokens = prepend([CLS], tokens)     <span style="color:#7FBB5A"># add [CLS] at position 0</span>
@@ -1049,39 +1058,42 @@ for sequence in corpus:
     <span style="color:#7FBB5A"># Apply 3-way substitution to selected positions:</span>
     for i in selected:
         r = uniform(0, 1)
-        if   r < 0.80: tokens[i] = [MASK]               <span style="color:#7FBB5A"># 80% → [MASK]</span>
+        if   r < 0.80: tokens[i] = [MASK]                <span style="color:#7FBB5A"># 80% → [MASK]</span>
         elif r < 0.90: tokens[i] = random_vocab_token()  <span style="color:#7FBB5A"># 10% → random token</span>
-        <span style="color:#7FBB5A"># else:          leave unchanged                       # 10% → unchanged</span>
+        <span style="color:#7FBB5A"># else:          tokens[i] unchanged             # 10% → unchanged</span>
 
     <span style="color:#7FBB5A"># Forward pass — all N tokens processed simultaneously</span>
-    representations = encoder_forward(tokens)   <span style="color:#7FBB5A"># (N, d)</span>
+    representations = encoder_forward(tokens)  <span style="color:#7FBB5A"># (N, d)</span>
 
     <span style="color:#7FBB5A"># Compute loss only at selected positions</span>
-    logits = representations[selected] @ E.T    <span style="color:#7FBB5A"># (|selected|, vocab_size)</span>
-    loss   = cross_entropy(logits, labels)       <span style="color:#7FBB5A"># unselected positions contribute nothing</span>
+    logits = representations[selected] @ E.T   <span style="color:#7FBB5A"># (|selected|, vocab_size)</span>
+    loss   = cross_entropy(logits, labels)     <span style="color:#7FBB5A"># unselected positions contribute nothing</span>
 
+    <span style="color:#7FBB5A"># Backpropagate and update weights</span>
     loss.backward()
     optimizer.step()</pre>
     </div>
     <div id="sscode-clm" style="display:none">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># CLM pre-training loop (GPT-style)</span>
-<span style="color:#7FBB5A"># For each batch of sequences:</span>
+<span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
 
+<span style="color:#7FBB5A"># For each sequence in corpus:</span>
 for sequence in corpus:
-    tokens = tokenize(sequence)          <span style="color:#7FBB5A"># e.g. ["the","cat","sat",...]</span>
+    tokens = tokenize(sequence)  <span style="color:#7FBB5A"># e.g. ["the","cat","sat",...]</span>
 
     <span style="color:#7FBB5A"># Inputs and targets are the same sequence, shifted by one position</span>
-    inputs  = tokens[:-1]                <span style="color:#7FBB5A"># ["the","cat","sat","on","the","warm"]</span>
-    targets = tokens[1:]                 <span style="color:#7FBB5A"># ["cat","sat","on","the","warm","mat"]</span>
+    inputs  = tokens[:-1]  <span style="color:#7FBB5A"># ["the","cat","sat","on","the","warm"]</span>
+    targets = tokens[1:]   <span style="color:#7FBB5A"># ["cat","sat","on","the","warm","mat"]</span>
 
     <span style="color:#7FBB5A"># Forward pass with causal mask — all positions processed in parallel</span>
     <span style="color:#7FBB5A"># but position i can only attend to positions 0..i (no peeking right)</span>
-    representations = decoder_forward(inputs)    <span style="color:#7FBB5A"># (N-1, d)</span>
+    representations = decoder_forward(inputs)  <span style="color:#7FBB5A"># (N-1, d)</span>
 
     <span style="color:#7FBB5A"># Every position predicts its next token — N-1 training signals per sequence</span>
-    logits = representations @ E.T              <span style="color:#7FBB5A"># (N-1, vocab_size)</span>
-    loss   = cross_entropy(logits, targets)      <span style="color:#7FBB5A"># all positions contribute to loss</span>
+    logits = representations @ E.T             <span style="color:#7FBB5A"># (N-1, vocab_size)</span>
+    loss   = cross_entropy(logits, targets)    <span style="color:#7FBB5A"># all positions contribute to loss</span>
 
+    <span style="color:#7FBB5A"># Backpropagate and update weights</span>
     loss.backward()
     optimizer.step()
 
@@ -1252,11 +1264,13 @@ PE(pos, 2i+1) = cos(pos / 10000<sup>2i/d</sup>)</div>
     <p>The core engine of the transformer. The <strong>"self"</strong> in self-attention means the queries, keys, and values all come from the <em>same</em> sequence — each token attends to other tokens in the same input. This distinguishes it from <em>cross-attention</em> (used in encoder-decoder models), where queries come from one sequence (the decoder's partial output) and keys/values come from a different sequence (the encoder's output).</p>
     <p>Each token arrives as a d-dimensional vector <span class="math-inline">x ∈ ℝ<sup>d</sup></span> — the same d used throughout the network. To produce its <strong>Query</strong>, <strong>Key</strong>, and <strong>Value</strong> vectors, the token representation is projected through three learned weight matrices:</p>
     <div class="math">Q = x · W<sub>Q</sub>,   K = x · W<sub>K</sub>,   V = x · W<sub>V</sub></div>
-    <p>where W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d × d<sub>k</sub></sup> each project from the full d-dimensional token space down to a smaller d<sub>k</sub>-dimensional subspace. The number of heads <strong>h</strong> and the head dimension <strong>d<sub>k</sub> = d / h</strong> are both hyperparameters ❄️ chosen before training — larger h means more heads each working in a smaller subspace; smaller h means fewer heads each with a richer subspace. Over all N tokens these become matrices: Q, K, V ∈ ℝ<sup>N × d<sub>k</sub></sup>.</p>
+    <p><strong>Shapes and hyperparameters:</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d × d<sub>k</sub></sup> each project from the full d-dimensional token space down to a smaller d<sub>k</sub>-dimensional subspace. The number of heads <strong>h</strong> and the head dimension <strong>d<sub>k</sub> = d / h</strong> are both hyperparameters ❄️ chosen before training — larger h means more heads each working in a smaller subspace; smaller h means fewer heads each with a richer subspace. Over all N tokens these become matrices: Q, K, V ∈ ℝ<sup>N × d<sub>k</sub></sup>.</p>
     <div class="math">Attention(Q,K,V) = softmax(Q·K<sup>T</sup> / √d<sub>k</sub>) · V</div>
-    <p>Dimensionalities step by step: Q·K<sup>T</sup> is <strong>(N×d<sub>k</sub>) · (d<sub>k</sub>×N) = N×N</strong> — one raw score per (query token, key token) pair. After dividing by √d<sub>k</sub> and applying softmax row-wise, the result is still <strong>N×N</strong> with each row summing to 1 — these are the attention weights (the heatmap on Tab ②). Multiplying by V gives <strong>(N×N) · (N×d<sub>k</sub>) = N×d<sub>k</sub></strong> — one updated vector per token, each a weighted blend of all value vectors.</p>
-    <p>The <strong>√d<sub>k</sub> scaling</strong> acts as a <em>temperature</em> in the Boltzmann sense — softmax(x/T) with T = √d<sub>k</sub>. Without it, dot products grow in magnitude with dimension (if Q and K have unit-variance components, each dot product sums d<sub>k</sub> terms giving std dev √d<sub>k</sub>), pushing softmax toward near-one-hot distributions where gradients vanish. d<sub>k</sub> is a fixed hyperparameter (d / h); it is not learned.</p>
-    <p><strong>Multiple heads</strong> (h of them) run this operation in parallel, each with its own W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub>, projecting into a different d<sub>k</sub>-dimensional subspace. The heads are not pre-assigned roles — they specialize through training. The final W<sub>O</sub> projection combines all h heads' outputs (concatenated: N×(h·d<sub>k</sub>) = N×d) back to ℝ<sup>d</sup>. See <strong>Tab ②</strong> for an interactive walkthrough.</p>
+    <p><strong>Dimensionalities in attention calculation, step by step:</strong> Q·K<sup>T</sup> is <strong>(N×d<sub>k</sub>) · (d<sub>k</sub>×N) = N×N</strong> — one raw score per (query token, key token) pair. After dividing by √d<sub>k</sub> and applying softmax row-wise, the result is still <strong>N×N</strong> with each row summing to 1 — these are the attention weights (the heatmap on Tab ②). Multiplying by V gives <strong>(N×N) · (N×d<sub>k</sub>) = N×d<sub>k</sub></strong> — one updated vector per token, each a weighted blend of all value vectors.</p>
+    <p><strong>The softmax here is not a classifier:</strong> you may recognize the softmax here from the head (output end) of classifier neural networks. In those cases, the softmax produces a probability distribution over output classes, and sampling from that distribution tends to produce the best-supported label (with that tendency controlled by temperature). Here, by contrast, the softmax weights are used directly as coefficients in a <em>weighted average</em> of all value vectors — no discrete draw, no sampling. The output is a genuine linear combination: output = Σⱼ αⱼ · V[j], where αⱼ are the softmax weights. This "soft" retrieval is what makes attention fully differentiable and trainable by gradient descent. The only place in a transformer where a hard discrete choice is made is at the very end, when the final representation is projected through E<sup>T</sup> and a token is sampled from the resulting distribution.</p>
+    <p><strong>Temperature in this softmax of the attention head:</strong> the √d<sub>k</sub> scaling acts as a <em>temperature</em> in the Boltzmann sense — softmax(x/T) with T = √d<sub>k</sub>. Without it, dot products grow in magnitude with dimension (if Q and K have unit-variance components, each dot product sums d<sub>k</sub> terms giving std dev √d<sub>k</sub>), pushing softmax toward near-one-hot distributions where gradients vanish. The √d<sub>k</sub> choice is specifically a <em>calibration</em> — it normalizes variance back to 1 regardless of d<sub>k</sub>, keeping gradients well-behaved. It does not encode any preference for how focused or diffuse attention should be.</p>
+    <p>A <em>learnable</em> or per-head temperature would do something richer: low temperature drives sharp, selective attention (the model picks one or a few tokens and ignores the rest — useful for syntactic retrieval or coreference); high temperature drives diffuse attention (broad blending of context — useful for global aggregation). Some architectures already learn a temperature per head or use <em>sparse attention</em> (top-k or entmax) to force exactly-zero weights on all but a few positions. In agentic settings — where multiple transformer models operate as a team — heterogeneous attention phenotypes across agents (some sharp-focus, some broad-context) may confer collective advantages analogous to the mixture of high- and low-latent-inhibition foragers observed in social insect colonies, where individual-level cognitive diversity improves group-level performance. Temperature may prove to be a meaningful design parameter as these multi-agent architectures mature.</p>
+    <p><strong>Multiple attention heads:</strong> there are h heads that run this operation in parallel, each with its own W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub>, projecting into a different d<sub>k</sub>-dimensional subspace. The heads are not pre-assigned roles — they specialize through training. The final W<sub>O</sub> projection combines all h heads' outputs (concatenated: N×(h·d<sub>k</sub>) = N×d) back to ℝ<sup>d</sup>. See <strong>Tab ②</strong> for an interactive walkthrough.</p>
     <p style="margin-top:10px;font-size:.8rem;font-family:var(--mono);color:var(--text-light);border-top:1px solid var(--border-lt);padding-top:8px">🔥 <strong>Trained:</strong> W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> (each d×d<sub>k</sub>) and W<sub>O</sub> (h·d<sub>k</sub>×d) — one set per head per layer. The number of heads h and the head dimension d<sub>k</sub> are both fixed hyperparameters ❄️; √d<sub>k</sub> scaling is parameter-free.</p>`
   },
   n1:{title:'Add &amp; Norm (1)',html:`
