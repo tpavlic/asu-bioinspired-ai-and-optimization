@@ -83,7 +83,7 @@ At the very bottom of `<body>`, before `</body>`, add:
 
 ```html
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="max-width:MAX_WIDTH;margin:0 auto;border-top:1px solid #E0DAC0;padding:0.75rem 0 0 1rem;">
+  <div style="max-width:MAX_WIDTH;margin:0 auto;padding:0.75rem 0 0 1rem;">
     <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>
 </footer>
@@ -92,9 +92,8 @@ if (window.self !== window.top) { var f = document.getElementById('course-nav-fo
 </script>
 ```
 
-Replace `MAX_WIDTH` with the page's primary content `max-width` (e.g. `860px`). The `border-top`
-is on the inner `<div>` so the separator line is constrained to the same width as the page body
-and aligns with the content column rather than spanning the full viewport.
+Replace `MAX_WIDTH` with the page's primary content `max-width` (e.g. `860px`). The inner
+`<div>` constrains the link to the same width as the page body so it aligns on wide screens.
 
 The `<script>` hides the footer when the page is embedded in a Canvas LMS iframe. Use
 `getElementById('course-nav-footer')` rather than `querySelector('footer')` — some demos
