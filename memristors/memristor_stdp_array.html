@@ -129,6 +129,9 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
 .chip{font-size:.7rem;font-family:'IBM Plex Mono',monospace;padding:3px 9px;border-radius:10px;background:var(--bg2);color:var(--txt3);transition:all .2s;white-space:nowrap;}
 .chip.run{background:#def0d4;color:var(--green);} .chip.done{background:#fde8cc;color:#804010;}
 
+.ftj-top{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.tab-n-intro{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.ftj-desc{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 /* footer */
 .footer{margin-top:18px;text-align:right;font-size:.66rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);}
 
@@ -177,6 +180,11 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
     flex-direction:column;
   }
   .net-hist{order:-1;}
+  .ftj-top{grid-template-columns:1fr;}
+  .tab-n-intro{grid-template-columns:1fr;}
+  .ftj-desc{grid-template-columns:1fr;}
+  /* On narrow: show crossbar array above input patterns */
+  .tab-n-crossbar{order:-1;}
 }
 </style>
 </head>
@@ -198,105 +206,16 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
 
 <!-- TAB DROPDOWN (shown on narrow screens instead of tab bar) -->
 <select id="tabSelect" class="tab-select" onchange="gotoTab(this.value)">
-  <option value="s">① STDP Synapse</option>
+  <option value="f">① Memristor STDP</option>
   <option value="n">② Crossbar Network</option>
 </select>
 
 <!-- TABS -->
 <div class="tab-bar">
-  <button class="tbtn on" id="tbtn-s" onclick="gotoTab('s')">&#9312; STDP Synapse</button>
+  <button class="tbtn on" id="tbtn-f" onclick="gotoTab('f')">&#9312; Memristor STDP</button>
   <button class="tbtn"    id="tbtn-n" onclick="gotoTab('n')">&#9313; Crossbar Network</button>
 </div>
 
-<!-- ═══════════ TAB 1: STDP ═══════════ -->
-<div class="tab on" id="tab-s">
-  <p class="info">
-    A <strong>ferroelectric tunnel junction (FTJ)</strong> acts as a memristor: its conductance (synaptic strength)
-    changes based on the <em>relative timing</em> (Δt) of spikes from connected neurons. When a synapse
-    fires on a neuron <strong>just before</strong> that neuron fires, the superimposed voltages briefly exceed the
-    switching threshold, <em>strengthening</em> the synapse. A synapse firing in the reverse order — just after
-    the neuron has already fired — <em>weakens</em> it.
-    This <strong>Spike-Timing-Dependent Plasticity (STDP)</strong> emerges from ferroelectric domain physics —
-    no explicit learning rule, no external controller.
-  </p>
-
-  <!-- TOP ROW: static crossbar overview (left) + geometry detail (right) -->
-  <div class="stdp-top">
-    <div class="panel" style="display:flex;flex-direction:column;">
-      <div class="ptitle">FTJ Crossbar Array — full structure</div>
-      <div style="flex:1;min-height:10px;"></div>
-      <canvas id="cvXStatic" style="width:100%;display:block;"></canvas>
-      <div style="flex:1;min-height:10px;"></div>
-      <div style="font-size:.68rem;color:var(--txt2);line-height:1.65;">
-        A crossbar array places FTJ memristors at every column–row intersection.
-        <strong>Columns</strong> carry pre-synaptic spike inputs (one per pixel);
-        <strong>rows</strong> are the output neurons — each neuron fires when the
-        sum of currents through its row's FTJ synapses reaches threshold, producing a
-        spike output to the right. Each FTJ junction is one synapse —
-        45 synapses total in the 9×5 array of Tab&nbsp;2.
-      </div>
-      <div style="flex:1;min-height:0;"></div>
-    </div>
-    <div class="panel">
-      <div class="ptitle">One FTJ Junction — where STDP acts</div>
-      <canvas id="cvCtx" style="width:100%;display:block;"></canvas>
-      <div style="font-size:.68rem;color:var(--txt2);margin-top:7px;line-height:1.65;">
-        The highlighted FTJ is the synapse through which the input on that column reaches
-        <strong>the neuron on the highlighted row</strong>. When enough current
-        accumulates along the row, that neuron fires — producing an output spike to the right.
-        The FTJ conductance G controls how much that particular input contributes to the
-        neuron's activation (its synaptic <em>weight</em>). G changes by <strong>ΔG</strong>
-        based on timing: <strong>ΔG&nbsp;&gt;&nbsp;0</strong> if the input spike arrives
-        <em>before</em> the neuron fires (that input helped trigger it — potentiation),
-        and <strong>ΔG&nbsp;&lt;&nbsp;0</strong> if the neuron had already fired when
-        the input spike arrives shortly after (the input was too late to contribute — depression).
-        These changes make the neuron more or less sensitive to that input in the future.
-        The lateral inhibition that prevents different row neurons from converging on the
-        same input pattern requires additional circuitry not shown in this simple array.
-      </div>
-    </div>
-  </div>
-
-  <!-- BOTTOM ROW: synapse diagram + STDP curve + waveforms -->
-  <div class="stdp-grid">
-    <div class="panel">
-      <div class="ptitle">Synapse Diagram &nbsp;&mdash;&nbsp; drag Δt slider to explore</div>
-      <canvas id="cvN" style="width:100%;display:block;"></canvas>
-      <div class="slwrap">
-        <div class="sllbl">
-          <span>output first (Δt &lt; 0)</span>
-          <span class="slval" id="dtLbl">Δt = +200 ns</span>
-          <span>input first (Δt &gt; 0)</span>
-        </div>
-      <div style="position:relative;">
-        <input type="range" id="slDt" min="-480" max="480" value="200" step="10"
-          oninput="document.getElementById('dtThumb').classList.remove('pulse-thumb-lbl');onDt()"
-          style="position:relative;z-index:0;">
-        <div id="dtThumb" class="pulse-thumb-lbl" style="position:absolute;top:50%;transform:translate(-50%,-50%);pointer-events:none;font-size:11px;line-height:1;font-family:'IBM Plex Mono',monospace;font-weight:700;color:#fff;z-index:1;white-space:nowrap;left:calc(80% + -5.2px);">Δt</div>
-      </div>
-      </div>
-      <div style="font-size:.65rem;color:var(--txt3);text-align:center;margin:14px 0 3px;">↓ resulting change in FTJ conductance (ΔG):</div>
-      <div class="dgbox pos" id="dgbox">ΔG = +1.29 µS — Synapse Strengthened</div>
-      <div style="font-size:.68rem;color:var(--txt3);text-align:center;margin-top:10px;">Drag Δt slider to explore how timing determines synaptic change</div>
-    </div>
-    <div class="stdp-right">
-      <div class="panel">
-        <div class="ptitle">STDP Learning Curve &nbsp;(after Boyn et al. 2017)</div>
-        <canvas id="cvC" style="width:100%;display:block;"></canvas>
-      </div>
-      <div class="panel">
-        <div class="ptitle">Voltage Waveforms at FTJ Junction</div>
-        <canvas id="cvW" style="width:100%;display:block;"></canvas>
-        <div class="wleg">
-          <span><span style="display:inline-block;width:14px;height:2px;background:var(--green);border-radius:1px;"></span><span>V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">input</span></span></span>
-          <span><span id="voutLegSwatch" style="display:inline-block;width:14px;height:2px;background:var(--blue);border-radius:1px;"></span><span>V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">output</span></span></span>
-          <span><span style="display:inline-block;width:14px;height:2px;background:var(--org);border-radius:1px;"></span><span style="white-space:nowrap;">V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">FTJ</span> = V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">input</span>&minus;V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">output</span></span></span>
-          <span style="color:var(--txt3);"><span style="white-space:nowrap;">&thinsp;·&thinsp;·&thinsp;±V<span style="font-size:.7em;position:relative;top:2px;letter-spacing:0;">th</span></span></span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 <div class="tab" id="tab-n">
   <p class="info">
     A <strong>9×5 crossbar</strong> of FTJ memristors connects 9 input neurons (one per pixel, labeled 1–9
@@ -309,7 +228,8 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
     replicating Fig. 4b of <a href="https://doi.org/10.1038/ncomms14736" target="_blank" style="color:var(--org);">Boyn et al. (2017)</a>.
   </p>
 
-  <!-- Reference patterns -->
+  <!-- Reference patterns + Crossbar structure side by side -->
+  <div class="tab-n-intro">
   <div class="panel">
     <div class="ptitle">Three Input Patterns to Learn &nbsp;&mdash;&nbsp; pixel labels 1–9 mark reading-order position in the 3×3 image</div>
     <div class="pat-row" id="patRow"></div>
@@ -323,6 +243,20 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
       The same labels appear above the crossbar columns and inside the learned weight images so you can
       track exactly which pixel each weight corresponds to.
     </div>
+  </div>
+  <div class="panel tab-n-crossbar" style="display:flex;flex-direction:column;">
+    <div class="ptitle">FTJ Crossbar Array — full structure</div>
+    <div style="flex:1;min-height:10px;"></div>
+    <canvas id="cvXStatic2" style="width:100%;display:block;"></canvas>
+    <div style="flex:1;min-height:10px;"></div>
+    <div style="font-size:.68rem;color:var(--txt2);line-height:1.65;">
+      A crossbar array places FTJ memristors at every column–row intersection.
+      <strong>Columns</strong> carry pre-synaptic spike inputs (one per pixel);
+      <strong>rows</strong> are the output neurons — each fires when its row’s FTJ currents
+      sum to threshold. Each FTJ junction is one synapse — 45 synapses in the 9×5 array.
+    </div>
+    <div style="flex:1;min-height:0;"></div>
+  </div>
   </div>
 
   <!-- Controls — placed here so Start is always near the top -->
@@ -405,6 +339,82 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
   <!-- Controls removed from here — moved above Crossbar panel -->
 </div>
 
+<!-- ═══════════ TAB 3: FTJ PHYSICS ═══════════ -->
+<div class="tab on" id="tab-f">
+  <p class="info">
+    A memristor's resistance encodes <em>history</em> — its pinched hysteresis I–V curve has two states
+    (HRS and LRS) that persist at V&nbsp;=&nbsp;0. Spike-timing-dependent plasticity emerges naturally:
+    the shape of V<sub>pre</sub> and V<sub>post</sub> is designed so that V<sub>FTJ</sub>&nbsp;=&nbsp;V<sub>pre</sub>&minus;V<sub>post</sub>
+    crosses the switching threshold &plusmn;V<sub>th</sub> only when the spikes arrive in the right
+    causal order — directly implementing the STDP curve shown below.
+  </p>
+
+  <!-- Row 1: I-V curve + Spike timing interactive -->
+  <div class="ftj-top">
+
+    <!-- Left: One FTJ Junction -->
+    <div class="panel" style="display:flex;flex-direction:column;">
+      <div class="ptitle">One FTJ Junction — where STDP acts</div>
+      <div style="flex:1;min-height:6px;"></div>
+      <canvas id="cvCtxF" style="width:100%;display:block;"></canvas>
+      <div style="flex:1;min-height:6px;"></div>
+      <div style="font-size:.67rem;color:var(--txt2);line-height:1.6;margin-top:4px;">
+        A single FTJ is one synapse: V<sub>FTJ</sub> drives current I = G·V through the junction,
+        where G is the learned conductance. The spike timing between V<sub>pre</sub> and V<sub>post</sub>
+        determines whether G increases (LTP) or decreases (LTD).
+      </div>
+    </div>
+
+    <!-- Right: I-V curve -->
+    <div class="panel">
+      <div class="ptitle">Memristor I–V Curve — Pinched Hysteresis</div>
+      <canvas id="cvIV" style="width:100%;display:block;"></canvas>
+      <div style="font-size:.67rem;color:var(--txt2);line-height:1.65;margin-top:7px;">
+        A resistor's I–V curve is a fixed straight line through the origin.
+        A memristor's curve is also pinched at the origin — <strong>zero voltage always means zero current,
+        regardless of state</strong> — but its slope depends on history: high-resistance state (<span style="color:#ee7733;">HRS</span>)
+        or low-resistance state (<span style="color:#0077bb;">LRS</span>). The bold line shows the current state;
+        the faint ghost loop is the full hysteresis for reference.
+        Drag the &Delta;t slider in the spike-timing panel to see the state snap between HRS and LRS.
+      </div>
+    </div>
+
+  </div><!-- end ftj-top -->
+
+  <!-- Spike timing: full width -->
+  <div class="panel">
+    <div class="ptitle">Spike Timing &amp; V<sub>FTJ</sub> Threshold Crossing</div>
+      <canvas id="cvSpike" style="width:100%;display:block;touch-action:none;cursor:default;"></canvas>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        <label style="font-size:.76rem;color:var(--txt2);font-weight:600;">&Delta;t (post&minus;pre):</label>
+        <span style="font-size:.72rem;font-family:'IBM Plex Mono',monospace;color:var(--txt3);" id="dtFTJLbl">+200 ns</span>
+      </div>
+      <div style="padding-left:14px;padding-right:56px;margin-top:2px;">
+        <input type="range" id="slDtFTJ" min="-600" max="600" value="200" step="5"
+               style="width:100%;" oninput="onDtFTJ()">
+      </div>
+      <div style="font-size:.67rem;color:var(--txt2);line-height:1.65;margin-top:7px;">
+        <strong>V<sub>pre</sub></strong> (<span style="color:var(--org);">orange</span>) and
+        <strong>V<sub>post</sub></strong> (<span style="color:#1040c8;">blue</span>) are biphasic spike waveforms;
+        <strong>V<sub>FTJ</sub></strong> = V<sub>pre</sub>&minus;V<sub>post</sub> is their difference.
+        The spike shape is designed so that V<sub>FTJ</sub> crosses the threshold &plusmn;V<sub>th</sub>
+        only for the right causal ordering — implementing the correct STDP polarity.
+        Shaded zones show when V<sub>FTJ</sub> exceeds &plusmn;V<sub>th</sub>; the bar shows net &Delta;G.
+        <strong>Drag V<sub>post</sub></strong> or use the slider to explore timing.
+      </div>
+  </div>
+
+  <!-- Row 2: ΔG vs Δt — separate panel -->
+  <div class="panel" style="margin-bottom:12px;">
+    <div class="ptitle">&Delta;G vs &Delta;t &mdash; STDP curve &nbsp;<span style="font-weight:400;color:var(--txt3);">(dot tracks current &Delta;t)</span></div>
+    <canvas id="cvMiniSTDP" style="width:100%;display:block;"></canvas>
+    <div style="font-size:.67rem;color:var(--txt2);line-height:1.6;margin-top:5px;">
+      Each point on this curve corresponds to a spike-pair timing. The dot shows where the current &Delta;t falls. Positive &Delta;t (post fires after pre, causal) → potentiation; negative &Delta;t (post fires before pre) → depression. Drag the slider above to explore.
+    </div>
+  </div>    </div>
+  </div>
+</div>
+
 <!-- FOOTER -->
 <div class="footer">
   &#169; 2026 Theodore P. Pavlic<span class="footer-cs">&nbsp;&middot;&nbsp;</span><a href="https://opensource.org/licenses/MIT" target="_blank" class="footer-cl">MIT License</a>
@@ -416,12 +426,16 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
 // CONSTANTS
 // ═══════════════════════════════════════
 const CG='#2d5a1b',CGM='#4a7c32',CGL='#7ab55a';
+const CFTJ='#4a5568'; // neutral dark slate for V_FTJ waveform line
 const CO='#e07b39',CB='#3050a0',CR='#c04020';
+// Colorblind-safe (Okabe-Ito) semantic pair for FTJ tab: LTP/LRS vs LTD/HRS
+const CLTP='#0077bb'; // blue  — LTP, ΔG>0, LRS (potentiated)
+const CLTD='#ee7733'; // orange — LTD, ΔG<0, HRS (depressed)
 const CT='#1a2e0a',CT2='#3a5a2a',CT3='#6a8a5a';
 const CBRD='#c8d8b8',CBG='#fdf8f0',CBG2='#f5eddc';
 
 // STDP / waveform
-const AP=2.0,AM=1.5,STAU=160;
+const AP=2.0,AM=1.5,STAU=100;
 const SP_A=0.70,SP_W=180,SP_TAU=250,VTH=0.80;
 
 // Network
@@ -467,8 +481,17 @@ function mixedText(ctx,parts,cx,y,baseFs,col){
     ctx.fillText(p.t,x,y+(p.sub?Math.round(baseFs*.28):0));x+=ws[i];
   });
 }
-function gc(id,hpx){
-  const cv=document.getElementById(id);if(!cv)return null;
+function drawArrow(ctx,x1,y1,x2,y2,col,lw,ahlen){
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();
+  const ang=Math.atan2(y2-y1,x2-x1),ah=ahlen||9;
+  ctx.beginPath();ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-ah*Math.cos(ang-.38),y2-ah*Math.sin(ang-.38));
+  ctx.lineTo(x2-ah*Math.cos(ang+.38),y2-ah*Math.sin(ang+.38));
+  ctx.closePath();ctx.fillStyle=col;ctx.fill();
+}
+
+function gc(id,hpx){  const cv=document.getElementById(id);if(!cv)return null;
   const dpr=window.devicePixelRatio||1;
   const w=cv.clientWidth||0;if(w<8)return null;
   cv.width=Math.round(w*dpr);cv.height=Math.round(hpx*dpr);
@@ -489,7 +512,45 @@ function rrect(ctx,x,y,w,h,r){
 // ═══════════════════════════════════════
 // STDP MODEL
 // ═══════════════════════════════════════
-function stdpDG(dt){if(dt>0)return AP*Math.exp(-dt/STAU);if(dt<0)return-AM*Math.exp(dt/STAU);return 0;}
+// ── STDP lookup table computed from actual V_FTJ waveform integration ────────
+// stdpDG(dt), _posArea(dt), _negArea(dt) are all derived from real threshold crossings.
+// Outside the timing window both areas are zero → dot at I-V origin, curve flat.
+const _DT_MAX=600,_DT_STEP=2;
+const _N=Math.floor(_DT_MAX/_DT_STEP)*2+1;
+const _posArea=new Float64Array(_N),_negArea=new Float64Array(_N),_stdpTbl=new Float64Array(_N);
+const _peakPos=new Float64Array(_N),_peakNeg=new Float64Array(_N); // max |V_FTJ| per polarity
+(function(){
+  const s_=5,t1_=100,t2_=100,V1_=0.70,V2_=0.68;
+  const tOff_=t1_+3*s_;
+  const VTP=0.88,VTN=1.05;
+  const ss_=(t,c)=>1/(1+Math.exp(-(t-c)/s_));
+  const Vpre_=t=>-V1_*(ss_(t,-t1_)-ss_(t,0))+V2_*(ss_(t,0)-ss_(t,t2_));
+  const NT=600,Tspan_=1200,dt_ns=Tspan_/NT;
+  let maxA=0;
+  for(let i=0;i<_N;i++){
+    const Δt=(-_DT_MAX+i*_DT_STEP);
+    let aP=0,aN=0,pkP=0,pkN=0;
+    for(let k=0;k<=NT;k++){
+      const t=-(600+tOff_)+k*dt_ns;
+      const v=Vpre_(t)-Vpre_(t-Δt);
+      if(v>VTP)aP+=(v-VTP)*dt_ns;
+      else if(v<-VTN)aN+=(-v-VTN)*dt_ns;
+      if(v>pkP)pkP=v;
+      if(-v>pkN)pkN=-v;
+    }
+    _posArea[i]=aP;_negArea[i]=aN;_peakPos[i]=pkP;_peakNeg[i]=pkN;
+    if(aP>maxA)maxA=aP;
+    if(aN>maxA)maxA=aN;
+  }
+  maxA=maxA||1;
+  for(let i=0;i<_N;i++) _stdpTbl[i]=(_posArea[i]*AP-_negArea[i]*AM)/maxA;
+})();
+function _dtIdx(dt){return Math.round((dt+_DT_MAX)/_DT_STEP);}
+function stdpDG(dt){const i=_dtIdx(dt);if(i<0||i>=_N)return 0;return _stdpTbl[i];}
+function _getPosArea(dt){const i=_dtIdx(dt);if(i<0||i>=_N)return 0;return _posArea[i];}
+function _getNegArea(dt){const i=_dtIdx(dt);if(i<0||i>=_N)return 0;return _negArea[i];}
+function _getPeakPos(dt){const i=_dtIdx(dt);if(i<0||i>=_N)return 0;return _peakPos[i];}
+function _getPeakNeg(dt){const i=_dtIdx(dt);if(i<0||i>=_N)return 0;return _peakNeg[i];}
 function spikeV(t){if(t<0)return-SP_A*Math.exp(t/SP_TAU);if(t<=SP_W)return SP_A;return SP_A*Math.exp(-(t-SP_W)/SP_TAU);}
 const Vpre=t=>spikeV(t);
 const Vpost=(t,dt)=>spikeV(t-dt);
@@ -514,8 +575,8 @@ function gotoTab(id){
     document.getElementById('chipSt').className='chip';
     document.getElementById('btnStep').disabled=false;
   }
-  if(id==='s')setTimeout(drawSTDP,15);
-  if(id==='n')setTimeout(drawNet,15);
+  if(id==='n')setTimeout(()=>{drawNet();drawXStatic2();},15);
+  if(id==='f')setTimeout(drawFTJTab,15);
 }
 
 // ═══════════════════════════════════════
@@ -552,6 +613,83 @@ function drawSTDP(){drawNeurDiag();drawCurve();drawXStatic();drawCrossbarCtx();d
 function drawXStatic(){
   const H=175;
   const r=gc('cvXStatic',H);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+
+  const NI=5,NO=5;
+  const pl=36,pr=14,pt=64,pb=26;
+  const gw=w-pl-pr,gh=h-pt-pb;
+  if(gw<10||gh<10)return;
+  const cw=gw/NI,rh=gh/NO;
+
+  // ── PRE-SYNAPTIC header ──
+  ctx.fillStyle=CG;ctx.font='600 9.5px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText('Pre-synaptic inputs (spike trains ↓)',pl+gw/2,10);
+  ctx.fillStyle=CT3;ctx.font='7px IBM Plex Mono';
+  ctx.fillText('one column per input pixel',pl+gw/2,20);
+
+  // Input columns — downward-pointing arrowhead at the grid ENTRY (tip near grid top)
+  for(let c=0;c<NI;c++){
+    const x=pl+(c+.5)*cw;
+    // short stem above the grid — starts at y=36, well below the subtitle text
+    ctx.strokeStyle=CG;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x,36);ctx.lineTo(x,pt+gh);ctx.stroke();
+    // ▼ arrowhead at grid entry — tip at pt-4, wings above (pointing DOWN)
+    ctx.beginPath();
+    ctx.moveTo(x,pt-4);ctx.lineTo(x-3.5,pt-13);
+    ctx.moveTo(x,pt-4);ctx.lineTo(x+3.5,pt-13);
+    ctx.stroke();
+    // pixel number label — sits between subtitle and arrowhead
+    ctx.fillStyle=CG;ctx.font='8.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    ctx.fillText(String(c+1),x,34);
+  }
+
+  // Grid lines
+  ctx.strokeStyle='rgba(200,216,184,.3)';ctx.lineWidth=.4;
+  for(let c=0;c<=NI;c++){const x=pl+c*cw;ctx.beginPath();ctx.moveTo(x,pt);ctx.lineTo(x,pt+gh);ctx.stroke();}
+  for(let r=0;r<=NO;r++){const y=pt+r*rh;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+gw,y);ctx.stroke();}
+
+  // Output rows with ► rightward arrows and labels
+  for(let r=0;r<NO;r++){
+    const y=pt+(r+.5)*rh;
+    ctx.strokeStyle=CB;ctx.lineWidth=1.8;
+    ctx.beginPath();ctx.moveTo(pl-3,y);ctx.lineTo(pl+gw,y);ctx.stroke();
+    // ► arrowhead at grid exit (tip at pl+gw+5, wings left)
+    ctx.beginPath();ctx.moveTo(pl+gw+5,y);ctx.lineTo(pl+gw-3,y-3.5);ctx.moveTo(pl+gw+5,y);ctx.lineTo(pl+gw-3,y+3.5);ctx.stroke();
+    ctx.fillStyle=CB;ctx.font='700 9px IBM Plex Mono';ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(`N${r+1}`,pl-7,y);
+  }
+
+  // FTJ dots
+  for(let r=0;r<NO;r++){
+    for(let c=0;c<NI;c++){
+      const x=pl+(c+.5)*cw,y=pt+(r+.5)*rh;
+      ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);
+      ctx.fillStyle=CBG2;ctx.fill();ctx.strokeStyle=CBRD;ctx.lineWidth=.7;ctx.stroke();
+    }
+  }
+
+  // Footer legend: row symbol + text, then FTJ dot + text
+  const fy=pt+gh+6;
+  // Blue row segment → "output neurons (rows)"
+  ctx.strokeStyle=CB;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(pl,fy+5);ctx.lineTo(pl+16,fy+5);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(pl+16,fy+5);ctx.lineTo(pl+10,fy+2);ctx.moveTo(pl+16,fy+5);ctx.lineTo(pl+10,fy+8);ctx.stroke();
+  ctx.fillStyle=CT3;ctx.font='8px Outfit';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText('output neurons (rows)',pl+20,fy+5);
+  // FTJ dot → "FTJ synapses at each junction"
+  const dotX=pl+20+ctx.measureText('output neurons (rows)').width+16;
+  ctx.beginPath();ctx.arc(dotX+4,fy+5,4,0,Math.PI*2);
+  ctx.fillStyle=CBG2;ctx.fill();ctx.strokeStyle=CBRD;ctx.lineWidth=.7;ctx.stroke();
+  ctx.fillStyle=CT3;ctx.font='8px Outfit';ctx.textAlign='left';
+  ctx.fillText('FTJ synapse at each junction',dotX+12,fy+5);
+}
+
+// Crossbar geometry detail (Tab 1 top-right): zoomed view of one junction with STDP annotations.
+// drawXStatic2: same as drawXStatic but renders to cvXStatic2 (Tab 2)
+function drawXStatic2(){
+  const H=175;
+  const r=gc('cvXStatic2',H);if(!r)return;
   const{ctx,w,h}=r;
   ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
 
@@ -706,6 +844,89 @@ function drawCrossbarCtx(){
   ctx.fillStyle=CT3;
   mixedText(ctx,[{t:'Δt = '},{t:'t'},{t:'post',sub:true},{t:' − '},{t:'t'},{t:'pre',sub:true},{t:'   →   sign of Δt determines sign of ΔG  (see STDP curve)'}],pl+gw/2,pt+gh+10,7,CT3);
 }
+// drawCrossbarCtxF: renders to cvCtxF (Tab 3)
+function drawCrossbarCtxF(){
+  const H=188;
+  const r=gc('cvCtxF',H);if(!r)return;
+  const{ctx,w,h}=r;
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+
+  const NR=2,NC=3;
+  const pl=56,pr=22,pt=74,pb=26;
+  const gw=w-pl-pr,gh=h-pt-pb;
+  if(gw<10||gh<10)return;
+  const cw=gw/NC,rh=gh/NR;
+  const HC=1,HR=0;
+  const hx=pl+(HC+.5)*cw, hy=pt+(HR+.5)*rh;
+
+  // ── PRE-SYNAPTIC header ──
+  ctx.fillStyle=CG;ctx.font='600 7.5px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText('pre-synaptic inputs → spike in ↓',pl+gw/2,9);
+
+  // Spike waveform above highlighted column (pushed down to clear the header text)
+  const sy=42;
+  ctx.strokeStyle=CG;ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(hx-18,sy);ctx.lineTo(hx-7,sy);ctx.lineTo(hx-5,sy-9);ctx.lineTo(hx,sy+5);ctx.lineTo(hx+5,sy);ctx.lineTo(hx+18,sy);ctx.stroke();
+  mixedText(ctx,[{t:'t'},{t:'pre',sub:true}],hx,sy-12,6.5,CG);
+
+  // Input columns with downward arrows
+  for(let c=0;c<NC;c++){
+    const x=pl+(c+.5)*cw, isH=c===HC;
+    ctx.strokeStyle=isH?CG:'rgba(45,90,27,.28)';ctx.lineWidth=isH?1.8:0.9;
+    ctx.beginPath();ctx.moveTo(x,isH?sy+4:pt-6);ctx.lineTo(x,pt+gh);ctx.stroke();
+    if(isH){
+      ctx.beginPath();ctx.moveTo(x,pt-5);ctx.lineTo(x-3,pt-12);ctx.moveTo(x,pt-5);ctx.lineTo(x+3,pt-12);ctx.stroke();
+    }
+  }
+
+  // Output rows (left to right, with label on the left)
+  for(let ro=0;ro<NR;ro++){
+    const y=pt+(ro+.5)*rh, isH=ro===HR;
+    ctx.strokeStyle=isH?CB:'rgba(48,80,160,.28)';ctx.lineWidth=isH?1.8:0.9;
+    ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+gw,y);ctx.stroke();
+    // left label — row labels sit in the pl margin
+    ctx.fillStyle=isH?CB:CT3;ctx.font=`${isH?'600':'400'} 7px Outfit`;
+    ctx.textAlign='right';ctx.textBaseline='middle';
+    ctx.fillText(isH?'row neuron':'neuron',pl-4,ro===HR?y-5:y);
+    if(isH){ctx.fillText('(fires →)',pl-4,y+6);}
+  }
+
+  // Right-arrow for highlighted row
+  ctx.strokeStyle=CB;ctx.lineWidth=1.4;
+  ctx.beginPath();ctx.moveTo(pl+gw+4,hy);ctx.lineTo(pl+gw-3,hy-3);ctx.moveTo(pl+gw+4,hy);ctx.lineTo(pl+gw-3,hy+3);ctx.stroke();
+  // "spike out →" label (right margin, semi-transparent bg)
+  const outLbl='→ spike out';
+  ctx.font='600 6.5px IBM Plex Mono';
+  const outW=ctx.measureText(outLbl).width;
+  ctx.fillStyle='rgba(255,255,255,.82)';ctx.fillRect(pl+gw+7,hy-6,outW+2,11);
+  ctx.fillStyle=CB;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(outLbl,pl+gw+8,hy);
+
+  // Junction dots
+  for(let ro=0;ro<NR;ro++){
+    for(let c=0;c<NC;c++){
+      const x=pl+(c+.5)*cw,y=pt+(ro+.5)*rh,isH=ro===HR&&c===HC;
+      ctx.beginPath();ctx.arc(x,y,isH?9:4.5,0,Math.PI*2);
+      ctx.fillStyle=isH?CO:CBG2;ctx.fill();
+      ctx.strokeStyle=isH?CO:CBRD;ctx.lineWidth=isH?1.5:.6;ctx.stroke();
+      if(isH){
+        ctx.fillStyle='#fff';ctx.font='600 6.5px IBM Plex Mono';
+        ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('FTJ',x,y);
+      }
+    }
+  }
+
+  // ΔG label — semi-transparent background so it reads over the row line
+  const dgLbl='← ΔG';
+  ctx.font='700 8.5px IBM Plex Mono';
+  const dgW=ctx.measureText(dgLbl).width;
+  ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(hx+11,hy-7,dgW+4,13);
+  ctx.fillStyle=CO;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(dgLbl,hx+13,hy);
+
+  // Δt annotation below the two waveform positions
+  ctx.fillStyle=CT3;
+  mixedText(ctx,[{t:'Δt = '},{t:'t'},{t:'post',sub:true},{t:' − '},{t:'t'},{t:'pre',sub:true},{t:'   →   sign of Δt determines sign of ΔG  (see STDP curve)'}],pl+gw/2,pt+gh+10,7,CT3);
+}
+
 function drawNeurDiag(){
   const H=205;
   const r=gc('cvN',H);if(!r)return;
@@ -1437,14 +1658,534 @@ function drawRate(){
 // INIT
 // ═══════════════════════════════════════
 window.addEventListener('load',()=>{
-  onDt();
   initW();buildPats();buildRF();
-  setTimeout(drawNet,20);
+  setTimeout(drawFTJTab,20);
+  setTimeout(drawNet,25);
 });
 window.addEventListener('resize',()=>{
-  if(document.getElementById('tab-s').classList.contains('on'))drawSTDP();
   if(document.getElementById('tab-n').classList.contains('on'))drawNet();
+  if(document.getElementById('tab-f').classList.contains('on'))drawFTJTab();
+  if(document.getElementById('tab-n').classList.contains('on'))drawXStatic2();
 });
+
+// ═══════════════════════════════════════
+// TAB 3: FTJ PHYSICS
+// ═══════════════════════════════════════
+let dtFTJns=200;
+let memState=0;        // binary physical state: 0=HRS, 1=LRS
+let memStateDisplay=0; // animated display value — lerps toward memState
+let _memAnimId=null;
+const SNAP_THRESH=0.001; // snap on any meaningful threshold crossing (matches pill appearance)
+function _animMem(){
+  const d=memState-memStateDisplay;
+  if(Math.abs(d)>0.004){
+    memStateDisplay+=d*0.16; // ~200 ms at 60 fps
+    drawIV();
+    _memAnimId=requestAnimationFrame(_animMem);
+  } else {
+    memStateDisplay=memState;
+    drawIV();
+    _memAnimId=null;
+  }
+}
+function _triggerMemAnim(){
+  if(_memAnimId)cancelAnimationFrame(_memAnimId);
+  _memAnimId=requestAnimationFrame(_animMem);
+}
+let ftjDragging=false,ftjShowHandle=false,ftjDragStartX=0,ftjDragStartDt=0;
+let spkGeom={pl:14,pr:56,pt:10,rowH_pre:64,cw:300,Tspan:1400};
+
+function onDtFTJ(){
+  dtFTJns=parseInt(document.getElementById('slDtFTJ').value);
+  const sign=dtFTJns>=0?'+':'';
+  document.getElementById('dtFTJLbl').textContent=sign+dtFTJns+' ns';
+  if(document.getElementById('tab-f').classList.contains('on')){
+    drawSpike();drawMiniSTDP();drawIV();
+  }
+}
+function drawFTJTab(){
+  if(!document.getElementById('tab-f').classList.contains('on'))return;
+  drawCrossbarCtxF();drawIV();drawSpike();drawMiniSTDP();
+  initFTJSpike();
+}
+
+function initFTJSpike(){
+  const cv=document.getElementById('cvSpike');if(!cv||cv._ftjInit)return;
+  cv._ftjInit=true;
+  const getXY=e=>{const rect=cv.getBoundingClientRect();return[e.clientX-rect.left,e.clientY-rect.top];};
+  const inPostRow=y=>{const bot=spkGeom.pt+spkGeom.rowH_pre*2;const top=spkGeom.pt+spkGeom.rowH_pre;return y>=top-12&&y<=bot+12;};
+  cv.addEventListener('pointerdown',e=>{
+    const[x,y]=getXY(e);
+    if(!inPostRow(y))return;
+    e.preventDefault();cv.setPointerCapture(e.pointerId);
+    ftjDragging=true;ftjDragStartX=x;ftjDragStartDt=dtFTJns;
+  });
+  cv.addEventListener('pointermove',e=>{
+    const[x,y]=getXY(e);
+    const wasHandle=ftjShowHandle;ftjShowHandle=inPostRow(y);
+    cv.style.cursor=(ftjShowHandle||ftjDragging)?'ew-resize':'default';
+    if(ftjDragging){
+      const dx=x-ftjDragStartX;
+      const newDt=Math.round((ftjDragStartDt+dx*spkGeom.Tspan/spkGeom.cw)/20)*20;
+      const clamped=Math.max(-600,Math.min(600,newDt));
+      if(clamped!==dtFTJns){
+        dtFTJns=clamped;
+        document.getElementById('slDtFTJ').value=clamped;
+        document.getElementById('dtFTJLbl').textContent=(clamped>=0?'+':'')+clamped+' ns';
+        drawSpike();drawMiniSTDP();drawIV();
+      }
+    }else if(ftjShowHandle!==wasHandle){drawSpike();}
+  });
+  cv.addEventListener('pointerup',()=>{ftjDragging=false;});
+  cv.addEventListener('pointercancel',()=>{ftjDragging=false;});
+  cv.addEventListener('pointerleave',()=>{
+    if(!ftjDragging){ftjShowHandle=false;cv.style.cursor='default';drawSpike();}
+  });
+}
+
+// ── I–V pinched hysteresis ─────────────────────────────────────────────────
+function drawIV(){
+  const H=240;const r=gc('cvIV',H);if(!r)return;
+  const{ctx,w,h}=r;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const mgL=14,mgR=62,mgT=16,mgB=28;
+  const Vm=0.65,G_HRS=0.18,G_LRS=0.90;
+  const Imax=G_LRS*Vm*1.15;
+  const cw=w-mgL-mgR,ch=h-mgT-mgB;
+  const tx=V=>mgL+(V+Vm)*cw/(2*Vm);
+  const ty=I=>mgT+(Imax-I)*ch/(2*Imax);
+  const Vth=0.42,sharp=0.016;
+  const sig=(x,c)=>1/(1+Math.exp(-(x-c)/sharp));
+
+  // Axes
+  ctx.strokeStyle='rgba(80,100,70,.55)';ctx.lineWidth=.8;
+  ctx.beginPath();ctx.moveTo(tx(-Vm),ty(0));ctx.lineTo(tx(Vm)+8,ty(0));ctx.stroke();
+  ctx.beginPath();ctx.moveTo(tx(0),ty(-Imax));ctx.lineTo(tx(0),ty(Imax)+6);ctx.stroke();
+  ctx.fillStyle=CT3;ctx.font='700 9px Outfit';
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('V',tx(Vm)+10,ty(0));
+  ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('I',tx(0),ty(Imax)-2);
+
+  // Threshold vertical lines
+  [Vth,-Vth].forEach(V=>{
+    ctx.setLineDash([3,3]);ctx.strokeStyle='rgba(224,123,57,.5)';ctx.lineWidth=.9;
+    ctx.beginPath();ctx.moveTo(tx(V),ty(-Imax*.9));ctx.lineTo(tx(V),ty(Imax*.9));ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle=CO;ctx.font='7px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(V>0?'+V\u209B\u2095':'\u2212V\u209B\u2095',tx(V),ty(-Imax*.88));
+  });
+
+  // Color by RESISTANCE STATE: green=HRS, orange=LRS
+  // Segment A (green HRS): rising V from -Vm to +Vth
+  // Segment B (orange LRS): rising from +Vth to +Vm, then falling from +Vm to -Vth
+  // Segment C (green HRS): falling from -Vth to -Vm — same line as A in that region, don't redraw
+  const N=600;
+  const ptsHRS_rise=[],ptsLRS=[],ptsHRS_fall=[];
+  for(let k=0;k<=N;k++){
+    const V=-Vm+2*Vm*(k/N);
+    if(V<=Vth) ptsHRS_rise.push([tx(V),ty((G_HRS+(G_LRS-G_HRS)*sig(V,Vth))*V)]);
+  }
+  // LRS: rising Vth→Vm then falling Vm→-Vth (one continuous orange arc)
+  for(let k=0;k<=N;k++){
+    const V=Vth+(Vm-Vth)*k/N;
+    ptsLRS.push([tx(V),ty((G_HRS+(G_LRS-G_HRS)*sig(V,Vth))*V)]);
+  }
+  for(let k=0;k<=N;k++){
+    const V=Vm-2*Vm*k/N;
+    if(V>=-Vth) ptsLRS.push([tx(V),ty((G_LRS+(G_HRS-G_LRS)*sig(-V,Vth))*V)]);
+  }
+  // HRS fall: -Vth → -Vm (same physical line as HRS_rise in that range but opposite direction)
+  for(let k=0;k<=N;k++){
+    const V=-Vth-( Vm-Vth)*k/N;
+    ptsHRS_fall.push([tx(V),ty((G_LRS+(G_HRS-G_LRS)*sig(-V,Vth))*V)]);
+  }
+
+  // Ghost loop — faint reference so students recognize the full hysteresis shape
+  const drawGhost=(pts,col)=>{
+    if(pts.length<2)return;
+    ctx.beginPath();pts.forEach(([x,y],i)=>i===0?ctx.moveTo(x,y):ctx.lineTo(x,y));
+    ctx.strokeStyle=col+'2a';ctx.lineWidth=1.8;ctx.stroke();
+  };
+  drawGhost(ptsHRS_rise,CLTD);
+  drawGhost(ptsLRS,CLTP);
+  drawGhost(ptsHRS_fall,CLTD);
+
+  // Bold active-state line through origin — straight bilateral (full linear resistor)
+  {
+    const Gnow=G_HRS+memStateDisplay*(G_LRS-G_HRS);
+    const onLRS=memStateDisplay>0.5;
+    const lineCol=onLRS?CLTP:CLTD;
+    // Extend slightly past axis edges so it reads as a true line
+    const Vext=Vm*1.02;
+    ctx.strokeStyle=lineCol;ctx.lineWidth=2.6;
+    ctx.beginPath();ctx.moveTo(tx(-Vext),ty(-Gnow*Vext));ctx.lineTo(tx(Vext),ty(Gnow*Vext));ctx.stroke();
+  }
+
+  // Labels near curve endpoints
+  ctx.font='700 8px Outfit';
+  // LRS (orange) — above top-right end of orange curve
+  ctx.fillStyle=CLTP;ctx.textAlign='right';ctx.textBaseline='bottom';
+  ctx.fillText('R\u2082 (LRS)',tx(Vm)-4,ty(G_LRS*Vm)-4);
+  // HRS (orange) — below bottom-left end of orange curve
+  ctx.fillStyle=CLTD;ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillText('R\u2081 (HRS)',tx(-Vm)+4,ty(-G_HRS*Vm)+4);
+  // Pinch dot
+  ctx.beginPath();ctx.arc(tx(0),ty(0),3,0,Math.PI*2);ctx.fillStyle='rgba(80,100,70,.55)';ctx.fill();
+
+
+
+
+  // ── Hard-snap memState (bistable) + trigger animation ────────────────────
+  {
+    let maxRef=0;for(let i=0;i<_N;i++)if(_posArea[i]>maxRef)maxRef=_posArea[i];maxRef=maxRef||1;
+    const aP=_getPosArea(dtFTJns),aN=_getNegArea(dtFTJns);
+    const prev=memState;
+    if(aP/maxRef>SNAP_THRESH) memState=1;       // LTP event → snap to LRS
+    else if(aN/maxRef>SNAP_THRESH) memState=0;  // LTD event → snap to HRS
+    // else: subthreshold → hold current state (bistable memory)
+    if(memState!==prev) _triggerMemAnim();
+  }
+}
+
+// ── Spike timing & V_FTJ threshold crossing demo ───────────────────────────────────────
+function drawSpike(){
+  const H=360;const r=gc('cvSpike',H);if(!r)return;
+  const{ctx,w,h}=r;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const pl=14,pr=56,pt=10,pb=28;
+  const cw=w-pl-pr;
+  const avail=h-pt-pb;
+  // Unequal rows: V_pre and V_post each take 1/5, V_FTJ gets 3/5
+  const rowH_pre=Math.floor(avail/5);
+  const rowH_ftj=avail-2*rowH_pre;
+  spkGeom={pl,pr,pt,rowH_pre,cw,Tspan:1200};
+  const Tspan=1200,tx=t=>pl+(t+600+tOff)*cw/Tspan; // liftoff t=−tOff at centre ≡ Δt=0 on slider
+  const s=5,τ1=100,τ2=100,V1=0.70,V2=0.68;
+  const tOff=τ1+3*s; // visual-liftoff offset (4.7% sigmoid amplitude at t=−tOff)
+  // Asymmetric coercive thresholds: V_c⁺ < |V_c⁻| as in BiFeO₃ FTJs
+  const Vth_pos=0.88,Vth_neg=1.05;
+  // Smooth rectangular biphasic: positive BEFORE firing (leading), negative AFTER (trailing)
+  // This matches the Boyn et al. design: for Δt>0, leading phases overlap FIRST → LTP
+  // For Δt<0, trailing phases overlap FIRST → LTD. Both coexist; first interaction dominates.
+  const ss=(t,c)=>1/(1+Math.exp(-(t-c)/s));
+  const Vpre=t=>-V1*(ss(t,-τ1)-ss(t,0))+V2*(ss(t,0)-ss(t,τ2));
+  const Vpost=t=>Vpre(t-dtFTJns); // same polarity, shifted — V_FTJ=Vpre-Vpost is antisymmetric
+  const Vftj=t=>Vpre(t)-Vpost(t);
+  const fns=[Vpre,Vpost,Vftj];
+  const sc=rowH_pre*0.40/V1; // pixels per volt — same for all rows
+  const cy=[pt+rowH_pre*0.5, pt+rowH_pre*1.5, pt+rowH_pre*2+rowH_ftj*0.5];
+  const colors=[CO,CB,CFTJ];
+  const NT=Math.round(cw*1.5);
+  const t_post=dtFTJns; // V_post fires at this time
+  // Row separators
+  ctx.strokeStyle='rgba(200,216,184,.4)';ctx.lineWidth=.5;
+  [pt+rowH_pre, pt+2*rowH_pre, pt+2*rowH_pre+rowH_ftj].forEach(y=>{
+    ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+cw,y);ctx.stroke();
+  });
+
+  // Zero lines
+  cy.forEach(y=>{ctx.strokeStyle='rgba(200,216,184,.45)';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+cw,y);ctx.stroke();});
+
+  // Asymmetric coercive threshold lines on V_FTJ row
+  // Labels: right-aligned at content edge; +V_c⁺ above its line, −|V_c⁻| below
+  [[Vth_pos,'+V_c⁺','rgba(0,119,187,.55)',CLTP,'bottom',-2],
+   [-Vth_neg,'−|V_c⁻|','rgba(238,119,51,.55)',CLTD,'top',2]].forEach(([v,lbl,stroke,fill,baseline,dy])=>{
+    const y=cy[2]-v*sc;ctx.setLineDash([3,2]);ctx.strokeStyle=stroke;ctx.lineWidth=.8;
+    ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(pl+cw,y);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=fill;ctx.font='7px IBM Plex Mono';ctx.textAlign='right';ctx.textBaseline=baseline;
+    ctx.fillText(lbl,pl+cw-2,y+dy);
+  });
+
+  // Shade V_FTJ excursions beyond each coercive threshold
+  const cy2=cy[2];
+  [[Vth_pos,'pos','rgba(0,119,187,.22)'],[Vth_neg,'neg','rgba(238,119,51,.22)']].forEach(([thr,dir,fill])=>{
+    ctx.beginPath();let open=false;
+    for(let k=0;k<=NT;k++){
+      const t=-(600+tOff)+k*Tspan/NT,v=Vftj(t);
+      const hit=dir==='pos'?v>thr:v<-thr;
+      const px=tx(t),py=cy2-v*sc,baseY=dir==='pos'?cy2-thr*sc:cy2+thr*sc;
+      if(hit){if(!open){ctx.moveTo(px,baseY);open=true;}ctx.lineTo(px,py);}
+      else if(open){ctx.lineTo(px,baseY);open=false;}
+    }
+    ctx.fillStyle=fill;ctx.fill();
+  });
+  // ── Integration area bars ── compute areas above each threshold ──────────
+  let A_pos=0,A_neg=0;
+  const dt_ns=Tspan/NT;
+  // First pass: scan current Δt
+  let firstPosT=Infinity,firstNegT=Infinity;
+  for(let k=0;k<=NT;k++){
+    const t=-(600+tOff)+k*Tspan/NT,v=Vftj(t);
+    if(v>Vth_pos){A_pos+=(v-Vth_pos)*dt_ns;if(t<firstPosT)firstPosT=t;}
+    if(v<-Vth_neg){A_neg+=(-v-Vth_neg)*dt_ns;if(t<firstNegT)firstNegT=t;}
+  }
+  // ── Integration area bars (now mutually exclusive: only one fires per Δt) ──
+  // V_FTJ=Vpre(t)−Vpre(t−Δt) is antisymmetric → causal crosses only +V_c⁺ (LTP),
+  // anti-causal crosses only −|V_c⁻| (LTD).  Both bars zero when |Δt|>timing window.
+  // Reference: max A_pos occurs at Δt=τ2; compute numerically at that fixed point.
+  let A_ref=0;
+  {const Vpr_=(t=>-V1*(ss(t,-τ1)-ss(t,0))+V2*(ss(t,0)-ss(t,τ2)));
+   const Vpo_=(t=>Vpr_(t-τ2));
+   for(let k=0;k<=NT;k++){const t=-(600+tOff)+k*Tspan/NT,v=Vpr_(t)-Vpo_(t);if(v>Vth_pos)A_ref+=(v-Vth_pos)*dt_ns;}}
+  A_ref=A_ref||1;
+  const barX=Math.round(w-pr*0.38),barW=10,barCy=cy[2];
+  const barMaxH=Math.round((cy[2]-cy[1])*0.80);
+  const bh_pos=Math.min(A_pos/A_ref,1)*barMaxH;
+  const bh_neg=Math.min(A_neg/A_ref,1)*barMaxH;
+  // Divider line
+  ctx.strokeStyle='rgba(160,180,150,.65)';ctx.lineWidth=.7;
+  ctx.beginPath();ctx.moveTo(barX-barW/2-2,barCy);ctx.lineTo(barX+barW/2+2,barCy);ctx.stroke();
+  // Green bar — LTP (upward); only nonzero for causal Δt
+  if(bh_pos>0.5){
+    ctx.fillStyle=CLTP+'99';ctx.fillRect(barX-barW/2,barCy-bh_pos,barW,bh_pos);
+    ctx.strokeStyle=CLTP;ctx.lineWidth=1;ctx.strokeRect(barX-barW/2,barCy-bh_pos,barW,bh_pos);
+    ctx.fillStyle=CLTP;ctx.font='700 7px Outfit';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText('\u0394G>0',barX,barCy-bh_pos-2);
+  }
+  // Red bar — LTD (downward); only nonzero for anti-causal Δt
+  if(bh_neg>0.5){
+    ctx.fillStyle=CLTD+'99';ctx.fillRect(barX-barW/2,barCy,barW,bh_neg);
+    ctx.strokeStyle=CLTD;ctx.lineWidth=1;ctx.strokeRect(barX-barW/2,barCy,barW,bh_neg);
+    ctx.fillStyle=CLTD;ctx.font='700 7px Outfit';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText('\u0394G<0',barX,barCy+bh_neg+2);
+  }
+  if(bh_pos<=0.5&&bh_neg<=0.5){
+    ctx.fillStyle=CT3;ctx.font='6px Outfit';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('\u0394G\u22480',barX,barCy);
+  }
+  ctx.fillStyle=CT3;ctx.font='7px Outfit';ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText('\u0394G',barX,cy[2]+barMaxH+4);
+
+  // Waveforms
+  fns.forEach((fn,ri)=>{
+    ctx.beginPath();
+    for(let k=0;k<=NT;k++){const t=-(600+tOff)+k*Tspan/NT;k===0?ctx.moveTo(tx(t),cy[ri]-fn(t)*sc):ctx.lineTo(tx(t),cy[ri]-fn(t)*sc);}
+    ctx.strokeStyle=colors[ri];ctx.lineWidth=ri===2?2.2:1.8;ctx.stroke();
+  });
+
+  // Firing-time vertical lines + bottom labels
+  // Vertical lines mark the START of each waveform (t=0 = V_pre start, t=Δt = V_post start)
+  [[-tOff,CO+'99','t=0'],[dtFTJns-tOff,CB+'99','t=Δt']].forEach(([t_fire,col,lbl])=>{
+    const x=tx(t_fire);
+    if(x<pl||x>pl+cw)return;
+    ctx.setLineDash([2,3]);ctx.strokeStyle=col;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,pt);ctx.lineTo(x,h-pb+4);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=col;ctx.font='7px Outfit';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(lbl,x,h-pb+5);
+  });
+
+  // ── Δt sign tag between the two vertical lines ────────────────────────
+  if(Math.abs(dtFTJns)>30){
+    const xL=tx(-tOff),xR=tx(dtFTJns-tOff);
+    const tagX=(xL+xR)/2;
+    // Position: in gap between V_post and V_FTJ rows
+    const tagY=pt+rowH_pre*2+rowH_ftj*0.12;
+    const tagTxt=dtFTJns>0?'\u0394t > 0':'\u0394t < 0';
+    const tagCol=dtFTJns>0?CLTP:CLTD;
+    ctx.font='700 8px Outfit';
+    const tw2=ctx.measureText(tagTxt).width;
+    const tp=6,tr=4;
+    ctx.fillStyle=tagCol+'1a';
+    ctx.beginPath();ctx.roundRect(tagX-tw2/2-tp,tagY-7,tw2+tp*2,14,tr);ctx.fill();
+    ctx.strokeStyle=tagCol+'66';ctx.lineWidth=.8;
+    ctx.beginPath();ctx.roundRect(tagX-tw2/2-tp,tagY-7,tw2+tp*2,14,tr);ctx.stroke();
+    ctx.fillStyle=tagCol;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(tagTxt,tagX,tagY);
+  }
+
+  // Dot only on V_post (ri===1) — marks when V_post starts
+  {
+    const t_dot=dtFTJns-tOff;if(t_dot>=-(600+tOff)&&t_dot<=600-tOff){
+      ctx.beginPath();ctx.arc(tx(t_dot),cy[1]-fns[1](t_dot)*sc,4.5,0,Math.PI*2);
+      ctx.fillStyle=colors[1];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    }
+  }
+
+  // Subscript labels
+  const fillSub=(main,sub,x,y,sz,col)=>{
+    ctx.fillStyle=col;ctx.font=`700 ${sz}px IBM Plex Mono`;ctx.textBaseline='alphabetic';
+    ctx.fillText(main,x,y);const mw=ctx.measureText(main).width;
+    ctx.font=`500 ${Math.round(sz*.72)}px IBM Plex Mono`;ctx.fillText(sub,x+mw,y+sz*.22);
+  };
+  [[CO,'V','pre'],[CB,'V','post'],[CFTJ,'V','FTJ']].forEach(([col,main,sub],ri)=>{
+    ctx.textAlign='left';fillSub(main,sub,pl+3,cy[ri]-rowH_pre*0.38,8,col);
+  });
+
+  // Drag handle on V_post row
+  // ew-resize cursor (set in pointer handler) is sufficient affordance for dragging
+
+  // Outcome label — note that for |Δt| < τ, both LTP and LTD interactions coexist
+  const vSamp=Array.from({length:NT+1},(_,k)=>Vftj(-(600+tOff)+k*Tspan/NT));
+  const hasPos=vSamp.some(v=>v>Vth_pos),hasNeg=vSamp.some(v=>v<-Vth_neg);
+
+  // ── Switch announcement pill: appears in V_FTJ row at threshold level ──────
+  if(hasPos||hasNeg){
+    const switchTxt=hasPos?'⇒ SWITCH TO LRS':'⇒ SWITCH TO HRS';
+    const switchCol=hasPos?CLTP:CLTD;
+    // Position: center of V_FTJ row, at the threshold level being crossed
+    // Offset pill above/below threshold line; shift left clear of threshold labels
+    // Place pill just beyond waveform peak to avoid overlap
+    const _peakY=(V1+V2)*sc+9;
+    const pillY=hasPos?cy[2]-_peakY:cy[2]+_peakY;
+    ctx.font='700 8.5px Outfit';
+    const _tw=ctx.measureText(switchTxt).width;
+    const pillX=pl+cw-_tw/2-54; // shifted left to clear threshold labels
+    const tw=_tw;
+    const ph=14,pw=tw+14,pr2=5;
+    // Pill background
+    ctx.fillStyle=switchCol+'22';
+    ctx.beginPath();ctx.roundRect(pillX-pw/2,pillY-ph/2,pw,ph,pr2);ctx.fill();
+    ctx.strokeStyle=switchCol+'88';ctx.lineWidth=1;
+    ctx.beginPath();ctx.roundRect(pillX-pw/2,pillY-ph/2,pw,ph,pr2);ctx.stroke();
+    // Pill text
+    ctx.fillStyle=switchCol;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(switchTxt,pillX,pillY);
+  }
+  let lbl,lcol;
+  if(hasPos&&!hasNeg){lbl='\u0394G > 0 — LTP  (post after pre: positive overlap)';lcol=CLTP;}
+  else if(hasNeg&&!hasPos){lbl='\u0394G < 0 — LTD  (post before pre: negative overlap)';lcol=CLTD;}
+  else if(!hasPos&&!hasNeg){lbl='no switching — |\u0394t| exceeds timing window';lcol=CT3;}
+  else{
+    const firstPos=vSamp.findIndex(v=>v>Vth_pos);
+    const firstNeg=vSamp.findIndex(v=>v<-Vth_neg);
+    lbl='mixed (|\u0394t| \u2248 0)';lcol=CT3;
+  }
+  ctx.fillStyle=lcol;ctx.font='700 10px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+  ctx.fillText(lbl,pl+cw/2,h-8);
+}
+
+// ── Mini STDP curve ─────────────────────────────────────────────────────────
+function drawMiniSTDP(){
+  const H=158;const r=gc('cvMiniSTDP',H);if(!r)return;
+  const{ctx,w,h}=r;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const pl=14,pr=56,pt=24,pb=34,cw=w-pl-pr,ch=h-pt-pb;
+  const dtRange=600,dtScale=cw/(2*dtRange);
+  const ttx=dt=>pl+(dt+dtRange)*dtScale;
+  // Give each side 1.30× headroom
+  const scaleMax=Math.max(AP,AM)*1.30;
+  const sc=ch*0.5/scaleMax;
+  const ty=dg=>pt+ch*0.5-dg*sc;
+  const yZero=pt+ch*0.5;
+  // Zero line
+  ctx.strokeStyle='rgba(200,216,184,.6)';ctx.lineWidth=.5;
+  ctx.beginPath();ctx.moveTo(pl,yZero);ctx.lineTo(pl+cw,yZero);ctx.stroke();
+  // Shade
+  const N=400;
+  // Active-region fills: only color columns where |ΔG| > threshold (creates vertical bars)
+  const fillEps=AP*0.03;
+  let runStart=null,runSign=0;
+  const flushRun=(endPx)=>{
+    if(runStart===null)return;
+    ctx.fillStyle=runSign>0?'rgba(0,119,187,.13)':'rgba(238,119,51,.13)';
+    ctx.fillRect(pl+runStart,pt,endPx-runStart,ch);
+    runStart=null;runSign=0;
+  };
+  for(let px=0;px<=cw;px++){
+    const dt=-dtRange+2*dtRange*px/cw,dg=stdpDG(dt);
+    const s=dg>fillEps?1:dg<-fillEps?-1:0;
+    if(s!==runSign){flushRun(px);if(s!==0){runStart=px;runSign=s;}}
+  }
+  flushRun(cw);
+  // Curve
+  ctx.beginPath();
+  for(let k=0;k<=N;k++){
+    const dt=-dtRange+2*dtRange*k/N,dg=stdpDG(dt);
+    k===0?ctx.moveTo(ttx(dt),ty(dg)):ctx.lineTo(ttx(dt),ty(dg));
+  }
+  ctx.strokeStyle=CT3;ctx.lineWidth=1.8;ctx.stroke();
+  // Current Δt dot — clamp to chart area
+  const curDG=stdpDG(dtFTJns);
+  const dotCol=curDG>0?CLTP:curDG<0?CLTD:CT3;
+  ctx.beginPath();ctx.arc(ttx(dtFTJns),Math.max(pt+5,Math.min(pt+ch-5,ty(curDG))),5,0,Math.PI*2);
+  ctx.fillStyle=dotCol;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  // Region labels — adaptive: inside when bar is wide enough, outside when narrow
+  let ltpCx=null,ltdCx=null,ltpW=0,ltdW=0;
+  for(let px=0;px<=cw;px++){
+    const dt=-dtRange+2*dtRange*px/cw,dg=stdpDG(dt);
+    if(dg>fillEps){if(ltpCx===null)ltpCx=pl+px;ltpW++;}
+    else if(dg<-fillEps){if(ltdCx===null)ltdCx=pl+px;ltdW++;}
+  }
+  const lblY=(pt+yZero)/2; // fallback: vertically centred (used when outside bar)
+  ctx.font='700 9px Outfit';
+  if(ltdCx!==null&&ltdW>5){
+    const tw=ctx.measureText('weaken (LTD)').width;
+    ctx.fillStyle=CLTD;
+    if(ltdW>=tw+10){ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('weaken (LTD)',ltdCx+ltdW/2,pt);}
+    else{ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText('weaken (LTD)',ltdCx-4,lblY);}
+  }
+  if(ltpCx!==null&&ltpW>5){
+    const tw=ctx.measureText('strengthen (LTP)').width;
+    ctx.fillStyle=CLTP;
+    if(ltpW>=tw+10){ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('strengthen (LTP)',ltpCx+ltpW/2,pt);}
+    else{ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('strengthen (LTP)',ltpCx+ltpW+4,lblY);}
+  }
+  // Vertical line at Δt=0
+  ctx.strokeStyle='rgba(120,140,120,.45)';ctx.lineWidth=.8;
+  ctx.beginPath();ctx.moveTo(ttx(0),pt);ctx.lineTo(ttx(0),pt+ch);ctx.stroke();
+  // ΔG axis label
+  ctx.fillStyle=CT3;ctx.font='7px Outfit';ctx.textAlign='right';ctx.textBaseline='middle';
+  ctx.fillText('\u0394G',pl-2,yZero);
+  // Tick marks anchored to bottom border — below the curve at all times
+  const tickY=h-pb;
+  [-400,-200,0,200,400].forEach(dt=>{
+    const x=ttx(dt);
+    ctx.strokeStyle='rgba(160,190,140,.7)';ctx.lineWidth=.5;
+    ctx.beginPath();ctx.moveTo(x,tickY);ctx.lineTo(x,tickY+4);ctx.stroke();
+    ctx.fillStyle=CT3;ctx.font='6.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='top';
+    ctx.fillText(dt===0?'0':(dt>0?'+':'')+dt,x,tickY+5);
+  });
+  // Δt axis label
+  ctx.fillStyle=CT3;ctx.font='7px Outfit';ctx.textAlign='center';ctx.textBaseline='bottom';
+  ctx.fillText('\u0394t (ns)',pl+cw/2,h-2);
+}
+
+function drawNeuronSchematic(){
+  const H=190;const r=gc('cvNeuron',H);if(!r)return;
+  const{ctx,w,h}=r;ctx.clearRect(0,0,w,h);ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);
+  const nSyn=3,inX=Math.round(w*.08),ftjX=Math.round(w*.26),sumX=Math.round(w*.47);
+  const ampX=Math.round(w*.63),outX=Math.round(w*.84);
+  const synY=[Math.round(h*.22),Math.round(h*.5),Math.round(h*.78)],midY=Math.round(h*.5);
+  const nodeR=11,ftjW=24,ftjH=14;
+  synY.forEach((y,i)=>{
+    ctx.strokeStyle='rgba(150,180,130,.7)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(inX+nodeR,y);ctx.lineTo(ftjX,y);ctx.stroke();
+    ctx.beginPath();ctx.arc(inX,y,nodeR,0,Math.PI*2);ctx.fillStyle='rgba(45,90,27,.12)';ctx.fill();ctx.strokeStyle=CG;ctx.lineWidth=1.8;ctx.stroke();
+    ctx.fillStyle=CG;ctx.font='700 8.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('x'+(i+1),inX,y);
+    ctx.fillStyle='rgba(224,123,57,.12)';ctx.strokeStyle=CO;ctx.lineWidth=1.8;ctx.fillRect(ftjX,y-ftjH/2,ftjW,ftjH);ctx.strokeRect(ftjX,y-ftjH/2,ftjW,ftjH);
+    ctx.strokeStyle=CO;ctx.lineWidth=1.1;ctx.beginPath();
+    const xs=[0,5,10,15,20];xs.forEach((dx,ii)=>{ii===0?ctx.moveTo(ftjX+dx,y+ftjH/2):ctx.lineTo(ftjX+dx,y+(ii%2===0?ftjH/2:-ftjH/2));});ctx.stroke();
+    ctx.fillStyle=CO;ctx.font='600 6.5px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='bottom';
+    ctx.fillText('w'+(i+1)+'\u2C7C',ftjX+ftjW/2,y-ftjH/2-1);
+    ctx.strokeStyle='rgba(150,180,130,.7)';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(ftjX+ftjW,y);ctx.lineTo(sumX,y);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(sumX,y);ctx.lineTo(sumX,midY);ctx.stroke();
+  });
+  ctx.strokeStyle='rgba(150,180,130,.8)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(sumX,synY[0]);ctx.lineTo(sumX,synY[2]);ctx.stroke();
+  const capY=synY[2]+18,capW=20;
+  ctx.strokeStyle=CO;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(sumX,synY[2]);ctx.lineTo(sumX,capY);ctx.stroke();
+  [0,8].forEach(dy=>{ctx.beginPath();ctx.moveTo(sumX-capW/2,capY+dy);ctx.lineTo(sumX+capW/2,capY+dy);ctx.stroke();});
+  ctx.beginPath();ctx.moveTo(sumX,capY+8);ctx.lineTo(sumX,capY+16);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(sumX-8,capY+16);ctx.lineTo(sumX+8,capY+16);ctx.stroke();
+  ctx.fillStyle=CO;ctx.font='600 7px Outfit';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText('C (soma)',sumX+10,capY+4);
+  ctx.strokeStyle='rgba(150,180,130,.8)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(sumX,midY);ctx.lineTo(ampX-20,midY);ctx.stroke();
+  const aH=34;
+  ctx.beginPath();ctx.moveTo(ampX-20,midY-aH/2);ctx.lineTo(ampX-20,midY+aH/2);ctx.lineTo(ampX+14,midY);ctx.closePath();
+  ctx.fillStyle='rgba(16,64,200,.1)';ctx.fill();ctx.strokeStyle=CB;ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(ampX+18,midY,4,0,Math.PI*2);ctx.strokeStyle=CB;ctx.lineWidth=1.5;ctx.stroke();ctx.fillStyle='#fff';ctx.fill();
+  ctx.fillStyle=CB;ctx.font='600 8px IBM Plex Mono';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('\u2212A',ampX-4,midY);
+  ctx.strokeStyle=CB;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(ampX+22,midY);ctx.lineTo(outX-16,midY);ctx.stroke();
+  const sx=outX-16,spkH=18;
+  ctx.beginPath();ctx.moveTo(sx,midY);ctx.lineTo(sx+3,midY);ctx.lineTo(sx+5,midY-spkH);ctx.lineTo(sx+8,midY+spkH);ctx.lineTo(sx+10,midY);ctx.lineTo(sx+14,midY);ctx.stroke();
+  drawArrow(ctx,outX,midY,outX+16,midY,CB,2,7);
+  ctx.fillStyle=CB;ctx.font='700 8px Outfit';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('V_post',outX+8,midY-4);
+  [[inX,'pre-synaptic\ninputs',CG],[ftjX+ftjW/2,'FTJ synapses\n(weight \xd7 input)',CO],[sumX,'soma\n(\u222b currents)',CO],[ampX-3,'axon\n(invert + buffer)',CB]].forEach(([x,lbl,col])=>{
+    ctx.fillStyle=col+'cc';ctx.font='600 6.5px Outfit';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+    lbl.split('\n').forEach((l,i)=>ctx.fillText(l,x,h-3-i*9));
+  });
+}
+
 </script>
 <footer id="course-nav-footer" style="margin-top:0;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;">
   <div style="max-width:960px;margin:0 auto;padding:0.75rem 0 0 1rem;">
