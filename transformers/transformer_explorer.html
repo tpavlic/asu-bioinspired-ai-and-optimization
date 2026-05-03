@@ -686,6 +686,7 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># Encoder-only forward pass (BERT-style)</span>
 <span style="color:#7FBB5A"># Input: token indices [N]   Output: N contextual vectors in R^d</span>
 <span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
+<span style="color:#7FBB5A"># .T denotes matrix/vector transpose (M.T is Mᵀ, as in NumPy/PyTorch)</span>
 
 def encoder_forward(tokens, E, W_pos, layers):
     x = E[tokens] + W_pos[:len(tokens)]  <span style="color:#7FBB5A"># embed + positional encoding  (N, d)</span>
@@ -709,6 +710,7 @@ def encoder_forward(tokens, E, W_pos, layers):
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># Decoder-only forward pass (GPT-style)</span>
 <span style="color:#7FBB5A"># Input: token indices [N]   Output: probability distribution over vocab</span>
 <span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
+<span style="color:#7FBB5A"># .T denotes matrix/vector transpose (M.T is Mᵀ, as in NumPy/PyTorch)</span>
 
 def decoder_forward(tokens, E, W_pos, layers):
     x    = E[tokens] + W_pos[:len(tokens)]           <span style="color:#7FBB5A"># (N, d)</span>
@@ -725,7 +727,7 @@ def decoder_forward(tokens, E, W_pos, layers):
         <span style="color:#7FBB5A"># — Feed-Forward Network —</span>
         x = layer_norm(x + relu(x@W_1+b_1)@W_2+b_2)
 
-    logits = x[-1] @ E.T     <span style="color:#7FBB5A"># project last token only (weight tying)</span>
+    logits = x[-1] @ E.T     <span style="color:#7FBB5A"># project last token only (re-use E — weight tying)</span>
     return softmax(logits)   <span style="color:#7FBB5A"># probability over next token</span>
 
 <span style="color:#7FBB5A"># Inference: sample(decoder_forward(tokens)) → append → repeat until [EOS]</span>
@@ -735,6 +737,7 @@ def decoder_forward(tokens, E, W_pos, layers):
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># Encoder-Decoder forward pass (T5/BART-style)</span>
 <span style="color:#7FBB5A"># source_tokens: source sequence [N]   target_tokens: target so far [M]</span>
 <span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
+<span style="color:#7FBB5A"># .T denotes matrix/vector transpose (M.T is Mᵀ, as in NumPy/PyTorch)</span>
 
 def enc_dec_forward(source_tokens, target_tokens, E, W_pos, enc_layers, dec_layers,
                     W_Q_x, W_K_x, W_V_x, W_O_x):  <span style="color:#7FBB5A"># cross-attn weights (part of decoder)</span>
@@ -1041,6 +1044,7 @@ def enc_dec_forward(source_tokens, target_tokens, E, W_pos, enc_layers, dec_laye
     <div id="sscode-mlm">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># MLM pre-training loop (BERT-style)</span>
 <span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
+<span style="color:#7FBB5A"># .T denotes matrix/vector transpose (M.T is Mᵀ, as in NumPy/PyTorch)</span>
 
 <span style="color:#7FBB5A"># For each sequence in corpus:</span>
 for sequence in corpus:
@@ -1072,6 +1076,7 @@ for sequence in corpus:
     <div id="sscode-clm" style="display:none">
 <pre style="background:#1C2B12;color:#D4E8C2;border-radius:10px;padding:16px;font-size:.76rem;line-height:1.7;overflow-x:auto;font-family:'IBM Plex Mono',monospace"><span style="color:#7FBB5A"># CLM pre-training loop (GPT-style)</span>
 <span style="color:#7FBB5A"># @ denotes matrix multiplication (as in NumPy/PyTorch)</span>
+<span style="color:#7FBB5A"># .T denotes matrix/vector transpose (M.T is Mᵀ, as in NumPy/PyTorch)</span>
 
 <span style="color:#7FBB5A"># For each sequence in corpus:</span>
 for sequence in corpus:
