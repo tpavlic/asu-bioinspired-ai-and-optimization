@@ -38,8 +38,7 @@
   --font:'Outfit',sans-serif;--mono:'IBM Plex Mono',monospace;
 }
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.65;min-height:100vh}
-/* HEADER */
-header{background:var(--green);color:#fff;padding:15px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+/* HEADER — background full-width, content constrained via .page-inner */
 header h1{font-size:1.1rem;font-weight:600;letter-spacing:.01em}
 header .copy{font-family:var(--mono);font-size:.68rem;opacity:.65;text-align:right}
 .copy-br{display:none}
@@ -47,9 +46,14 @@ header .copy{font-family:var(--mono);font-size:.68rem;opacity:.65;text-align:rig
   .copy-sep{display:none}.copy-br{display:inline}
   header .copy{width:100%}footer .copy-mit{display:block}
 }
+/* PAGE INNER — same max-width as main, applied inside full-bleed sections */
+.page-inner{max-width:1080px;margin:0 auto;width:100%}
+/* HEADER */
+header{background:var(--green);color:#fff;padding:15px 32px}
+header .page-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 /* FRAMING */
 .framing{background:#1c3010;color:rgba(255,255,255,.84);padding:18px 32px 16px;border-bottom:3px solid var(--accent)}
-.framing p{font-size:.87rem;line-height:1.72;max-width:900px}
+.framing p{font-size:.87rem;line-height:1.72}
 .framing strong{color:#fff;font-weight:600}
 .framing-steps{display:flex;gap:0;margin-top:14px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.12);padding-top:12px}
 .framing-step{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:200px;padding:8px 16px 8px 6px;cursor:pointer;border-radius:5px;transition:background .18s,box-shadow .18s;user-select:none}
@@ -204,26 +208,30 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
 <body>
 
 <header>
-  <h1>Toward Multimodal AI</h1>
-  <span class="copy"><span class="copy-author">© 2026 Theodore P. Pavlic</span><span class="copy-sep"> · </span><br class="copy-br"><span class="copy-mit">MIT License</span></span>
+  <div class="page-inner">
+    <h1>Toward Multimodal AI</h1>
+    <span class="copy"><span class="copy-author">© 2026 Theodore P. Pavlic</span><span class="copy-sep"> · </span><br class="copy-br"><span class="copy-mit">MIT License</span></span>
+  </div>
 </header>
 
 <div class="framing">
-  <p>Large multimodal models — systems that can see images and read text and reason across both — did not emerge all at once.
-  They rest on three ideas built in sequence: a way to turn a visual scene into a flexible token-based representation; a way to train image and text encoders to share a common semantic space; and the insight that once visual information is in that space, a language model's reasoning machinery applies unchanged.
-  This module builds that story from the ground up.</p>
-  <div class="framing-steps">
-    <div class="framing-step active" onclick="switchTab(0)">
-      <div class="fstep-num">1</div>
-      <div class="fstep-text"><strong>From Pixels to Tokens</strong><br>Why the shift from CNNs to Vision Transformers was necessary — and what the <strong>[CLS] token</strong> is.</div>
-    </div>
-    <div class="framing-step" onclick="switchTab(1)">
-      <div class="fstep-num">2</div>
-      <div class="fstep-text"><strong>Joint Embedding Spaces</strong><br>How contrastive training (CLIP) maps images and text into a shared geometry where <strong>cosine similarity equals semantic similarity</strong>.</div>
-    </div>
-    <div class="framing-step" onclick="switchTab(2)">
-      <div class="fstep-num">3</div>
-      <div class="fstep-text"><strong>Multimodal Reasoning</strong><br>How visual tokens are projected into the <strong>same space as text tokens</strong> so a language model's attention can reason over both.</div>
+  <div class="page-inner">
+    <p>Large multimodal models — systems that can see images and read text and reason across both — did not emerge all at once.
+    They rest on three ideas built in sequence: a way to turn a visual scene into a flexible token-based representation; a way to train image and text encoders to share a common semantic space; and the insight that once visual information is in that space, a language model's reasoning machinery applies unchanged.
+    This module builds that story from the ground up.</p>
+    <div class="framing-steps">
+      <div class="framing-step active" onclick="switchTab(0)">
+        <div class="fstep-num">1</div>
+        <div class="fstep-text"><strong>From Pixels to Tokens</strong><br>Why the shift from CNNs to Vision Transformers was necessary — and what the <strong>[CLS] token</strong> is.</div>
+      </div>
+      <div class="framing-step" onclick="switchTab(1)">
+        <div class="fstep-num">2</div>
+        <div class="fstep-text"><strong>Joint Embedding Spaces</strong><br>How contrastive training (CLIP) maps images and text into a shared geometry where <strong>cosine similarity equals semantic similarity</strong>.</div>
+      </div>
+      <div class="framing-step" onclick="switchTab(2)">
+        <div class="fstep-num">3</div>
+        <div class="fstep-text"><strong>Multimodal Reasoning</strong><br>How visual tokens are projected into the <strong>same space as text tokens</strong> so a language model's attention can reason over both.</div>
+      </div>
     </div>
   </div>
 </div>
@@ -320,6 +328,16 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     The resulting space has a remarkable property: <strong>cosine similarity measures semantic proximity</strong>.
     A photograph of a dog and the phrase "a dog" are angularly close; a photograph and "a red sports car" are angularly far apart.
     This geometry enables zero-shot classification — and, as Tab 3 shows, it makes multimodal reasoning tractable.
+  </p>
+
+  <div class="arch-wrap" style="margin-bottom:14px;">
+    <canvas id="clip-train-canvas" style="width:100%;display:block;"></canvas>
+    <p style="font-size:.76rem;color:var(--muted);margin:8px 4px 0;line-height:1.55;border-top:1px solid var(--border);padding-top:8px;">
+      <strong style="color:var(--green);">InfoNCE loss:</strong> per batch of N image–caption pairs, N embeddings are pulled together (positives on the diagonal) while N²−N cross-pairs are pushed apart — gradient updates flow back through <em>both</em> encoders simultaneously.
+    </p>
+  </div>
+  <p style="font-size:.80rem;color:var(--muted);margin-bottom:16px;line-height:1.65;">
+    CLIP is itself a pair of transformers trained jointly. A ViT encodes images; a text transformer encodes captions. The ViT prepends a learnable <strong>[CLS] token</strong> to the patch sequence; its output embedding represents the whole image. The text encoder uses a causal language model (like GPT) and takes the embedding at the <strong>[EOS] (end-of-sequence) position</strong> instead — serving the same purpose as [CLS] but naturally suited to left-to-right architectures where no token precedes the sequence. Both encoders are trained end-to-end with a shared InfoNCE contrastive loss — neither is frozen. Gradients from the loss flow back through both networks simultaneously, shaping each encoder's internal representations until matching image–text pairs land at the same location in the joint embedding space. The shared geometry that results is what you are exploring below.
   </p>
 
   <div class="mode-toggle">
@@ -477,6 +495,12 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     <p style="margin-top:8px;">The projection is also the <strong>only component being trained</strong> during multimodal adaptation. The ViT (CLIP pretrained) is frozen. The entire LLM — including its embedding table — is frozen. Backpropagation on image–caption generation tasks sends gradients backward through the frozen LLM layers into the projected visual embeddings, and those gradients update the projection matrix. It learns to produce whatever continuous vectors make the frozen LLM generate accurate text about image content — not "find the nearest vocabulary token," but find the point in 4,096-D space that best serves the downstream task.</p>
   </div>
 
+  <div class="card" style="margin-bottom:22px;border-left:4px solid var(--accent);">
+    <h3 style="font-size:.93rem;font-weight:600;color:var(--green);margin-bottom:9px;">Beyond the adapter paradigm: native multimodal pretraining</h3>
+    <p style="font-size:.82rem;line-height:1.70;">The architecture shown above — frozen ViT + frozen LLM + thin learned projection — is sometimes called the <strong>adapter</strong> or <strong>late-fusion</strong> approach (exemplified by LLaVA, BLIP-2, and early GPT-4V). It is pedagogically clean: the visual and language components are trained separately, then connected by a small adapter trained on image–instruction data.</p>
+    <p style="font-size:.82rem;line-height:1.70;margin-top:8px;">Frontier models have increasingly moved toward a different paradigm: <strong>native multimodal pretraining</strong>, where image patches and text tokens are treated as first-class inputs in a single joint context window from the start of pretraining. Rather than relying on an external CLIP encoder to produce visual embeddings that are then projected into the LLM, these models use their own patch embedding layer to convert image regions directly into embedding vectors — the same kind of continuous vectors that text tokens produce — and interleave them with text in one sequence during both pretraining and inference. Flamingo (2022) introduced large-scale image–text interleaving; Gemini (2023) and subsequent models were trained natively multimodal from scratch on this mixed data. This produces richer cross-modal grounding but requires vastly more compute and carefully curated interleaved datasets. The adapter approach in this tab remains widely used for smaller-scale systems and for fine-tuning existing LLMs on visual tasks.</p>
+  </div>
+
   <div class="refs">
     <div class="refs-title">References</div>
     <ol>
@@ -525,8 +549,189 @@ function cosSim(ax,ay,bx,by){const d=ax*bx+ay*by,ma=Math.sqrt(ax*ax+ay*ay),mb=Ma
 function stableNoise(a,b,c,d){return(((a*7+b*13+c*29+d*37)*2654435761)>>>0)/4294967296;}
 
 /* ═══════════════════════════════
-   TAB SWITCHING
+   TAB 1 — CLIP TRAINING DIAGRAM
 ═══════════════════════════════ */
+function drawClipTrain(){
+  const canvas=document.getElementById('clip-train-canvas');
+  if(!canvas) return;
+  const W=canvas.getBoundingClientRect().width;
+  if(!W) return;
+
+  const G=Math.min(W/22,28);
+
+  // Sizes
+  const encW=Math.min(G*3.0,W*0.14);
+  const encH=G*2.4;
+  const simW=Math.max(G*2.2,W*0.09);
+  const simH=simW;
+  const lossW=Math.max(G*2.6,W*0.10);
+  const lossH=G*2.2;
+  const arrowClear=G*1.5;
+
+  // H computed from content — no excess
+  const topPad=G*1.6;   // room for "Use as ViT loss" label + spacing above
+  const botPad=G*1.6;   // room for "Use as Text Transformer loss" label + spacing below
+  const encGap=G*4.0;
+  const H=Math.ceil(topPad + 2*arrowClear + encH + encGap + botPad);
+
+  const dpr=window.devicePixelRatio||1;
+  canvas.style.height=H+'px';
+  canvas.width=Math.round(W*dpr);
+  canvas.height=Math.round(H*dpr);
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle='#F0EBE0';ctx.fillRect(0,0,W,H);
+
+  const imgCol='#C46428',txtCol='#243D18',simCol='#2E6B8A',lossCol='#7A5830';
+  const backCol='rgba(36,61,24,0.52)';
+
+  // Y positions — anchored from topPad
+  const vitAboveY=topPad;
+  const vitCtrY=vitAboveY+arrowClear+encH/2;
+  const vitY=vitCtrY-encH/2;
+  const txtCtrY=vitCtrY+encGap;
+  const txtY=txtCtrY-encH/2;
+  const lossCy=(vitCtrY+txtCtrY)/2;
+  const simCy=lossCy;
+  const simY=simCy-simH/2;
+  const lossY=lossCy-lossH/2;
+  const txtBelowY=txtY+encH+arrowClear;
+
+  // X positions — shifted right, direct W-proportions, smaller right gap
+  const thX=W*0.05;
+  const encX=W*0.30;
+  const encCx=encX+encW/2;
+  const simX=W*0.57;
+  const simCx=simX+simW/2;
+  const lossX=W*0.72;
+  const rightLoop=W*0.94;
+
+  // ── Helpers ──────────────────────────────────────────────
+  function box(x,y,w,h,fill,label,sub){
+    rRect(ctx,x,y,w,h,5);ctx.fillStyle=fill;ctx.fill();
+    ctx.save();ctx.beginPath();ctx.rect(x+2,y+2,w-4,h-4);ctx.clip();
+    let fs=Math.min(G*0.82,11.5);
+    ctx.font=`bold ${fs}px Outfit,sans-serif`;
+    while(ctx.measureText(label).width>w-8&&fs>5){fs-=0.5;ctx.font=`bold ${fs}px Outfit,sans-serif`;}
+    ctx.fillStyle='#fff';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(label,x+w/2,sub?y+h/2-G*0.42:y+h/2);
+    if(sub){
+      let sfs=Math.min(G*0.62,9);ctx.font=`${sfs}px Outfit,sans-serif`;
+      ctx.globalAlpha=0.85;ctx.fillText(sub,x+w/2,y+h/2+G*0.50);ctx.globalAlpha=1;
+    }
+    ctx.restore();
+  }
+  function solidArrow(x1,y1,x2,y2,col){
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=col;ctx.lineWidth=2.2;ctx.stroke();
+    const ang=Math.atan2(y2-y1,x2-x1),as=9;
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-as*Math.cos(ang-0.4),y2-as*Math.sin(ang-0.4));
+    ctx.lineTo(x2-as*Math.cos(ang+0.4),y2-as*Math.sin(ang+0.4));
+    ctx.closePath();ctx.fillStyle=col;ctx.fill();
+  }
+  function line(x1,y1,x2,y2,col){
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.strokeStyle=col;ctx.lineWidth=2.2;ctx.stroke();
+  }
+  function polyDash(pts,col){
+    ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+    for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+    ctx.setLineDash([5,4]);ctx.strokeStyle=col;ctx.lineWidth=1.9;ctx.stroke();ctx.setLineDash([]);
+  }
+  function dashedArrow(x1,y1,x2,y2,col){
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+    ctx.setLineDash([5,4]);ctx.strokeStyle=col;ctx.lineWidth=1.9;ctx.stroke();ctx.setLineDash([]);
+    const ang=Math.atan2(y2-y1,x2-x1),as=9;
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-as*Math.cos(ang-0.4),y2-as*Math.sin(ang-0.4));
+    ctx.lineTo(x2-as*Math.cos(ang+0.4),y2-as*Math.sin(ang+0.4));
+    ctx.closePath();ctx.fillStyle=col;ctx.fill();
+  }
+  function lbl(x,y,text,col,sz,align,base){
+    ctx.fillStyle=col;ctx.font=`${sz||10}px Outfit,sans-serif`;
+    ctx.textAlign=align||'center';ctx.textBaseline=base||'top';ctx.fillText(text,x,y);
+  }
+  function clsTag(x,y,tag,col){
+    const fs=Math.min(G*0.65,9);
+    ctx.font=`${fs}px IBM Plex Mono,monospace`;
+    const text='+ '+tag;
+    const tw=ctx.measureText(text).width;
+    ctx.fillStyle=hexAlpha(col,0.12);
+    rRect(ctx,x-tw/2-4,y-fs*0.75,tw+8,fs*1.5,2);ctx.fill();
+    ctx.strokeStyle=hexAlpha(col,0.35);ctx.lineWidth=0.9;ctx.stroke();
+    ctx.fillStyle=col;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y);
+  }
+
+  // ── Inputs ───────────────────────────────────────────────
+  const thSz=Math.min(G*1.9,encH*0.88);
+  const thY=vitCtrY-thSz/2;
+  const pSz=thSz*0.46,pGap=thSz*0.06;
+  [[3,3],[13,2],[7,9],[3,12]].forEach(([sx,sy],i)=>{
+    ctx.fillStyle=getLandscapeColor(sx,sy);
+    ctx.fillRect(thX+(i%2)*(pSz+pGap),thY+Math.floor(i/2)*(pSz+pGap),pSz,pSz);
+  });
+  ctx.strokeStyle=hexAlpha(imgCol,0.55);ctx.lineWidth=1.2;
+  ctx.strokeRect(thX-1,thY-1,thSz+2,thSz+2);
+  lbl(thX+thSz/2,thY-G*0.72,'IMAGE',imgCol,Math.min(G*0.70,10),'center','bottom');
+
+  const tagVitX=thX+thSz+G*0.85;
+  clsTag(tagVitX,vitCtrY,'[CLS]',imgCol);
+  solidArrow(tagVitX+G*0.82,vitCtrY,encX,vitCtrY,imgCol);
+
+  const capW=Math.min(G*2.5,thSz*1.05),capH=G*1.6;
+  const capX=thX,capY=txtCtrY-capH/2;
+  ctx.fillStyle=hexAlpha(txtCol,0.08);
+  rRect(ctx,capX,capY,capW,capH,4);ctx.fill();
+  ctx.strokeStyle=hexAlpha(txtCol,0.22);ctx.lineWidth=0.9;ctx.stroke();
+  let capFs=Math.min(G*0.62,8.5);
+  const capText='"a dog on a lawn"';
+  ctx.font=`${capFs}px Outfit,sans-serif`;
+  while(ctx.measureText(capText).width>capW-6&&capFs>5){capFs-=0.5;ctx.font=`${capFs}px Outfit,sans-serif`;}
+  ctx.fillStyle=txtCol;ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(capText,capX+capW/2,capY+capH/2);
+  lbl(capX+capW/2,capY-G*0.72,'CAPTION',txtCol,Math.min(G*0.70,10),'center','bottom');
+
+  const tagTxtX=capX+capW+G*0.85;
+  clsTag(tagTxtX,txtCtrY,'[EOS]',txtCol);
+  solidArrow(tagTxtX+G*0.82,txtCtrY,encX,txtCtrY,txtCol);
+
+  // ── Encoders ─────────────────────────────────────────────
+  box(encX,vitY,encW,encH,imgCol,'ViT','Encoder');
+  box(encX,txtY,encW,encH,txtCol,'Text Transformer','Encoder');
+
+  // ── Right-angle paths to cosine sim ──────────────────────
+  // Horizontal (no arrowhead), then vertical arrow into sim top/bottom
+  const embLblX=encX+encW+(simCx-encX-encW)*0.55;
+  line(encX+encW,vitCtrY,simCx,vitCtrY,imgCol);
+  solidArrow(simCx,vitCtrY,simCx,simY,imgCol);
+  lbl(embLblX,vitCtrY-G*0.30,'[CLS] embedding',imgCol,Math.min(G*0.58,8.5),'center','bottom');
+
+  line(encX+encW,txtCtrY,simCx,txtCtrY,txtCol);
+  solidArrow(simCx,txtCtrY,simCx,simY+simH,txtCol);
+  lbl(embLblX,txtCtrY+G*0.30,'[EOS] embedding',txtCol,Math.min(G*0.58,8.5),'center','top');
+
+  // ── Cosine sim → InfoNCE ─────────────────────────────────
+  box(simX,simY,simW,simH,simCol,'cosine','similarity');
+  solidArrow(simX+simW,simCy,lossX,lossCy,simCol);
+
+  // ── InfoNCE Loss ─────────────────────────────────────────
+  box(lossX,lossY,lossW,lossH,lossCol,'InfoNCE','Loss');
+
+  // ── Backprop feedback loops ───────────────────────────────
+  const trunkX=lossX+lossW+W*0.022;
+  polyDash([[lossX+lossW,lossCy],[trunkX,lossCy]],backCol);
+
+  // TOP: right → up → label → down arrow into ViT top
+  polyDash([[trunkX,lossCy],[rightLoop,lossCy],[rightLoop,vitAboveY],[encCx,vitAboveY]],backCol);
+  dashedArrow(encCx,vitAboveY,encCx,vitY,backCol);
+  lbl((rightLoop+encCx)/2,vitAboveY-G*0.30,'Use as ViT loss',backCol,Math.min(G*0.65,9.5),'center','bottom');
+
+  // BOTTOM: right → down → label → up arrow into Text Trans bottom
+  polyDash([[trunkX,lossCy],[rightLoop,lossCy],[rightLoop,txtBelowY],[encCx,txtBelowY]],backCol);
+  dashedArrow(encCx,txtBelowY,encCx,txtY+encH,backCol);
+  lbl((rightLoop+encCx)/2,txtBelowY+G*0.30,'Use as Text Transformer loss',backCol,Math.min(G*0.65,9.5),'center','top');
+}
 
 function switchTab(idx) {
   document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
@@ -534,7 +739,7 @@ function switchTab(idx) {
   document.querySelector('.tab-select').value = idx;
   setTimeout(()=>{
     if(idx===0){drawCNN();drawViT();drawTradeoff();}
-    if(idx===1){drawEmb();}
+    if(idx===1){drawEmb();drawClipTrain();}
     if(idx===2){drawArch();runScenario(activeScenario);}
   },30);
 }
@@ -874,19 +1079,17 @@ function drawViT(){
   ctx.strokeStyle='rgba(255,255,255,0.92)'; ctx.lineWidth=3.5;
   ctx.strokeRect(vitSel.px*pw+1.8,vitSel.py*ph+1.8,pw-3.6,ph-3.6);
 
-  // 7. Labels: [CLS]/query on selected, attention value on others
+  // 7. Labels: query on selected patch, attention values on others
   ctx.textAlign='center'; ctx.textBaseline='middle';
   for(const a of attn){
     const cx=(a.px+0.5)*pw, cy=(a.py+0.5)*ph;
     if(a.px===vitSel.px&&a.py===vitSel.py){
-      const fs=Math.round(pw*0.20);
+      const fs=Math.round(pw*0.22);
       ctx.font=`bold ${fs}px Outfit,sans-serif`;
-      const tw=ctx.measureText('[CLS]').width;
+      const tw=ctx.measureText('query').width;
       ctx.fillStyle='rgba(0,0,0,0.38)';
-      rRect(ctx,cx-tw/2-3,cy-fs*0.64-ph*0.10,tw+6,fs*1.28,3); ctx.fill();
-      ctx.fillStyle='#fff'; ctx.fillText('[CLS]',cx,cy-ph*0.12);
-      ctx.font=`${Math.round(pw*0.14)}px Outfit,sans-serif`;
-      ctx.fillStyle='rgba(255,255,255,0.82)'; ctx.fillText('query',cx,cy+ph*0.20);
+      rRect(ctx,cx-tw/2-3,cy-fs*0.64,tw+6,fs*1.28,3); ctx.fill();
+      ctx.fillStyle='#fff'; ctx.fillText('query',cx,cy);
     } else {
       const val=a.w.toFixed(2);
       const fs=Math.round(pw*0.16);
@@ -1671,7 +1874,7 @@ window.addEventListener('resize',()=>{
   drawCNN(); drawCNNDiagram(); drawViT(); drawTradeoff();
   const t1=document.getElementById('tab-1').classList.contains('active');
   const t2=document.getElementById('tab-2').classList.contains('active');
-  if(t1) drawEmb();
+  if(t1){drawEmb();drawClipTrain();}
   if(t2) drawArch();
 });
 </script>
