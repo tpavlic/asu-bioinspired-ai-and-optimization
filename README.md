@@ -116,8 +116,10 @@ For a new `my_demo.html`, the checklist is:
 2. **Back-link footer** – add at the bottom of `<body>`:
 
    ```html
-    <footer id="course-nav-footer" style="margin-top:0;padding-top:0.75rem;border-top:1px solid #e0e0e0;font-size:0.8rem;color:#888;text-align:left;">
-      <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+    <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#888;">
+      <div style="max-width:MAX_WIDTH;margin:0 auto;border-top:1px solid #e0e0e0;padding:0.75rem 0 0 1rem;">
+        <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+      </div>
     </footer>
     <script>
     if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
