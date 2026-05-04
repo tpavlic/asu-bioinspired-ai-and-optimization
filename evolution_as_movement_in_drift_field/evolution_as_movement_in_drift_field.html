@@ -76,9 +76,8 @@
     footer {
       margin-top: 1.5rem;
       padding-top: 0.75rem;
-      border-top: 1px solid #e0e0e0;
       font-size: 0.8rem;
-      color: #888;
+      color: #78786A;
     }
   </style>
 </head>
@@ -100,12 +99,12 @@
          alt="Diagram showing selection, genetic drift, and mutation as parallel forces on a population, with selection and drift reducing diversity and mutation adding it, across a spectrum from high diversity to fixation.">
   </figure>
 
-  <footer>
+  <footer id="course-nav-footer">
     <p>&copy; 2026 Theodore P. Pavlic &mdash; Released under the <a href="../LICENSE">MIT License</a></p>
     <p style="margin-top:0.3rem;"><a href="../">&larr; All course visualizations</a></p>
   </footer>
   <script>
-if (window.self !== window.top) { var f = document.querySelector('footer'); if (f) f.style.display = 'none'; }
+if (window.self !== window.top) { var f = document.getElementById('course-nav-footer'); if (f) { f.style.display = 'none'; } }
 </script>
 
 </body>
