@@ -25,6 +25,8 @@
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-LH9FR4R4WT"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-LH9FR4R4WT');</script>
+
+<!-- Start RBFNN main script -->
 <style>
 :root{
   --bg:#ffffff;--bg2:#f5f5f3;--bg3:#ebebea;
@@ -86,7 +88,7 @@ input[type=checkbox]{accent-color:#ffd700;width:14px;height:14px;vertical-align:
 .cb{padding:7px 12px;border-radius:var(--r);border:0.5px solid var(--bdr);background:transparent;cursor:pointer;font-size:12.5px;font-family:var(--ff);color:var(--txt2);transition:all .18s;line-height:1.4}
 .cb:hover{border-color:var(--bdr2);color:var(--txt)}
 .cb.open{border-color:rgba(79,172,254,.55);background:rgba(79,172,254,.06);color:#4facfe}
-.cc{height:280px;overflow-y:auto;border:0.5px solid var(--bdr);border-radius:var(--rl);padding:14px 16px;font-size:12.5px;line-height:1.7;color:var(--txt2)}
+.cc{height:430px;overflow-y:auto;border:0.5px solid var(--bdr);border-radius:var(--rl);padding:14px 16px;font-size:12.5px;line-height:1.7;color:var(--txt2)}
 .cc h4{margin:0 0 10px;color:var(--txt);font-size:13.5px;font-weight:500}
 .cc p{margin:0 0 8px}
 .pill{padding-left:9px;border-left:2.5px solid currentColor;margin-bottom:9px}
@@ -771,7 +773,8 @@ const INFO={
 <p style="color:var(--txt3);font-style:italic">Switch to Linear mode to remove the hidden layer and see the raw input space fail. Switch to SVM mode to see how using all N=90 training points as RBF centers — with a max-margin objective that forces the weights of non-critical points to zero — produces a boundary defined by only the geometrically essential support vectors.</p>`,
 
   svm:`<h4>⇌ RBFNN vs. RBF-SVM: same architecture, different objectives</h4>
-<p>Both models compute a weighted sum of Gaussian evaluations. When K=N (one center per training point), they operate in the <em>same</em> function space. The <b>representer theorem</b> guarantees that the optimal SVM solution always lies in the N-dimensional subspace spanned by {k(·,x₁),...,k(·,xN)}. The "infinite-dimensional feature space" of the Gaussian kernel describes the ambient function <em>class</em> — not the dimensionality of what is actually learned from N points. With K=N, exactly two differences remain:</p>
+<p>Both models compute a weighted sum of Gaussian evaluations. When K=N (one center per training point), they operate in the <em>same</em> function space. The <b>representer theorem</b> guarantees that the optimal SVM solution always lies in the N-dimensional subspace spanned by {k(·,x₁),...,k(·,x<sub>N</sub>)}. This N-dimensional subspace is sometimes confused with a different space that arises in traditional SVM discussions: the <b>infinite-dimensional feature space</b> of the so-called <b>kernel trick</b>. In that framing, the evaluation of input x<sub>i</sub> through RBF φ<sub>k</sub>(x<sub>i</sub>) with center at x<sub>c</sub> occurring in the hidden layer of the RBFNN is written as a <b>two-argument kernel</b> k(x<sub>i</sub>, x<sub>c</sub>). This kernel is an inner product between infinite-dimensional transformations of input x<sub>i</sub> and RBF center x<sub>c</sub> — a fact made precise by the Taylor series expansion of the Gaussian, which yields an infinite sum decomposable into exactly such an inner product. This implicit infinite-dimensional lifting is the classical justification for why SVMs can find nonlinear decision boundaries without ever computing the high-dimensional transformation explicitly.</p>
+<p>However, from the RBFNN perspective, this <b>kernel-trick</b> framing is unnecessary. <b>Cover’s theorem</b> and the <b>Universal Approximation Theorem</b> already tell us that nonlinear activations — including Gaussian RBFs — provide sufficient expressive power to separate classes that are not linearly separable in the input space, and so we do not need to invoke an infinite-dimensional space to justify the approach. Furthermore, with RBFNN, we typically focus on cases where <b>K≪N</b> because the training set is large (and so we cannot have a hidden node for every training data point). In this case, the centers have to be chosen strategically, but choosing them automatically by traditional methods of neural network training (e.g., <b>backpropagation</b>) is not practical. These challenges lead to the following two significant differences between how RBFNNs and SVMs are trained:</p>
 <div class="pill" style="color:#4facfe"><b>1. Objective function</b>RBFNN minimizes <span class="mn">‖Φw−y‖² + λ‖w‖²</span> (squared loss). It treats all points symmetrically and pulls the boundary toward the centroid — which is why the least-squares boundary can sit in a suboptimal position even when classes are well-separated. RBF-SVM maximizes margin via hinge loss, focusing exclusively on geometrically critical points near the boundary. <span style="font-weight:500">Switch between RBFNN and SVM mode</span> to see both the latent boundary and its feature-space pre-image change, with the accuracy bar tracking whichever is active.</div>
 <div class="pill" style="color:#f77062"><b>2. Coupling of centers and weights</b>In an RBFNN, centers are fixed first (two separate stages — no interaction). In SVM mode, the optimizer considers all N training points as candidate Gaussian centers, then identifies the <em>support vectors</em> — the subset that lie on or inside the margin — by assigning exactly zero weight to all others. The number of support vectors (shown as K in the slider) is the SVM's effective K; the other N−K candidates are discarded. Gold markers (× and rings) in both views identify the active centers.</div>
 <table class="itbl"><thead><tr><th></th><th style="color:#4facfe">RBFNN</th><th style="color:#f77062">RBF-SVM</th></tr></thead><tbody>
@@ -805,6 +808,7 @@ update();
 updateRBFCardUI();
 setTimeout(()=>toggleInfo('how'),0);
 </script>
+<!-- end RBFNN main script -->
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
   <div style="max-width:900px;margin:0 auto;padding:0.75rem 0 0 1rem;">
     <a href="../" style="color:#2e7d32;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
