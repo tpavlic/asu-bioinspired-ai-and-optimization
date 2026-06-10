@@ -77,6 +77,16 @@ Inside `<head>`, include all of the following, filling in the actual values:
 - If the natural preview image is the wrong ratio, create a cropped/padded version for
   `twitter:image` while leaving `og:image` pointing at the full-resolution original.
 
+**Use literal characters, not HTML entities, in `og:*` and `twitter:*` `content` attributes.**
+Social-card scrapers read these values as plain text, not HTML, so they often do not decode
+entities — a title like `Foo &amp; Bar` can surface verbatim as "Foo &amp; Bar". Worse, an
+ampersand followed by a space (`Foo & Bar`) is not even a valid entity, so escaping is both
+unnecessary and harmful here. Write the literal character instead: `og:title` and
+`twitter:title` (and the matching `:description` tags) should contain `&`, not `&amp;`, and
+likewise use literal `—`, `<`, `>`, `'`, etc. (This applies only to the social-card meta
+`content` attributes; the human-visible `<title>` element and page body still follow normal
+HTML escaping rules.)
+
 ### 2. Footer with back-link and iframe-hiding script
 
 At the very bottom of `<body>`, before `</body>`, add:
