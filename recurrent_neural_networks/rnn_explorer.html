@@ -60,7 +60,8 @@ body{font-family:var(--font-body);background:var(--cream);color:var(--text);
   display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;}
 .hdr h1{font-size:1rem;font-weight:600;letter-spacing:.02em;}
 .hdr-copy{font-size:.62rem;opacity:.75;font-family:var(--font-mono);}
-.hdr-copy a{color:rgba(255,255,255,.85);text-decoration:underline;}
+.hdr-copy a{color:rgba(255,255,255,.85);text-decoration:none;}
+.hdr-copy a:hover{text-decoration:underline;}
 
 /* ── tabs ── */
 .tab-bar{display:flex;background:var(--cream-dark);border-bottom:2px solid var(--border);
@@ -189,7 +190,8 @@ input[type=checkbox]{accent-color:var(--orange);width:14px;height:14px;cursor:po
 /* ── footer ── */
 footer:not(#course-nav-footer){text-align:center;padding:8px;font-size:.62rem;font-family:var(--font-mono);
   color:var(--text-muted);border-top:1px solid var(--border-light);}
-footer:not(#course-nav-footer) a{color:var(--orange);}
+footer:not(#course-nav-footer) a{color:var(--orange);text-decoration:none;}
+footer:not(#course-nav-footer) a:hover{text-decoration:underline;}
 
 /* ── back-link footer: left-aligned, page body font, inherits link color ── */
 #course-nav-footer{text-align:left;font-family:var(--font-body);}

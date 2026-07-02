@@ -54,17 +54,20 @@ header h1 { font-size:1.2rem;font-weight:600;letter-spacing:-.02em;line-height:1
   font-family:var(--mono);font-size:.62rem;opacity:.58;text-align:right;
   flex-shrink:0;line-height:1.7;
 }
-.hdr-copy-wide a{color:rgba(255,255,255,.75);text-decoration:underline;}
+.hdr-copy-wide a{color:rgba(255,255,255,.75);text-decoration:none;}
+.hdr-copy-wide a:hover{text-decoration:underline;}
 /* one-line copyright under subtitle (medium 420–780px) */
 .hdr-copy-inline {
   display:none;font-family:var(--mono);font-size:.62rem;opacity:.55;margin-top:.32rem;
 }
-.hdr-copy-inline a{color:rgba(255,255,255,.7);text-decoration:underline;}
+.hdr-copy-inline a{color:rgba(255,255,255,.7);text-decoration:none;}
+.hdr-copy-inline a:hover{text-decoration:underline;}
 /* two-line copyright under subtitle (narrow <420px) */
 .hdr-copy-narrow {
   display:none;font-family:var(--mono);font-size:.62rem;opacity:.55;margin-top:.32rem;line-height:1.7;
 }
-.hdr-copy-narrow a{color:rgba(255,255,255,.7);text-decoration:underline;}
+.hdr-copy-narrow a{color:rgba(255,255,255,.7);text-decoration:none;}
+.hdr-copy-narrow a:hover{text-decoration:underline;}
 
 @media(max-width:419px){
   .hdr-inner{flex-direction:column;gap:.25rem;}
@@ -251,7 +254,8 @@ canvas.losscv{display:block;width:100%;height:130px;}
 footer{padding:.65rem 1.75rem;font-family:var(--mono);font-size:.63rem;
   color:var(--muted);border-top:1px solid var(--border);margin-top:1.5rem;}
 .foot-inner{max-width:1100px;text-align:center;}
-footer a{color:var(--forest2);}
+footer a{color:var(--forest2);text-decoration:none;}
+footer a:hover{text-decoration:underline;}
 /* On very narrow screens drop separator, wrap MIT License to own line */
 .foot-sep{margin:0 .3rem;}
 @media(max-width:360px){
