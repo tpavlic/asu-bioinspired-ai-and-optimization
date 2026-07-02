@@ -108,6 +108,12 @@ input[type=checkbox]{accent-color:#ffd700;width:14px;height:14px;vertical-align:
 .actnote li{display:flex;align-items:baseline;gap:5px;margin-bottom:2px}
 .actnote li::before{content:"·";font-size:14px;color:var(--bdr2);flex-shrink:0}
 .mn2{font-family:var(--fm);font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:3px}
+.rbf-crf{max-width:900px;margin:0 auto;box-sizing:border-box;text-align:center;font-size:0.72rem;color:var(--txt3);padding:0 1rem;}
+.rbf-crf a{color:inherit;text-decoration:none;}
+.rbf-crf a:hover{text-decoration:underline;}
+.rbf-crf .cr-sep{display:inline;}
+.rbf-crf .cr-br{display:none;}
+@media(max-width:420px){.rbf-crf .cr-br{display:inline;}.rbf-crf .cr-sep{display:none;}}
 </style>
 </head>
 <body>
@@ -809,8 +815,9 @@ updateRBFCardUI();
 setTimeout(()=>toggleInfo('how'),0);
 </script>
 <!-- end RBFNN main script -->
+<div class="rbf-crf">&copy; 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> &middot; </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="max-width:900px;margin:0 auto;padding:0.75rem 0 0 1rem;">
+  <div style="max-width:900px;margin:0 auto;padding:0.2rem 0 0 1rem;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
   </div>
 </footer>
