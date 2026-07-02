@@ -165,6 +165,32 @@ the footer if needed.
   falling through to the generic `sans-serif` gives a longer, nicer `←` (Helvetica/Arial).
   For a consistent long arrow, wrap just the arrow in `<span style="font-family:sans-serif">&larr;</span>`
   (as in the template above) so it never picks up `system-ui`.
+- **A generic `footer { … }` rule also leaks `border-top` and `margin-top` onto
+  `#course-nav-footer`.** Beyond font/align, a demo's copyright `footer{}` styling can put a hard
+  rule (`border-top`) and a large top margin on the back-link footer too (both are `<footer>`),
+  giving an unwanted second horizontal rule and a big gap. Reset `border-top`/`margin-top`/`padding`
+  on `#course-nav-footer` inline, or scope the rule to `footer:not(#course-nav-footer)`.
+- **Reused `cr-br`/`cr-sep` wrap classes can carry the wrong default.** Some headers put the
+  copyright in a narrow column and set `cr-br` to show (two-line) by default; a footer copyright
+  that reuses those classes inherits the two-line default. Give the footer copyright its own
+  scoped wrap rules (`.foo .cr-sep{display:inline}.foo .cr-br{display:none}` + a narrow media
+  query) so it is one line with the dot by default and only reflows to two lines on narrow screens.
+
+**Link decoration (underline) consistency.** Within each page, the copyright/license "MIT License"
+links and the back-link should share ONE underline behavior; the default is **hover-underline**
+(no resting underline, no hover-bold, no hover color-shift — the underline appears only on hover).
+Use a resting (always-on) underline only when a link is the *same color* as its surrounding text
+so nothing else signals it is a link; better still, give such links a distinct accent color and
+keep hover-underline. Colors may differ by context and need not match across header/footer:
+
+- Choose each link's color to be readable **and** distinct from adjacent text *in its own
+  context*. An accent that reads on a light footer (orange, maroon, green) is often unreadable on
+  a dark header banner — there, let the header "MIT License" link keep the banner's own text color
+  (it is fine if it does not obviously look like a link).
+- The back-link should match the page's link color: set the `#course-nav-footer` element's `color`
+  to that accent (the anchor keeps `color:inherit`).
+- Bring body/reference links into the same behavior (e.g. via the page's global `a{}` rule:
+  `a{…;text-decoration:none} a:hover{text-decoration:underline}`) so the whole page is consistent.
 
 ### 3. Entry in `index.html`
 
@@ -210,6 +236,29 @@ Add a row to the appropriate table under `## Contents`:
 ```
 
 ---
+
+## HiDPI `<canvas>` rendering
+
+Any `<canvas>` drawing (plots, diagrams, scatter/loss charts, histograms) looks blurry on
+retina/HiDPI unless the backing store is scaled by `devicePixelRatio`. Draw in **logical** units
+but size the backing store at `logical × dpr` and scale the context once:
+
+```js
+const dpr = window.devicePixelRatio || 1, W = 600, H = 175;   // logical size
+cv.style.width = W + 'px';                                     // display size (height:auto keeps ratio)
+cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+const ctx = cv.getContext('2d');
+ctx.setTransform(dpr, 0, 0, dpr, 0, 0);                        // all drawing below uses logical W,H
+```
+
+- Draw with the logical `W`/`H`, **not** `cv.width`/`cv.height` (those are now the larger backing
+  store — using them would double-scale).
+- For a canvas redrawn every frame, guard the resize (`if (cv.width !== Math.round(W*dpr)) { … }`)
+  so an incremental (non-clearing) draw loop is not wiped each frame.
+- Mouse/click mapping that uses `getBoundingClientRect()` normalized to `[0,1]` is unaffected by
+  the backing-store change, so interaction keeps working.
+
+When adding or reviewing a demo with canvas graphics, check that this dpr scaling is present.
 
 ## Site structure
 
