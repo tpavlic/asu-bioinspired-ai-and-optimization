@@ -94,7 +94,7 @@ At the very bottom of `<body>`, before `</body>`, add:
 ```html
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
   <div style="max-width:MAX_WIDTH;margin:0 auto;padding:0.75rem 0 0 1rem;">
-    <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
+    <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
   </div>
 </footer>
 <script>
@@ -159,6 +159,12 @@ the footer if needed.
   `flex:1` so the footer sits directly under the content.
 - **In-plot copyright** baked into `<canvas>`/`<svg>` `<text>` can still be linked by wrapping
   the `<text>` in an SVG `<a href="…" target="_blank" rel="noopener">` (keeps the same look).
+- **Back-link arrow (`&larr;`) glyph varies by font fallback.** The page webfonts (Outfit,
+  Inter, etc.) usually lack a `←` glyph, so it falls back down the stack. A stack containing
+  `system-ui`/`-apple-system` renders a short, stubby `←` (San Francisco on macOS), whereas
+  falling through to the generic `sans-serif` gives a longer, nicer `←` (Helvetica/Arial).
+  For a consistent long arrow, wrap just the arrow in `<span style="font-family:sans-serif">&larr;</span>`
+  (as in the template above) so it never picks up `system-ui`.
 
 ### 3. Entry in `index.html`
 
