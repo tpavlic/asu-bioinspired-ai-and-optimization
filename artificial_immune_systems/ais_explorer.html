@@ -1179,7 +1179,11 @@ const DOMAINS = {
 ================================================================ */
 const cvs = document.getElementById('cvs');
 const ctx = cvs.getContext('2d');
-const W = cvs.width, H = cvs.height;
+// HiDPI: back the canvas at devicePixelRatio; keep drawing in logical 500x500 units
+const DPR = window.devicePixelRatio || 1;
+cvs.width = cvs.height = Math.round(500 * DPR);
+ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+const W = 500, H = 500;
 const wx = x => x * W;
 const wy = y => y * H;
 const wr = r => r * W;
@@ -1803,7 +1807,11 @@ function agHex(idx) {
 ================================================================ */
 const cCvs = document.getElementById('cCvs');
 const cCtx = cCvs.getContext('2d');
-const CW = cCvs.width, CH = cCvs.height;
+// HiDPI: back the canvas at devicePixelRatio; keep drawing in logical 500x500 units
+const CDPR = window.devicePixelRatio || 1;
+cCvs.width = cCvs.height = Math.round(500 * CDPR);
+cCtx.setTransform(CDPR, 0, 0, CDPR, 0, 0);
+const CW = 500, CH = 500;
 const cwx = x => x * CW;
 const cwy = y => y * CH;
 const cwr = r => r * CW;
