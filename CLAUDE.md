@@ -136,6 +136,12 @@ the footer if needed.
   monospace / centered / oddly padded. Fix by overriding on the back-link's inline style
   (`font-family:inherit; text-align:left; padding:0`) or scoping the demo's rule to
   `footer:not(#course-nav-footer)`.
+- **The back-link footer sits OUTSIDE the page's main content wrapper** (it is a direct
+  `<body>` child placed after the wrapper). If the demo sets its `font-family` (or text color)
+  on that wrapper — e.g. `.wrap { font-family: sans-serif }` — rather than on `body`, the
+  back-link does not inherit it and falls back to the browser default (serif). Set
+  `font-family` explicitly on `#course-nav-footer` to match the page, and align its left edge
+  to the wrapper's content, not with extra padding.
 - **Header copyright vs title baseline.** A header flex row with `align-items:flex-start` makes
   a small top-right copyright sit visibly *above* the large title's glyphs (different
   half-leading). Use `align-items:baseline`.
