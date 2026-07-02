@@ -71,8 +71,8 @@ body{
 .hdr-title h1{font-size:1.28rem;font-weight:700;line-height:1.2;letter-spacing:.01em}
 .hdr-title .sub{font-size:.76rem;opacity:.68;margin-top:3px}
 .hdr-copy{font-family:var(--mono);font-size:.66rem;opacity:.6;text-align:right;flex-shrink:0}
-.hdr-copy a{color:#fff;opacity:.85;text-decoration:underline}
-.hdr-copy a:hover{opacity:1}
+.hdr-copy a{color:var(--orange-hi);text-decoration:none}
+.hdr-copy a:hover{text-decoration:underline}
 
 /* ── TAB BAR ─────────────────────────────────────────────── */
 .tabbar{
@@ -297,8 +297,8 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
   font-family:var(--mono);color:var(--text-light);
   text-align:center;margin-top:40px;
 }
-.ftr a{color:var(--text-light);text-decoration:underline}
-.ftr a:hover{color:var(--text-mid)}
+.ftr a{color:var(--orange);text-decoration:none}
+.ftr a:hover{text-decoration:underline}
 .ftr-sep{display:inline}.ftr-br{display:none}
 @media(max-width:340px){
   .ftr-sep{display:none}
@@ -2269,9 +2269,9 @@ window.addEventListener('resize',()=>{
   if(curTab===3){renderVitTab();}
 });
 </script>
-<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
+<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:var(--orange);">
   <div style="max-width:1080px;margin:0 auto;padding:0.75rem 0 0 1rem;">
-    <a href="../" style="color:inherit;text-decoration:underline;"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
+    <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
   </div>
 </footer>
 <script>
