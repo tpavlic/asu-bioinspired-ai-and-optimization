@@ -105,12 +105,16 @@ if (window.self !== window.top) { var f = document.getElementById('course-nav-fo
 Replace `MAX_WIDTH` with the page's primary content `max-width` (e.g. `860px`). The inner
 `<div>` constrains the link to the same width as the page body so it aligns on wide screens.
 
-**Back-link color: use `color:inherit`, not a hardcoded hex.** Each demo has its own palette
-(green, amber, orange, dark-themed white, etc.), so a fixed course-green link clashes on most
-pages. `color:inherit` lets the anchor pick up the host page's own link color: it inherits the
-page's global `a { color: ... }` rule where one exists, and otherwise falls back to the
-footer's muted color. Keep the `text-decoration:none` plus hover-underline behavior so the
-link still reads as clickable. Do not substitute the accent color `#2e7d32` here.
+**Back-link color: match the page's own link color — but mind how `color:inherit` works.**
+Each demo has its own palette, so a fixed course-green clashes. The anchor keeps
+`color:inherit`, but note that `inherit` takes the **footer element's** computed color, NOT
+the page's `a { color: ... }` rule (an inline `color:inherit` on the anchor outranks the `a`
+selector). So to make the back-link match the page's other links, set the **`#course-nav-footer`
+element's** `color` to the page's link/accent color (often a CSS var such as `var(--accent)`)
+and let the anchor inherit it. Check contrast against the footer's background: on dark-themed
+pages whose links are white/light, use the nearest readable accent instead. Where the page has
+no distinct link color, the muted default (`#78786A`) is fine. Keep `text-decoration:none`
+plus the hover-underline. Never hardcode `#2e7d32`.
 
 The `<script>` hides the footer when the page is embedded in a Canvas LMS iframe. Use
 `getElementById('course-nav-footer')` rather than `querySelector('footer')` — some demos
@@ -120,6 +124,35 @@ it finds instead of the back-link footer.
 **Watch for body padding:** if the demo's `body` CSS has no `padding-bottom`, the footer will
 sit flush against the viewport edge. Add `padding-bottom` to the body or `margin-bottom` to
 the footer if needed.
+
+**Footer/copyright layout — conventions and pitfalls** (from a full pass over every demo):
+
+- **Footer copyright centered; back-link left-aligned** to the content's left edge, with only a
+  small gap between them. Put a subtle footer copyright line (`© 2026 Theodore P. Pavlic ·
+  MIT License`, MIT linked, `MIT&nbsp;License` non-breaking) just above the back-link.
+- **A generic `footer { … }` rule leaks into `#course-nav-footer`.** Many demos style their own
+  copyright `<footer>` with `font-family:var(--mono)`, `text-align:center|right`, and padding;
+  since `#course-nav-footer` is also a `<footer>`, those cascade in and make the back-link look
+  monospace / centered / oddly padded. Fix by overriding on the back-link's inline style
+  (`font-family:inherit; text-align:left; padding:0`) or scoping the demo's rule to
+  `footer:not(#course-nav-footer)`.
+- **Header copyright vs title baseline.** A header flex row with `align-items:flex-start` makes
+  a small top-right copyright sit visibly *above* the large title's glyphs (different
+  half-leading). Use `align-items:baseline`.
+- **`html, body { padding: … }` applies the padding twice** (once to each element), doubling the
+  top/side/bottom space. Put layout padding on `body` only.
+- **Don't try to center the footer copyright on the organic tab-row width.** CSS can't reference
+  another element's rendered width, hardcoded pixel guesses land off-center, and JS measurement
+  is fragile (web fonts load late; tabs may collapse to a dropdown). Left-align it instead, or
+  center it under a fixed content-column `max-width`.
+- **Per-tab pages sharing one `<footer>`:** a bottom copyright shows a top rule only on the tab
+  whose last element happens to have a border. Give the copyright `<footer>` its own
+  `border-top` so the rule is consistent across tabs.
+- **`#body { flex:1 }` under `body { min-height:100vh; display:flex; flex-direction:column }`**
+  stretches the widget and strands the back-link at the very bottom on tall windows. Drop the
+  `flex:1` so the footer sits directly under the content.
+- **In-plot copyright** baked into `<canvas>`/`<svg>` `<text>` can still be linked by wrapping
+  the `<text>` in an SVG `<a href="…" target="_blank" rel="noopener">` (keeps the same look).
 
 ### 3. Entry in `index.html`
 

@@ -187,32 +187,40 @@ input[type=checkbox]{accent-color:var(--orange);width:14px;height:14px;cursor:po
 .two-cv > div{flex:1;min-width:0;}
 
 /* ── footer ── */
-footer{text-align:center;padding:8px;font-size:.62rem;font-family:var(--font-mono);
+footer:not(#course-nav-footer){text-align:center;padding:8px;font-size:.62rem;font-family:var(--font-mono);
   color:var(--text-muted);border-top:1px solid var(--border-light);}
-footer a{color:var(--orange);}
+footer:not(#course-nav-footer) a{color:var(--orange);}
+
+/* ── back-link footer: left-aligned, page body font, inherits link color ── */
+#course-nav-footer{text-align:left;font-family:var(--font-body);}
+#course-nav-footer .cr-sep{display:inline;}
+#course-nav-footer .cr-br{display:none;}
 
 /* ── responsive ── */
 @media(max-width:700px){
   .panel-content{flex-direction:column;}
   .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);}
   .two-cv{flex-direction:column;}
-  .tab-btn{font-size:.72rem;padding:8px 11px;}
-}
-/* ── narrow: tabs become a dropdown ── */
-.tab-select{display:none;}
-@media(max-width:520px){
+  /* tabs overflow around here with 5 wide labels, so swap to the dropdown */
   .tab-bar{display:none;}
   .tab-select{display:block;width:100%;font-family:var(--font-body);font-size:.82rem;
     font-weight:500;background:var(--cream-dark);border:none;
     border-bottom:2px solid var(--border);padding:10px 14px;
     color:var(--text);cursor:pointer;outline:none;appearance:auto;}
+}
+/* ── narrow ── */
+.tab-select{display:none;}
+@media(max-width:520px){
   /* Header: title takes full row, copyright wraps below right-aligned */
   .hdr{align-items:flex-start;}
   .hdr h1{flex:1 1 100%;font-size:1rem;}
   .hdr-copy{width:100%;display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
   /* Copyright: hide separator, stack vertically */
   .copy-sep{display:none;}
-  footer{display:flex;flex-direction:column;align-items:center;gap:2px;}
+  footer:not(#course-nav-footer){display:flex;flex-direction:column;align-items:center;gap:2px;}
+  /* stack copyright separator onto its own line at narrow widths */
+  #course-nav-footer .cr-br{display:inline;}
+  #course-nav-footer .cr-sep{display:none;}
 }
 </style>
 </head>
@@ -222,7 +230,7 @@ footer a{color:var(--orange);}
   <h1>Recurrent Networks &amp; Temporal Supervision Explorer</h1>
   <span class="hdr-copy">
     <span>&copy; 2026 Theodore P. Pavlic</span>
-    <span class="copy-sep">&nbsp;&middot;&nbsp;</span>
+    <span class="copy-sep">&thinsp;&middot;&thinsp;</span>
     <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
   </span>
 </header>
@@ -3353,7 +3361,7 @@ window.addEventListener('load',()=>{
 });
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="padding:0.75rem 0 0 1rem;">
+  <div style="padding:0.2rem 0 0 1rem;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>
 </footer>

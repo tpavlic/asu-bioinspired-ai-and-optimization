@@ -37,13 +37,20 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.5;}
-.hdr{background:var(--primary);padding:13px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.hdr{background:var(--primary);padding:13px 0;}
+.hdr-inner{max-width:1200px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
 .hdr h1{font-size:18px;font-weight:600;color:#fff;letter-spacing:-.2px;}
 .hdr-copy{font-size:11px;color:rgba(255,255,255,.42);font-weight:300;white-space:nowrap;flex-shrink:0;}
 .tab-bar{background:var(--surface);border-bottom:2px solid var(--border);padding:0 32px;display:flex;overflow-x:auto;overflow-y:hidden;}
 .tb{padding:11px 18px;border:none;background:none;font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
 .tb:hover{color:var(--primary);}.tb.on{color:var(--primary);border-bottom-color:var(--accent);font-weight:600;}
-.panel{display:none;padding:24px 32px 56px;max-width:1200px;}.panel.on{display:block;}
+.panel{display:none;padding:24px 32px 16px;max-width:1200px;}.panel.on{display:block;}
+.efoot-copy{padding:8px 32px 0 2rem;text-align:left;font-size:11px;color:var(--muted);}
+.efoot-copy a{color:inherit;text-decoration:none;}
+.efoot-copy a:hover{text-decoration:underline;}
+.cr-sep{display:inline;}
+.cr-br{display:none;}
+@media(max-width:560px){.cr-br{display:inline;}.cr-sep{display:none;}}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
 .card-t{background:var(--tinted);border:1px solid #b8d4b8;border-radius:var(--r);padding:14px 18px;font-size:13.5px;line-height:1.75;color:#1a3820;}
@@ -71,7 +78,8 @@ hr.div{border:none;border-top:1px solid var(--border);margin:14px 0;}
   .g2{grid-template-columns:1fr;}
   .g3{grid-template-columns:1fr;}
   .g3 .rep-card{margin-bottom:16px;}
-  .hdr{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 16px;}
+  .hdr{padding:0;}
+  .hdr-inner{flex-direction:column;align-items:flex-start;gap:4px;padding:12px 16px;}
   .hdr-copy{font-size:10px;}
   .tab-bar{display:none;}
   #tab-select-wrap{display:block!important;}
@@ -115,8 +123,10 @@ hr.pal-div{border:none;border-top:1px solid var(--border);margin:4px 0;}
 <body>
 
 <div class="hdr">
+ <div class="hdr-inner">
   <h1>Evolutionary Programming Representations</h1>
-  <span class="hdr-copy">© 2026 Theodore P. Pavlic &nbsp;·&nbsp; MIT License</span>
+  <span class="hdr-copy">© 2026 Theodore P. Pavlic &nbsp;·&nbsp; <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:inherit;">MIT&nbsp;License</a></span>
+ </div>
 </div>
 
 <nav class="tab-bar">
@@ -1657,8 +1667,9 @@ function fsmUpdateRunDisplay() {
 
 
 </script>
-<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="padding:0.75rem 0 0 1.5rem;">
+<div class="efoot-copy">&copy; 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> &middot; </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>
+<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:var(--muted);font-family:inherit;text-align:left;">
+  <div style="padding:0.3rem 0 0.9rem 2rem;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>
 </footer>

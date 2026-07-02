@@ -38,7 +38,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--text);padding:1.25rem 1rem;min-height:100vh}
 .wrap{max-width:940px;margin:0 auto;display:flex;flex-direction:column;gap:.85rem}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem}
+.hdr{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem}
 .hdr h1{font-size:1.45rem;font-weight:700;color:var(--g-dk);letter-spacing:-.02em;line-height:1.2}
 .hdr p{font-size:.85rem;color:var(--text-muted);margin-top:.15rem}
 .hdr-rule{border:none;border-top:2.5px solid var(--g-dk);margin-top:.55rem}
@@ -84,9 +84,13 @@ input[type=range].bsld::-webkit-slider-thumb{background:var(--orange)}
 #neuron-svg,#lever-svg,#bc-svg,#f2d-svg,#f2d-lv-svg{touch-action:none}
 #soma-glow{transition:stroke .4s,opacity .4s}
 #ap-terminal{transition:fill .4s,stroke .4s}
-footer{display:flex;justify-content:flex-end;font-size:.68rem;color:var(--text-muted)}
-footer a,.cr-top a{color:var(--orange);text-decoration:none}
+.wrap > footer{display:flex;justify-content:center;font-size:.68rem;color:var(--text-muted)}
+.wrap > footer a,.cr-top a{color:var(--orange);text-decoration:none}
 .cr-top{font-size:.65rem;color:var(--text-muted);text-align:right;line-height:1.5}
+/* Copyright wrap rule: on narrow screens, break before the middot separator */
+.cr-sep{display:inline}
+.cr-br{display:none}
+@media(max-width:420px){.cr-br{display:inline}.cr-sep{display:none}}
 </style>
 </head>
 <body>
@@ -98,7 +102,7 @@ footer a,.cr-top a{color:var(--orange);text-decoration:none}
       <h1>The Single-Layer Perceptron</h1>
       <p>Animated connection between the biological neuron and the linear classifier</p>
     </div>
-    <div class="cr-top">© 2026 Theodore P. Pavlic<br><a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></div>
+    <div class="cr-top">© 2026 Theodore P. Pavlic<br><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>
   </div>
   <hr class="hdr-rule">
 </header>
@@ -172,7 +176,7 @@ footer a,.cr-top a{color:var(--orange);text-decoration:none}
   </div>
 </div>
 
-<footer><span>© 2026 Theodore P. Pavlic · <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></span></footer>
+<footer><span>© 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> · </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></span></footer>
 
 </div>
 <script>
@@ -1793,7 +1797,7 @@ function tick(ts){
 /* ═════ INIT ══════════════════════════════════════════════════════ */
 buildControls();buildNeuron();buildLever();addNeuronInteractions();addLeverInteractions();buildBellCrank();addBellCrankInteractions();buildF2DFeature();buildF2DLever();addF2DInteractions();addF2DLeverInteractions();refreshEqBar();requestAnimationFrame(tick);
 </script>
-<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#888;">
+<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:var(--orange);">
   <div style="max-width:940px;margin:0 auto;padding:0.75rem 0 0 1rem;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>

@@ -41,6 +41,9 @@ body{background:var(--cream);color:var(--text);font-family:var(--font);font-size
 header {
   background:var(--forest);color:#fff;
   padding:.85rem 1.75rem;
+}
+.hdr-inner {
+  max-width:1100px;
   display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;
 }
 .hdr-main { flex:1; min-width:0; }
@@ -64,7 +67,7 @@ header h1 { font-size:1.2rem;font-weight:600;letter-spacing:-.02em;line-height:1
 .hdr-copy-narrow a{color:rgba(255,255,255,.7);text-decoration:underline;}
 
 @media(max-width:419px){
-  header{flex-direction:column;gap:.25rem;}
+  .hdr-inner{flex-direction:column;gap:.25rem;}
   .hdr-copy-wide{display:none;}
   .hdr-copy-narrow{display:block;}
 }
@@ -75,9 +78,10 @@ header h1 { font-size:1.2rem;font-weight:600;letter-spacing:-.02em;line-height:1
 
 /* ─── TABS ───────────────────────────────────────────── */
 .tab-bar{background:var(--forest);display:flex;padding:0 1.75rem;}
+.tab-inner{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;width:max-content;}
 .tab-btn{background:none;border:none;border-bottom:3px solid transparent;
   color:rgba(255,255,255,.5);font-family:var(--font);font-size:.875rem;font-weight:500;
-  padding:.5rem 1.1rem;cursor:pointer;transition:color .15s,border-color .15s;margin-bottom:-1px;}
+  padding:.5rem 1.1rem;cursor:pointer;transition:color .15s,border-color .15s;margin-bottom:-1px;text-align:center;}
 .tab-btn.active{color:#fff;border-bottom-color:var(--orange);}
 .tab-btn:hover:not(.active){color:rgba(255,255,255,.85);}
 .tab-panel{display:none;padding:1.4rem 1.75rem 2rem;}
@@ -117,7 +121,7 @@ header h1 { font-size:1.2rem;font-weight:600;letter-spacing:-.02em;line-height:1
 .note-box strong,.warn-box strong{font-weight:600;}
 
 /* ─── ARCH TAB ───────────────────────────────────────── */
-.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:960px;}
+.arch-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:1100px;}
 .arch-grid .span2{grid-column:1/-1;}
 @media(max-width:660px){.arch-grid{grid-template-columns:1fr;}.arch-grid .span2{grid-column:1;}}
 #bowtie-svg{width:100%;max-width:740px;display:block;margin:0 auto;}
@@ -244,8 +248,9 @@ canvas.losscv{display:block;width:100%;height:130px;}
 .dec-epoch{font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:.15rem;}
 
 /* footer */
-footer{text-align:center;padding:.65rem 1.75rem;font-family:var(--mono);font-size:.63rem;
+footer{padding:.65rem 1.75rem;font-family:var(--mono);font-size:.63rem;
   color:var(--muted);border-top:1px solid var(--border);margin-top:1.5rem;}
+.foot-inner{max-width:1100px;text-align:center;}
 footer a{color:var(--forest2);}
 /* On very narrow screens drop separator, wrap MIT License to own line */
 .foot-sep{margin:0 .3rem;}
@@ -263,6 +268,7 @@ footer a{color:var(--forest2);}
 </div>
 
 <header>
+ <div class="hdr-inner">
   <div class="hdr-main">
     <h1>Autoencoder Explorer</h1>
     <div class="hdr-sub">Unsupervised representation learning &middot; 2-D bottleneck demo &middot; synthetic handwritten digits</div>
@@ -276,11 +282,14 @@ footer a{color:var(--forest2);}
     &copy; 2026 Theodore P. Pavlic<br>
     <a href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
   </div>
+ </div>
 </header>
 
 <div class="tab-bar" id="tab-bar-row">
+  <div class="tab-inner">
   <button class="tab-btn active" id="tbtn-arch" onclick="switchTab('arch',this)">Architecture</button>
   <button class="tab-btn" id="tbtn-train" onclick="switchTab('train',this)">Train &amp; Explore</button>
+  </div>
 </div>
 <div class="tab-select-wrap">
   <select id="tab-select" onchange="switchTabBySelect(this.value)">
@@ -451,7 +460,7 @@ footer a{color:var(--forest2);}
 </div>
 
 <footer>
-  <span class="foot-copy">&copy; 2026 Theodore P. Pavlic</span><span class="foot-sep">&middot;</span><a class="foot-lic" href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a>
+  <div class="foot-inner"><span class="foot-copy">&copy; 2026 Theodore P. Pavlic</span><span class="foot-sep">&middot;</span><a class="foot-lic" href="https://opensource.org/licenses/MIT" target="_blank">MIT License</a></div>
 </footer>
 
 <script>
@@ -1272,8 +1281,8 @@ async function init(){
 }
 init();
 </script>
-<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="padding:0.75rem 0 0 1rem;">
+<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:var(--forest2);font-family:inherit;text-align:left;padding:0;">
+  <div style="padding:0.3rem 1.75rem 0;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>
 </footer>

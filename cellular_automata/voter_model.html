@@ -131,13 +131,22 @@ canvas{display:block;}
 @media(max-width:660px){
   .coal-card{max-width:100%;width:100%;}
 }
+.cr-foot{text-align:center;font-size:0.75rem;color:var(--muted);max-width:960px;box-sizing:border-box;padding:0 24px 0;}
+.cr-foot a{color:inherit;text-decoration:none;}
+.cr-foot a:hover{text-decoration:underline;}
+.cr-sep{display:inline;}
+.cr-br{display:none;}
+@media(max-width:420px){
+  .cr-br{display:inline;}
+  .cr-sep{display:none;}
+}
 </style>
 </head>
 <body>
 
 <div class="phdr">
   <h1>Voter Model &amp; Consensus Dynamics</h1>
-  <p>The voter model is a minimal model of opinion dynamics and neutral genetic drift: each cell copies a random neighbor's opinion with no selection or preference. Despite its simplicity it captures how topology shapes the spread of traits on a network — and how random takeover (fixation) is guaranteed in some geometries but not others. At each generation every cell copies a randomly chosen neighbor. Tab ① shows a 1D spacetime diagram; Tab ② shows a 2D grid. Both support ancestry tracing: click any cell to follow its opinion lineage backward in time. Tab ③ uses two random walkers in 2D vs. 3D to demonstrate <em>why</em> consensus (fixation by drift) is guaranteed in low dimensions but not on an infinite 3D lattice — the key is Pólya's theorem on when two independent random walks must eventually meet.<br><span style="display:block;text-align:right;font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;">&copy; 2026 Theodore P. Pavlic &nbsp;&middot;&nbsp; MIT License</span></p>
+  <p>The voter model is a minimal model of opinion dynamics and neutral genetic drift: each cell copies a random neighbor's opinion with no selection or preference. Despite its simplicity it captures how topology shapes the spread of traits on a network — and how random takeover (fixation) is guaranteed in some geometries but not others. At each generation every cell copies a randomly chosen neighbor. Tab ① shows a 1D spacetime diagram; Tab ② shows a 2D grid. Both support ancestry tracing: click any cell to follow its opinion lineage backward in time. Tab ③ uses two random walkers in 2D vs. 3D to demonstrate <em>why</em> consensus (fixation by drift) is guaranteed in low dimensions but not on an infinite 3D lattice — the key is Pólya's theorem on when two independent random walks must eventually meet.<br><span style="display:block;text-align:right;font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;">&copy; 2026 Theodore P. Pavlic &middot; <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:inherit;white-space:nowrap;">MIT&nbsp;License</a></span></p>
   <div class="tabs">
     <button class="tab on" id="tb0" onclick="switchTab(0)">① 1D Voter Model &amp; Contact Tracing</button>
     <button class="tab"   id="tb1" onclick="switchTab(1)">② 2D Voter Model &amp; Contact Tracing</button>
@@ -1281,8 +1290,9 @@ drawCoalDiagram('cvcoal0');
 drawCoalDiagram('cvcoal1');
 drawCoalDiagram('cvcoal2');
 </script>
+<div class="cr-foot">&copy; 2026 Theodore P. Pavlic<span class="cr-br"><br></span><span class="cr-sep"> &middot; </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="padding:0.75rem 0 1rem 1.5rem;">
+  <div style="padding:0.25rem 0 1rem 1.5rem;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>
 </footer>

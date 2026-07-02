@@ -327,7 +327,7 @@ input[type=range]::-moz-range-thumb{
 /* ── Footnote & copyright ── */
 .footnote{font-size:11px;color:var(--soft);border-top:1px solid var(--border);padding-top:8px;margin-bottom:4px;line-height:1.55;}
 .footnote strong{color:var(--muted);}
-.copyright{font-size:10px;color:var(--soft);text-align:right;}
+.copyright{font-size:10px;color:var(--soft);text-align:center;margin-top:12px;margin-bottom:2px;}
 
 @media(max-width:680px){
   .main-grid{grid-template-columns:1fr;}
@@ -345,7 +345,7 @@ input[type=range]::-moz-range-thumb{
 
 <div class="hdr">
   <h1>Artificial Immune Systems</h1>
-  <span class="hdr-copy">&copy; 2026 Theodore P. Pavlic &middot; MIT License</span>
+  <span class="hdr-copy">&copy; 2026 Theodore P. Pavlic &middot; <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:inherit;">MIT&nbsp;License</a></span>
 </div>
 
 <div class="tab-bar">
@@ -1128,7 +1128,7 @@ input[type=range]::-moz-range-thumb{
 <p class="footnote">
   <strong>Note on dimensionality:</strong> This 2D projection is a pedagogical simplification. In practice, feature spaces are high-dimensional (dozens to hundreds of features), and random detector coverage becomes exponentially sparse — a fundamental challenge for real-valued immune algorithms that motivates structured detector generation strategies.
 </p>
-<p class="copyright">© 2026 Theodore P. Pavlic · MIT License</p>
+<p class="copyright">© 2026 Theodore P. Pavlic · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:inherit;">MIT&nbsp;License</a></p>
 
 
 <script>
@@ -2799,7 +2799,7 @@ document.querySelectorAll('.tab').forEach(t =>
 );
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="max-width:940px;margin:0 auto;padding:0.75rem 0 0 1rem;">
+  <div style="max-width:940px;margin:0 auto;padding:0.2rem 0 0.75rem 0;">
     <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">&larr; All course visualizations</a>
   </div>
 </footer>
