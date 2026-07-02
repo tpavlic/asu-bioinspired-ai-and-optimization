@@ -1088,7 +1088,12 @@ function statW(){
 function drawCoalDiagram(canvasId){
   const cv=document.getElementById(canvasId);
   if(!cv)return;
-  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  // HiDPI: draw in logical 600x175 units but back the canvas at devicePixelRatio
+  const dpr=window.devicePixelRatio||1,W=600,H=175;
+  cv.style.width=W+'px';               // display size (height stays auto -> keeps ratio)
+  cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);   // so all drawing below uses logical W,H
   ctx.fillStyle='#f7f5f0';ctx.fillRect(0,0,W,H);
 
   const RING=6,SL=7,SR=7;
