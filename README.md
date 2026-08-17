@@ -137,7 +137,7 @@ For a new `my_demo.html`, the checklist is:
 
 Other projects by the same author that visitors here may find complementary:
 
-* [Simulating Stochastic Systems — Course Visualizations](https://tpavlic.github.io/asu-simulating-stochastic-systems/) — supplemental visualizations for the companion ASU course on simulating systems driven by randomness.
+* [Simulating Stochastic Systems — Course Visualizations](https://tpavlic.github.io/asu-simulating-stochastic-systems/) — supplemental visualizations for a separate ASU course on simulating systems driven by randomness.
 * [Topic Visualizers — Interactive Explainers](https://tpavlic.github.io/topic_visualizers/) — interactive web demonstrations across science, mathematics, statistics, and engineering.
 * [Notes, Documents, & Guides](https://github.com/tpavlic/docs-and-guides) — Markdown-formatted notes and instructional guides on a variety of fundamental and applied science and engineering topics.
 * [Lectures and short video tutorials](https://www.youtube.com/@TedPavlic) on YouTube, including the [Office Hours](https://www.youtube.com/playlist?list=PLXBbGVSkQJqEFKCGlTbzBnvf96DRJ6_gi) playlist.
