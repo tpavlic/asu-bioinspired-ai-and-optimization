@@ -45,7 +45,7 @@ as iframes.
 
 | Directory | Description |
 | --- | --- |
-| [`monte_carlo/`](monte_carlo/) | Interactive explorer for Monte Carlo methods: rejection sampling, Monte Carlo integration, and MCMC |
+| [`monte_carlo/`](monte_carlo/) | Interactive explorer for Monte Carlo estimation: dartboard estimation of π and Monte Carlo integration, with accumulating 95% confidence intervals |
 | [`simulated_annealing/`](simulated_annealing/) | Interactive explainer for Simulated Annealing: temperature schedules, neighbor selection, and probabilistic acceptance on an energy landscape |
 | [`parallel_tempering/`](parallel_tempering/) | Interactive explainer for Parallel Tempering / REMC: fixed-temperature SA replicas at different temperatures with periodic configuration swaps |
 | [`softmax/`](softmax/) | Interactive explorer for the softmax (Gibbs) distribution: how temperature interpolates between uniform exploration and greedy exploitation, connecting MaxEnt methods to SA and reinforcement learning |
