@@ -296,6 +296,13 @@ Add a row to the appropriate table under `## Contents`:
 | [`my_demo/`](my_demo/) | Brief description matching the index entry |
 ```
 
+### 5. A short tag for the demo's commits
+
+The commits that introduce a demo usually name it in their summaries and so need no prefix, but the
+narrow follow-up edits ("Fix the margins", "Reword the lede") do. Settle on a short tag for the new
+demo now (see "Commit messages" below) so those later commits have one to reach for. Tag the demo
+itself rather than its directory wherever the directory holds more than one.
+
 ---
 
 ## HiDPI `<canvas>` rendering
@@ -328,6 +335,34 @@ When adding or reviewing a demo with canvas graphics, check that this dpr scalin
 - Each demo is a **self-contained, single-file HTML page** with all CSS and JS inlined
 - Preview images live alongside their HTML file in the same subdirectory
 - The site is deployed via **GitHub Pages** directly from the `main` branch (no build step)
+
+## Commit messages
+
+**A localized edit to one demo has to make that demo identifiable from the commit message, and
+preferably from the subject line itself.** Normally that takes the form of a short prefix – the
+demo's tag, a colon, and a space – so a narrow summary is not stranded in `git log --oneline`
+with no sign of where it landed:
+
+```text
+boids: Rework the neighbor-radius control
+eca: Fix the margins on the narrow-screen layout
+```
+
+Tags are not enumerated anywhere and are not permanent, because demos keep arriving. Several
+directories already hold more than one – `cellular_automata/` carries the ECA explorer and the voter
+model, and those are independent tools that happen to share a topic – so name the demo rather than
+its directory wherever that is the case, and fall back to the directory name where it holds exactly
+one (`softmax`, `memristors`, or a trimmed form such as `pso` for `particle_swarm_optimization/`).
+Reuse whatever a demo has been tagged before, which `git log --oneline -- cellular_automata/` will
+show, and keep the tag short: the whole subject line should stay at 72 characters or fewer. This is
+not Conventional Commits, as there is no `feat:`/`fix:` type and the tag names a demo rather than a
+kind of change.
+
+**Omit the tag when the subject already says where the work is**, either because it names its
+target ("Add mobile-friendliness rules to CLAUDE.md") or because it describes a sweep ("Standardize
+the footer copyright across all demos"). Such a commit still owes the reader its scope, but carries
+that scope in the summary, where a tag would understate it. A commit spanning exactly two demos can
+carry both tags (`boids, vicsek: …`), though splitting it is usually better.
 
 ## Current sections and demos
 
