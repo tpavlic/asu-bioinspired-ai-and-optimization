@@ -47,6 +47,7 @@ body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--te
   padding: 8px 24px; border: 2px solid transparent; border-bottom: none;
   border-radius: 7px 7px 0 0; background: transparent; color: var(--muted);
   cursor: pointer; margin-bottom: -2px; transition: .15s;
+  text-decoration: none; display: inline-block;
 }
 .tab.active { background: var(--card); color: var(--green); font-weight: 700; border-color: var(--green); border-bottom-color: var(--card); }
 .tab:hover:not(.active) { color: var(--green); background: rgba(26,61,43,.05); }
@@ -134,8 +135,8 @@ footer a:hover { color: var(--orange); }
     <div class="wh-copy">&copy; 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> &middot; </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>
   </div>
   <nav class="tabs">
-    <button class="tab active" data-tab="pi" onclick="showTab('pi',this)">① Estimating π</button>
-    <button class="tab" data-tab="mc" onclick="showTab('mc',this)">② MC Integration</button>
+    <a class="tab active" href="#pi" data-tab="pi" onclick="showTab('pi',this);return false;">① Estimating π</a>
+    <a class="tab" href="#mc" data-tab="mc" onclick="showTab('mc',this);return false;">② MC Integration</a>
   </nav>
   <select id="tab-select" class="tab-select" onchange="showTabFromSelect(this)">
     <option value="pi">① Estimating π</option>
@@ -312,7 +313,11 @@ function showTab(name, btn) {
   document.querySelectorAll('.tp').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  btn.classList.add('active');
+  const tabBtn = btn || document.querySelector('.tab[data-tab="'+name+'"]');
+  if (tabBtn) tabBtn.classList.add('active');
+  const tabSel = document.getElementById('tab-select');
+  if (tabSel) tabSel.value = name;
+  if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
   if (name === 'mc') {
     if (!expInitialized) {
       expInitialized = true;
@@ -358,6 +363,12 @@ function showTab(name, btn) {
 }
 
 function showTabFromSelect(sel){ showTab(sel.value, null); }
+function validTab(name){ return !!document.querySelector('.tab[data-tab="'+name+'"]'); }
+
+window.addEventListener('hashchange', () => {
+  const name = location.hash.slice(1);
+  if (name && validTab(name)) showTab(name, null);
+});
 
 // ── Tab 1: π estimation ─────────────────────────────────
 function runPi() {
@@ -775,6 +786,9 @@ window.addEventListener('load',()=>{
 
   // Draw blank history chart for Tab 1 immediately (blank axes on init)
   renderPiHist();
+
+  const startHash = location.hash.slice(1);
+  if (startHash && startHash !== 'pi' && validTab(startHash)) showTab(startHash, null);
 });
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;text-align:left;">

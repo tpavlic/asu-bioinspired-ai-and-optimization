@@ -156,23 +156,24 @@ body{
   background:white;border:1px solid var(--border);border-radius:8px;
   padding:.35rem;box-shadow:0 2px 8px var(--shadow);
 }
-.tab-bar-buttons button{
+.tab-bar-buttons a{
   font-family:'Outfit',sans-serif;font-size:.86rem;font-weight:500;
   padding:.45rem .9rem;border:1px solid transparent;background:transparent;
   color:var(--text-soft);border-radius:6px;cursor:pointer;
+  text-decoration:none;display:inline-block;
   transition:background .12s,color .12s,border-color .12s;
 }
-.tab-bar-buttons button:hover{background:var(--cream-mid);color:var(--g-dk)}
-.tab-bar-buttons button.active{
+.tab-bar-buttons a:hover{background:var(--cream-mid);color:var(--g-dk)}
+.tab-bar-buttons a.active{
   background:var(--g-dk);color:white;border-color:var(--g-dk);
 }
-.tab-bar-buttons button .n{
+.tab-bar-buttons a .n{
   font-family:'IBM Plex Mono',monospace;color:var(--orange);
   font-weight:500;margin-right:.4rem;font-size:.85em;
 }
-.tab-bar-buttons button.active .n{color:var(--orange-lt)}
-.tab-bar-buttons button.stub{color:#B5A995;font-style:italic}
-.tab-bar-buttons button.stub:hover{background:transparent;color:#B5A995;cursor:not-allowed}
+.tab-bar-buttons a.active .n{color:var(--orange-lt)}
+.tab-bar-buttons a.stub{color:#B5A995;font-style:italic}
+.tab-bar-buttons a.stub:hover{background:transparent;color:#B5A995;cursor:not-allowed}
 
 .tab-bar-select{display:none}
 .tab-bar-select select{
@@ -1903,12 +1904,12 @@ svg.bp-map{
   </header>
 
   <div class="tab-bar-buttons" id="tab-bar-btns" role="tablist">
-    <button data-tab="architecture" class="active"><span class="n">1</span>Anatomy of an MLP</button>
-    <button data-tab="xor"><span class="n">2</span>Separability &amp; Hidden Layers</button>
-    <button data-tab="backprop"><span class="n">3</span>Backprop Explainer</button>
-    <button data-tab="backprop-walk"><span class="n">4</span>Backprop Walkthrough</button>
-    <button data-tab="depth"><span class="n">5</span>Depth vs. Width</button>
-    <button data-tab="cnn"><span class="n">6</span>From MLP to CNN</button>
+    <a href="#tab-architecture" data-tab="architecture" class="active"><span class="n">1</span>Anatomy of an MLP</a>
+    <a href="#tab-xor" data-tab="xor"><span class="n">2</span>Separability &amp; Hidden Layers</a>
+    <a href="#tab-backprop" data-tab="backprop"><span class="n">3</span>Backprop Explainer</a>
+    <a href="#tab-backprop-walk" data-tab="backprop-walk"><span class="n">4</span>Backprop Walkthrough</a>
+    <a href="#tab-depth" data-tab="depth"><span class="n">5</span>Depth vs. Width</a>
+    <a href="#tab-cnn" data-tab="cnn"><span class="n">6</span>From MLP to CNN</a>
   </div>
   <div class="tab-bar-select">
     <select id="tab-select" aria-label="Select tab">
@@ -2704,7 +2705,7 @@ svg.bp-map{
     const leavingDepth = (currentTab === 'depth'          && name !== 'depth');
     const leavingCnn   = (currentTab === 'cnn'            && name !== 'cnn');
 
-    const btns = document.querySelectorAll('.tab-bar-buttons button[data-tab]');
+    const btns = document.querySelectorAll('.tab-bar-buttons a[data-tab]');
     btns.forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     ['architecture','xor','backprop','backprop-walk','depth','cnn'].forEach(n=>{
       const el = document.getElementById('tab-'+n);
@@ -2713,6 +2714,7 @@ svg.bp-map{
     const sel = document.getElementById('tab-select');
     if (sel && sel.value !== name) sel.value = name;
     currentTab = name;
+    if (history.replaceState) history.replaceState(null, '', '#tab-'+name);
 
     // When revealing the Backprop Explainer tab, re-measure the dependency-zone
     // label now that the SVG has real layout (it was display:none before).
@@ -2757,9 +2759,10 @@ svg.bp-map{
     }
   }
   document.getElementById('tab-bar-btns').addEventListener('click', e=>{
-    const btn = e.target.closest('button[data-tab]');
+    const btn = e.target.closest('a[data-tab]');
     if (!btn) return;
     if (btn.classList.contains('stub')) return;
+    e.preventDefault();
     switchTab(btn.dataset.tab);
   });
   document.getElementById('tab-select').addEventListener('change', e=>{
@@ -2773,6 +2776,22 @@ svg.bp-map{
     e.preventDefault();
     switchTab(link.dataset.targetTab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  // External deep link support: a hash of "#tab-<name>" opens directly on
+  // that tab, whether it names the page at load or arrives later (an
+  // external link opened while the page is already open, or a back/forward
+  // step). The tab set is read from the button row itself so this can't
+  // drift out of step with the markup above.
+  function tabNameFromHash(){
+    const m = /^#tab-(.+)$/.exec(location.hash);
+    if (!m) return null;
+    const valid = Array.from(document.querySelectorAll('.tab-bar-buttons a[data-tab]'))
+      .map(b => b.dataset.tab);
+    return valid.includes(m[1]) ? m[1] : null;
+  }
+  window.addEventListener('hashchange', () => {
+    const n = tabNameFromHash();
+    if (n) switchTab(n);
   });
 
   /* We intentionally do NOT respond to browser focus changes (tab hidden,
@@ -8658,6 +8677,11 @@ svg.bp-map{
 
   aeBuildIntroFigures();
   aeReset();
+
+  // Now that every tab's own default-tab setup above has run, honor an
+  // incoming deep link to a non-default tab.
+  const bootTab = tabNameFromHash();
+  if (bootTab) switchTab(bootTab);
 
 })();
 </script>

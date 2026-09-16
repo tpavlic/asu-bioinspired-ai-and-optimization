@@ -53,9 +53,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
 .wh-copy{font-size:.67rem;color:var(--muted);text-align:right;white-space:nowrap;flex-shrink:0;padding-top:3px}
 .wh-copy a{color:var(--org);text-decoration:none}.wh-copy a:hover{text-decoration:underline}
 .tab-bar{display:flex;border-bottom:2px solid var(--bdr);padding:0 18px;background:var(--srf2)}
-.tb{font-family:var(--sans);font-size:.82rem;font-weight:500;background:none;border:none;
+.tb{display:inline-block;font-family:var(--sans);font-size:.82rem;font-weight:500;background:none;border:none;
     border-bottom:3px solid transparent;margin-bottom:-2px;padding:9px 16px;cursor:pointer;
-    color:var(--muted);transition:color .15s,border-color .15s;white-space:nowrap}
+    text-decoration:none;color:var(--muted);transition:color .15s,border-color .15s;white-space:nowrap}
 .tb:hover{color:var(--gdp)}.tb.active{color:var(--gdp);border-bottom-color:var(--gdp);font-weight:600}
 .tc{display:none}.tc.active{display:block}
 .layout{display:grid;grid-template-columns:1fr 272px;align-items:stretch}
@@ -133,8 +133,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--txt);min-height:10
   <div class="wh-copy">© 2026 Theodore P. Pavlic · <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT License</a></div>
 </header>
 <div class="tab-bar">
-  <button class="tb active" onclick="switchTab('single',this)">① Single Patch</button>
-  <button class="tb"        onclick="switchTab('portfolio',this)">② Patch Portfolio</button>
+  <a class="tb active" href="#single"    data-tab="single"    onclick="switchTab('single',this);return false;">① Single Patch</a>
+  <a class="tb"        href="#portfolio" data-tab="portfolio" onclick="switchTab('portfolio',this);return false;">② Patch Portfolio</a>
 </div>
 
 <!-- ═══ TAB 1 ═══ -->
@@ -1159,16 +1159,23 @@ function reflowTab2(){
 }
 
 function switchTab(tab,btn){
+  if(tab!=='single'&&tab!=='portfolio')return;
   activeTab=tab;
+  btn=btn||document.querySelector('.tb[data-tab="'+tab+'"]');
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('.tc').forEach(p=>p.classList.remove('active'));
-  btn.classList.add('active');
+  if(btn)btn.classList.add('active');
   document.getElementById('pane-'+tab).classList.add('active');
   requestAnimationFrame(()=>{
     if(tab==='single')renderSingle();
     else{reflowTab2();ensureTri();drawTri();renderPortfolio();}
   });
+  history.replaceState(null,'','#'+tab);
 }
+window.addEventListener('hashchange',()=>{
+  const id=location.hash.slice(1);
+  if(id==='single'||id==='portfolio')switchTab(id);
+});
 
 document.getElementById('slS').addEventListener('input',()=>{
   s1=parseFloat(document.getElementById('slS').value);
@@ -1198,6 +1205,9 @@ requestAnimationFrame(()=>{
   renderSingle();
   reflowTab2();
   ensureTri();drawTri();
+
+  const bootId=location.hash.slice(1);
+  if(bootId==='portfolio')switchTab(bootId);
 });
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">

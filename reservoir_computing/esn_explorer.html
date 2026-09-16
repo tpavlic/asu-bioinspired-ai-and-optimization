@@ -40,7 +40,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);over
 .wh h1{font-size:1.18rem;font-weight:600;letter-spacing:.02em;}
 .wh p{font-size:.76rem;opacity:.82;margin-top:2px;font-family:'IBM Plex Mono',monospace;}
 .tabs{display:flex;background:var(--surf);border-bottom:2px solid var(--border);padding:0 14px;}
-.tab{padding:9px 15px;border:none;background:transparent;font-family:'Outfit';font-size:.82rem;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;}
+.tab{padding:9px 15px;border:none;background:transparent;font-family:'Outfit';font-size:.82rem;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;text-decoration:none;display:inline-block;}
 .tab.on{color:var(--green);border-bottom-color:var(--orange);font-weight:600;}
 .tab:hover:not(.on){color:var(--green2);}
 .panel{display:none;padding:13px 14px;}
@@ -103,10 +103,10 @@ canvas{display:block;}
   </div>
 </div>
 <div class="tabs">
-  <button class="tab on" onclick="showTab(0)">① Echo &amp; Memory</button>
-  <button class="tab"    onclick="showTab(1)">② RMS Fingerprint</button>
-  <button class="tab"    onclick="showTab(2)">③ Pattern Separability</button>
-  <button class="tab"    onclick="showTab(3)">④ Classification Comparison</button>
+  <a class="tab on" href="#echo" data-tab="echo" onclick="showTab(0);return false;">① Echo &amp; Memory</a>
+  <a class="tab"    href="#rms" data-tab="rms" onclick="showTab(1);return false;">② RMS Fingerprint</a>
+  <a class="tab"    href="#separability" data-tab="separability" onclick="showTab(2);return false;">③ Pattern Separability</a>
+  <a class="tab"    href="#classification" data-tab="classification" onclick="showTab(3);return false;">④ Classification Comparison</a>
 </div>
 <select class="tab-select" id="tab-dropdown" onchange="showTab(parseInt(this.value))">
   <option value="0">① Echo &amp; Memory</option>
@@ -1505,17 +1505,28 @@ function drawCurve3(results){
 // ════════════════════════════════════════════════════
 // Tab switching + init
 // ════════════════════════════════════════════════════
+const TAB_IDS=['echo','rms','separability','classification'];
 function showTab(i){
   document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('on',j===i));
   document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('on',j===i));
   const dd=document.getElementById('tab-dropdown');
   if(dd&&parseInt(dd.value)!==i) dd.value=i;
+  const hashName=TAB_IDS[i];
+  if(hashName&&location.hash.slice(1)!==hashName) history.replaceState(null,'','#'+hashName);
   if(i===0) renderTab1();
   else if(i===1) renderRMSTab();
   else if(i===2) renderTab2();
   else if(i===3) drawCurve3(null);
 }
-window.addEventListener('load',()=>{renderTab1();updateT3Task();drawCurve3(null);renderRMSTab&&setTimeout(()=>{},0);});
+window.addEventListener('hashchange',()=>{
+  const idx=TAB_IDS.indexOf(location.hash.slice(1));
+  if(idx!==-1) showTab(idx);
+});
+window.addEventListener('load',()=>{
+  renderTab1();updateT3Task();drawCurve3(null);renderRMSTab&&setTimeout(()=>{},0);
+  const startIdx=TAB_IDS.indexOf(location.hash.slice(1));
+  if(startIdx>0) showTab(startIdx);
+});
 window.addEventListener('resize',()=>{
   const i=[...document.querySelectorAll('.panel')].findIndex(p=>p.classList.contains('on'));
   if(i===0) renderTab1();else if(i===1) renderRMSTab();else if(i===2) renderTab2();else if(i===3) drawCurve3(null);

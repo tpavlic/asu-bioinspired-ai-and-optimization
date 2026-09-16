@@ -106,6 +106,8 @@ html, body {
   margin-bottom: -2px;
   white-space: nowrap;
   transition: color 0.15s;
+  text-decoration: none;
+  display: inline-block;
 }
 .tab-btn:hover:not(.disabled):not(.active) { color: rgba(255,255,255,0.88); }
 .tab-btn.active:hover { color: var(--green-dark); opacity: 0.80; }
@@ -425,9 +427,9 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 </header>
 
 <nav class="tabbar">
-  <button class="tab-btn active" id="tabBtn1d">① 1-D Signal &amp; Chemotaxis</button>
-  <button class="tab-btn" id="tabBtn2d">② 2-D Signal &amp; Chemotaxis</button>
-  <button class="tab-btn" id="tabBtn3">③ Full BFO Algorithm</button>
+  <a class="tab-btn active" id="tabBtn1d" href="#1d">① 1-D Signal &amp; Chemotaxis</a>
+  <a class="tab-btn" id="tabBtn2d" href="#2d">② 2-D Signal &amp; Chemotaxis</a>
+  <a class="tab-btn" id="tabBtn3" href="#3">③ Full BFO Algorithm</a>
 </nav>
 <div class="tab-select-wrap">
   <select class="tab-select" id="tabSelect">
@@ -1883,7 +1885,15 @@ function pauseAll() {
   if (running3)  { running3=false;  btnRun3.innerHTML='▶ Run'; }
 }
 
-document.getElementById('tabBtn1d').addEventListener('click', () => {
+// Reflect the active tab in the URL hash without growing browser history.
+function syncTabHash(tab) {
+  if (location.hash.slice(1) !== tab) history.replaceState(null, '', '#' + tab);
+}
+function validBfoTab(tab) { return tab === '1d' || tab === '2d' || tab === '3'; }
+
+document.getElementById('tabBtn1d').addEventListener('click', (e) => {
+  e.preventDefault();
+  syncTabHash('1d');
   if (activeTab === '1d') return;
   pauseAll(); activeTab = '1d'; syncTabSelect('1d');
   document.getElementById('tabBtn1d').classList.add('active');
@@ -1894,7 +1904,9 @@ document.getElementById('tabBtn1d').addEventListener('click', () => {
   document.getElementById('tab3-content').style.display = 'none';
   syncCanvas(); needsRedraw = true;
 });
-document.getElementById('tabBtn2d').addEventListener('click', () => {
+document.getElementById('tabBtn2d').addEventListener('click', (e) => {
+  e.preventDefault();
+  syncTabHash('2d');
   if (activeTab === '2d') return;
   pauseAll(); activeTab = '2d'; syncTabSelect('2d');
   document.getElementById('tabBtn2d').classList.add('active');
@@ -1905,7 +1917,9 @@ document.getElementById('tabBtn2d').addEventListener('click', () => {
   document.getElementById('tab3-content').style.display = 'none';
   syncCanvas2d(); heatmapDirty2D = true; needsRedraw2D = true;
 });
-document.getElementById('tabBtn3').addEventListener('click', () => {
+document.getElementById('tabBtn3').addEventListener('click', (e) => {
+  e.preventDefault();
+  syncTabHash('3');
   if (activeTab === '3') return;
   pauseAll(); activeTab = '3'; syncTabSelect('3');
   document.getElementById('tabBtn3').classList.add('active');
@@ -1916,6 +1930,14 @@ document.getElementById('tabBtn3').addEventListener('click', () => {
   document.getElementById('tab3-content').style.display = '';
   syncCanvas3(); heatDirty3 = true; needsRedraw3 = true;
   draw3dTab3();
+});
+
+window.addEventListener('hashchange', () => {
+  const tab = location.hash.slice(1);
+  if (!validBfoTab(tab)) return;
+  if (tab === '1d') document.getElementById('tabBtn1d').click();
+  else if (tab === '2d') document.getElementById('tabBtn2d').click();
+  else document.getElementById('tabBtn3').click();
 });
 
 // ═══════════════════════════════════════════════
@@ -3252,6 +3274,14 @@ recordFitSnapshot3();
 syncCanvas3();
 draw3dTab3();
 requestAnimationFrame(renderLoop);
+
+{
+  const startTab = location.hash.slice(1);
+  if (startTab && startTab !== '1d' && validBfoTab(startTab)) {
+    if (startTab === '2d') document.getElementById('tabBtn2d').click();
+    else document.getElementById('tabBtn3').click();
+  }
+}
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
   <div style="padding:0.25rem 0 0.75rem 1rem;">

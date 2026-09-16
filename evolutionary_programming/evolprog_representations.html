@@ -42,7 +42,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-
 .hdr h1{font-size:18px;font-weight:600;color:#fff;letter-spacing:-.2px;}
 .hdr-copy{font-size:11px;color:rgba(255,255,255,.42);font-weight:300;white-space:nowrap;flex-shrink:0;}
 .tab-bar{background:var(--surface);border-bottom:2px solid var(--border);padding:0 32px;display:flex;overflow-x:auto;overflow-y:hidden;}
-.tb{padding:11px 18px;border:none;background:none;font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
+.tb{display:inline-block;padding:11px 18px;border:none;background:none;font-family:'Outfit',sans-serif;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap;}
 .tb:hover{color:var(--primary);}.tb.on{color:var(--primary);border-bottom-color:var(--accent);font-weight:600;}
 .panel{display:none;padding:24px 32px 16px;max-width:1200px;}.panel.on{display:block;}
 .efoot-copy{padding:8px 32px 0 2rem;text-align:left;font-size:11px;color:var(--muted);}
@@ -129,10 +129,10 @@ hr.pal-div{border:none;border-top:1px solid var(--border);margin:4px 0;}
 </div>
 
 <nav class="tab-bar">
-  <button class="tb on"  onclick="switchTab('ast')">🌳 Abstract Syntax Trees</button>
-  <button class="tb"     onclick="switchTab('lgp')">📼 Linear Genetic Programs</button>
-  <button class="tb"     onclick="switchTab('fsm')">🔄 FSM / Evol. Programming</button>
-  <button class="tb"     onclick="switchTab('cmp')">↔ Summary &amp; Comparison</button>
+  <a class="tb on"  href="#ast" onclick="switchTab('ast');return false;">🌳 Abstract Syntax Trees</a>
+  <a class="tb"     href="#lgp" onclick="switchTab('lgp');return false;">📼 Linear Genetic Programs</a>
+  <a class="tb"     href="#fsm" onclick="switchTab('fsm');return false;">🔄 FSM / Evol. Programming</a>
+  <a class="tb"     href="#cmp" onclick="switchTab('cmp');return false;">↔ Summary &amp; Comparison</a>
 </nav>
 
 <!-- Narrow-screen tab selector (shown below 700px) -->
@@ -438,14 +438,21 @@ hr.pal-div{border:none;border-top:1px solid var(--border);margin:4px 0;}
 /* ── SHARED ── */
 let _uid=0;
 const uid=()=>'n'+(++_uid), rnd=n=>Math.floor(Math.random()*n), pick=a=>a[rnd(a.length)];
+const TAB_IDS=['ast','lgp','fsm','cmp'];
 function switchTab(id){
-  ['ast','lgp','fsm','cmp'].forEach((t,i)=>{
+  if(!TAB_IDS.includes(id))return;
+  TAB_IDS.forEach((t,i)=>{
     document.querySelectorAll('.tb')[i].classList.toggle('on',t===id);
     document.getElementById('tab-'+t).classList.toggle('on',t===id);
   });
   const sel=document.getElementById('tab-select');
   if(sel) sel.value=id;
+  history.replaceState(null,'','#'+id);
 }
+window.addEventListener('hashchange',()=>{
+  const id=location.hash.slice(1);
+  if(TAB_IDS.includes(id)) switchTab(id);
+});
 
 /* ── NODE INFO ── */
 const NI={
@@ -1664,6 +1671,10 @@ function fsmUpdateRunDisplay() {
    COMPARISON TAB — properties table only
 ══════════════════════════════════════════════ */
 
+(function(){
+  const id=location.hash.slice(1);
+  if(TAB_IDS.includes(id) && id!=='ast') switchTab(id);
+})();
 
 </script>
 <div class="efoot-copy">&copy; 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> &middot; </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>

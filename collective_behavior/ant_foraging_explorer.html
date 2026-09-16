@@ -85,6 +85,7 @@ a:hover { text-decoration: underline; }
   color: rgba(255,255,255,0.50); cursor: pointer;
   border-bottom: 3px solid transparent; margin-bottom: -2px;
   white-space: nowrap; transition: color 0.15s;
+  text-decoration: none; display: inline-block;
 }
 .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.85); }
 .tab-btn.active {
@@ -507,8 +508,8 @@ footer.copyright { text-align: center; }
 
 <!-- TABBAR -->
 <nav class="tabbar">
-  <button class="tab-btn active" id="btn-t1">① Trail Noise &amp; Y-Maze</button>
-  <button class="tab-btn"        id="btn-t2">② Recruitment Linearity</button>
+  <a class="tab-btn active" href="#t1" id="btn-t1">① Trail Noise &amp; Y-Maze</a>
+  <a class="tab-btn"        href="#t2" id="btn-t2">② Recruitment Linearity</a>
 </nav>
 <div class="tab-select-wrap">
   <select class="tab-select" id="tab-select">
@@ -2310,17 +2311,24 @@ function setPhaseTag(html) {
 // ── EVENT WIRING ──────────────────────────────────────────────────────
 
 // Tabs — shared switchTab keeps buttons and dropdown in sync
+function validTab(id) { return id === 't1' || id === 't2'; }
 function switchTab(id) {
   el('tab1').style.display = id === 't1' ? '' : 'none';
   el('tab2').style.display = id === 't2' ? '' : 'none';
   el('btn-t1').classList.toggle('active', id === 't1');
   el('btn-t2').classList.toggle('active', id === 't2');
   el('tab-select').value = id;
+  if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
   if (id === 't2' && !t2Ready) { t2Setup(); t2Ready = true; }
 }
-el('btn-t1').addEventListener('click',    () => switchTab('t1'));
-el('btn-t2').addEventListener('click',    () => switchTab('t2'));
+el('btn-t1').addEventListener('click',    e => { e.preventDefault(); switchTab('t1'); });
+el('btn-t2').addEventListener('click',    e => { e.preventDefault(); switchTab('t2'); });
 el('tab-select').addEventListener('change', e => switchTab(e.target.value));
+
+window.addEventListener('hashchange', () => {
+  const name = location.hash.slice(1);
+  if (name && validTab(name)) switchTab(name);
+});
 
 // Run / step / reset
 el('btn-run').addEventListener('click', () => { running ? stopSim() : startSim(); });
@@ -2428,6 +2436,11 @@ const DPR = window.devicePixelRatio || 1;
 initAnts();
 syncSliders();
 renderLoop();
+
+{
+  const startHash = location.hash.slice(1);
+  if (startHash && startHash !== 't1' && validTab(startHash)) switchTab(startHash);
+}
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:var(--orange);border-top:none;padding:0;text-align:left;">
   <div style="max-width:960px;margin:0 auto;padding:0.75rem 1rem 0;border-top:1px solid var(--border);">

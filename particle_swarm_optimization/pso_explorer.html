@@ -95,6 +95,7 @@ html, body {
   color: rgba(255,255,255,0.55); cursor: pointer;
   border-bottom: 3px solid transparent; margin-bottom: -2px;
   white-space: nowrap; transition: color 0.15s;
+  text-decoration: none;
 }
 .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.88); }
 .tab-btn.active {
@@ -388,8 +389,8 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 </header>
 
 <nav class="tabbar">
-  <button class="tab-btn active" id="tabBtnTheory">&#9312; How It Works</button>
-  <button class="tab-btn"        id="tabBtnSim">&#9313; PSO Simulation</button>
+  <a class="tab-btn active" id="tabBtnTheory" href="#theory">&#9312; How It Works</a>
+  <a class="tab-btn"        id="tabBtnSim"    href="#sim">&#9313; PSO Simulation</a>
 </nav>
 <div class="tab-select-wrap">
   <select class="tab-select" id="tabSelect">
@@ -729,13 +730,21 @@ function switchTab(id){
     tabBtns[k].classList.toggle('active', k===id);
   }
   document.getElementById('tabSelect').value = id;
+  history.replaceState(null, '', '#' + id);
   if(id==='theory') requestAnimationFrame(theoryLoop);
   if(id==='sim') setTimeout(()=>{ draw3dThumb(); if(typeof initParticlesGlobal==='function') initParticlesGlobal(); requestAnimationFrame(simMainLoop); }, 0);
 }
 
-document.getElementById('tabBtnTheory').addEventListener('click', ()=>switchTab('theory'));
-document.getElementById('tabBtnSim').addEventListener('click',    ()=>switchTab('sim'));
+// Reads the hash against the real tab set (the `tabs` map above), rather than a second list.
+function hashTabId(){
+  const h = location.hash.slice(1);
+  return Object.prototype.hasOwnProperty.call(tabs, h) ? h : null;
+}
+
+document.getElementById('tabBtnTheory').addEventListener('click', e=>{ e.preventDefault(); switchTab('theory'); });
+document.getElementById('tabBtnSim').addEventListener('click',    e=>{ e.preventDefault(); switchTab('sim'); });
 document.getElementById('tabSelect').addEventListener('change', e=>switchTab(e.target.value));
+window.addEventListener('hashchange', ()=>{ const id = hashTabId(); if(id !== null) switchTab(id); });
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SHARED DRAWING HELPERS
@@ -1594,6 +1603,11 @@ const PARTICLE_COLORS = [
 
   updateBadge();
 })();
+
+{
+  const bootId = hashTabId();
+  if (bootId !== null && bootId !== 'theory') switchTab(bootId);
+}
 </script>
 </div><!-- page-wrap -->
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">

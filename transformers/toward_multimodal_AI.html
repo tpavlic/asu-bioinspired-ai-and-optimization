@@ -58,7 +58,7 @@ header .page-inner{display:flex;align-items:center;justify-content:space-between
 .framing p{font-size:.87rem;line-height:1.72}
 .framing strong{color:#fff;font-weight:600}
 .framing-steps{display:flex;gap:0;margin-top:14px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.12);padding-top:12px}
-.framing-step{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:200px;padding:8px 16px 8px 6px;cursor:pointer;border-radius:5px;transition:background .18s,box-shadow .18s;user-select:none}
+.framing-step{display:flex;align-items:flex-start;gap:10px;flex:1;min-width:200px;padding:8px 16px 8px 6px;cursor:pointer;border-radius:5px;transition:background .18s,box-shadow .18s;user-select:none;color:inherit;text-decoration:none}
 .framing-step:not(:last-child){border-right:1px solid rgba(255,255,255,.12);margin-right:16px}
 .framing-step:hover{background:rgba(255,255,255,.07)}
 .framing-step.active{background:rgba(255,255,255,.13);box-shadow:inset 0 3px 0 var(--accent)}
@@ -223,18 +223,18 @@ hr{border:none;border-top:1px solid var(--border);margin:18px 0}
     They rest on three ideas built in sequence: a way to turn a visual scene into a flexible token-based representation; a way to train image and text encoders to share a common semantic space; and the insight that once visual information is in that space, a language model's reasoning machinery applies unchanged.
     This module builds that story from the ground up.</p>
     <div class="framing-steps">
-      <div class="framing-step active" onclick="switchTab(0)">
+      <a class="framing-step active" href="#0" onclick="switchTab(0); return false;">
         <div class="fstep-num">1</div>
         <div class="fstep-text"><strong>From Pixels to Tokens</strong><br>Why the shift from CNNs to Vision Transformers was necessary — and what the <strong>[CLS] token</strong> is.</div>
-      </div>
-      <div class="framing-step" onclick="switchTab(1)">
+      </a>
+      <a class="framing-step" href="#1" onclick="switchTab(1); return false;">
         <div class="fstep-num">2</div>
         <div class="fstep-text"><strong>Joint Embedding Spaces</strong><br>How contrastive training (CLIP) maps images and text into a shared geometry where <strong>cosine similarity equals semantic similarity</strong>.</div>
-      </div>
-      <div class="framing-step" onclick="switchTab(2)">
+      </a>
+      <a class="framing-step" href="#2" onclick="switchTab(2); return false;">
         <div class="fstep-num">3</div>
         <div class="fstep-text"><strong>Multimodal Reasoning</strong><br>How visual tokens are projected into the <strong>same space as text tokens</strong> so a language model's attention can reason over both.</div>
-      </div>
+      </a>
     </div>
   </div>
 </div>
@@ -740,12 +740,25 @@ function switchTab(idx) {
   document.querySelectorAll('.tab-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
   document.querySelectorAll('.framing-step').forEach((s,i)=>s.classList.toggle('active',i===idx));
   document.querySelector('.tab-select').value = idx;
+  history.replaceState(null, '', '#' + idx);
   setTimeout(()=>{
     if(idx===0){drawCNN();drawViT();drawTradeoff();}
     if(idx===1){drawEmb();drawClipTrain();}
     if(idx===2){drawArch();runScenario(activeScenario);}
   },30);
 }
+
+// Reads the hash against the real tab panel set, rather than a second hardcoded list.
+function hashTabIndex() {
+  const n = document.querySelectorAll('.tab-panel').length;
+  const idx = parseInt(location.hash.slice(1), 10);
+  return (Number.isInteger(idx) && idx >= 0 && idx < n) ? idx : null;
+}
+
+window.addEventListener('hashchange', () => {
+  const idx = hashTabIndex();
+  if (idx !== null) switchTab(idx);
+});
 
 /* ═══════════════════════════════
    LANDSCAPE SCENE (shared by CNN & ViT)
@@ -1871,6 +1884,8 @@ window.addEventListener('load',()=>{
   buildChips();
   drawCNN(); drawCNNDiagram(); drawViT(); drawTradeoff();
   // Pre-run scenario 0 on tab 2 (deferred)
+  const idx = hashTabIndex();
+  if (idx !== null && idx !== 0) switchTab(idx);
 });
 
 window.addEventListener('resize',()=>{

@@ -69,6 +69,7 @@ a{text-decoration:none}
   padding:9px 16px;border:none;background:transparent;color:#6a7a5a;
   cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;
   white-space:nowrap;transition:color .14s,border-color .14s;outline:none;
+  text-decoration:none;display:inline-block;
 }
 .tab-btn:hover{color:#1e2a14}
 .tab-btn.active{color:#2d5a1b;border-bottom-color:#c8580e;font-weight:600}
@@ -252,11 +253,11 @@ input[type=range]::-moz-range-thumb{
 <!-- TAB NAV -->
 <nav class="tab-nav" role="tablist">
   <div class="site-inner" style="display:flex;padding:0">
-    <button class="tab-btn active" data-tab="0">① LIF Dynamics</button>
-    <button class="tab-btn" data-tab="1">② Rate Coding</button>
-    <button class="tab-btn" data-tab="2">③ STDP</button>
-    <button class="tab-btn" data-tab="3">④ Hardware &amp; Software</button>
-    <button class="tab-btn" data-tab="4">⑤ Learning &amp; Applications</button>
+    <a class="tab-btn active" href="#tab-0" data-tab="0">① LIF Dynamics</a>
+    <a class="tab-btn" href="#tab-1" data-tab="1">② Rate Coding</a>
+    <a class="tab-btn" href="#tab-2" data-tab="2">③ STDP</a>
+    <a class="tab-btn" href="#tab-3" data-tab="3">④ Hardware &amp; Software</a>
+    <a class="tab-btn" href="#tab-4" data-tab="4">⑤ Learning &amp; Applications</a>
   </div>
 </nav>
 <div style="background:#ede8d8;border-bottom:2px solid #c5bfa8">
@@ -790,10 +791,28 @@ function switchTab(i) {
   panels .forEach((p,j) => p.classList.toggle('active', i===j));
   tabBtns.forEach((b,j) => b.classList.toggle('active', i===j));
   tabSel.value = i;
+  if (history.replaceState) history.replaceState(null, '', '#tab-'+i);
   if (i===0 && !lifGoing) startLIF();
   if (i===1 && !codGoing) startCOD();
   if (i===2) setTimeout(redrawSTDP, 50);
 }
+
+// External deep link support: a hash of "#tab-<n>" opens directly on that
+// tab, whether it names the page at load or arrives later (an external
+// link opened while the page is already open, or a back/forward step).
+// The tab set is read from the button row itself so this can't drift out
+// of step with the markup above.
+function tabIndexFromHash() {
+  const m = /^#tab-(\d+)$/.exec(location.hash);
+  if (!m) return null;
+  const n = +m[1];
+  const valid = Array.from(tabBtns).some(b => +b.dataset.tab === n);
+  return valid ? n : null;
+}
+window.addEventListener('hashchange', () => {
+  const n = tabIndexFromHash();
+  if (n !== null) switchTab(n);
+});
 
 function showHW(key) {
   ['loihi2','truenorth','spinnaker','brainscales'].forEach(k => {
@@ -804,7 +823,7 @@ function showHW(key) {
     lbl.classList.toggle('active', lbl.querySelector('input').value === key);
   });
 }
-tabBtns.forEach(b => b.addEventListener('click', () => switchTab(+b.dataset.tab)));
+tabBtns.forEach(b => b.addEventListener('click', (e) => { e.preventDefault(); switchTab(+b.dataset.tab); }));
 tabSel .addEventListener('change', () => switchTab(+tabSel.value));
 
 // ═══════════════════════════════════════════════════════════
@@ -1656,7 +1675,13 @@ window.addEventListener('resize', () => {
 });
 
 // ── INIT: start both simulations once fonts are ready ─────
-document.fonts.ready.then(() => { startLIF(); startCOD(); });
+document.fonts.ready.then(() => {
+  startLIF(); startCOD();
+  // Now that the default tab's own simulations have been primed, honor an
+  // incoming deep link to a non-default tab.
+  const bootTab = tabIndexFromHash();
+  if (bootTab !== null) switchTab(bootTab);
+});
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#c8580e;">
   <div style="max-width:860px;margin:0 auto;padding:0.75rem 0 0 1rem;">

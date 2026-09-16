@@ -93,6 +93,7 @@ body{
   margin-bottom:-2px;
   border-radius:4px 4px 0 0;
   transition:color .15s,background .15s;
+  text-decoration:none;display:inline-block;
 }
 .tab.active{color:var(--g700);background:var(--surface);border-color:var(--g700);}
 .tab:not(.active):hover{color:var(--g700);}
@@ -349,8 +350,8 @@ input[type=range]::-moz-range-thumb{
 </div>
 
 <div class="tab-bar">
-  <button class="tab active" id="tabNSA">Negative Selection (NSA)</button>
-  <button class="tab" id="tabCLONALG">CLONALG</button>
+  <a class="tab active" id="tabNSA" href="#NSA">Negative Selection (NSA)</a>
+  <a class="tab" id="tabCLONALG" href="#CLONALG">CLONALG</a>
 </div>
 
 <!-- ================================================================
@@ -2760,20 +2761,31 @@ document.getElementById('cDomSel').addEventListener('change', () => {
 /* ================================================================
    TAB SWITCHING
 ================================================================ */
-document.getElementById('tabNSA').addEventListener('click', () => {
-  document.getElementById('panelNSA').style.display    = '';
-  document.getElementById('panelCLONALG').style.display = 'none';
-  document.getElementById('tabNSA').classList.add('active');
-  document.getElementById('tabCLONALG').classList.remove('active');
-  if (cRunning) cStartStop();
+function showAisTab(id) {
+  const isNSA = id === 'NSA';
+  document.getElementById('panelNSA').style.display     = isNSA ? '' : 'none';
+  document.getElementById('panelCLONALG').style.display = isNSA ? 'none' : '';
+  document.getElementById('tabNSA').classList.toggle('active', isNSA);
+  document.getElementById('tabCLONALG').classList.toggle('active', !isNSA);
+  if (isNSA && cRunning) cStartStop();
+  if (!isNSA && running) startStop();
+  if (location.hash.slice(1) !== id) history.replaceState(null, '', '#' + id);
+}
+function validAisTab(id) { return id === 'NSA' || id === 'CLONALG'; }
+
+document.getElementById('tabNSA').addEventListener('click', (e) => {
+  e.preventDefault();
+  showAisTab('NSA');
 });
 
-document.getElementById('tabCLONALG').addEventListener('click', () => {
-  document.getElementById('panelNSA').style.display    = 'none';
-  document.getElementById('panelCLONALG').style.display = '';
-  document.getElementById('tabCLONALG').classList.add('active');
-  document.getElementById('tabNSA').classList.remove('active');
-  if (running) startStop();
+document.getElementById('tabCLONALG').addEventListener('click', (e) => {
+  e.preventDefault();
+  showAisTab('CLONALG');
+});
+
+window.addEventListener('hashchange', () => {
+  const id = location.hash.slice(1);
+  if (validAisTab(id)) showAisTab(id);
 });
 
 /* ================================================================
@@ -2782,6 +2794,11 @@ document.getElementById('tabCLONALG').addEventListener('click', () => {
 updateDomain();
 init();
 cInit();
+
+{
+  const startId = location.hash.slice(1);
+  if (startId && startId !== 'NSA' && validAisTab(startId)) showAisTab(startId);
+}
 
 // Scroll hint for pseudo-cards that overflow horizontally
 function updateScrollHints() {

@@ -52,7 +52,8 @@ a:hover{text-decoration:underline;}
 .tab-bar{display:flex;border-bottom:2px solid var(--brd);margin-bottom:14px;gap:2px;}
 .tbtn{font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;color:var(--txt3);
   background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;
-  padding:7px 16px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;}
+  padding:7px 16px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;
+  text-decoration:none;display:inline-block;}
 .tbtn:hover{color:var(--green);}.tbtn.on{color:var(--green);border-bottom-color:var(--org);}
 .tab{display:none;}.tab.on{display:block;}
 .panel{background:#fff;border:1px solid var(--brd);border-radius:8px;padding:12px 14px 14px;
@@ -144,8 +145,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
   <option value="c">② Clustering Demo</option>
 </select>
 <div class="tab-bar">
-  <button class="tbtn on" id="tbtn-h" onclick="gotoTab('h')">&#9312; Learning Rules</button>
-  <button class="tbtn"    id="tbtn-c" onclick="gotoTab('c')">&#9313; Clustering Demo</button>
+  <a class="tbtn on" id="tbtn-h" href="#h" onclick="gotoTab('h');return false;">&#9312; Learning Rules</a>
+  <a class="tbtn"    id="tbtn-c" href="#c" onclick="gotoTab('c');return false;">&#9313; Clustering Demo</a>
 </div>
 
 <!-- ══════════ TAB 1: HEBBIAN RULE ══════════ -->
@@ -431,11 +432,17 @@ function gotoTab(id){
   document.getElementById('tbtn-'+id).classList.add('on');
   document.getElementById('tab-'+id).classList.add('on');
   const sel=document.getElementById('tabSelect');if(sel)sel.value=id;
+  if(location.hash.slice(1)!==id) history.replaceState(null,'','#'+id);
   if(id!=='h')pauseD2();
   if(id!=='c')pauseC2();
   if(id==='h')setTimeout(()=>{drawD2();drawD2W();drawNetDiag();},15);
   if(id==='c')setTimeout(drawNet2,15);
 }
+function validTab(id){ return !!document.getElementById('tab-'+id); }
+window.addEventListener('hashchange',()=>{
+  const id=location.hash.slice(1);
+  if(id&&validTab(id)) gotoTab(id);
+});
 
 // ══════════════════════════════
 // TAB 1 — 2D GEOMETRIC EXPLORER
@@ -1138,6 +1145,8 @@ window.addEventListener('load',()=>{
   initD2();
   initW2();buildPats2();buildRF2();
   setTimeout(()=>{drawD2();drawD2W();drawNetDiag();drawNet2();},20);
+  const startId=location.hash.slice(1);
+  if(startId&&startId!=='h'&&validTab(startId)) gotoTab(startId);
 });
 window.addEventListener('resize',()=>{
   if(document.getElementById('tab-h').classList.contains('on')){drawD2();drawD2W();drawNetDiag();}

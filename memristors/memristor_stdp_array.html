@@ -55,7 +55,8 @@ body{background:var(--bg);font-family:'Outfit',sans-serif;color:var(--txt);min-h
 .tab-bar{display:flex;border-bottom:2px solid var(--brd);margin-bottom:14px;gap:2px;}
 .tbtn{font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;color:var(--txt3);
   background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;
-  padding:7px 16px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;}
+  padding:7px 16px;cursor:pointer;transition:color .15s,border-color .15s;white-space:nowrap;
+  text-decoration:none;display:inline-block;}
 .tbtn:hover{color:var(--green);} .tbtn.on{color:var(--green);border-bottom-color:var(--org);}
 .tab{display:none;} .tab.on{display:block;}
 
@@ -212,8 +213,8 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:5px;bac
 
 <!-- TABS -->
 <div class="tab-bar">
-  <button class="tbtn on" id="tbtn-f" onclick="gotoTab('f')">&#9312; Memristor STDP</button>
-  <button class="tbtn"    id="tbtn-n" onclick="gotoTab('n')">&#9313; Crossbar Network</button>
+  <a class="tbtn on" id="tbtn-f" href="#f" onclick="gotoTab('f');return false;">&#9312; Memristor STDP</a>
+  <a class="tbtn"    id="tbtn-n" href="#n" onclick="gotoTab('n');return false;">&#9313; Crossbar Network</a>
 </div>
 
 <div class="tab" id="tab-n">
@@ -566,6 +567,7 @@ function gotoTab(id){
   document.getElementById('tab-'+id).classList.add('on');
   const sel=document.getElementById('tabSelect');
   if(sel)sel.value=id;
+  if(location.hash.slice(1)!==id) history.replaceState(null,'','#'+id);
   // Pause the network simulation when leaving Tab 2 — silent background
   // running is confusing and students miss the convergence trajectory.
   if(id!=='n'&&running){
@@ -578,6 +580,11 @@ function gotoTab(id){
   if(id==='n')setTimeout(()=>{drawNet();drawXStatic2();},15);
   if(id==='f')setTimeout(drawFTJTab,15);
 }
+function validTab(id){ return !!document.getElementById('tab-'+id); }
+window.addEventListener('hashchange',()=>{
+  const id=location.hash.slice(1);
+  if(id&&validTab(id)) gotoTab(id);
+});
 
 // ═══════════════════════════════════════
 // TAB 1: STDP DRAWING
@@ -1661,6 +1668,8 @@ window.addEventListener('load',()=>{
   initW();buildPats();buildRF();
   setTimeout(drawFTJTab,20);
   setTimeout(drawNet,25);
+  const startId=location.hash.slice(1);
+  if(startId&&startId!=='f'&&validTab(startId)) gotoTab(startId);
 });
 window.addEventListener('resize',()=>{
   if(document.getElementById('tab-n').classList.contains('on'))drawNet();

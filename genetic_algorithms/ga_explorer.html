@@ -42,7 +42,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--
 .tabs{display:flex;background:var(--vlt);border-bottom:1.5px solid var(--bdr)}
 .tbtn{padding:10px 18px;border:none;background:0;font-family:inherit;font-size:13px;
   font-weight:500;color:var(--md);cursor:pointer;border-right:1px solid var(--bdr);
-  transition:all .12s;letter-spacing:.15px}
+  transition:all .12s;letter-spacing:.15px;text-decoration:none;display:inline-block}
 .tbtn:hover{background:rgba(82,183,136,.2)}
 .tbtn.act{background:var(--dk);color:#fff}
 .tab{display:none}.tab.act{display:block}
@@ -142,10 +142,10 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg);color:var(--
 </div>
 
 <div class="tabs">
-  <button class="tbtn act" onclick="switchTab('t1d',this)">&#9312; 1-D Multimodal GA</button>
-  <button class="tbtn" onclick="switchTab('tisl',this)">&#9313; Island Model / DGA</button>
-  <button class="tbtn" onclick="switchTab('tzoo',this)">&#9314; 2-D Opt. Zoo</button>
-  <button class="tbtn" onclick="switchTab('tns',this)">&#9315; 2-Obj MOEA</button>
+  <a class="tbtn act" href="#t1d" onclick="switchTab('t1d',this);return false;">&#9312; 1-D Multimodal GA</a>
+  <a class="tbtn" href="#tisl" onclick="switchTab('tisl',this);return false;">&#9313; Island Model / DGA</a>
+  <a class="tbtn" href="#tzoo" onclick="switchTab('tzoo',this);return false;">&#9314; 2-D Opt. Zoo</a>
+  <a class="tbtn" href="#tns" onclick="switchTab('tns',this);return false;">&#9315; 2-Obj MOEA</a>
 </div>
 
 <!-- ═══════════════════════════════════════════════
@@ -647,12 +647,16 @@ function getCtx(cv){
   return{ctx,W,H};
 }
 
+function validTab(id){ return !!document.querySelector('.tbtn[href="#'+id+'"]'); }
+
 function switchTab(id,btn){
   stop1(); stopN(); stopI(); stopZ();
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('act'));
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
   document.getElementById(id).classList.add('act');
-  btn.classList.add('act');
+  const tabBtn = btn || document.querySelector('.tbtn[href="#'+id+'"]');
+  if(tabBtn) tabBtn.classList.add('act');
+  if(location.hash.slice(1)!==id) history.replaceState(null,'','#'+id);
   if(id==='t1d'){
     ['cv1d','cvHist1'].forEach(id2=>{ const el=document.getElementById(id2); if(el)scaleToDPR(el); });
     if(!ga1)// Scale tab-1 canvases on initial load (they're visible immediately)
@@ -1990,6 +1994,10 @@ requestAnimationFrame(()=>{
   draw1(); drawHist1();
 });
 
+window.addEventListener('hashchange', () => {
+  const name = location.hash.slice(1);
+  if (name && validTab(name)) switchTab(name, null);
+});
 
 // ─── TAB 4 BOOT ───
 // ─── TAB 4  2-D OPTIMIZATION ZOO ─────────────────
@@ -2679,6 +2687,14 @@ function initZTab(){
 
 // Tab 4 elements are inserted after this script tag, so defer until parsed
 document.addEventListener('DOMContentLoaded', zBuildFuncSelector);
+
+// Deep-link boot: Tab 4's markup and function selector aren't ready until
+// DOMContentLoaded (see above), so the incoming-hash switch waits for that
+// too, running after zBuildFuncSelector via listener registration order.
+document.addEventListener('DOMContentLoaded', () => {
+  const startHash = location.hash.slice(1);
+  if (startHash && startHash !== 't1d' && validTab(startHash)) switchTab(startHash, null);
+});
 </script>
 <!-- ═══════════════════════════════════════════════
      TAB 4  —  2-D OPTIMIZATION ZOO

@@ -87,9 +87,10 @@ html, body {
 }
 .tabbar::-webkit-scrollbar { display: none; }
 .tab-btn {
+  display: inline-block;
   font-family: var(--font-body); font-size: 0.79rem; font-weight: 500;
   padding: 8px 14px; border: none; background: transparent;
-  color: rgba(255,255,255,0.55); cursor: pointer;
+  color: rgba(255,255,255,0.55); text-decoration: none; cursor: pointer;
   border-bottom: 3px solid transparent; margin-bottom: -2px;
   white-space: nowrap; transition: color 0.15s;
 }
@@ -377,8 +378,8 @@ input[type=range] { width: 100%; accent-color: var(--green-dark); cursor: pointe
 </header>
 
 <nav class="tabbar">
-  <button class="tab-btn active" id="tabBtnTheory">&#9312; How It Works</button>
-  <button class="tab-btn"        id="tabBtnSim">&#9313; Simulation</button>
+  <a class="tab-btn active" href="#theory" id="tabBtnTheory" data-tab="theory">&#9312; How It Works</a>
+  <a class="tab-btn"        href="#sim"    id="tabBtnSim"    data-tab="sim">&#9313; Simulation</a>
 </nav>
 <div class="tab-select-wrap">
   <select class="tab-select" id="tabSelect">
@@ -702,6 +703,7 @@ const tabs={ theory:document.getElementById('tab-theory'), sim:document.getEleme
 const tabBtns={ theory:document.getElementById('tabBtnTheory'), sim:document.getElementById('tabBtnSim') };
 
 function switchTab(id){
+  if(!(id in tabs))return;
   activeTab=id;
   for(const k in tabs){
     tabs[k].style.display=(k===id)?'':'none';
@@ -710,10 +712,15 @@ function switchTab(id){
   document.getElementById('tabSelect').value=id;
   if(id==='theory') requestAnimationFrame(theoryLoop);
   if(id==='sim') setTimeout(()=>{ if(typeof simInitGlobal==='function') simInitGlobal(); requestAnimationFrame(simLoop); },0);
+  history.replaceState(null,'','#'+id);
 }
-document.getElementById('tabBtnTheory').addEventListener('click',()=>switchTab('theory'));
-document.getElementById('tabBtnSim').addEventListener('click',()=>switchTab('sim'));
+document.getElementById('tabBtnTheory').addEventListener('click',e=>{e.preventDefault();switchTab('theory');});
+document.getElementById('tabBtnSim').addEventListener('click',e=>{e.preventDefault();switchTab('sim');});
 document.getElementById('tabSelect').addEventListener('change',e=>switchTab(e.target.value));
+window.addEventListener('hashchange',()=>{
+  const id=location.hash.slice(1);
+  if(id in tabs) switchTab(id);
+});
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    DRAWING HELPERS
@@ -1601,6 +1608,11 @@ drawStaticHistogram('histEx1',  15,       0);          // spike   → φ≈1
 
   // init immediately
   initParticles(); updateBadge();
+})();
+
+(function(){
+  const bootId=location.hash.slice(1);
+  if(bootId==='sim') switchTab(bootId);
 })();
 </script>
 </div><!-- page-wrap -->
