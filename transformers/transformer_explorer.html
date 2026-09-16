@@ -366,10 +366,10 @@ input[type=range]{padding:4px 0;accent-color:var(--green);width:100%}
 <!-- ── TAB BAR ─────────────────────────────────────────── -->
 <nav class="tabbar" role="tablist">
   <div class="tabbar-inner">
-    <a class="tbtn active" role="tab" href="#0" onclick="switchTab(0); return false;">① Architecture</a>
-    <a class="tbtn" role="tab" href="#1" onclick="switchTab(1); return false;">② Attention Mechanism</a>
-    <a class="tbtn" role="tab" href="#2" onclick="switchTab(2); return false;">③ Self-Supervision</a>
-    <a class="tbtn" role="tab" href="#3" onclick="switchTab(3); return false;">④ Vision Transformer</a>
+    <a class="tbtn active" role="tab" href="#architecture" onclick="switchTab(0); return false;">① Architecture</a>
+    <a class="tbtn" role="tab" href="#attention" onclick="switchTab(1); return false;">② Attention Mechanism</a>
+    <a class="tbtn" role="tab" href="#selfsupervision" onclick="switchTab(2); return false;">③ Self-Supervision</a>
+    <a class="tbtn" role="tab" href="#visiontransformer" onclick="switchTab(3); return false;">④ Vision Transformer</a>
   </div>
 </nav>
 
@@ -1220,22 +1220,25 @@ let vitImg = 0, vitPatch = 4, vitHead = 0, vitSelPatch = 0;
 let vitSeqHitRegions = []; // [{x, w, patchIdx}] populated by drawVitSeq
 
 // ── Tab switching ────────────────────────────────────────
+// Stable per-tab names for the URL hash, kept independent of array position so
+// inserting a tab later never repoints an already-shared link at the wrong one.
+const TAB_SLUGS = ['architecture', 'attention', 'selfsupervision', 'visiontransformer'];
 function switchTab(i) {
   document.querySelectorAll('.tab-panel').forEach((p,j)=>p.classList.toggle('active',j===i));
   document.querySelectorAll('.tbtn').forEach((b,j)=>b.classList.toggle('active',j===i));
   const sel=document.getElementById('tab-select'); if(sel) sel.value=i;
   curTab = i;
-  history.replaceState(null, '', '#' + i);
+  history.replaceState(null, '', '#' + TAB_SLUGS[i]);
   if(i===1){renderAttnTab(); drawEmbMap();}
   if(i===2){renderSSTab();}
   if(i===3){renderVitTab()}
 }
 
-// Reads the hash against the real tab panel set, rather than a second hardcoded list.
+// Reads the hash against the real slug list, rather than trusting a raw index
+// that would silently point at the wrong tab once the tab order changes.
 function hashTabIndex() {
-  const n = document.querySelectorAll('.tab-panel').length;
-  const idx = parseInt(location.hash.slice(1), 10);
-  return (Number.isInteger(idx) && idx >= 0 && idx < n) ? idx : null;
+  const idx = TAB_SLUGS.indexOf(location.hash.slice(1));
+  return idx >= 0 ? idx : null;
 }
 
 window.addEventListener('hashchange', () => {

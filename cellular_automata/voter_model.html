@@ -148,9 +148,9 @@ canvas{display:block;}
   <h1>Voter Model &amp; Consensus Dynamics</h1>
   <p>The voter model is a minimal model of opinion dynamics and neutral genetic drift: each cell copies a random neighbor's opinion with no selection or preference. Despite its simplicity it captures how topology shapes the spread of traits on a network — and how random takeover (fixation) is guaranteed in some geometries but not others. At each generation every cell copies a randomly chosen neighbor. Tab ① shows a 1D spacetime diagram; Tab ② shows a 2D grid. Both support ancestry tracing: click any cell to follow its opinion lineage backward in time. Tab ③ uses two random walkers in 2D vs. 3D to demonstrate <em>why</em> consensus (fixation by drift) is guaranteed in low dimensions but not on an infinite 3D lattice — the key is Pólya's theorem on when two independent random walks must eventually meet.<br><span style="display:block;text-align:right;font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;">&copy; 2026 Theodore P. Pavlic &middot; <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:inherit;white-space:nowrap;text-decoration:underline;">MIT&nbsp;License</a></span></p>
   <div class="tabs">
-    <a class="tab on" id="tb0" href="#0" onclick="switchTab(0); return false;">① 1D Voter Model &amp; Contact Tracing</a>
-    <a class="tab"   id="tb1" href="#1" onclick="switchTab(1); return false;">② 2D Voter Model &amp; Contact Tracing</a>
-    <a class="tab"   id="tb2" href="#2" onclick="switchTab(2); return false;">③ Why 3D Fails: Random Walkers</a>
+    <a class="tab on" id="tb0" href="#voter1d" onclick="switchTab(0); return false;">① 1D Voter Model &amp; Contact Tracing</a>
+    <a class="tab"   id="tb1" href="#voter2d" onclick="switchTab(1); return false;">② 2D Voter Model &amp; Contact Tracing</a>
+    <a class="tab"   id="tb2" href="#randomwalkers3d" onclick="switchTab(2); return false;">③ Why 3D Fails: Random Walkers</a>
   </div>
 </div>
 
@@ -394,6 +394,9 @@ canvas{display:block;}
 'use strict';
 
 // ── shared ──────────────────────────────────────────────────────
+// Stable per-tab names for the URL hash, kept independent of array position so
+// inserting a tab later never repoints an already-shared link at the wrong one.
+const TAB_SLUGS = ['voter1d', 'voter2d', 'randomwalkers3d'];
 function switchTab(n){
   if(n!==0&&t1run)t1Run();
   if(n!==1&&run2)t2Run();
@@ -402,14 +405,14 @@ function switchTab(n){
     document.getElementById('tb'+i).classList.toggle('on',i===n);
     document.getElementById('p'+i).classList.toggle('on',i===n);
   });
-  history.replaceState(null, '', '#' + n);
+  history.replaceState(null, '', '#' + TAB_SLUGS[n]);
 }
 
-// Reads the hash against the real tab set, rather than a second hardcoded list.
+// Reads the hash against the real slug list, rather than trusting a raw index
+// that would silently point at the wrong tab once the tab order changes.
 function hashTabIndex(){
-  const n = document.querySelectorAll('.tabs .tab').length;
-  const idx = parseInt(location.hash.slice(1), 10);
-  return (Number.isInteger(idx) && idx>=0 && idx<n) ? idx : null;
+  const idx = TAB_SLUGS.indexOf(location.hash.slice(1));
+  return idx >= 0 ? idx : null;
 }
 
 window.addEventListener('hashchange', ()=>{
