@@ -4,22 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Monte Carlo Explorer — interactive explainer</title>
-<meta name="description" content="Interactive explorer for Monte Carlo estimation: estimate π by dartboard sampling and integrate a function by averaging random draws, watching 95% confidence intervals accumulate across repeated experiments.">
+<meta name="description" content="Interactive explorer for Monte Carlo estimation: estimate π by dartboard sampling and by dropping Buffon’s needles, measure a floor area from the crossings of a robot’s own trails, and integrate a function by averaging random draws, with accumulating 95% confidence intervals.">
 
 <!-- Open Graph (Facebook, LinkedIn, Slack, iMessage, etc.) -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Monte Carlo Explorer — interactive explainer">
-<meta property="og:description" content="Interactive explorer for Monte Carlo estimation: estimate π by dartboard sampling and integrate a function by averaging random draws, watching 95% confidence intervals accumulate across repeated experiments.">
+<meta property="og:description" content="Interactive explorer for Monte Carlo estimation: estimate π by dartboard sampling and by dropping Buffon’s needles, measure a floor area from the crossings of a robot’s own trails, and integrate a function by averaging random draws, with accumulating 95% confidence intervals.">
 <meta property="og:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/monte_carlo/mc_explorer-preview.png">
-<meta property="og:image:width" content="2966">
-<meta property="og:image:height" content="1484">
+<meta property="og:image:width" content="2170">
+<meta property="og:image:height" content="1072">
 <meta property="og:url" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/monte_carlo/mc_explorer.html">
 <meta property="fb:app_id" content="2385695445236853">
 
 <!-- Twitter/X card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Monte Carlo Explorer — interactive explainer">
-<meta name="twitter:description" content="Interactive explorer for Monte Carlo estimation: estimate π by dartboard sampling and integrate a function by averaging random draws, watching 95% confidence intervals accumulate across repeated experiments.">
+<meta name="twitter:description" content="Interactive explorer for Monte Carlo estimation: estimate π by dartboard sampling and by dropping Buffon’s needles, measure a floor area from the crossings of a robot’s own trails, and integrate a function by averaging random draws, with accumulating 95% confidence intervals.">
 <meta name="twitter:image" content="https://tpavlic.github.io/asu-bioinspired-ai-and-optimization/monte_carlo/mc_explorer-preview.png">
 
 <!-- Google Analytics -->
@@ -29,103 +29,226 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f5f0e8; --card: #ffffff; --green: #1a3d2b; --green2: #2d6a4f;
-  --orange: #c85a0a; --accept: #1a7a4a; --reject: #c85a0a;
-  --text: #1c1c1c; --muted: #777; --border: #ddd5c8;
-  --sq-fill: #eceaf5; --sq-stroke: #6a5d9e; --circ-stroke: #8b6914;
+  /* ── Chrome: the widget's own green on cream ──────────────────────── */
+  --accent:      #1a3d2b;
+  --accent-dark: #2d6a4f;
+  --bg:          #f5f0e8;
+  --card:        #ffffff;
+  --border:      #ddd5c8;
+  --text:        #1c1c1c;
+  --muted:       #777777;
+  --accent-wash: rgba(26,61,43,.06);
+  --accent-tint: rgba(26,61,43,.10);
+  --chart-bg:    #f8f6f1;
+
+  /* ── Data: widget-owned, these encode meaning and are NOT themed ───
+     Teal reads as "the exact thing" (true curve, dart inside, CI hit);
+     orange reads as "the sampled thing" (estimate, dart outside, CI miss).
+     Teal/orange stays separable under red-green color deficiency, and the
+     dart marks are shape-coded (filled dot vs cross) on top of that. */
+  --truth:       #0F6E8C;
+  --est:         #C2570A;
+  --est-pale:    rgba(194,87,10,.13);
+  --accept:      #0F6E8C;
+  --reject:      #C2570A;
+  --hit:         #0F6E8C;
+  --miss:        #C2570A;
+  --warn:        #8b6914;
+  --sq-fill:     #eaecf6; --sq-stroke: #3F4C8C;  /* square geometry */
+  --circ-stroke: #8b6914;                        /* circle geometry */
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5;
+       -webkit-text-size-adjust: 100%; }
 .widget { max-width: 1020px; margin: 0 auto; padding: 18px 18px 4px; }
 .wh-copy { text-align:right; font-size:.72rem; color:var(--muted); margin-top:4px; }
-.wh-copy a { color:inherit; text-decoration:underline; }
-.wh-title { font-size: 1.4rem; font-weight: 700; color: var(--green); }
+.wh-copy a { color:var(--accent); text-decoration:none; }
+.wh-copy a:hover { text-decoration:underline; }
+.wh-title { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
 .wh-sub   { font-size: 0.875rem; color: var(--muted); margin-top: 3px; }
-.tabs { display: flex; gap: 3px; border-bottom: 2px solid var(--green); margin: 14px 0 18px; }
+.tabs { display: flex; gap: 3px; border-bottom: 2px solid var(--accent); margin: 14px 0 18px; }
 .tab {
   font-family: 'Outfit', sans-serif; font-size: .9rem; font-weight: 500;
   padding: 8px 24px; border: 2px solid transparent; border-bottom: none;
   border-radius: 7px 7px 0 0; background: transparent; color: var(--muted);
   cursor: pointer; margin-bottom: -2px; transition: .15s;
-  text-decoration: none; display: inline-block;
+  /* Never break a tab label across two lines; the dropdown takes over first. */
+  white-space: nowrap; flex-shrink: 0;
 }
-.tab.active { background: var(--card); color: var(--green); font-weight: 700; border-color: var(--green); border-bottom-color: var(--card); }
-.tab:hover:not(.active) { color: var(--green); background: rgba(26,61,43,.05); }
+.tab.active { background: var(--card); color: var(--accent); font-weight: 700; border-color: var(--accent); border-bottom-color: var(--card); }
+.tab:hover:not(.active) { color: var(--accent); background: var(--accent-wash); }
 .tp { display: none; } .tp.active { display: block; }
 .ctrl-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-.ctrl-lbl { font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+/* min-height, not a bigger glyph: the label is what a finger lands on, and 24px is
+   the WCAG 2.5.8 floor. The rows are already taller than this, so nothing moves. */
+.ctrl-lbl { font-size: .82rem; font-weight: 600; color: var(--muted); white-space: nowrap;
+            display: inline-flex; align-items: center; min-height: 24px; }
 select { font-family: 'Outfit', sans-serif; font-size: .88rem; padding: 5px 10px; border: 1.5px solid var(--border); border-radius: 6px; background: #fff; color: var(--text); cursor: pointer; }
-.btn-run { font-family: 'Outfit', sans-serif; font-size: .9rem; font-weight: 700; padding: 6px 22px; background: var(--green); color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: .15s; }
-.btn-run:hover { background: var(--green2); }
+.btn-run { display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            font-family: 'Outfit', sans-serif; font-size: .9rem; font-weight: 700; padding: 6px 22px; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; transition: .15s; }
+.btn-run:hover { background: var(--accent-dark); }
 .btn-run:disabled { background: #aaa; cursor: not-allowed; }
+/* Secondary run button (the 100-run sweep): same weight as Run Experiment, but
+   outlined, so the single run stays the obvious first thing to click. */
+.btn-run2 { display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+            font-family: 'Outfit', sans-serif; font-size: .9rem; font-weight: 700; padding: 6px 16px; background: transparent; color: var(--accent); border: 2px solid var(--accent); border-radius: 6px; cursor: pointer; transition: .15s; }
+.btn-run2:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.btn-run2:disabled { color: #aaa; border-color: #d6d0d2; cursor: not-allowed; }
+/* Play and fast-forward are drawn, not typed. U+25B6 carries an emoji presentation,
+   which iOS resolves to Apple Color Emoji and renders as a white triangle in a
+   blue-grey box, and two of those read as two separate glyphs rather than one
+   fast-forward. currentColor keeps them following the button's text through its
+   hover state. Sized in em so they track the label. */
+/* A dotted underline means the same thing across these widgets: there is a tooltip
+   here, reachable by hover, tap, or keyboard focus. Never carried by a title
+   attribute, which shows nothing at all on a touch screen. */
+.tip { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.tip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+/* A button cannot use tap to open a tip, because tap already runs it, so it opens on
+   a long press instead and suppresses the callout iOS would otherwise raise. */
+[data-tip-press] { -webkit-touch-callout: none; }
+/* Descriptions live here for assistive tech: visible to a screen reader, to nothing
+   else. See the note on title in the tooltip script. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+           overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+#tipbox { position: fixed; z-index: 60; max-width: 260px; padding: 8px 11px; border-radius: 7px;
+          background: var(--accent-dark); color: #fff; font: 400 12.5px/1.45 'Outfit', sans-serif;
+          box-shadow: 0 5px 16px rgba(31,10,18,.3); pointer-events: none; opacity: 0;
+          transition: opacity .08s; }
+.btn-ico { height: .68em; width: auto; fill: currentColor; flex: 0 0 auto; }
 .btn-clear { font-family: 'Outfit', sans-serif; font-size: .82rem; padding: 6px 13px; background: transparent; color: var(--muted); border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer; transition: .15s; }
-.btn-clear:hover { color: var(--orange); border-color: var(--orange); }
+.btn-clear:hover { color: var(--accent); border-color: var(--accent); }
+/* Holds the seed label, field and checkbox together so the row does not split
+   them at ordinary widths; wraps internally only when it genuinely cannot fit. */
+.ctrl-grp { display: inline-flex; align-items: center; gap: 6px 8px; flex-wrap: wrap; }
+.ctrl-row + .ctrl-row { margin-top: -4px; }
+.seed-inp { font-family: 'IBM Plex Mono', monospace; font-size: .88rem; width: 108px;
+            padding: 5px 8px; border: 1.5px solid var(--border); border-radius: 6px;
+            background: #fff; color: var(--text); }
+/* Invalid state is border + wash + aria-invalid + a text message, never color alone */
+.seed-inp[aria-invalid="true"] { border-color: var(--accent); background: var(--accent-wash); }
+.ctrl-chk { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; min-height: 24px;
+            font-size: .82rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.ctrl-chk input { accent-color: var(--accent); cursor: pointer; margin: 0; }
+/* Own line inside the wrapping row, with the height reserved so text causes no shift */
+.seed-msg { flex: 0 0 100%; min-height: 1.15em; margin-top: -2px;
+            font-size: .75rem; line-height: 1.35; color: var(--muted); }
+.seed-msg.bad { color: var(--accent); font-weight: 600; }
+.seed-inp:focus-visible, select:focus-visible, .tab-select:focus-visible,
+.btn-run:focus-visible, .btn-run2:focus-visible, .btn-clear:focus-visible, .tab:focus-visible,
+.ctrl-chk input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
 .viz-row { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
-.cv-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; flex: 0 0 auto; }
-canvas { display: block; }
+/* Shrinkable, so a narrow viewport scales the plot down instead of overflowing */
+.cv-card { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 12px; flex: 0 1 auto; min-width: 0; }
+canvas { display: block; max-width: 100%; }
 .cv-leg { font-size: .7rem; color: var(--muted); text-align: center; margin-top: 6px; }
 .stats-panel { flex: 1; min-width: 0; }
-.sg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+/* minmax(0,1fr), not 1fr: the stat values are nowrap, so an auto minimum would
+   give the columns a large min-content width and push the page into h-scroll. */
+.sg { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 8px; margin-bottom: 10px; }
 .sc { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; }
 .sc-lbl { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
-.sc-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; font-weight: 600; color: var(--green); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.sc-val.acc { color: var(--orange); }
-.sc-val.dim { color: var(--muted); font-size: .9rem; }
-.hint { background: #f8f6f1; border-radius: 6px; padding: 9px 11px; font-size: .82rem; color: var(--muted); line-height: 1.55; }
-.bridge-note { font-size: .8rem; background: rgba(26,61,43,.09); color: var(--green); border-radius: 6px; padding: 7px 11px; border-left: 3px solid var(--green2); display: none; margin-bottom: 4px; }
+.sc-val { font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; font-weight: 600; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sc-val.acc { color: var(--est); }
+.sc-val.dim { color: var(--truth); font-size: .9rem; }
+.hint { background: #f5f2f3; border-radius: 6px; padding: 9px 11px; font-size: .82rem; color: var(--muted); line-height: 1.55; }
+.bridge-note { font-size: .8rem; background: var(--accent-tint); color: var(--accent); border-radius: 6px; padding: 7px 11px; border-left: 3px solid var(--accent-dark); display: none; margin-bottom: 4px; }
 .sec { background: var(--card); border: 1.5px solid var(--border); border-radius: 8px; padding: 13px; margin-bottom: 13px; }
-.sec-hd { font-size: .75rem; font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 9px; }
+.sec-hd { font-size: .75rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 9px; }
 .hist-empty { font-size: .85rem; color: var(--muted); font-style: italic; text-align: center; padding: 18px 0; }
+/* Capture tally under a history chart -- what the 100-run sweep is for. The height
+   is reserved so the section does not jump when the first run fills it in. */
+/* Key for the estimate strip. Each mark means one thing: a dot is a walk, an open
+   circle is the walk on screen, and the capped line is the interval. */
+/* The cavity's two labels sit above the canvas rather than inside it: drawn on the
+   canvas they landed on the cavity wall, and no margin makes that reliably safe. */
+.ra-cv-hd { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; font-size: .72rem; color: var(--muted); margin-bottom: 7px; }
+#ra-plan { color: var(--accent); font-weight: 700; }
+.ra-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: .74rem; color: var(--muted); margin: 10px 0 12px; }
+.ra-key span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.ra-rug-hd { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+.hist-cap { font-size: .8rem; color: var(--muted); text-align: center; margin-top: 7px; min-height: 1.2em; }
+.hist-cap strong { font-family: 'IBM Plex Mono',monospace; font-weight: 700; color: var(--accent); }
 svg.hsv { display: block; width: 100%; height: auto; }
 .exp-cv  { display: block; border-radius: 4px; }
 .exp-cap { font-size: .75rem; color: var(--muted); text-align: center; margin-top: 5px; }
 .exp-svg { display: block; width: 100%; }
-.pi-exp-wrap { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
-.pi-exp-dart { flex: 0 0 auto; width: 172px; height: auto; display: block; }
-.pi-exp-math { flex: 1 1 380px; min-width: 0; display: block; }
-.pi-eq-row { display: flex; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; padding: 3px 0; }
-.pi-eq-lbl { font-family: 'Outfit',sans-serif; font-size: .88rem; font-weight: 600;
-             color: var(--green); flex-shrink: 0; min-width: 148px; }
-.pi-eq-val { font-family: 'IBM Plex Mono',monospace; font-size: .83rem; color: var(--green); }
-.pi-eq-hr  { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
-.pi-therefore { background: rgba(26,61,43,.07); border-radius: 7px;
-                padding: 9px 11px; margin-top: 8px; }
-.pi-therefore-row { display: flex; flex-wrap: wrap; gap: 3px 8px;
-                    align-items: baseline; margin-bottom: 5px; }
-.pi-therefore strong { font-family: 'Outfit',sans-serif; font-size: .85rem;
-                        font-weight: 700; color: var(--green); flex-shrink: 0; }
-.pi-therefore-eq { font-family: 'IBM Plex Mono',monospace; font-size: .83rem;
-                   color: var(--orange); }
-.pi-borel { font-size: .76rem; color: var(--muted); line-height: 1.4; }
+/* Explainer layout: a fixed-width figure beside the equations. Shared by the
+   dartboard explainer on Tab ① and the needle explainer on Tab ②. */
+.exp-wrap { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.exp-fig  { flex: 0 0 auto; width: 172px; height: auto; display: block; }
+.exp-math { flex: 1 1 380px; min-width: 0; display: block; }
+/* Shared equation vocabulary — used by the Tab ① and ② explainers and the Tab ④
+   formula block. Neutral names on purpose: further tabs are expected to reuse these. */
+.eq-row { display: flex; gap: 6px 12px; align-items: baseline; flex-wrap: wrap; padding: 3px 0; }
+.eq-lbl { font-family: 'Outfit',sans-serif; font-size: .88rem; font-weight: 600;
+          color: var(--accent); flex-shrink: 0; min-width: 148px; }
+.eq-val { font-family: 'IBM Plex Mono',monospace; font-size: .83rem; color: var(--accent); }
+.eq-hr  { border: none; border-top: 1px solid var(--border); margin: 5px 0; }
+.eq-note { background: var(--accent-wash); border-radius: 7px;
+           padding: 9px 11px; margin-top: 8px; }
+.eq-note-row { display: flex; flex-wrap: wrap; gap: 3px 8px;
+               align-items: baseline; margin-bottom: 5px; }
+.eq-note strong { font-family: 'Outfit',sans-serif; font-size: .85rem;
+                  font-weight: 700; color: var(--accent); flex-shrink: 0; }
+.eq-note-eq { font-family: 'IBM Plex Mono',monospace; font-size: .83rem;
+              color: var(--est); }
+.eq-fine { font-size: .76rem; color: var(--muted); line-height: 1.4; }
+/* Inline symbols inside prose. The script small l (U+2113) has no glyph in Outfit
+   and falls back to a mismatched face, so any prose carrying it switches to mono. */
+.eq-m { font-family: 'IBM Plex Mono',monospace; font-size: .95em; color: inherit; }
+/* Compact scope for the Tab ④ block, which lives in the narrow stats column */
+.mc-eq { margin-bottom: 10px; }
+.mc-eq .eq-row  { padding: 2px 0; }
+.mc-eq .eq-lbl  { min-width: 104px; font-size: .8rem; }
+.mc-eq .eq-val  { font-size: .78rem; }
+.mc-eq .eq-note { margin-top: 6px; padding: 7px 10px; }
+.mc-eq .eq-note-eq { font-size: .82rem; }
+.mc-eq .eq-fine    { font-size: .74rem; color: var(--truth); }
+/* The font bump below is scoped to the Tab ① and ② explainers, which go full-width
+   here. Tab ④'s block is still a narrow sibling of the canvas card between 620 and
+   680px, so it must not inherit the enlargement. */
 @media (max-width: 680px) {
-  .pi-exp-wrap { flex-direction: column; gap: 10px; }
-  .pi-exp-dart { width: 100%; max-width: 310px; height: auto; margin: 0 auto; }
-  .pi-exp-math { width: 100%; }
-  .pi-eq-lbl { font-size: 1rem; }
-  .pi-eq-val { font-size: .92rem; }
-  .pi-therefore-eq { font-size: .9rem; }
-  .pi-borel { font-size: .82rem; }
+  .exp-wrap { flex-direction: column; gap: 10px; }
+  .exp-fig  { width: 100%; max-width: 310px; height: auto; margin: 0 auto; }
+  .exp-math { width: 100%; }
+  .exp-math .eq-lbl     { font-size: 1rem; }
+  .exp-math .eq-val     { font-size: .92rem; }
+  .exp-math .eq-note-eq { font-size: .9rem; }
+  .exp-math .eq-fine    { font-size: .82rem; }
 }
 .exp-note { font-size: .82rem; color: var(--muted); line-height: 1.55; margin-bottom: 9px; }
-footer { text-align: center; padding: 6px 18px 0; max-width: 1020px; margin: 0 auto; font-size: .72rem; color: var(--muted); }
-footer a { color: var(--muted); text-decoration: underline; }
-footer a:hover { color: var(--orange); }
+/* Body links share the footer links' behavior: accent color, underline on hover
+   only, per the link-decoration convention in CLAUDE.md. The back-link footer sets
+   color:inherit inline, which outranks this rule, so it keeps following its footer. */
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+footer:not(#course-nav-footer) { text-align: center; padding: 6px 18px 0; max-width: 1020px; margin: 0 auto; font-size: .72rem; color: var(--muted); }
+footer a { color: var(--accent); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
 .cr-sep { display: inline; }
 .cr-br { display: none; }
 @media (max-width: 360px) { .cr-br { display: inline; } .cr-sep { display: none; } }
 .tab-select {
   display: none; width: 100%; font-family: 'Outfit', sans-serif;
   font-size: .95rem; font-weight: 700; padding: 8px 14px;
-  border: 2px solid var(--green); border-radius: 7px;
-  background: var(--card); color: var(--green); cursor: pointer;
+  border: 2px solid var(--accent); border-radius: 7px;
+  background: var(--card); color: var(--accent); cursor: pointer;
   margin-bottom: 14px; appearance: auto;
 }
-@media (max-width: 345px) {
+/* The four tab labels need ~791px of viewport side by side, so swap to the
+   dropdown before they would wrap. Expressed in em rather than px so the
+   switch also happens sooner for a reader whose default font size is larger:
+   in a media query, em tracks the browser's default font size. */
+@media (max-width: 50em) {
   .tabs { display: none; }
   .tab-select { display: block; }
 }
 @media (max-width: 620px) { .viz-row { flex-direction: column; } }
 </style>
+
 </head>
 <body>
 <div class="widget">
@@ -135,25 +258,44 @@ footer a:hover { color: var(--orange); }
     <div class="wh-copy">&copy; 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> &middot; </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></div>
   </div>
   <nav class="tabs">
-    <a class="tab active" href="#pi" data-tab="pi" onclick="showTab('pi',this);return false;">① Estimating π</a>
-    <a class="tab" href="#mc" data-tab="mc" onclick="showTab('mc',this);return false;">② MC Integration</a>
+    <a class="tab active" href="#pi" data-tab="pi" onclick="showTab('pi',this);return false;">① Est. π: Dartboard</a>
+    <a class="tab" href="#bn" data-tab="bn" onclick="showTab('bn',this);return false;">② Est. π: Buffon’s Needle</a>
+    <a class="tab" href="#ra" data-tab="ra" onclick="showTab('ra',this);return false;">③ Est. Area by Robot</a>
+    <a class="tab" href="#mc" data-tab="mc" onclick="showTab('mc',this);return false;">④ MC Integration</a>
   </nav>
   <select id="tab-select" class="tab-select" onchange="showTabFromSelect(this)">
-    <option value="pi">① Estimating π</option>
-    <option value="mc">② MC Integration</option>
+    <option value="pi">① Est. π: Dartboard</option>
+    <option value="bn">② Est. π: Buffon’s Needle</option>
+    <option value="ra">③ Est. Area by Robot</option>
+    <option value="mc">④ MC Integration</option>
   </select>
 
   <!-- TAB 1 -->
   <section id="tab-pi" class="tp active">
     <div class="ctrl-row">
-      <span class="ctrl-lbl">Samples per run</span>
+      <label class="ctrl-lbl" for="pi-n">Samples per run</label>
       <select id="pi-n">
         <option value="50">50</option><option value="100">100</option>
         <option value="500" selected>500</option><option value="1000">1,000</option>
         <option value="5000">5,000</option><option value="10000">10,000</option>
       </select>
-      <button class="btn-run" id="pi-run" onclick="runPi()">▶ Run Experiment</button>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-grp">
+        <label class="ctrl-lbl" for="pi-seed"><span class="tip" tabindex="0" data-tip="Any whole number from 0 to 2147483647. The same seed reproduces the same run exactly, which is what makes an experiment here repeatable.">Seed</span></label>
+        <input class="seed-inp" id="pi-seed" type="text" inputmode="numeric"
+               value="54321" maxlength="10" autocomplete="off" spellcheck="false"
+               aria-describedby="pi-seed-msg"
+               onchange="normalizeSeed('pi')"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();runPi();}">
+        <label class="ctrl-chk" data-tip="Run Experiment always uses the seed shown. With this ticked, a fresh seed is drawn afterwards, ready for the next run." data-tip-press>
+          <input type="checkbox" id="pi-newseed" checked> <span class="tip">New seed after each run</span>
+        </label>
+      </span>
+      <button class="btn-run" id="pi-run" onclick="runPi()"><svg class="btn-ico" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z"/></svg>Run Experiment</button>
+      <button class="btn-run2" id="pi-run100" onclick="runPiBatch()" data-tip="Runs 100 experiments back to back from consecutive seeds and draws only the last. The capture tally under the history chart should settle near 95%." data-tip-press><svg class="btn-ico" viewBox="0 0 17 12" aria-hidden="true"><path d="M0 0l8 6-8 6z"/><path d="M9 0l8 6-8 6z"/></svg>Run ×100</button>
       <button class="btn-clear" onclick="clearPi()">Clear history</button>
+      <span class="seed-msg" id="pi-seed-msg" role="status" aria-live="polite"></span>
     </div>
     <div class="viz-row">
       <div class="cv-card">
@@ -172,31 +314,33 @@ footer a:hover { color: var(--orange); }
           <div class="sc"><div class="sc-lbl">True π/4</div><div class="sc-val dim">0.78539816339744…</div></div>
           <div class="sc"><div class="sc-lbl">True π</div><div class="sc-val dim">3.14159265358979…</div></div>
         </div>
-        <div class="hint">Each "dart" lands at a uniform random point in the square. The fraction landing inside the inscribed circle estimates π/4. Run many experiments to watch 95% confidence intervals accumulate — nearly all should capture the dashed true value.</div>
+        <div class="hint">Each "dart" lands at a uniform random point in the square. The fraction landing inside the inscribed circle estimates π/4, so four times that fraction estimates π. Run many experiments to watch 95% confidence intervals for π accumulate — nearly all should capture the dashed true value.</div>
       </div>
     </div>
     <div class="sec">
-      <div class="sec-hd">Experiment History — 95% Confidence Intervals for π/4</div>
+      <div class="sec-hd">Experiment History — 95% Confidence Intervals for π</div>
       <div id="pi-hw">
         <svg class="hsv" id="pi-hs"></svg>
       </div>
+      <div class="hist-cap" id="pi-hits"></div>
     </div>
     <div class="sec">
       <div class="sec-hd">Why does dartboard sampling estimate π?</div>
-      <div class="pi-exp-wrap">
-        <svg id="pi-exp-dart" class="pi-exp-dart" xmlns="http://www.w3.org/2000/svg"></svg>
-        <div id="pi-exp-math" class="pi-exp-math">
-          <div class="pi-eq-row"><span class="pi-eq-lbl">Area of square:</span><span class="pi-eq-val" style="color:var(--sq-stroke)">(2r)² = 4r²</span></div>
-          <div class="pi-eq-row"><span class="pi-eq-lbl">Area of circle:</span><span class="pi-eq-val" style="color:var(--circ-stroke)">πr²</span></div>
-          <div class="pi-eq-hr"></div>
-          <div class="pi-eq-row"><span class="pi-eq-lbl">Pr(dart inside):</span><span class="pi-eq-val">πr²&thinsp;/&thinsp;4r² = π/4</span></div>
-          <div class="pi-eq-row"><span class="pi-eq-lbl">By LLN as N → ∞:</span><span class="pi-eq-val" style="color:var(--orange)">(# inside) / N  →  π/4</span></div>
-          <div class="pi-therefore">
-            <div class="pi-therefore-row">
+      <div class="exp-wrap">
+        <svg id="pi-exp-dart" class="exp-fig" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="pi-exp-math" class="exp-math">
+          <div class="eq-row"><span class="eq-lbl">Area of square:</span><span class="eq-val" style="color:var(--sq-stroke)">(2r)² = 4r²</span></div>
+          <div class="eq-row"><span class="eq-lbl">Area of circle:</span><span class="eq-val" style="color:var(--circ-stroke)">πr²</span></div>
+          <div class="eq-hr"></div>
+          <div class="eq-row"><span class="eq-lbl">Pr(dart inside):</span><span class="eq-val">πr²&thinsp;/&thinsp;4r² = π/4</span></div>
+          <div class="eq-row"><span class="eq-lbl">By LLN as N → ∞:</span><span class="eq-val" style="color:var(--est)">(# inside) / N  →  π/4</span></div>
+          <div class="eq-note">
+            <div class="eq-note-row">
               <strong>Therefore:</strong>
-              <span class="pi-therefore-eq">π ≈ 4 × (# inside circle) / (# total samples)</span>
+              <span class="eq-note-eq">π ≈ 4 × (# inside circle) / (# total samples)</span>
             </div>
-            <div class="pi-borel">Borel’s Law of Large Numbers guarantees convergence — the 95% CI will capture π ≈ 95% of the time.</div>
+            <div class="eq-fine">Borel’s Law of Large Numbers guarantees convergence — the 95% CI will capture π ≈ 95% of the time.</div>
+            <div class="eq-fine">π is four times π/4, and nothing else changes: the chart above plots the estimate of π/4 and both of its interval endpoints multiplied by 4.</div>
           </div>
         </div>
       </div>
@@ -204,9 +348,134 @@ footer a:hover { color: var(--orange); }
   </section>
 
   <!-- TAB 2 -->
+  <section id="tab-bn" class="tp">
+    <div class="ctrl-row">
+      <label class="ctrl-lbl" for="bn-n">Needles per run</label>
+      <!-- Defaults lower than the dartboard's 500: a needle is a segment, and 100 of
+           them fill the sheet about as much as 500 darts fill the square. -->
+      <select id="bn-n">
+        <option value="50">50</option><option value="100" selected>100</option>
+        <option value="500">500</option><option value="1000">1,000</option>
+        <option value="5000">5,000</option><option value="10000">10,000</option>
+      </select>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-grp">
+        <label class="ctrl-lbl" for="bn-seed"><span class="tip" tabindex="0" data-tip="Any whole number from 0 to 2147483647. The same seed reproduces the same run exactly, which is what makes an experiment here repeatable.">Seed</span></label>
+        <input class="seed-inp" id="bn-seed" type="text" inputmode="numeric"
+               value="43215" maxlength="10" autocomplete="off" spellcheck="false"
+               aria-describedby="bn-seed-msg"
+               onchange="normalizeSeed('bn')"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();runBn();}">
+        <label class="ctrl-chk" data-tip="Run Experiment always uses the seed shown. With this ticked, a fresh seed is drawn afterwards, ready for the next run." data-tip-press>
+          <input type="checkbox" id="bn-newseed" checked> <span class="tip">New seed after each run</span>
+        </label>
+      </span>
+      <button class="btn-run" id="bn-run" onclick="runBn()"><svg class="btn-ico" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z"/></svg>Run Experiment</button>
+      <button class="btn-run2" id="bn-run100" onclick="runBnBatch()" data-tip="Runs 100 experiments back to back from consecutive seeds and draws only the last. The capture tally under the history chart should settle near 95%." data-tip-press><svg class="btn-ico" viewBox="0 0 17 12" aria-hidden="true"><path d="M0 0l8 6-8 6z"/><path d="M9 0l8 6-8 6z"/></svg>Run ×100</button>
+      <button class="btn-clear" onclick="clearBn()">Clear history</button>
+      <span class="seed-msg" id="bn-seed-msg" role="status" aria-live="polite"></span>
+    </div>
+    <div class="viz-row">
+      <div class="cv-card">
+        <canvas id="bn-cv"></canvas>
+        <div class="cv-leg">
+          <svg width="30" height="10" viewBox="0 0 30 10" aria-hidden="true" style="vertical-align:-1px"><line x1="2" y1="8.5" x2="28" y2="1.5" stroke="var(--accept)" stroke-width="2"/><circle cx="15" cy="5" r="2.6" fill="var(--accept)"/></svg>
+          <span style="color:var(--accept)">crosses a line</span>&nbsp;&nbsp;
+          <svg width="30" height="10" viewBox="0 0 30 10" aria-hidden="true" style="vertical-align:-1px"><line x1="2" y1="8.5" x2="28" y2="1.5" stroke="var(--reject)" stroke-width="1.7" stroke-dasharray="3,2.5"/></svg>
+          <span style="color:var(--reject)">no crossing</span>
+        </div>
+        <div class="cv-leg" id="bn-shown" style="min-height:1.1em;margin-top:2px"></div>
+      </div>
+      <div class="stats-panel">
+        <div class="sg">
+          <div class="sc"><div class="sc-lbl">Total needles</div><div class="sc-val" id="bn-sn">—</div></div>
+          <div class="sc"><div class="sc-lbl">Crossing a line</div><div class="sc-val" id="bn-sk">—</div></div>
+          <div class="sc"><div class="sc-lbl">Estimate of 2/π</div><div class="sc-val acc" id="bn-sq">—</div></div>
+          <div class="sc"><div class="sc-lbl">Estimate of π</div><div class="sc-val acc" id="bn-sp">—</div></div>
+          <div class="sc"><div class="sc-lbl">True 2/π</div><div class="sc-val dim">0.63661977236758…</div></div>
+          <div class="sc"><div class="sc-lbl">True π</div><div class="sc-val dim">3.14159265358979…</div></div>
+        </div>
+        <div class="hint">Each needle lands at a uniform random position and angle on paper ruled with lines exactly one needle-length apart. The fraction crossing a line estimates 2/π, so dividing 2 by that fraction estimates π. Run many experiments to watch 95% confidence intervals for π accumulate — nearly all should capture the dashed true value.</div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd">Experiment History — 95% Confidence Intervals for π</div>
+      <div id="bn-hw">
+        <svg class="hsv" id="bn-hs"></svg>
+      </div>
+      <div class="hist-cap" id="bn-hits"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd">Why does dropping needles estimate π?</div>
+      <div class="exp-wrap">
+        <svg id="bn-exp-fig" class="exp-fig" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="bn-exp-math" class="exp-math">
+          <div class="eq-row"><span class="eq-lbl">Needle angle:</span><span class="eq-val" style="color:var(--circ-stroke)">θ ~ U[0, π)</span></div>
+          <div class="eq-row"><span class="eq-lbl">Center to nearest line:</span><span class="eq-val" style="color:var(--circ-stroke)">d ~ U[0, t/2]</span></div>
+          <div class="eq-hr"></div>
+          <div class="eq-row"><span class="eq-lbl">Needle crosses when:</span><span class="eq-val">d ≤ (ℓ/2)·sin θ</span></div>
+          <div class="eq-row"><span class="eq-lbl">Mean half-span:</span><span class="eq-val">avg of (ℓ/2)·sin θ = ℓ/π</span></div>
+          <div class="eq-row"><span class="eq-lbl">Pr(needle crosses):</span><span class="eq-val">(ℓ/π) ÷ (t/2) = 2ℓ/(tπ)</span></div>
+          <div class="eq-row"><span class="eq-lbl">By LLN as N → ∞:</span><span class="eq-val" style="color:var(--est)">(# crossings) / N  →  2ℓ/(tπ)</span></div>
+          <div class="eq-note">
+            <div class="eq-note-row">
+              <strong>Therefore:</strong>
+              <span class="eq-note-eq">π ≈ 2 × (# needles dropped) / (# crossing a line)</span>
+            </div>
+            <div class="eq-fine">Two averages give the result: sin θ averages 2/π over [0, π), and d is uniform on [0, t/2], so a needle crosses with probability <span class="eq-m">2ℓ/(tπ)</span>. This tab always uses <span class="eq-m">ℓ = t</span> (needles as long as the line spacing, as matchsticks are on ruled paper), which reduces that probability to 2/π.</div>
+            <div class="eq-fine">π sits in the <em>denominator</em> here, unlike the dartboard on Tab ①. The estimate is therefore a ratio, slightly biased at finite N, and its interval comes from inverting the interval for the crossing probability, which swaps the two endpoints.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 3 -->
+  <section id="tab-ra" class="tp">
+    <div class="sec">
+      <div class="sec-hd">Buffon’s needle extension: the same count, read backwards, measures area</div>
+      <div class="exp-note">Two sets of randomly scattered lines of total lengths S and L that are thrown across a region of area A cross each other about <span class="eq-m">2SL/(πA)</span> times. The ruled sheet above is the case where one of the two sets is the ruling itself. Inside a region of area A, lines spaced t apart have a total length of A/t, and the general count then collapses back to the <span class="eq-m">2ℓ/(tπ)</span> per needle that this tab counts.</div>
+      <div class="eq-row"><span class="eq-lbl">Crossings expected:</span><span class="eq-val">N ≈ 2SL/(πA)</span></div>
+      <div class="eq-row"><span class="eq-lbl">Solve it for π:</span><span class="eq-val">π ≈ 2SL/(AN)&nbsp;– the area is known, and so counting crossings measures π</span></div>
+      <div class="eq-row"><span class="eq-lbl">Solve it for A:</span><span class="eq-val" style="color:var(--est)">A ≈ 2SL/(πN)&nbsp;– π is known, and so counting crossings measures the area</span></div>
+      <div class="eq-note">
+        <div class="eq-fine"><a href="https://doi.org/10.1098/rspb.2000.1069" target="_blank" rel="noopener">Mallon and Franks (2000)</a> showed that crevice-dwelling <em>Temnothorax albipennis</em> ants may be sizing up new nest candidates using a method that works because of the relationship above. Scout ants enter the nest and lay down a random trail on its floor, acting like the first set of randomly scattered lines. The next time the scout enters the nest, she can count how often she crosses her previous trail. By the expression above, that count can be used to estimate the area of the cavity. A robot with an odometer and no map can do the same thing, which allows for estimating area without energetically and computationally costly sensing systems like LIDAR.</div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-hd">A robot pacing a cavity it cannot see</div>
+      <div class="exp-note">The robot fixes how far it will walk before it sets out. It paces the cavity for that distance with its pen down, leaves, and paces it again in a second color. Every crossing between the two trails is marked, and the count alone gives the floor area: the robot never measures a wall and never sees the room. The animation works through four prescribed distances in turn, and each finished pair drops one estimate into that distance&rsquo;s own row on the right, where the rows show what distance buys. The cavity&rsquo;s floor is 875 mm², the same as the standard nest in the ant study, where a scout&rsquo;s median first visit covered 486 mm.</div>
+      <div class="viz-row">
+        <div class="cv-card">
+          <div class="ra-cv-hd">
+            <span>cavity floor: 875 mm², unknown to the robot</span>
+            <span id="ra-plan">planned distance: 100 mm each pass</span>
+          </div>
+          <canvas class="exp-cv" id="ra-cv"></canvas>
+          <div class="cv-leg" id="ra-cap">Loading…</div>
+        </div>
+        <div class="stats-panel">
+          <div class="ra-rug-hd">Estimates by prescribed path length</div>
+          <div id="ra-rugwrap"><svg class="hsv" id="ra-rug"></svg></div>
+          <div class="ra-key">
+            <span><svg width="13" height="11" viewBox="0 0 13 11" aria-hidden="true"><circle cx="6.5" cy="5.5" r="2.6" fill="var(--accent)" opacity=".55"/></svg>one pair of walks</span>
+            <span><svg width="13" height="11" viewBox="0 0 13 11" aria-hidden="true"><circle cx="6.5" cy="5.5" r="3.2" fill="#fff" stroke="var(--est)" stroke-width="1.8"/></svg>the pair just shown</span>
+            <span><svg width="36" height="11" viewBox="0 0 36 11" aria-hidden="true"><line x1="2" y1="5.5" x2="34" y2="5.5" stroke="var(--accent)" stroke-width="1.3"/><line x1="2" y1="1.5" x2="2" y2="9.5" stroke="var(--accent)" stroke-width="1.3"/><line x1="34" y1="1.5" x2="34" y2="9.5" stroke="var(--accent)" stroke-width="1.3"/><circle cx="18" cy="5.5" r="2.8" fill="var(--accent)"/></svg>mean and its 95% interval</span>
+            <span><svg width="11" height="13" viewBox="0 0 11 13" aria-hidden="true"><line x1="5.5" y1="0" x2="5.5" y2="13" stroke="var(--truth)" stroke-width="1.6" stroke-dasharray="4,2.5"/></svg>true area, 875 mm²</span>
+          </div>
+          <div class="eq-fine" id="ra-rug-note">Because the robot picks its distance before it sets out, every walk in a row is exactly that long and their estimates pool. The rows differ in nothing else.</div>
+        </div>
+      </div>
+      <div class="eq-hr"></div>
+      <div class="eq-fine">Tab ④ reaches an area a different way. Monte Carlo integration samples points across a domain that is already known and averages the height of a function there, which measures the area under a curve. The robot has no map to sample from, and so it counts crossings instead. Both recover an area from nothing but random samples.</div>
+    </div>
+  </section>
+
+  <!-- TAB 4 -->
   <section id="tab-mc" class="tp">
     <div class="ctrl-row">
-      <span class="ctrl-lbl">Function</span>
+      <label class="ctrl-lbl" for="mc-fn">Function</label>
       <select id="mc-fn" onchange="mcFnChange()">
         <option value="sin">sin(x) on [0, π]</option>
         <option value="xsq">x² on [0, 1]</option>
@@ -214,15 +483,30 @@ footer a:hover { color: var(--orange); }
         <option value="semi">√(1−x²) on [0, 1]  [integral = π/4]</option>
         <option value="cosx">cos(x) on [0, π/2]</option>
       </select>
-      <span class="ctrl-lbl">Samples</span>
+      <label class="ctrl-lbl" for="mc-n">Samples</label>
       <select id="mc-n">
         <option value="10">10</option><option value="20">20</option>
         <option value="50">50</option><option value="100" selected>100</option>
         <option value="500">500</option><option value="1000">1,000</option>
         <option value="5000">5,000</option>
       </select>
-      <button class="btn-run" id="mc-run" onclick="runMC()">▶ Run Experiment</button>
+    </div>
+    <div class="ctrl-row">
+      <span class="ctrl-grp">
+        <label class="ctrl-lbl" for="mc-seed"><span class="tip" tabindex="0" data-tip="Any whole number from 0 to 2147483647. The same seed reproduces the same run exactly, which is what makes an experiment here repeatable.">Seed</span></label>
+        <input class="seed-inp" id="mc-seed" type="text" inputmode="numeric"
+               value="12345" maxlength="10" autocomplete="off" spellcheck="false"
+               aria-describedby="mc-seed-msg"
+               onchange="normalizeSeed('mc')"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();runMC();}">
+        <label class="ctrl-chk" data-tip="Run Experiment always uses the seed shown. With this ticked, a fresh seed is drawn afterwards, ready for the next run." data-tip-press>
+          <input type="checkbox" id="mc-newseed" checked> <span class="tip">New seed after each run</span>
+        </label>
+      </span>
+      <button class="btn-run" id="mc-run" onclick="runMC()"><svg class="btn-ico" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z"/></svg>Run Experiment</button>
+      <button class="btn-run2" id="mc-run100" onclick="runMCBatch()" data-tip="Runs 100 experiments back to back from consecutive seeds and draws only the last. The capture tally under the history chart should settle near 95%." data-tip-press><svg class="btn-ico" viewBox="0 0 17 12" aria-hidden="true"><path d="M0 0l8 6-8 6z"/><path d="M9 0l8 6-8 6z"/></svg>Run ×100</button>
       <button class="btn-clear" onclick="clearMC()">Clear history</button>
+      <span class="seed-msg" id="mc-seed-msg" role="status" aria-live="polite"></span>
     </div>
     <div class="viz-row" style="margin-top:4px">
       <div class="cv-card">
@@ -238,6 +522,26 @@ footer a:hover { color: var(--orange); }
           <div class="sc"><div class="sc-lbl">True Integral</div><div class="sc-val dim" id="mc-st">—</div></div>
           <div class="sc"><div class="sc-lbl">Relative Error</div><div class="sc-val" id="mc-serr">—</div></div>
         </div>
+        <!-- How the draws become the estimate. Always visible, with placeholders before
+             the first run, so switching functions causes no layout shift. -->
+        <div class="mc-eq">
+          <div class="eq-row">
+            <span class="eq-lbl">Estimator:</span>
+            <span class="eq-val" style="color:var(--est)">(L/M) · Σ f(x<sub>i</sub>), <span id="mc-eq-dom">x<sub>i</sub> ~ U[0,π]</span></span>
+          </div>
+          <div class="eq-row">
+            <span class="eq-lbl">This run:</span>
+            <span class="eq-val" id="mc-eq-sub">—</span>
+          </div>
+          <div class="eq-hr"></div>
+          <div class="eq-note">
+            <div class="eq-note-row">
+              <strong>Estimate:</strong>
+              <span class="eq-note-eq" id="mc-eq-est">—</span>
+            </div>
+            <div class="eq-fine" id="mc-eq-true">Exact value: —</div>
+          </div>
+        </div>
         <!-- Bridge note lives inside the stats panel — no layout shift when it appears -->
         <div class="bridge-note" id="mc-bridge">
           ① Connection: this function's integral equals <strong>π/4</strong> — the same quantity estimated by dartboard sampling on Tab ①. Both are Monte Carlo estimates of the same number!
@@ -249,6 +553,7 @@ footer a:hover { color: var(--orange); }
       <div id="mc-hw">
         <svg class="hsv" id="mc-hs"></svg>
       </div>
+      <div class="hist-cap" id="mc-hits"></div>
     </div>
     <div class="sec">
       <div class="sec-hd">Random Riemann Rectangles — as M grows, width L/M shrinks</div>
@@ -261,13 +566,171 @@ footer a:hover { color: var(--orange); }
 <footer>© 2026 Theodore P. Pavlic<br class="cr-br"><span class="cr-sep"> · </span><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener">MIT&nbsp;License</a></footer>
 
 <script>
+const css = getComputedStyle(document.documentElement);
+const tok = n => css.getPropertyValue(n).trim();
 const C = {
-  green:'#1a3d2b', green2:'#2d6a4f', orange:'#c85a0a',
-  orangePale:'rgba(200,90,10,0.13)', accept:'#1a7a4a', reject:'#c85a0a',
-  muted:'#888', sqFill:'#eceaf5', sqStroke:'#6a5d9e', circStroke:'#8b6914', bg:'#f8f6f1',
+  // Chrome: read from the CSS tokens so a palette change reaches the canvas/SVG too.
+  accent: tok('--accent'), muted: tok('--muted'), bg: tok('--chart-bg'),
+  // Data: these encode meaning, so they are the widget's own (see :root for the rationale).
+  truth: tok('--truth'), est: tok('--est'), estPale: tok('--est-pale'),
+  accept: tok('--accept'), reject: tok('--reject'),
+  hit: tok('--hit'), miss: tok('--miss'), warn: tok('--warn'),
+  sqFill: tok('--sq-fill'), sqStroke: tok('--sq-stroke'), circStroke: tok('--circ-stroke'),
 };
 const FF_MONO = 'IBM Plex Mono,monospace';
 const FF_SANS = 'Outfit,sans-serif';
+
+// ── Seeded PRNG ────────────────────────────────────────
+// mulberry32: 32 bits of state, one integer seed, no library. Chosen over a
+// textbook Park-Miller LCG because seed 0 is legal here (0 is an absorbing fixed
+// point for a multiplicative LCG, and "seed 0 gives a blank dartboard" is a bad
+// first lesson), the output is avalanche-mixed so consecutive pairs show no
+// lattice banding on the dartboard at N = 10,000, and adjacent seeds give
+// well-separated streams -- which matters because students step seeds by hand.
+const SEED_MAX = 2147483647;   // 2^31 - 1, the largest seed a student can type
+
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;   // [0, 1)
+  };
+}
+
+// Pure, so it can be exercised from the console.
+function parseSeed(raw) {
+  const s = String(raw).trim();
+  if (!/^[+-]?\d{1,10}$/.test(s))
+    return { ok: false, value: null, msg: '⚠ Seed must be a whole number from 0 to ' + SEED_MAX + '.' };
+  const n = Number(s), v = Math.min(Math.max(n, 0), SEED_MAX);
+  // Worded neutrally ("using") because this fires both when a seed is about to
+  // be run and when the field is merely edited, where nothing has run yet.
+  return { ok: true, value: v,
+           msg: v === n ? '' : 'Seed ' + s + ' is outside 0–' + SEED_MAX + '; using ' + v + '.' };
+}
+
+// The last completed run per tab. Kept so that editing the seed can update the
+// "Next run" figure while preserving the record of what the last run actually did.
+const lastRun = { pi: null, bn: null, mc: null };
+
+function seedMsg(tab, text, bad) {
+  const inp = document.getElementById(tab + '-seed');
+  const msg = document.getElementById(tab + '-seed-msg');
+  msg.textContent = text;
+  msg.classList.toggle('bad', !!bad);
+  inp.setAttribute('aria-invalid', bad ? 'true' : 'false');
+}
+
+// Returns an integer, or null if the field cannot be interpreted. Always writes
+// the value actually used back into the box, so what the student reads is what
+// the generator received.
+function readSeed(tab) {
+  const inp = document.getElementById(tab + '-seed');
+  const r = parseSeed(inp.value);
+  if (!r.ok) { seedMsg(tab, r.msg, true); inp.focus(); inp.select(); return null; }
+  inp.value = String(r.value);
+  seedMsg(tab, r.msg, false);
+  return r.value;
+}
+
+// Same normalization on change, but never steals focus. Editing the seed only
+// changes what the NEXT run will do, and so the record of the last run is kept
+// and just the "Next run" figure is re-pointed at the new value.
+function normalizeSeed(tab) {
+  const inp = document.getElementById(tab + '-seed');
+  const r = parseSeed(inp.value);
+  if (!r.ok) { seedMsg(tab, r.msg, true); return; }
+  inp.value = String(r.value);
+  const last = lastRun[tab], bits = [];
+  if (r.msg) bits.push(r.msg);
+  if (last) bits.push('Run ' + last.idx + ' used seed ' + last.seed + '.',
+                      'Next run: ' + r.value + '.');
+  seedMsg(tab, bits.join(' '), false);
+}
+
+function randomSeed() {
+  // Math.random here only picks WHICH seed to use next. The experiment itself
+  // never touches Math.random -- see the mulberry32 stream built in runPi/runMC.
+  // Six digits, always: short enough to read aloud or copy into a lab notebook,
+  // and a constant width so the field never jumps. Typed seeds may still be any
+  // value up to SEED_MAX; mulberry32 mixes low seeds as well as high ones.
+  return 100000 + Math.floor(Math.random() * 900000);
+}
+
+// Called after a run has already drawn its samples, so the run always used the
+// seed the student could see. With the box ticked, queue a fresh one for next
+// time and name both, so the field changing under them is never a surprise.
+// Unticked, repeated clicks genuinely do reproduce the run -- say so, or it
+// reads as a broken button rather than as the point of the exercise.
+function noteRun(tab, seed, runIdx, repeat) {
+  lastRun[tab] = { idx: runIdx, seed: seed };
+  if (document.getElementById(tab + '-newseed').checked) {
+    const next = randomSeed();
+    document.getElementById(tab + '-seed').value = String(next);
+    seedMsg(tab, 'Run ' + runIdx + ' used seed ' + seed + '. Next run: ' + next + '.', false);
+    return;
+  }
+  seedMsg(tab, repeat
+    ? 'Run ' + runIdx + ' repeats Run ' + (runIdx - 1) + ' exactly — same seed, same sample size. Tick “New seed after each run” to vary it.'
+    : 'Run ' + runIdx + ' used seed ' + seed + '.', false);
+}
+
+// ── 100-run sweeps ─────────────────────────────────────
+const BATCH_RUNS=100;
+// The sweep walks consecutive seeds from the one in the box, rather than 100 random
+// ones, so the whole sweep is reproducible from a single number. Adjacent seeds are
+// safe here: mulberry32 avalanche-mixes them into well-separated streams (see the
+// note on the generator).
+function batchSeed(s0,i){ return (s0+i)%(SEED_MAX+1); }
+
+// Disable both run buttons, yield one turn so that state actually paints, then do
+// the work. A sweep is fast enough to be synchronous -- 100 x 10,000 darts is a few
+// tens of milliseconds -- but not so fast that a frozen-looking button is honest.
+function batchRun(tab,work){
+  const one=document.getElementById(tab+'-run'), many=document.getElementById(tab+'-run100');
+  one.disabled=true; many.disabled=true;
+  seedMsg(tab,'Running '+BATCH_RUNS+' experiments…',false);
+  setTimeout(()=>{
+    try { work(); }
+    finally { one.disabled=false; many.disabled=false; }
+  },0);
+}
+
+// Counterpart to noteRun for a sweep: names the seed range instead of one seed.
+function noteBatch(tab,s0,first,last){
+  const sLast=batchSeed(s0,BATCH_RUNS-1);
+  lastRun[tab]={idx:last,seed:sLast};
+  const range='Runs '+first+'–'+last+' used seeds '+s0+'–'+sLast+'.';
+  if(document.getElementById(tab+'-newseed').checked){
+    const next=randomSeed();
+    document.getElementById(tab+'-seed').value=String(next);
+    seedMsg(tab,range+' Next run: '+next+'.',false);
+    return;
+  }
+  seedMsg(tab,range+' Click again to repeat the whole sweep exactly.',false);
+}
+
+// Share of the intervals that covered the true value, over exactly the runs the
+// chart is showing -- so the tally and the picture can always be counted against
+// each other. timeSeriesPlot returns the count; older runs it dropped are named.
+function histCaption(id,res,what){
+  const el=document.getElementById(id);
+  if(!res||!res.shown){ el.textContent=''; return; }
+  el.innerHTML='95% intervals covering '+what+': <strong>'+res.hits+' of '+res.shown
+              +'</strong> ('+(100*res.hits/res.shown).toFixed(1)+'%)'
+              +(res.dropped?' &middot; latest '+res.shown+' of '+(res.shown+res.dropped)+' runs':'');
+}
+
+// Student-t 97.5th percentile, by the Cornish-Fisher expansion in 1/df. Within 0.001
+// of the exact value for df ≥ 5, far inside the precision anything here is drawn at.
+// Only Tab ③ needs it; the two proportion tabs use the normal quantile (see piTrial).
+function tQuantile975(df){
+  if(df<2)return 12.706;
+  const z=1.959963985, z2=z*z, z3=z2*z, z5=z3*z2, z7=z5*z2, d=df;
+  return z + (z3+z)/(4*d) + (5*z5+16*z3+3*z)/(96*d*d) + (3*z7+19*z5+17*z3-15*z)/(384*d*d*d);
+}
 
 // ── HiDPI ──────────────────────────────────────────────
 const DPR = window.devicePixelRatio || 1;
@@ -276,8 +739,11 @@ function initHiDPI(cv, logW, logH) {
   cv.dataset.logW = logW; cv.dataset.logH = logH;
   cv.width  = Math.round(logW * DPR);
   cv.height = Math.round(logH * DPR);
-  cv.style.width  = logW + 'px';
-  cv.style.height = logH + 'px';
+  // Scale down on narrow viewports rather than overflow. The backing store stays
+  // at logical x DPR, so a shrunk canvas is drawn from more pixels, not fewer.
+  cv.style.width    = logW + 'px';
+  cv.style.maxWidth = '100%';
+  cv.style.height   = 'auto';
 }
 
 // Resets transform + clears; safe to call on every draw entry point
@@ -304,7 +770,7 @@ const FUNCS = {
 };
 
 // ── State ───────────────────────────────────────────────
-let piExps = [], mcExps = {}, piAnimId = null, mcAnimId = null, mcExpTimer = null, mcExpStep = 0;
+let piExps = [], bnExps = [], mcExps = {}, piAnimId = null, bnAnimId = null, mcAnimId = null, mcExpTimer = null, mcExpStep = 0;
 let expInitialized = false;
 const MC_EXP_STEPS = [4, 8, 16, 32, 64, 128];
 let curFn = 'sin';
@@ -313,11 +779,22 @@ function showTab(name, btn) {
   document.querySelectorAll('.tp').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
+  // btn is null when the change came from the narrow-viewport <select>; the
+  // data-tab attributes on the .tab buttons exist for exactly this fallback.
   const tabBtn = btn || document.querySelector('.tab[data-tab="'+name+'"]');
   if (tabBtn) tabBtn.classList.add('active');
+  // Keep the dropdown in sync when the tab was changed from a .tab button, so
+  // shrinking the window below 345px does not reveal the wrong option.
   const tabSel = document.getElementById('tab-select');
-  if (tabSel) tabSel.value = name;
+  if (tabSel && tabSel.value !== name) tabSel.value = name;
+  // replaceState, not pushState: switching tabs updates the link a reader could
+  // copy without growing the back/forward history.
   if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+  // A history chart lays itself out from its container, which is zero-width while
+  // its tab is hidden, so re-render on the way in.
+  renderActiveHist();
+  if (name === 'ra') raStart(); else raStop();
+  if (name !== 'mc' && mcExpTimer !== null) { clearInterval(mcExpTimer); mcExpTimer = null; }
   if (name === 'mc') {
     if (!expInitialized) {
       expInitialized = true;
@@ -356,34 +833,97 @@ function showTab(name, btn) {
       }
 
       drawMCExpFrame();
-      mcExpTimer = setInterval(drawMCExpFrame, 2200);
     }
-    renderMCHist();
+    // Restarted on the way in and cleared on the way out, so that nothing animates
+    // to a hidden canvas.
+    if (mcExpTimer === null) mcExpTimer = setInterval(drawMCExpFrame, 2200);
   }
 }
 
 function showTabFromSelect(sel){ showTab(sel.value, null); }
 function validTab(name){ return !!document.querySelector('.tab[data-tab="'+name+'"]'); }
-
+// An externally opened #id, or a back/forward step across one, lands on that tab.
 window.addEventListener('hashchange', () => {
   const name = location.hash.slice(1);
   if (name && validTab(name)) showTab(name, null);
 });
 
-// ── Tab 1: π estimation ─────────────────────────────────
+// Redraw whichever history chart is on screen. The SVG scales with its viewBox, so
+// without this a resized window stretches the old layout instead of re-fitting it.
+function renderActiveHist(){
+  const pane=document.querySelector('.tp.active');
+  if(!pane)return;
+  if(pane.id==='tab-pi')renderPiHist();
+  else if(pane.id==='tab-bn')renderBnHist();
+  else if(pane.id==='tab-mc')renderMCHist();
+}
+let histResizeTimer=null, histLastW=0;
+function watchHistWidth(){
+  const widget=document.querySelector('.widget');
+  const onWidth=w=>{
+    // Width only: re-rendering changes the chart's height, and reacting to that
+    // would feed straight back into the observer.
+    if(w===histLastW)return;
+    histLastW=w;
+    clearTimeout(histResizeTimer);
+    histResizeTimer=setTimeout(renderActiveHist,120);
+  };
+  if(typeof ResizeObserver!=='undefined'&&widget){
+    new ResizeObserver(es=>onWidth(Math.round(es[0].contentRect.width))).observe(widget);
+  } else {
+    window.addEventListener('resize',()=>onWidth(Math.round(window.innerWidth)));
+  }
+}
+
+// ── Tab ①: π estimation by dartboard ─────────────────────
+// One dartboard experiment: seed in, interval out. keep=true also returns the dart
+// coordinates, which only a run that is going to be drawn needs to hold on to.
+function piTrial(seed,N,keep){
+  // A fresh stream per experiment, so the same seed always reproduces the run.
+  const rand=mulberry32(seed);
+  const xs=keep?[]:null, ys=keep?[]:null, ins=keep?[]:null;
+  let k=0;
+  for(let i=0;i<N;i++){
+    // Relies on left-to-right evaluation of the declarator list; do not reorder.
+    const x=rand()*2-1, y=rand()*2-1, inside=x*x+y*y<=1;
+    if(keep){xs.push(x);ys.push(y);ins.push(inside);}
+    if(inside)k++;
+  }
+  // The estimator is a proportion, so its variance is fixed by its own mean,
+  // p(1-p)/N, with no separately estimated sigma -- which is exactly the case the
+  // normal (Wald) interval is for, and why there is no t quantile here. Tab ③,
+  // which averages a continuous f and must estimate sigma, does use one.
+  const phat=k/N, se=Math.sqrt(phat*(1-phat)/N);
+  return {rec:{n:N,k,seed,estQ:phat,ciLowQ:Math.max(0,phat-1.96*se),ciHighQ:Math.min(1,phat+1.96*se)},
+          xs:xs,ys:ys,ins:ins};
+}
+function piShow(rec){
+  setText('pi-sn',rec.n.toLocaleString()); setText('pi-sk',rec.k.toLocaleString());
+  setText('pi-sq',rec.estQ.toFixed(6));    setText('pi-sp',(4*rec.estQ).toFixed(6));
+}
+function piDots(ctx,W,H,xs,ys,ins,from,to){
+  for(let i=from;i<to;i++){
+    const px=(xs[i]+1)/2*W, py=(ys[i]+1)/2*H;
+    if(ins[i]){ctx.beginPath();ctx.fillStyle=C.accept;ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();}
+    else{const s=2.5;ctx.strokeStyle=C.reject;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(px-s,py-s);ctx.lineTo(px+s,py+s);
+      ctx.moveTo(px+s,py-s);ctx.lineTo(px-s,py+s);ctx.stroke();}
+  }
+}
 function runPi() {
+  // Validate BEFORE disabling: the button is only re-enabled inside the animation's
+  // completion branch, so an early return after disabling would lock it for good.
+  const seed = readSeed('pi');
+  if (seed === null) return;
   const N = +document.getElementById('pi-n').value;
   const btn = document.getElementById('pi-run');
   btn.disabled = true;
-  const xs=[],ys=[],ins=[]; let k=0;
-  for(let i=0;i<N;i++){
-    const x=Math.random()*2-1, y=Math.random()*2-1, inside=x*x+y*y<=1;
-    xs.push(x);ys.push(y);ins.push(inside); if(inside)k++;
-  }
-  const phat=k/N, se=Math.sqrt(phat*(1-phat)/N);
-  piExps.push({n:N,k,estQ:phat,ciLowQ:Math.max(0,phat-1.96*se),ciHighQ:Math.min(1,phat+1.96*se)});
-  setText('pi-sn',N.toLocaleString()); setText('pi-sk',k.toLocaleString());
-  setText('pi-sq',phat.toFixed(6));    setText('pi-sp',(4*phat).toFixed(6));
+  const {rec,xs,ys,ins}=piTrial(seed,N,true);
+  const prevPi=piExps[piExps.length-1];
+  const repeatPi=!!prevPi && prevPi.seed===seed && prevPi.n===N;
+  piExps.push(rec);
+  noteRun('pi',seed,piExps.length,repeatPi);
+  piShow(rec);
 
   const cv=document.getElementById('pi-cv');
   const {ctx,W,H}=getCtx(cv);
@@ -392,19 +932,37 @@ function runPi() {
   let drawn=0; const batch=Math.max(1,Math.ceil(N/45));
   function frame(){
     const end=Math.min(drawn+batch,N);
-    for(let i=drawn;i<end;i++){
-      const px=(xs[i]+1)/2*W, py=(ys[i]+1)/2*H;
-      if(ins[i]){ctx.beginPath();ctx.fillStyle=C.accept;ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();}
-      else{const s=2.5;ctx.strokeStyle=C.reject;ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(px-s,py-s);ctx.lineTo(px+s,py+s);
-        ctx.moveTo(px+s,py-s);ctx.lineTo(px-s,py+s);ctx.stroke();}
-    }
+    piDots(ctx,W,H,xs,ys,ins,drawn,end);
     drawn=end;
     if(drawn<N){piAnimId=requestAnimationFrame(frame);}
-    else{piOverlay(ctx,W,H);btn.disabled=false;}
+    else{piAnimId=null;piOverlay(ctx,W,H);btn.disabled=false;}
   }
   piAnimId=requestAnimationFrame(frame);
   renderPiHist();
+}
+// 100 experiments back to back. Only the last is drawn: 100 animations would take a
+// minute and show nothing the history chart does not show better.
+function runPiBatch(){
+  const seed=readSeed('pi');
+  if(seed===null)return;
+  const N=+document.getElementById('pi-n').value;
+  batchRun('pi',()=>{
+    if(piAnimId){cancelAnimationFrame(piAnimId);piAnimId=null;}
+    const first=piExps.length+1;
+    let last=null;
+    for(let i=0;i<BATCH_RUNS;i++){
+      const tr=piTrial(batchSeed(seed,i),N,i===BATCH_RUNS-1);
+      piExps.push(tr.rec); last=tr;
+    }
+    const cv=document.getElementById('pi-cv');
+    const {ctx,W,H}=getCtx(cv);
+    piBase(ctx,W,H);
+    piDots(ctx,W,H,last.xs,last.ys,last.ins,0,N);
+    piOverlay(ctx,W,H);
+    piShow(last.rec);
+    renderPiHist();
+    noteBatch('pi',seed,first,piExps.length);
+  });
 }
 function piBase(ctx,W,H){ctx.fillStyle=C.sqFill;ctx.fillRect(0,0,W,H);}
 function piOverlay(ctx,W,H){
@@ -421,12 +979,17 @@ function clearPi(){
   const {ctx,W,H}=getCtx(cv);
   piBase(ctx,W,H);piOverlay(ctx,W,H);
   ['pi-sn','pi-sk','pi-sq','pi-sp'].forEach(id=>setText(id,'—'));
+  lastRun.pi = null; seedMsg('pi','',false);
   renderPiHist();
 }
 function renderPiHist(){
   const hw=document.getElementById('pi-hw'), hs=document.getElementById('pi-hs');
-  timeSeriesPlot(hs,hw,piExps,e=>({est:e.estQ,ciLow:e.ciLowQ,ciHigh:e.ciHighQ,n:e.n}),
-    Math.PI/4,'π/4 = 0.7854','Estimated π/4');
+  // Plotted on the π scale, not the π/4 scale the sampling actually works on:
+  // π = 4 × π/4 is a linear rescaling, so the estimate and both interval endpoints
+  // are simply multiplied by 4. Tabs ① and ② then share one y axis and one true line.
+  histCaption('pi-hits',
+    timeSeriesPlot(hs,hw,piExps,e=>({est:4*e.estQ,ciLow:4*e.ciLowQ,ciHigh:4*e.ciHighQ,n:e.n}),
+      Math.PI,'π = 3.1416','Estimated π'), 'π');
 }
 
 // ── Pi SVG explainer ────────────────────────────────────
@@ -435,7 +998,7 @@ function drawPiExp(){
   const dartSvg=document.getElementById('pi-exp-dart');
   const r=64,cx=86,cy=96; let dh='';
   dh+=svgRect(cx-r,cy-r,r*2,r*2,C.sqFill,C.sqStroke,2.2);
-  dh+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(26,122,74,.07)" stroke="${C.circStroke}" stroke-width="2.2"/>`;
+  dh+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(139,105,20,.07)" stroke="${C.circStroke}" stroke-width="2.2"/>`;
   dh+=svgLine(cx,cy,cx+r,cy,C.circStroke,1.5,'4,3');
   dh+=svgTxt(cx+r/2,cy-8,'r',C.circStroke,13,FF_MONO,'middle','600');
   const by=cy+r+13;
@@ -453,7 +1016,529 @@ function drawPiExp(){
   dartSvg.setAttribute('viewBox','12 22 148 174');
 }
 
-// ── Tab 2: MC integration ───────────────────────────────
+// ── Tab ②: π estimation by Buffon's needle ─────
+// The sheet is ruled the same way for every run: five lines, and needles exactly
+// as long as the spacing between them (ℓ = t), so Pr(crossing) = 2/π throughout.
+const BN_BANDS=5;
+// A needle is a segment, not a point, so ink grows with N far faster than it does
+// on the dartboard: 5,000 of them would cover the sheet several times over. Past
+// this many, the drawing shows a representative prefix of the run and says so --
+// every needle is still counted, and the shrinking intervals carry the rest.
+const BN_DRAW=300;
+// Keyed on how many needles are actually drawn, so the sheet fills in as N grows
+// to the cap and then holds. dotAl stays high at every size: the needles are the
+// experiment, but the dots strung along the lines are the count, and they must
+// stay the loudest mark on the sheet -- the needle answer to the blue dots inside
+// the circle on Tab ①.
+function bnInk(D){
+  return D<=50  ? {lw:1.6, al:1,   dot:2.9, dotAl:1}
+       : D<=100 ? {lw:1.5, al:.8,  dot:2.6, dotAl:1}
+                : {lw:1.2, al:.5,  dot:2.3, dotAl:.95};
+}
+// Bands are numbered so that the ruled lines fall at t/2, 3t/2, ... -- every line
+// is drawn fully inside the canvas rather than half-clipped at the edges.
+function bnBand(y,t){ return Math.floor((y-t/2)/t); }
+function bnRules(ctx,W,H,t,lw){
+  ctx.strokeStyle=C.sqStroke;ctx.lineWidth=lw;ctx.setLineDash([]);
+  for(let y=t/2;y<H;y+=t){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+}
+function bnBase(ctx,W,H,t){
+  ctx.fillStyle=C.sqFill;ctx.fillRect(0,0,W,H);
+  // Alternating strips, as on ruled paper: they keep the bands legible once the
+  // sheet fills with needles, and they cost the eye nothing when it is empty.
+  ctx.fillStyle='#f4f5fa';
+  for(let k=0;k<=Math.ceil(H/t);k+=2){
+    const yA=Math.max(0,(k-.5)*t), yB=Math.min(H,(k+.5)*t);
+    if(yB>yA)ctx.fillRect(0,yA,W,yB-yA);
+  }
+  bnRules(ctx,W,H,t,1.4);
+}
+// Run after the needles: the ruling and the crossing marks both belong on top of
+// the tangle, so that a full sheet still reads as "dots strung along the lines".
+// No border, deliberately, and no counterpart to the square on Tab ①: there the
+// square is half the estimator, since the darts are uniform inside it and π/4 is
+// the ratio of the two outlined areas. Here nothing bounds the experiment. Crossing
+// depends on a needle's height and angle alone, so needles hanging over the left and
+// right edges are drawn clipped and counted in full, and the ruling runs off both
+// sides to say what is true: the sheet carries on past the view.
+function bnOverlay(ctx,W,H,t,sn,ink){
+  bnRules(ctx,W,H,t,1.4);
+  if(sn){
+    ctx.globalAlpha=ink.dotAl;ctx.fillStyle=C.accept;
+    sn.forEach(s=>{if(s.cr){ctx.beginPath();ctx.arc(s.hx,s.hy,ink.dot,0,Math.PI*2);ctx.fill();}});
+    ctx.globalAlpha=1;
+  }
+}
+function bnDrawNeedle(ctx,s,ink){
+  // Crossing vs not must not rest on hue alone: a crossing needle is also solid
+  // and carries a dot, and a needle that misses is dashed, thinner and fainter.
+  ctx.globalAlpha=s.cr?ink.al:ink.al*.72;
+  ctx.strokeStyle=s.cr?C.accept:C.reject;
+  ctx.lineWidth=s.cr?ink.lw:ink.lw*.8;
+  ctx.setLineDash(s.cr?[]:[3,2.5]);
+  ctx.beginPath();ctx.moveTo(s.x1,s.y1);ctx.lineTo(s.x2,s.y2);ctx.stroke();
+  if(s.cr){
+    ctx.setLineDash([]);
+    ctx.globalAlpha=ink.dotAl;
+    ctx.fillStyle=C.accept;
+    ctx.beginPath();ctx.arc(s.hx,s.hy,ink.dot,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;ctx.setLineDash([]);
+}
+// Three times π, just inside the y-axis cap that timeSeriesPlot applies: an interval
+// this wide is off the chart anyway, and a finite number keeps the auto-scale sane.
+const BN_CAP=3*Math.PI;
+
+// One needle experiment: seed in, interval out. keepTo caps how many needles keep
+// their geometry -- only the drawn prefix of a drawn run needs it.
+function bnTrial(seed,N,W,H,t,keepTo){
+  const len=t;
+  // A fresh stream per experiment, so the same seed always reproduces the run.
+  const rand=mulberry32(seed);
+  const sn=[]; let h=0;
+  for(let i=0;i<N;i++){
+    const cx=rand()*W, cy=rand()*H, th=rand()*Math.PI;
+    const dx=Math.cos(th)*len/2, dy=Math.sin(th)*len/2;
+    const y1=cy-dy, y2=cy+dy;
+    // Simulated rather than assumed: does the needle actually reach across a ruled
+    // line? With ℓ = t its vertical span is at most t, so it crosses at most one.
+    // Needles poking past the left or right edge are drawn clipped but counted in
+    // full, which biases nothing: crossing depends on cy and θ alone.
+    const cr=bnBand(y1,t)!==bnBand(y2,t);
+    if(cr)h++;
+    if(i<keepTo){
+      const nd={x1:cx-dx,y1:y1,x2:cx+dx,y2:y2,cr:cr,hx:0,hy:0};
+      if(cr){
+        // Where it crosses: the first ruled line past the upper end, back-solved
+        // along the needle.
+        const yL=t/2+Math.ceil((y1-t/2)/t)*t;
+        nd.hy=yL; nd.hx=cx+(yL-cy)/dy*dx;
+      }
+      sn.push(nd);
+    }
+  }
+  // p̂ estimates 2/π, and its interval is the same Wald interval as the dartboard's.
+  // π = 2/p is decreasing in p, so inverting that interval swaps its endpoints; the
+  // cap keeps a pathological run from wrecking the y axis.
+  const phat=h/N, se=Math.sqrt(phat*(1-phat)/N);
+  const pLo=Math.max(0,phat-1.96*se), pHi=Math.min(1,phat+1.96*se);
+  const est=h>0?2/phat:NaN;
+  // No crossings means no estimate at all -- vanishingly unlikely at N ≥ 50, but it
+  // is a division by zero rather than a rounding problem, so it stays out of history.
+  const rec=h>0?{n:N,h:h,seed:seed,est:est,
+                 ciLow:pHi>0?2/pHi:BN_CAP,
+                 ciHigh:pLo>0?Math.min(2/pLo,BN_CAP):BN_CAP}:null;
+  return {rec:rec,n:N,h:h,phat:phat,est:est,sn:sn};
+}
+function bnShow(tr,drawn){
+  setText('bn-sn',tr.n.toLocaleString()); setText('bn-sk',tr.h.toLocaleString());
+  setText('bn-sq',tr.h>0?tr.phat.toFixed(6):'0.000000');
+  setText('bn-sp',tr.h>0?tr.est.toFixed(6):'undefined (0 crossings)');
+  setText('bn-shown', drawn<tr.n
+    ? 'Drawing the first ' + drawn + ' needles of ' + tr.n.toLocaleString()
+      + '; all ' + tr.n.toLocaleString() + ' are counted.'
+    : '');
+}
+function runBn(){
+  // Validate BEFORE disabling -- see the note in runPi.
+  const seed=readSeed('bn');
+  if(seed===null)return;
+  const N=+document.getElementById('bn-n').value;
+  const btn=document.getElementById('bn-run');
+  btn.disabled=true;
+  const cv=document.getElementById('bn-cv');
+  const {ctx,W,H}=getCtx(cv);
+  const t=H/BN_BANDS, D=Math.min(N,BN_DRAW), ink=bnInk(D);
+  const tr=bnTrial(seed,N,W,H,t,D);
+  const prevBn=bnExps[bnExps.length-1];
+  const repeatBn=!!prevBn && prevBn.seed===seed && prevBn.n===N;
+  if(tr.rec)bnExps.push(tr.rec);
+  noteRun('bn',seed,bnExps.length,repeatBn);
+  bnShow(tr,D);
+
+  bnBase(ctx,W,H,t);
+  if(bnAnimId)cancelAnimationFrame(bnAnimId);
+  let drawn=0; const batch=Math.max(1,Math.ceil(D/45));
+  function frame(){
+    const end=Math.min(drawn+batch,D);
+    for(let i=drawn;i<end;i++)bnDrawNeedle(ctx,tr.sn[i],ink);
+    drawn=end;
+    if(drawn<D){bnAnimId=requestAnimationFrame(frame);}
+    else{bnAnimId=null;bnOverlay(ctx,W,H,t,tr.sn,ink);btn.disabled=false;}
+  }
+  bnAnimId=requestAnimationFrame(frame);
+  renderBnHist();
+}
+// 100 experiments back to back, drawing only the last -- see runPiBatch.
+function runBnBatch(){
+  const seed=readSeed('bn');
+  if(seed===null)return;
+  const N=+document.getElementById('bn-n').value;
+  batchRun('bn',()=>{
+    if(bnAnimId){cancelAnimationFrame(bnAnimId);bnAnimId=null;}
+    const cv=document.getElementById('bn-cv');
+    const {ctx,W,H}=getCtx(cv);
+    const t=H/BN_BANDS, D=Math.min(N,BN_DRAW), ink=bnInk(D);
+    const first=bnExps.length+1;
+    let last=null;
+    for(let i=0;i<BATCH_RUNS;i++){
+      const tr=bnTrial(batchSeed(seed,i),N,W,H,t,i===BATCH_RUNS-1?D:0);
+      if(tr.rec)bnExps.push(tr.rec);
+      last=tr;
+    }
+    bnBase(ctx,W,H,t);
+    last.sn.forEach(nd=>bnDrawNeedle(ctx,nd,ink));
+    bnOverlay(ctx,W,H,t,last.sn,ink);
+    bnShow(last,D);
+    renderBnHist();
+    noteBatch('bn',seed,first,bnExps.length);
+  });
+}
+function clearBn(){
+  bnExps=[];
+  if(bnAnimId){cancelAnimationFrame(bnAnimId);bnAnimId=null;}
+  document.getElementById('bn-run').disabled=false;
+  const cv=document.getElementById('bn-cv');
+  const {ctx,W,H}=getCtx(cv);
+  const t=H/BN_BANDS;
+  bnBase(ctx,W,H,t);bnOverlay(ctx,W,H,t,null,null);
+  ['bn-sn','bn-sk','bn-sq','bn-sp'].forEach(id=>setText(id,'—'));
+  setText('bn-shown','');
+  lastRun.bn=null; seedMsg('bn','',false);
+  renderBnHist();
+}
+function renderBnHist(){
+  const hw=document.getElementById('bn-hw'), hs=document.getElementById('bn-hs');
+  histCaption('bn-hits',
+    timeSeriesPlot(hs,hw,bnExps,e=>({est:e.est,ciLow:e.ciLow,ciHigh:e.ciHigh,n:e.n}),
+      Math.PI,'π = 3.1416','Estimated π'), 'π');
+}
+
+// ── Buffon SVG explainer ────────────────────────────────
+// Cartoon of the ruled sheet: one needle crossing a line, with its distance d to
+// that line and its angle θ marked, and one needle that lands clear of them all.
+function drawBnExp(){
+  const fig=document.getElementById('bn-exp-fig');
+  const xa=10,xb=166,t=68,y0=40,half=t/2;   // ℓ = t, so the half-length is t/2
+  let g='';
+  g+=svgRect(xa-4,y0-half,xb-xa+8,t*3,C.sqFill,'none',0);
+  g+=svgRect(xa-4,y0,xb-xa+8,t,'#f4f5fa','none',0);
+  for(let i=0;i<3;i++)g+=svgLine(xa,y0+i*t,xb,y0+i*t,C.sqStroke,1.8);
+
+  // Line spacing t, dimensioned in the clear margin at the left
+  const dx0=26;
+  g+=svgLine(dx0,y0,dx0,y0+t,C.sqStroke,1.2);
+  g+=svgLine(dx0-4,y0,dx0+4,y0,C.sqStroke,1.2);
+  g+=svgLine(dx0-4,y0+t,dx0+4,y0+t,C.sqStroke,1.2);
+  g+=svgTxt(dx0+6,y0+half+5,'t',C.sqStroke,14,FF_MONO,'start','600');
+
+  // A needle that reaches over a line, with its center distance d and its angle θ
+  const cx=104,cy=126,ang=60*Math.PI/180,yL=y0+t;
+  const dx=half*Math.cos(ang), dy=half*Math.sin(ang);
+  const hx=cx+(yL-cy)/dy*dx;
+  g+=svgLine(cx-dx,cy-dy,cx+dx,cy+dy,C.accept,3.2);
+  g+=`<circle cx="${hx.toFixed(1)}" cy="${yL}" r="4.6" fill="${C.accept}"/>`;
+  g+=svgTxt(cx+dx+5,cy+dy+5,'ℓ',C.accept,14,FF_MONO,'start','600');
+  // θ where the needle meets the line, opened to the left where nothing else sits
+  const ar=22;
+  g+=`<path d="M ${(hx-ar).toFixed(1)} ${yL} A ${ar} ${ar} 0 0 1 ${(hx-ar*Math.cos(ang)).toFixed(1)} ${(yL-ar*Math.sin(ang)).toFixed(1)}" fill="none" stroke="${C.circStroke}" stroke-width="1.5"/>`;
+  g+=svgTxt(hx-ar-3,yL-7,'θ',C.circStroke,14,FF_MONO,'end','600');
+  // d: center of the needle up to the nearest line
+  g+=svgLine(cx,cy,cx,yL,C.circStroke,1.4,'3,2');
+  g+=svgLine(cx-4,yL,cx+4,yL,C.circStroke,1.4);
+  g+=`<circle cx="${cx}" cy="${cy}" r="2.6" fill="${C.circStroke}"/>`;
+  g+=svgTxt(cx+7,cy-6,'d',C.circStroke,14,FF_MONO,'start','600');
+
+  // A needle that lands clear of every line
+  const bx=110,by=70,bang=20*Math.PI/180;
+  const bdx=half*Math.cos(bang), bdy=half*Math.sin(bang);
+  g+=`<line x1="${(bx-bdx).toFixed(1)}" y1="${(by-bdy).toFixed(1)}" x2="${(bx+bdx).toFixed(1)}" y2="${(by+bdy).toFixed(1)}" stroke="${C.reject}" stroke-width="2.8" stroke-dasharray="4,3"/>`;
+
+  fig.innerHTML=g;
+  fig.setAttribute('viewBox','4 4 168 208');
+}
+
+// ── Tab ③: area by a walking robot ─────────────────────
+// An animation, not an experiment: no seed, no history, nothing to run. The cavity
+// is a convex polygon, and both trails are correlated random walks that reflect off
+// its walls, and so the trails are the only thing that ever touches the geometry.
+//
+// Over 300 replications of this exact walk, the estimate came out at 119%, 104%,
+// 101% and 100.3% of the true area at the four lengths below, with run-to-run
+// spreads of 48%, 23%, 10% and 7%. That progression is what the stacked rows are
+// for. A walk that scribbles rather than sweeps fails outright as well (140% of true
+// at a turn jitter of 1.5 rad/step), which is why RA_TURN is small: the walk has to
+// cover the floor, not mill about in one corner of it.
+const RA_POLY=[[0.03,0.24],[0.12,0.08],[0.34,0.02],[0.62,0.04],[0.85,0.11],
+               [0.97,0.26],[0.90,0.42],[0.66,0.49],[0.36,0.48],[0.12,0.40]];
+// Because the robot decides how far it will walk before it sets out, these are round
+// numbers rather than whatever a multiple of √A works out to, and the animation
+// takes them in order. They stay separate rows in the panel: each length has its own
+// sampling distribution, and pooling across them would average four different things.
+const RA_LENS=[100,200,350,500];  // prescribed path length, mm, walked in this order
+// Step and heading jitter set the walk's persistence length, which is what the
+// identity is sensitive to; the pair below keeps that length and draws a smoother
+// curve than a longer step with a sharper turn would.
+const RA_STEP=0.04, RA_TURN=0.247; // step length (also in √A) and heading jitter, rad
+const RA_MM2=875;                 // the cavity is drawn as the ant study's 875 mm² nest
+const RA_PHASE=[1100,1900,1500];  // lay the first trail, lay the second, hold the result
+let raIdx=0, raRun=null, raAnimId=null, raT0=0, raReady=false;
+
+// Math.random on purpose: this illustration free-runs and must never draw from a
+// seeded experiment stream. See the mulberry32 use in runPi/runBn/runMC.
+function raGauss(){ return Math.sqrt(-2*Math.log(1-Math.random()))*Math.cos(2*Math.PI*Math.random()); }
+function raShoelace(P){let a=0;for(let i=0;i<P.length;i++){const q=P[i],r=P[(i+1)%P.length];a+=q[0]*r[1]-r[0]*q[1];}return Math.abs(a)/2;}
+function raInside(P,x,y){
+  let sgn=0;
+  for(let i=0;i<P.length;i++){
+    const a=P[i], b=P[(i+1)%P.length];
+    const z=(b[0]-a[0])*(y-a[1])-(b[1]-a[1])*(x-a[0]);
+    if(z!==0){ if(sgn===0)sgn=Math.sign(z); else if(Math.sign(z)!==sgn)return false; }
+  }
+  return true;
+}
+// First wall the step runs into, as a fraction t along it, with that wall's direction.
+function raHit(P,x,y,dx,dy){
+  let best=null;
+  for(let i=0;i<P.length;i++){
+    const a=P[i], b=P[(i+1)%P.length], ex=b[0]-a[0], ey=b[1]-a[1];
+    const den=dx*ey-dy*ex; if(Math.abs(den)<1e-12)continue;
+    const t=((a[0]-x)*ey-(a[1]-y)*ex)/den, u=((a[0]-x)*dy-(a[1]-y)*dx)/den;
+    if(t>1e-9&&t<=1+1e-9&&u>=-1e-9&&u<=1+1e-9&&(!best||t<best.t))best={t:t,ex:ex,ey:ey};
+  }
+  return best;
+}
+// A walk of exactly `len`, reflecting off the walls, staying inside the cavity.
+function raWalk(P,len,step,turn){
+  let x,y,guard=0;
+  const xs=P.map(p=>p[0]), ys=P.map(p=>p[1]);
+  const x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+  const y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+  do{ x=x0+Math.random()*(x1-x0); y=y0+Math.random()*(y1-y0); }while(!raInside(P,x,y)&&guard++<500);
+  let th=Math.random()*2*Math.PI, left=len;
+  const pts=[[x,y]];
+  guard=0;
+  while(left>1e-9&&guard++<40000){
+    th+=turn*raGauss();
+    let d=Math.min(step,left);
+    while(d>1e-9&&guard++<40000){
+      const dx=Math.cos(th)*d, dy=Math.sin(th)*d, h=raHit(P,x,y,dx,dy);
+      if(!h||h.t>1){ x+=dx; y+=dy; pts.push([x,y]); left-=d; d=0; }
+      else{
+        x+=dx*h.t; y+=dy*h.t; pts.push([x,y]);
+        const used=d*h.t; left-=used; d-=used;
+        const el=Math.hypot(h.ex,h.ey), nx=-h.ey/el, ny=h.ex/el;   // wall normal
+        const ux=Math.cos(th), uy=Math.sin(th), dot=ux*nx+uy*ny;
+        th=Math.atan2(uy-2*dot*ny, ux-2*dot*nx);
+        x+=Math.cos(th)*1e-4; y+=Math.sin(th)*1e-4;                // nudge off the wall
+      }
+    }
+  }
+  return pts;
+}
+// Proper crossings between the two trails, each tagged with the second trail's
+// segment index so a dot can appear at the moment the robot walks through it.
+function raCrossings(A,B){
+  const o=(ax,ay,bx,by,cx,cy)=>Math.sign((bx-ax)*(cy-ay)-(by-ay)*(cx-ax));
+  const out=[];
+  for(let j=0;j<B.length-1;j++){
+    const c=B[j], d=B[j+1];
+    for(let i=0;i<A.length-1;i++){
+      const a=A[i], b=A[i+1];
+      if(Math.min(a[0],b[0])>Math.max(c[0],d[0])||Math.max(a[0],b[0])<Math.min(c[0],d[0]))continue;
+      if(Math.min(a[1],b[1])>Math.max(c[1],d[1])||Math.max(a[1],b[1])<Math.min(c[1],d[1]))continue;
+      if(o(a[0],a[1],b[0],b[1],c[0],c[1])*o(a[0],a[1],b[0],b[1],d[0],d[1])<0 &&
+         o(c[0],c[1],d[0],d[1],a[0],a[1])*o(c[0],c[1],d[0],d[1],b[0],b[1])<0){
+        const r1=(b[0]-a[0])*(d[1]-c[1])-(b[1]-a[1])*(d[0]-c[0]);
+        const t=((c[0]-a[0])*(d[1]-c[1])-(c[1]-a[1])*(d[0]-c[0]))/r1;
+        out.push({x:a[0]+t*(b[0]-a[0]), y:a[1]+t*(b[1]-a[1]), j:j});
+      }
+    }
+  }
+  return out;
+}
+// Every estimate the animation has produced, filed by prescribed length. Nothing is
+// pre-computed: each mark is a pair of walks the viewer watched, which is the only
+// way an interval narrowing in front of them means anything.
+let raEst=RA_LENS.map(()=>[]), raNewest=null;
+const RA_RUG_MAX=2000;            // mm², the axis stops here and overflow is flagged
+function raRug(){
+  const wrap=document.getElementById('ra-rugwrap'), svg=document.getElementById('ra-rug');
+  if(!wrap||!svg)return;
+  const W=Math.max(250, wrap.offsetWidth||360);
+  const pL=54,pR=16,pT=8,pB=30, rowH=36, rows=RA_LENS.length;
+  const H=pT+rows*rowH+pB, cW=W-pL-pR;
+  const xp=v=>pL+Math.min(v,RA_RUG_MAX)/RA_RUG_MAX*cW;
+  let h='';
+  h+=`<rect x="${pL}" y="${pT}" width="${cW}" height="${rows*rowH}" fill="${C.bg}" rx="3"/>`;
+  const tx=xp(RA_MM2);
+  RA_LENS.forEach((L,i)=>{
+    const y0=pT+i*rowH, mid=y0+rowH/2, es=raEst[i], live=(i===raIdx);
+    // The length being walked right now is marked, so that the animation and the row
+    // it is filling read as one thing.
+    if(live)h+=`<rect x="${pL}" y="${y0}" width="${cW}" height="${rowH}" fill="${C.accent}" opacity=".045"/>`;
+    if(i)h+=`<line x1="${pL}" y1="${y0}" x2="${pL+cW}" y2="${y0}" stroke="#e8e4e5" stroke-width="1"/>`;
+    h+=`<text x="${pL-6}" y="${mid-1}" text-anchor="end" fill="${live?C.accent:C.muted}" font-size="10" font-weight="${live?700:400}" font-family="${FF_MONO}">${L} mm</text>`;
+    h+=`<text x="${pL-6}" y="${mid+10}" text-anchor="end" fill="#aaa" font-size="8.5" font-family="${FF_MONO}">n=${es.length}</text>`;
+    // Two bands per row, so that no mark is told apart from another by size alone:
+    // the walks themselves sit on the upper line, and the summary of them sits below.
+    const yDot=mid-7, yBar=mid+9;
+    // The walk just animated is an open circle in the trail color, the one mark the
+    // eye should be able to find while it is still on the canvas.
+    const fresh=raNewest===i;
+    es.forEach((e,j)=>{
+      const hot=fresh&&j===es.length-1;
+      if(e>RA_RUG_MAX)
+        h+=`<path d="M ${pL+cW-2} ${yDot-4.5} l 6 4.5 l -6 4.5 z" fill="${hot?C.est:C.accent}" opacity="${hot?1:.55}"/>`;
+      else if(hot)
+        h+=`<circle cx="${xp(e)}" cy="${yDot}" r="3.6" fill="#fff" stroke="${C.est}" stroke-width="2"/>`;
+      else
+        h+=`<circle cx="${xp(e)}" cy="${yDot}" r="2.6" fill="${C.accent}" opacity=".5"/>`;
+    });
+    // A 95% interval for this row's mean, on the same t quantile Tab ④ uses. It needs
+    // two walks before it exists at all, and it narrows as they accumulate.
+    if(es.length>1){
+      const m=es.reduce((x,y)=>x+y,0)/es.length;
+      const sd=Math.sqrt(es.reduce((x,y)=>x+(y-m)*(y-m),0)/(es.length-1));
+      const half=tQuantile975(es.length-1)*sd/Math.sqrt(es.length);
+      const lo=xp(Math.max(0,m-half)), hi=xp(m+half);
+      h+=`<line x1="${lo}" y1="${yBar}" x2="${hi}" y2="${yBar}" stroke="${C.accent}" stroke-width="1.3"/>`;
+      h+=`<line x1="${lo}" y1="${yBar-4}" x2="${lo}" y2="${yBar+4}" stroke="${C.accent}" stroke-width="1.3"/>`;
+      h+=`<line x1="${hi}" y1="${yBar-4}" x2="${hi}" y2="${yBar+4}" stroke="${C.accent}" stroke-width="1.3"/>`;
+      h+=`<circle cx="${xp(m)}" cy="${yBar}" r="2.8" fill="${C.accent}"/>`;
+    }
+  });
+  h+=`<line x1="${tx}" y1="${pT}" x2="${tx}" y2="${pT+rows*rowH}" stroke="${C.truth}" stroke-width="1.5" stroke-dasharray="5,3" opacity=".85"/>`;
+  const ay=pT+rows*rowH;
+  h+=`<text x="${pL}" y="${ay+13}" text-anchor="start" fill="${C.muted}" font-size="9" font-family="${FF_MONO}">0</text>`;
+  h+=`<text x="${tx}" y="${ay+13}" text-anchor="middle" fill="${C.truth}" font-size="9" font-weight="700" font-family="${FF_MONO}">${RA_MM2}</text>`;
+  h+=`<text x="${pL+cW}" y="${ay+13}" text-anchor="end" fill="${C.muted}" font-size="9" font-family="${FF_MONO}">${RA_RUG_MAX}+</text>`;
+  h+=`<text x="${pL+cW/2}" y="${ay+25}" text-anchor="middle" fill="${C.muted}" font-size="9.5" font-family="${FF_SANS}">estimated floor area (mm²)</text>`;
+  svg.innerHTML=h;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.style.width='100%'; svg.style.height='auto'; svg.style.display='block';
+}
+const RA_M=14;   // margin between the cavity and the edge of the canvas
+// Cavity polygon in canvas pixels, plus its true area
+function raGeom(W,H){
+  const xs=RA_POLY.map(p=>p[0]), ys=RA_POLY.map(p=>p[1]);
+  const x0=Math.min.apply(null,xs), x1=Math.max.apply(null,xs);
+  const y0=Math.min.apply(null,ys), y1=Math.max.apply(null,ys);
+  const sc=Math.min((W-2*RA_M)/(x1-x0), (H-2*RA_M)/(y1-y0));
+  const ox=(W-(x1-x0)*sc)/2-x0*sc, oy=(H-(y1-y0)*sc)/2-y0*sc;
+  const P=RA_POLY.map(p=>[p[0]*sc+ox, p[1]*sc+oy]);
+  return {P:P, A:raShoelace(P)};
+}
+function raBuild(){
+  const cv=document.getElementById('ra-cv');
+  const W=+cv.dataset.logW, H=+cv.dataset.logH;
+  const g=raGeom(W,H), P=g.P, A=g.A, R=Math.sqrt(A);
+  // Report in millimetres by scaling the drawn cavity to the study's 875 mm² nest,
+  // then read the prescribed path length back into canvas pixels.
+  const mm2=RA_MM2/A, mm=Math.sqrt(mm2);
+  const len=RA_LENS[raIdx]/mm;
+  const pa=raWalk(P,len,RA_STEP*R,RA_TURN), pb=raWalk(P,len,RA_STEP*R,RA_TURN);
+  const xr=raCrossings(pa,pb);
+  setText('ra-plan','planned distance: '+RA_LENS[raIdx]+' mm each pass');
+  raRun={P:P,A:A,len:len,pa:pa,pb:pb,xr:xr,mm:mm,mm2:mm2,
+         est:xr.length?2*len*len/(Math.PI*xr.length)*mm2:null};
+}
+function raTrail(ctx,pts,upto,color,lw){
+  if(upto<1)return;
+  ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<=upto&&i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.stroke();
+}
+function raDraw(na,nb,showEst){
+  const cv=document.getElementById('ra-cv');
+  const {ctx,W,H}=getCtx(cv);
+  const r=raRun;
+  ctx.fillStyle=C.bg;ctx.fillRect(0,0,W,H);
+  ctx.beginPath();
+  r.P.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+  ctx.closePath();
+  ctx.fillStyle=C.sqFill;ctx.fill();
+  ctx.strokeStyle=C.sqStroke;ctx.lineWidth=2.2;ctx.stroke();
+  raTrail(ctx,r.pa,na,C.truth,1.5);
+  raTrail(ctx,r.pb,nb,C.est,1.5);
+  const shown=r.xr.filter(c=>c.j<nb);
+  ctx.fillStyle=C.accent;
+  shown.forEach(c=>{ctx.beginPath();ctx.arc(c.x,c.y,2.6,0,Math.PI*2);ctx.fill();});
+  // The robot itself, at the head of whichever trail it is still laying
+  const head=nb>0?(r.pb[Math.min(nb,r.pb.length-1)]):(na>0&&na<r.pa.length?r.pa[na]:null);
+  if(head&&!showEst){
+    ctx.fillStyle=nb>0?C.est:C.truth;
+    ctx.beginPath();ctx.arc(head[0],head[1],4,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.4;ctx.stroke();
+  }
+  const L=Math.round(r.len*r.mm);
+  const cap=document.getElementById('ra-cap');
+  if(!showEst){
+    cap.textContent=nb>0
+      ? 'Second trail, '+L+' mm long: '+shown.length+' crossing'+(shown.length===1?'':'s')+' so far.'
+      : 'First trail, '+L+' mm long, laid down and left behind.';
+  } else {
+    cap.textContent=r.est===null
+      ? 'S = L = '+L+' mm with no crossings at all, and so no estimate from this walk.'
+      : 'S = L = '+L+' mm,  N = '+r.xr.length+' crossings,  2SL/(πN) = '+Math.round(r.est)
+        +' mm²  (true area '+RA_MM2+' mm²)';
+  }
+}
+function raFrame(ts){
+  if(!raT0)raT0=ts;
+  const el=ts-raT0, p0=RA_PHASE[0], p1=p0+RA_PHASE[1], p2=p1+RA_PHASE[2];
+  const na=raRun.pa.length-1, nb=raRun.pb.length-1;
+  if(el<p0)       raDraw(Math.round(na*el/p0), 0, false);
+  else if(el<p1)  raDraw(na, Math.round(nb*(el-p0)/RA_PHASE[1]), false);
+  else            raDraw(na, nb, true);
+  if(el>=p2){
+    if(raRun.est!==null){raEst[raIdx].push(raRun.est);raNewest=raIdx;}   // joins its row
+    raIdx=(raIdx+1)%RA_LENS.length; raBuild(); raRug(); raT0=0;
+  }
+  raAnimId=requestAnimationFrame(raFrame);
+}
+// Sized to the cavity's own proportions rather than to the column: this is a floor
+// plan, and so the canvas is cut to fit it snugly and centered, and it stops at a
+// height that keeps the whole tab shorter than its siblings.
+const RA_AR=(function(){
+  const xs=RA_POLY.map(p=>p[0]), ys=RA_POLY.map(p=>p[1]);
+  return (Math.max.apply(null,xs)-Math.min.apply(null,xs))/
+         (Math.max.apply(null,ys)-Math.min.apply(null,ys));
+})();
+function raSize(){
+  const cv=document.getElementById('ra-cv'), sec=cv.closest('.sec');
+  if(!sec)return false;
+  const H_MAX=290;
+  let W=Math.max(240,Math.min(500,sec.clientWidth-26));
+  let H=Math.round((W-2*RA_M)/RA_AR)+2*RA_M;
+  if(H>H_MAX){ H=H_MAX; W=Math.round((H-2*RA_M)*RA_AR)+2*RA_M; }
+  if(Math.abs(W-(+cv.dataset.logW||0))<=2)return false;
+  cv.dataset.logW=W; cv.dataset.logH=H;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  cv.style.width=W+'px'; cv.style.height=H+'px'; cv.style.margin='0 auto';
+  return true;
+}
+function raStart(){
+  if(!raReady){
+    raReady=true;
+    raSize();
+    if(typeof ResizeObserver!=='undefined'){
+      let t=null;
+      new ResizeObserver(()=>{clearTimeout(t);t=setTimeout(()=>{if(raSize()){raBuild();raT0=0;}raRug();},80);})
+        .observe(document.getElementById('ra-cv').closest('.sec'));
+    }
+    raBuild(); raRug();
+  }
+  if(raAnimId===null){ raT0=0; raAnimId=requestAnimationFrame(raFrame); }
+}
+// Stopped on the way out, unlike the Tab ④ explainer's interval: this one runs a
+// frame at a time and would otherwise keep drawing to a hidden canvas.
+function raStop(){
+  if(raAnimId!==null){ cancelAnimationFrame(raAnimId); raAnimId=null; }
+}
+
+// ── Tab ④: MC integration ──────────────────────────────
 function mcFnChange(){
   curFn=document.getElementById('mc-fn').value;
   document.getElementById('mc-bridge').style.display=curFn==='semi'?'block':'none';
@@ -463,6 +1548,23 @@ function mcFnChange(){
 function resetMCStats(){
   setText('mc-st',FUNCS[curFn].trueStr);
   ['mc-sm','mc-sl','mc-sw','mc-se','mc-serr'].forEach(id=>setText(id,'—'));
+  updateMCFormula(null);
+}
+// Readable form for a domain length that is an exact multiple of π.
+function piStr(v){
+  return v===Math.PI?'π':v===Math.PI/2?'π/2':v===Math.PI/4?'π/4':v.toFixed(4);
+}
+// Shows how the draws become the estimate. Pass null to reset to placeholders.
+// Every line is verbally labeled, so the colors reinforce meaning without carrying it.
+function updateMCFormula(run){
+  const fn=FUNCS[curFn];
+  document.getElementById('mc-eq-dom').innerHTML='x<sub>i</sub> ~ U'+fn.domStr;
+  document.getElementById('mc-eq-true').textContent='Exact value: '+fn.trueStr;
+  const sub=document.getElementById('mc-eq-sub'), est=document.getElementById('mc-eq-est');
+  if(!run){ sub.textContent='—'; est.textContent='—'; return; }
+  sub.innerHTML='('+piStr(run.L)+'/'+run.M+') × '+run.sum.toFixed(4)
+               +' &nbsp;[Σ f(x<sub>i</sub>) over M = '+run.M.toLocaleString()+']';
+  est.textContent='∫ '+fn.name+' dx ≈ '+run.est.toFixed(6);
 }
 function mcDrawBase(samples){
   const cv=document.getElementById('mc-cv');
@@ -493,19 +1595,21 @@ function drawMCPlot(ctx,W,H,fn,samples,totalM){
     ctx.beginPath();
     for(let i=0;i<=200;i++){const x=a+i/200*L;if(i===0)ctx.moveTo(xP(x),yP(f(x)));else ctx.lineTo(xP(x),yP(f(x)));}
     ctx.lineTo(xP(b),yP(0));ctx.lineTo(xP(a),yP(0));ctx.closePath();
-    ctx.fillStyle='rgba(26,61,43,.06)';ctx.fill();
+    ctx.fillStyle='rgba(15,110,140,.07)';ctx.fill();
   }
   if(M>0){
     const rWpx=cW/TM;  // width based on TM for stable anim
     samples.forEach(({x,y})=>{
       const px=xP(x)-rWpx/2, py=yP(y), ph=Math.max(yP(0)-py,1);
-      ctx.fillStyle=C.orangePale;ctx.fillRect(px,py,rWpx,ph);
-      ctx.strokeStyle=C.orange;ctx.lineWidth=M<=100?1:0.5;ctx.strokeRect(px,py,rWpx,ph);
+      ctx.fillStyle=C.estPale;ctx.fillRect(px,py,rWpx,ph);
+      ctx.strokeStyle=C.est;ctx.lineWidth=M<=100?1:0.5;ctx.strokeRect(px,py,rWpx,ph);
     });
   }
-  ctx.beginPath();ctx.strokeStyle=C.green;ctx.lineWidth=2.2;
+  ctx.beginPath();
   for(let i=0;i<=300;i++){const x=a+i/300*L;if(i===0)ctx.moveTo(xP(x),yP(f(x)));else ctx.lineTo(xP(x),yP(f(x)));}
-  ctx.stroke();
+  ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.strokeStyle='#fff';ctx.lineWidth=5.2;ctx.stroke();   // halo: keeps the curve legible over the bars
+  ctx.strokeStyle=C.truth;ctx.lineWidth=2.2;ctx.stroke();
   ctx.strokeStyle='#ccc';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(pL,pT+cH);ctx.lineTo(pL+cW,pT+cH);ctx.stroke();
   ctx.beginPath();ctx.moveTo(pL,pT);ctx.lineTo(pL,pT+cH);ctx.stroke();
@@ -517,7 +1621,7 @@ function drawMCPlot(ctx,W,H,fn,samples,totalM){
   ctx.fillText(midL, pL+cW/2, pT+cH+16);
   ctx.textAlign='right';
   ctx.fillText('0',pL-4,yP(0)+4);ctx.fillText('1',pL-4,yP(1)+4);
-  ctx.fillStyle=C.green;ctx.font=`bold 11.5px ${FF_SANS}`;ctx.textAlign='left';
+  ctx.fillStyle=C.truth;ctx.font=`bold 11.5px ${FF_SANS}`;ctx.textAlign='left';
   ctx.fillText('f(x) = '+name, pL+4, pT+13);
 
   // Width annotation — always shown, drafting-style for any M
@@ -527,42 +1631,67 @@ function drawMCPlot(ctx,W,H,fn,samples,totalM){
     const midS=samples[Math.floor(M/2)];
     const bx=xP(midS.x), rWpx=cW/TM, visW=Math.max(rWpx,3);
     const ay=pT+cH+32, tkH=4;
-    ctx.strokeStyle=C.orange;ctx.lineWidth=1;
+    ctx.strokeStyle=C.est;ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(bx-visW/2,ay);ctx.lineTo(bx+visW/2,ay);ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(bx-visW/2,ay-tkH);ctx.lineTo(bx-visW/2,ay+tkH);
     ctx.moveTo(bx+visW/2,ay-tkH);ctx.lineTo(bx+visW/2,ay+tkH);
     ctx.stroke();
     const Lstr=fn.b===Math.PI?'π':fn.b===Math.PI/2?'π/2':L.toFixed(2);
-    ctx.fillStyle=C.orange;ctx.font=`${rWpx<28?8.5:9.5}px ${FF_MONO}`;ctx.textAlign='center';
+    ctx.fillStyle=C.est;ctx.font=`${rWpx<28?8.5:9.5}px ${FF_MONO}`;ctx.textAlign='center';
     ctx.fillText(`L/M = ${Lstr}/${TM}`, bx, ay+14);
   }
 }
 
+// One integration experiment: seed in, interval out. keep=true also returns the
+// sampled points, which only a run that is going to be drawn needs to hold on to.
+function mcTrial(seed,M,fn,keep){
+  const {a,b,f,trueVal}=fn, L=b-a;
+  // A fresh stream per experiment, so the same seed always reproduces the run.
+  const rand=mulberry32(seed);
+  const samples=keep?[]:null; let sum=0,sumSq=0;
+  for(let i=0;i<M;i++){const x=a+rand()*L,y=f(x);if(keep)samples.push({x,y});sum+=y;sumSq+=y*y;}
+  const mean=sum/M;
+  // Unlike the two proportion tabs, sigma is estimated here from the same M draws,
+  // which is what Student's t is for -- so the sample variance takes the M-1 divisor
+  // and the quantile comes from t, not the normal. At M = 10 the pair of corrections
+  // widens the interval by about 13%, and without them a 95% interval covers rather
+  // less than 95% of the time -- which the 100-run sweep would show as a shortfall.
+  const varS=M>1?Math.max(0,(sumSq-M*mean*mean)/(M-1)):0;
+  const se=Math.sqrt(varS/M), tq=tQuantile975(M-1), est=L*mean;
+  return {rec:{M:M,seed:seed,est:est,ciLow:L*(mean-tq*se),ciHigh:L*(mean+tq*se)},
+          M:M,L:L,sum:sum,est:est,relErr:Math.abs(est-trueVal)/trueVal,samples:samples};
+}
+function mcShow(tr,fn){
+  setText('mc-sm',tr.M.toLocaleString());
+  setText('mc-sl',tr.L===Math.PI?`π ≈ ${tr.L.toFixed(4)}`:tr.L===Math.PI/2?`π/2 ≈ ${tr.L.toFixed(4)}`:tr.L.toFixed(4));
+  setText('mc-sw',(tr.L/tr.M).toFixed(6));setText('mc-se',tr.est.toFixed(6));setText('mc-st',fn.trueStr);
+  const errEl=document.getElementById('mc-serr');
+  errEl.textContent=(tr.relErr*100).toFixed(3)+'%';
+  errEl.style.color=tr.relErr<.05?C.hit:tr.relErr<.2?C.warn:C.miss;
+  updateMCFormula({M:tr.M,L:tr.L,sum:tr.sum,est:tr.est});
+}
 function runMC(){
+  // Validate BEFORE disabling — see the note in runPi.
+  const seed=readSeed('mc');
+  if(seed===null)return;
   const M=+document.getElementById('mc-n').value;
   const fkey=document.getElementById('mc-fn').value;
   const fn=FUNCS[fkey], btn=document.getElementById('mc-run');
   btn.disabled=true;
   if(mcAnimId){cancelAnimationFrame(mcAnimId);mcAnimId=null;}
-  const {a,b,f,trueVal}=fn, L=b-a;
 
-  // Generate all samples upfront — stats are exact from the start
-  const samples=[]; let sum=0,sumSq=0;
-  for(let i=0;i<M;i++){const x=a+Math.random()*L,y=f(x);samples.push({x,y});sum+=y;sumSq+=y*y;}
-  const mean=sum/M, variance=Math.max(0,sumSq/M-mean*mean), se=Math.sqrt(variance/M);
-  const est=L*mean, relErr=Math.abs(est-trueVal)/trueVal;
+  // Generate all samples upfront — stats are exact from the start.
+  const tr=mcTrial(seed,M,fn,true);
   if(!mcExps[fkey])mcExps[fkey]=[];
-  mcExps[fkey].push({M,est,ciLow:L*(mean-1.96*se),ciHigh:L*(mean+1.96*se)});
+  const mcHist=mcExps[fkey], prevMC=mcHist[mcHist.length-1];
+  const repeatMC=!!prevMC && prevMC.seed===seed && prevMC.M===M;
+  mcHist.push(tr.rec);
   curFn=fkey;
+  noteRun('mc',seed,mcHist.length,repeatMC);
 
   // Update stat cards and history immediately (before animation finishes)
-  setText('mc-sm',M.toLocaleString());
-  setText('mc-sl',L===Math.PI?`π ≈ ${L.toFixed(4)}`:L===Math.PI/2?`π/2 ≈ ${L.toFixed(4)}`:L.toFixed(4));
-  setText('mc-sw',(L/M).toFixed(6));setText('mc-se',est.toFixed(6));setText('mc-st',fn.trueStr);
-  const errEl=document.getElementById('mc-serr');
-  errEl.textContent=(relErr*100).toFixed(3)+'%';
-  errEl.style.color=relErr<.05?C.green2:relErr<.2?C.orange:'#c0392b';
+  mcShow(tr,fn);
   renderMCHist();
 
   // Animate rectangles one-by-one (batched so total frames ≈ 45)
@@ -575,7 +1704,7 @@ function runMC(){
     // Full redraw each frame: clear → rects so far → curve+axes on top
     // Canvas is fast enough; this keeps the curve always above the rects.
     const {ctx,W,H}=getCtx(cv);
-    drawMCPlot(ctx,W,H,fn,samples.slice(0,end),M);
+    drawMCPlot(ctx,W,H,fn,tr.samples.slice(0,end),M);
     drawn=end;
     if(drawn<M){
       mcAnimId=requestAnimationFrame(frame);
@@ -586,32 +1715,74 @@ function runMC(){
   }
   mcAnimId=requestAnimationFrame(frame);
 }
+// 100 experiments back to back, drawing only the last -- see runPiBatch. The sweep
+// stays on the function currently selected, which is also the history it appends to.
+function runMCBatch(){
+  const seed=readSeed('mc');
+  if(seed===null)return;
+  const M=+document.getElementById('mc-n').value;
+  const fkey=document.getElementById('mc-fn').value, fn=FUNCS[fkey];
+  batchRun('mc',()=>{
+    if(mcAnimId){cancelAnimationFrame(mcAnimId);mcAnimId=null;}
+    if(!mcExps[fkey])mcExps[fkey]=[];
+    const mcHist=mcExps[fkey], first=mcHist.length+1;
+    let last=null;
+    for(let i=0;i<BATCH_RUNS;i++){
+      const tr=mcTrial(batchSeed(seed,i),M,fn,i===BATCH_RUNS-1);
+      mcHist.push(tr.rec); last=tr;
+    }
+    curFn=fkey;
+    const cv=document.getElementById('mc-cv');
+    const {ctx,W,H}=getCtx(cv);
+    drawMCPlot(ctx,W,H,fn,last.samples,M);
+    mcShow(last,fn);
+    renderMCHist();
+    noteBatch('mc',seed,first,mcHist.length);
+  });
+}
 function clearMC(){
   if(mcAnimId){cancelAnimationFrame(mcAnimId);mcAnimId=null;}
   document.getElementById('mc-run').disabled=false;
   const fkey=document.getElementById('mc-fn').value;
-  mcExps[fkey]=[];mcDrawBase([]);resetMCStats();renderMCHist();
+  mcExps[fkey]=[];mcDrawBase([]);resetMCStats();lastRun.mc=null;seedMsg('mc','',false);renderMCHist();
 }
 function renderMCHist(){
   const hw=document.getElementById('mc-hw'), hs=document.getElementById('mc-hs');
   const fkey=document.getElementById('mc-fn').value;
   const exps=mcExps[fkey]||[], fn=FUNCS[fkey];
-  timeSeriesPlot(hs,hw,exps,e=>({est:e.est,ciLow:e.ciLow,ciHigh:e.ciHigh,n:e.M}),
-    fn.trueVal,'True = '+fn.trueStr.split(' ')[0],'∫f(x)dx  estimate');
+  histCaption('mc-hits',
+    timeSeriesPlot(hs,hw,exps,e=>({est:e.est,ciLow:e.ciLow,ciHigh:e.ciHigh,n:e.M}),
+      fn.trueVal,'True = '+fn.trueStr.split(' ')[0],'∫f(x)dx  estimate'), 'the true integral');
 }
 
 // ── Time-series history plot ────────────────────────────────────────
-// Left→right time axis; old runs pushed off left (circular buffer).
+// Left→right time axis; old runs pushed off left (circular buffer, 100 runs deep).
 // Blank axes shown on init. Fixed SVG height; viewBox scales responsively.
-// SH=260  pL=56 pR=12 pT=30 pB=52  cH=178  colW=56
+// pL=56 pR=12 pT=30 pB=52  cH=178  colW=56 at rest, narrowing to fit a long history
 function timeSeriesPlot(svgEl,containerEl,allExps,accessor,trueVal,trueLabel,yLabel){
   // Use container width; fall back to widget when container is hidden (e.g., inactive tab)
   const widget=document.querySelector('.widget');
   const W=Math.max(300, containerEl.offsetWidth||(widget?widget.clientWidth:600));
-  const SH=260, pL=56,pR=12,pT=30,pB=52;
-  const cW=W-pL-pR, cH=SH-pT-pB;
-  const colW=56, maxVis=Math.max(1,Math.floor(cW/colW));
+  const pL=56,pR=12,pT=30,pB=52, cH=178;
+  const cW=W-pL-pR;
+  // Two legend entries side by side need about 330px. Narrower than that they stack
+  // and the plot grows by a line, rather than the second entry running off the edge.
+  const legRows=cW<330?2:1;
+  const SH=pT+cH+pB+(legRows-1)*14;
+  // Columns narrow to fit the run count before the buffer starts dropping runs, so a
+  // 100-run sweep is shown whole wherever there is room for it at all. The window
+  // stops at 100 even where more would fit: with a round hundred on screen the miss
+  // count is the percentage, and about five of them is the 5% the interval promises.
+  const COL_MAX=56, COL_MIN=7, HIST_MAX=100;
+  const want=Math.min(allExps.length,HIST_MAX);
+  let colW=COL_MAX;
+  if(want>Math.floor(cW/colW)) colW=Math.max(COL_MIN,cW/want);
+  const maxVis=Math.min(HIST_MAX,Math.max(1,Math.floor(cW/colW)));
   const shown=allExps.slice(-maxVis);
+  // Below this the per-run labels cannot fit, and the marks are drawn slimmer.
+  const dense=colW<30;
+  const barW=Math.min(6,colW*.5), capW=Math.min(5,colW*.42);
+  const dotR=Math.min(4,Math.max(1.4,colW*.34)), lwBar=colW<12?1.1:1.8;
   const firstRunIdx=allExps.length-shown.length+1;
   const pts=shown.map(accessor);
 
@@ -635,21 +1806,29 @@ function timeSeriesPlot(svgEl,containerEl,allExps,accessor,trueVal,trueLabel,yLa
 
   // Build inner SVG content (no outer <svg> tag — set as attributes on the element)
   let h='';
-  h+=`<rect x="${pL}" y="${pT}" width="${cW}" height="${cH}" fill="#faf9f6" rx="3"/>`;
+  h+=`<rect x="${pL}" y="${pT}" width="${cW}" height="${cH}" fill="${C.bg}" rx="3"/>`;
 
   // True-value dashed line, clamped to plot area
   const tvy=Math.min(Math.max(yP(trueVal),pT+2),pT+cH-2);
-  h+=`<line x1="${pL}" y1="${tvy}" x2="${pL+cW}" y2="${tvy}" stroke="${C.green}" stroke-width="1.5" stroke-dasharray="5,3" opacity=".75"/>`;
+  h+=`<line x1="${pL}" y1="${tvy}" x2="${pL+cW}" y2="${tvy}" stroke="${C.truth}" stroke-width="1.5" stroke-dasharray="5,3" opacity=".75"/>`;
 
   // Label drawn LAST (after CI bars) so it always sits on top
+  // The label rides on the dashed line, in the same spot however many runs are up.
+  // Its opaque patch does cover a few intervals once the columns are packed, and that
+  // is the trade taken on purpose: naming the dashed line as the true value is what
+  // makes the whole chart readable, and a label that moved around would say it less
+  // clearly. Drawn last, below, so it stays on top of the bars rather than under them.
   const lblY=tvy<pT+18?tvy+14:tvy-5;
   const lblBgW=trueLabel.length*6.8+8;
   const lblH=`<rect x="${pL+3}" y="${lblY-12}" width="${lblBgW}" height="16" fill="white" opacity=".92" rx="2"/>`
-    +`<text x="${pL+5}" y="${lblY}" fill="${C.green}" font-size="10.5" font-weight="700" font-family="${FF_MONO}">${trueLabel}</text>`;
+    +`<text x="${pL+5}" y="${lblY}" fill="${C.truth}" font-size="10.5" font-weight="700" font-family="${FF_MONO}">${trueLabel}</text>`;
 
   // Y axis
   h+=`<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pT+cH}" stroke="#ccc" stroke-width="1"/>`;
-  const prec=Math.abs(trueVal)<2?3:2;
+  // Precision from the visible window rather than the magnitude: a tight window
+  // around a large true value (π at N = 10,000) needs more decimals, not fewer.
+  const yWin=yMax-yMin;
+  const prec=yWin<0.02?5:yWin<0.2?4:yWin<2?3:2;
   for(let i=0;i<=4;i++){
     const v=yMin+i*(yMax-yMin)/4, ty=yP(v);
     h+=`<line x1="${pL-4}" y1="${ty}" x2="${pL}" y2="${ty}" stroke="#bbb" stroke-width="1"/>`;
@@ -661,6 +1840,7 @@ function timeSeriesPlot(svgEl,containerEl,allExps,accessor,trueVal,trueLabel,yLa
   // X axis baseline
   h+=`<line x1="${pL}" y1="${pT+cH}" x2="${pL+cW}" y2="${pT+cH}" stroke="#ccc" stroke-width="1"/>`;
 
+  let hits=0;
   if(allExps.length===0){
     // Empty state: axes + message; true-value line already drawn above
     // Message placed in upper quarter of chart, well above the true-value line
@@ -671,24 +1851,37 @@ function timeSeriesPlot(svgEl,containerEl,allExps,accessor,trueVal,trueLabel,yLa
       const yTop=yP(Math.min(yMax,p.ciHigh)), yBot=yP(Math.max(yMin,p.ciLow));
       const ym=yP(Math.min(yMax,Math.max(yMin,p.est)));
       const hit=p.ciLow<=trueVal&&trueVal<=p.ciHigh;
-      const col=hit?C.green2:C.reject;
-      h+=`<rect x="${cx-3}" y="${yTop}" width="6" height="${Math.max(1,yBot-yTop)}" fill="${col}" opacity=".15" rx="1"/>`;
-      h+=`<line x1="${cx}" y1="${yTop}" x2="${cx}" y2="${yBot}" stroke="${col}" stroke-width="1.8"/>`;
-      h+=`<line x1="${cx-5}" y1="${yTop}" x2="${cx+5}" y2="${yTop}" stroke="${col}" stroke-width="1.8"/>`;
-      h+=`<line x1="${cx-5}" y1="${yBot}" x2="${cx+5}" y2="${yBot}" stroke="${col}" stroke-width="1.8"/>`;
-      h+=`<circle cx="${cx}" cy="${ym}" r="4" fill="${col}"/>`;
-      h+=`<line x1="${cx}" y1="${pT+cH}" x2="${cx}" y2="${pT+cH+4}" stroke="#bbb" stroke-width="1"/>`;
-      h+=`<text x="${cx}" y="${pT+cH+17}" text-anchor="middle" fill="#666" font-size="10" font-family="${FF_MONO}">Run ${runN}</text>`;
-      h+=`<text x="${cx}" y="${pT+cH+29}" text-anchor="middle" fill="#aaa" font-size="9" font-family="${FF_MONO}">N=${p.n.toLocaleString()}</text>`;
+      if(hit)hits++;
+      const col=hit?C.hit:C.miss;
+      // Capture vs miss must not rest on hue alone: a miss also gets a dashed bar and a hollow dot.
+      const dash=hit?'':' stroke-dasharray="3,2.5"';
+      h+=`<rect x="${cx-barW/2}" y="${yTop}" width="${barW}" height="${Math.max(1,yBot-yTop)}" fill="${col}" opacity=".15" rx="1"/>`;
+      h+=`<line x1="${cx}" y1="${yTop}" x2="${cx}" y2="${yBot}" stroke="${col}" stroke-width="${lwBar}"${dash}/>`;
+      h+=`<line x1="${cx-capW}" y1="${yTop}" x2="${cx+capW}" y2="${yTop}" stroke="${col}" stroke-width="${lwBar}"/>`;
+      h+=`<line x1="${cx-capW}" y1="${yBot}" x2="${cx+capW}" y2="${yBot}" stroke="${col}" stroke-width="${lwBar}"/>`;
+      h+=hit?`<circle cx="${cx}" cy="${ym}" r="${dotR}" fill="${col}"/>`
+             :`<circle cx="${cx}" cy="${ym}" r="${dotR*.9}" fill="#fff" stroke="${col}" stroke-width="${Math.min(2,dotR/2)}"/>`;
+      if(!dense){
+        h+=`<line x1="${cx}" y1="${pT+cH}" x2="${cx}" y2="${pT+cH+4}" stroke="#bbb" stroke-width="1"/>`;
+        h+=`<text x="${cx}" y="${pT+cH+17}" text-anchor="middle" fill="#666" font-size="10" font-family="${FF_MONO}">Run ${runN}</text>`;
+        h+=`<text x="${cx}" y="${pT+cH+29}" text-anchor="middle" fill="#aaa" font-size="9" font-family="${FF_MONO}">N=${p.n.toLocaleString()}</text>`;
+      } else if(i===0||i===shown.length-1){
+        // Too tight for a label per column, so only the ends are named -- anchored
+        // outward so neither runs off its side of the plot.
+        const at=i===0?'start':'end', ax=i===0?pL:pL+cW;
+        h+=`<text x="${ax}" y="${pT+cH+17}" text-anchor="${at}" fill="#666" font-size="10" font-family="${FF_MONO}">Run ${runN}</text>`;
+        h+=`<text x="${ax}" y="${pT+cH+29}" text-anchor="${at}" fill="#aaa" font-size="9" font-family="${FF_MONO}">N=${p.n.toLocaleString()}</text>`;
+      }
     });
   }
 
-  // Legend
-  const ly=SH-14;
-  h+=`<circle cx="${pL+7}" cy="${ly}" r="4" fill="${C.green2}"/>`;
+  // Legend: side by side when it fits, otherwise stacked and left-aligned
+  const ly=SH-14-(legRows-1)*14;
+  const mx=legRows===1?pL+165:pL+7, my=legRows===1?ly:SH-14;
+  h+=`<circle cx="${pL+7}" cy="${ly}" r="4" fill="${C.hit}"/>`;
   h+=`<text x="${pL+15}" y="${ly+4}" fill="#666" font-size="10" font-family="${FF_SANS}">CI captures true value</text>`;
-  h+=`<circle cx="${pL+165}" cy="${ly}" r="4" fill="${C.reject}"/>`;
-  h+=`<text x="${pL+173}" y="${ly+4}" fill="#666" font-size="10" font-family="${FF_SANS}">CI misses  (≈5% expected)</text>`;
+  h+=`<circle cx="${mx}" cy="${my}" r="3.6" fill="#fff" stroke="${C.miss}" stroke-width="2"/>`;
+  h+=`<text x="${mx+8}" y="${my+4}" fill="#666" font-size="10" font-family="${FF_SANS}">CI misses  (≈5% expected)</text>`;
 
   // Append label last so it renders on top of CI bars
   h+=lblH;
@@ -698,6 +1891,7 @@ function timeSeriesPlot(svgEl,containerEl,allExps,accessor,trueVal,trueLabel,yLa
   svgEl.style.width='100%';
   svgEl.style.height='auto';
   svgEl.style.display='block';
+  return {shown:shown.length, hits:hits, dropped:allExps.length-shown.length};
 }
 
 // ── MC animated explainer ────────────────────────────────
@@ -715,18 +1909,22 @@ function drawMCExpFrame(){
   const xP=x=>pL+(x-a)/L*cW;
   const yP=y=>pT+cH-y/1.06*cH;
   ctx.fillStyle=C.bg;ctx.fillRect(0,0,W,H);
+  // Math.random on purpose: this illustration free-runs on its own interval and must
+  // never draw from a seeded experiment stream. See the mulberry32 use in runPi/runMC.
   const samp=[]; let sum=0;
   for(let i=0;i<M;i++){const x=a+Math.random()*L,y=f(x);samp.push({x,y});sum+=y;}
   const est=L*sum/M;
   const rWpx=cW/M;
   samp.forEach(({x,y})=>{
     const px=xP(x)-rWpx/2,py=yP(y),ph=Math.max(yP(0)-py,1);
-    ctx.fillStyle=C.orangePale;ctx.fillRect(px,py,rWpx,ph);
-    ctx.strokeStyle=C.orange;ctx.lineWidth=M<=16?1.2:0.7;ctx.strokeRect(px,py,rWpx,ph);
+    ctx.fillStyle=C.estPale;ctx.fillRect(px,py,rWpx,ph);
+    ctx.strokeStyle=C.est;ctx.lineWidth=M<=16?1.2:0.7;ctx.strokeRect(px,py,rWpx,ph);
   });
-  ctx.beginPath();ctx.strokeStyle=C.green;ctx.lineWidth=2;
+  ctx.beginPath();
   for(let i=0;i<=250;i++){const x=a+i/250*L;if(i===0)ctx.moveTo(xP(x),yP(f(x)));else ctx.lineTo(xP(x),yP(f(x)));}
-  ctx.stroke();
+  ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.strokeStyle='#fff';ctx.lineWidth=5;ctx.stroke();   // halo, as in the static plot
+  ctx.strokeStyle=C.truth;ctx.lineWidth=2;ctx.stroke();
   ctx.strokeStyle='#ccc';ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(pL,pT+cH);ctx.lineTo(pL+cW,pT+cH);ctx.stroke();
   ctx.beginPath();ctx.moveTo(pL,pT);ctx.lineTo(pL,pT+cH);ctx.stroke();
@@ -739,16 +1937,16 @@ function drawMCExpFrame(){
     const rawBx=xP(s.x), visW=Math.max(rWpx,3), ay=pT+cH+32, tkH=4;
     // Clamp so annotation label never clips at right/left edge
     const bx=Math.max(pL+visW/2+4, Math.min(rawBx, pL+cW-visW/2-4));
-    ctx.strokeStyle=C.orange;ctx.lineWidth=1;
+    ctx.strokeStyle=C.est;ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(bx-visW/2,ay);ctx.lineTo(bx+visW/2,ay);ctx.stroke();
     ctx.beginPath();
     ctx.moveTo(bx-visW/2,ay-tkH);ctx.lineTo(bx-visW/2,ay+tkH);
     ctx.moveTo(bx+visW/2,ay-tkH);ctx.lineTo(bx+visW/2,ay+tkH);
     ctx.stroke();
-    ctx.fillStyle=C.orange;ctx.font=`${rWpx<28?8.5:9.5}px ${FF_MONO}`;ctx.textAlign='center';
+    ctx.fillStyle=C.est;ctx.font=`${rWpx<28?8.5:9.5}px ${FF_MONO}`;ctx.textAlign='center';
     ctx.fillText(`L/M = π/${M}`,bx,ay+14);
   }
-  ctx.fillStyle=C.green;ctx.font=`bold 12px ${FF_SANS}`;ctx.textAlign='left';
+  ctx.fillStyle=C.truth;ctx.font=`bold 12px ${FF_SANS}`;ctx.textAlign='left';
   ctx.fillText(`M = ${M} samples`,pL+3,pT+13);
   // Caption explicitly names the function
   document.getElementById('mc-exp-cap').textContent=
@@ -768,6 +1966,88 @@ function svgTxt(x,y,content,fill,size,ff,anchor,weight){
 }
 function setText(id,v){document.getElementById(id).textContent=v;}
 
+
+// ── Tooltips ────────────────────────────────────────────
+// One floating element serves every [data-tip] on the page, so two tips can never be
+// open at once and the text can carry markup. Ported from the pattern already used in
+// topic_visualizers/jacobian_linearization; the title attribute is deliberately not
+// used anywhere, because iOS and Android show it neither on tap nor on long press.
+(function(){
+  var tip=document.createElement('div');
+  tip.id='tipbox';
+  tip.setAttribute('role','tooltip');
+  document.body.appendChild(tip);
+
+  // Every tip is also a description in the accessibility tree. A title attribute
+  // would do that for free, but it would raise the browser's own tooltip alongside
+  // this one, and it reaches neither the keyboard nor a touch screen. So the text is
+  // mirrored into a visually hidden span instead, and pointed at with
+  // aria-describedby. The spans are parked outside their triggers on purpose: inside
+  // a button or a label they would be read as part of its name.
+  var host=document.createElement('div');
+  host.className='sr-only';
+  document.body.appendChild(host);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-tip]'), function(el,i){
+    var id='tipdesc-'+i, sp=document.createElement('span');
+    sp.id=id; sp.innerHTML=el.getAttribute('data-tip');
+    host.appendChild(sp);
+    el.setAttribute('aria-describedby',id);
+  });
+  function place(x,y){
+    var r=tip.getBoundingClientRect();
+    var nx=x-r.width/2, ny=y+12;
+    if(nx+r.width>window.innerWidth-8) nx=window.innerWidth-8-r.width;
+    if(ny+r.height>window.innerHeight-8) ny=y-r.height-14;
+    tip.style.left=Math.max(8,nx)+'px'; tip.style.top=Math.max(8,ny)+'px';
+  }
+  // Remembering what opened the tip keeps one input from closing another's: tapping a
+  // term blurs whatever had focus, and an unconditional focusout would shut the tip
+  // in the same breath as the tap that opened it.
+  var openedBy=null;
+  function show(t,x,y,how){ tip.innerHTML=t.getAttribute('data-tip'); tip.style.opacity='1'; openedBy=how; place(x,y); }
+  function showAt(t,how){ var r=t.getBoundingClientRect(); show(t, r.left+r.width/2, r.bottom, how); }
+  function hide(){ tip.style.opacity='0'; openedBy=null; }
+  function hideIf(how){ if(openedBy===how)hide(); }
+  function target(e){ return e.target && e.target.closest ? e.target.closest('[data-tip]') : null; }
+
+  // Hover for a mouse, focus for a keyboard, tap for a finger.
+  document.addEventListener('mousemove', function(e){ var t=target(e); if(t)show(t,e.clientX,e.clientY,'hover'); else hideIf('hover'); });
+  document.addEventListener('focusin',  function(e){ var t=target(e); if(t)showAt(t,'focus'); });
+  document.addEventListener('focusout', function(){ hideIf('focus'); });
+  document.addEventListener('keydown',  function(e){ if(e.key==='Escape')hide(); });
+  window.addEventListener('scroll', hide, true);
+
+  // Tap opens a tip on anything except a control that tap already operates.
+  document.addEventListener('click', function(e){
+    var t=target(e);
+    if(t&&!t.hasAttribute('data-tip-press')){
+      // A term can sit inside a <label>, where the default action would hand focus to
+      // the field and raise the keyboard on a phone. The tip is the whole intent here.
+      e.preventDefault();
+      showAt(t,'tap');
+    } else hide();
+  });
+
+  // Long press for those: 450ms held still, and the click it would fire is swallowed.
+  var timer=null, x0=0, y0=0, swallow=false;
+  document.addEventListener('pointerdown', function(e){
+    var t=e.target.closest?e.target.closest('[data-tip-press]'):null;
+    if(!t)return;
+    x0=e.clientX; y0=e.clientY;
+    timer=setTimeout(function(){ timer=null; swallow=true; showAt(t,'press'); }, 450);
+  });
+  document.addEventListener('pointermove', function(e){
+    if(timer&&Math.hypot(e.clientX-x0,e.clientY-y0)>10){ clearTimeout(timer); timer=null; }
+  });
+  ['pointerup','pointercancel'].forEach(function(ev){
+    document.addEventListener(ev, function(){ if(timer){ clearTimeout(timer); timer=null; } });
+  });
+  // Capture phase, so the press never reaches the button's own handler.
+  document.addEventListener('click', function(e){
+    if(swallow){ swallow=false; e.preventDefault(); e.stopPropagation(); }
+  }, true);
+})();
+
 // ── Init ────────────────────────────────────────────────
 window.addEventListener('load',()=>{
   // Pi canvas — 304×304
@@ -776,24 +2056,33 @@ window.addEventListener('load',()=>{
   {const {ctx,W,H}=getCtx(piCv);piBase(ctx,W,H);piOverlay(ctx,W,H);}
   drawPiExp();
 
+  // Buffon canvas — 304×304, the same square as the dartboard so the two tabs
+  // read as the same experiment run two ways.
+  const bnCv=document.getElementById('bn-cv');
+  initHiDPI(bnCv,304,304);
+  clearBn();        // rules the empty sheet and draws the blank history chart
+  drawBnExp();
+
   // MC main canvas — 408×302  (pT=16 cH=216 pB=70)
   const mcCv=document.getElementById('mc-cv');
   initHiDPI(mcCv,408,302);
-  curFn='sin'; mcDrawBase([]); setText('mc-st',FUNCS['sin'].trueStr);
+  curFn='sin'; mcDrawBase([]); resetMCStats();   // also primes the formula block
 
-  // MC animated explainer: lazy-init on first Tab 2 visit (see showTab)
-  // Tab 2 is hidden at load so clientWidth === 0; defer until it's visible.
+  // MC animated explainer: lazy-init on first Tab ④ visit (see showTab)
+  // Tab ④ is hidden at load so clientWidth === 0; defer until it's visible.
 
-  // Draw blank history chart for Tab 1 immediately (blank axes on init)
+  // Draw blank history chart for Tab ① immediately (blank axes on init)
   renderPiHist();
+  watchHistWidth();
 
+  // An incoming #id link opens straight to that tab instead of the default.
   const startHash = location.hash.slice(1);
   if (startHash && startHash !== 'pi' && validTab(startHash)) showTab(startHash, null);
 });
 </script>
-<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;text-align:left;">
+<footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:var(--accent,#1a3d2b);text-align:left;font-family:inherit;border-top:none;padding:0;">
   <div style="max-width:1020px;margin:0 auto;padding:2px 18px 10px;">
-    <a href="../" style="color:inherit;text-decoration:underline;"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
+    <a href="../" style="color:inherit;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
   </div>
 </footer>
 <script>

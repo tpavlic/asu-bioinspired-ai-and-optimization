@@ -525,7 +525,8 @@ carry both tags (`boids, vicsek: …`), though splitting it is usually better.
 
 ### Physics-Inspired Methods
 
-- `monte_carlo/mc_explorer.html`
+- `monte_carlo/mc_explorer.html` *(dartboard and Buffon's needle estimates of π, ant-inspired robot area
+  estimation, and Monte Carlo integration)*
 - `simulated_annealing/simulated_annealing_demo.html`
 - `parallel_tempering/parallel_tempering.html`
 - `softmax/softmax_temperature_explorer.html`
