@@ -37,13 +37,20 @@
   --rad-md: 8px;
   --rad-lg: 12px;
   --sans: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  --wrap-max: 760px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--sans);background:#f4f2ec;padding:24px;color:var(--txt1)}
-.wrap{display:flex;flex-direction:column;gap:10px;width:574px;margin:0 auto}
-.top-row{display:flex;gap:8px;align-items:stretch}
+.wrap{display:flex;flex-direction:column;gap:10px;width:100%;max-width:var(--wrap-max);margin:0 auto}
+/* Feeder cards flank the pond by default; the narrow and wide layouts below move them
+   into rows above and below it, keeping each feeder on the pond's side it sits on. */
+.top-row{display:grid;gap:8px;grid-template-columns:140px minmax(0,1fr) 140px;
+  grid-template-rows:auto 1fr auto;grid-template-areas:"f1 pond f2" ". pond ." "f3 pond f4"}
+#fb0{grid-area:f1}#fb1{grid-area:f2}#fb2{grid-area:f3}#fb3{grid-area:f4}
 .card{background:var(--bg);border:0.5px solid var(--bord1);border-radius:var(--rad-lg);padding:10px 12px}
-.fside{display:flex;flex-direction:column;justify-content:space-between;gap:6px;width:126px;flex-shrink:0}
+.pond-card{grid-area:pond;padding:5px}
+#pond,#chart{display:block;width:100%;height:auto}
+#chart{overflow:visible}
 .fbtn{border:1.5px solid;border-radius:var(--rad-md);padding:7px 9px;cursor:pointer;
   text-align:left;font-family:var(--sans);transition:opacity .15s,background .15s;width:100%}
 .fbtn.off{opacity:0.38}
@@ -60,15 +67,38 @@ body{font-family:var(--sans);background:#f4f2ec;padding:24px;color:var(--txt1)}
 .ls{width:16px;height:2.5px;border-radius:1px;flex-shrink:0}
 .pond-hint{font-size:11px;color:var(--txt3);text-align:center;padding:4px 0 5px}
 input[type=range]{width:100%;accent-color:#185FA5;cursor:pointer}
+@media (min-width:620px){
+  .fn{font-size:14px}
+  .fs2,.fa{font-size:12.5px}
+  .slb{font-size:15px}
+  .nv{font-size:18px}
+  .lam,.li{font-size:13px}
+  .pond-hint{font-size:12px}
+}
+@media (max-width:819px){
+  .top-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto;
+    grid-template-areas:"f1 f2" "pond pond" "f3 f4"}
+  #pond{max-width:520px;margin:0 auto}
+}
+@media (max-width:619px){
+  body{padding:16px}
+}
+/* Wide screens: pond and chart side by side, so both fit on one projected screen. */
+@media (min-width:1000px){
+  :root{--wrap-max:1200px}
+  .wrap{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+  .top-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto;
+    grid-template-areas:"f1 f2" "pond pond" "f3 f4";align-content:start}
+  .chart-card{display:flex;flex-direction:column;justify-content:center}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top-row">
-    <div class="fside" id="fleft"></div>
-    <div class="card" style="padding:5px;flex:0 0 auto">
+  <div class="top-row" id="top-row">
+    <div class="card pond-card" id="pond-card">
       <div class="pond-hint">Click on each feeder to toggle it on or off</div>
-      <svg id="pond" width="296" height="248" viewBox="0 0 296 248">
+      <svg id="pond" viewBox="30 30 236 182">
         <defs><clipPath id="pcl"><ellipse cx="148" cy="124" rx="110" ry="80"/></clipPath></defs>
         <ellipse cx="148" cy="124" rx="110" ry="80" fill="#4388BE"/>
         <ellipse cx="139" cy="116" rx="62" ry="45" fill="#6AAAD8" opacity="0.26"/>
@@ -78,9 +108,8 @@ input[type=range]{width:100%;accent-color:#185FA5;cursor:pointer}
       </svg>
       <div class="pond-hint" style="padding:5px 0 2px">&copy; 2026 Theodore P. Pavlic &mdash; <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">MIT&nbsp;License</a></div>
     </div>
-    <div class="fside" id="fright"></div>
   </div>
-  <div class="card">
+  <div class="card chart-card">
     <div class="srow">
       <span class="slb">N =</span>
       <input type="range" min="1" max="25" value="11" id="nsl" step="1" style="flex:1">
@@ -88,8 +117,8 @@ input[type=range]{width:100%;accent-color:#185FA5;cursor:pointer}
       <span style="font-size:11px;color:var(--txt3)">ducks</span>
     </div>
     <div class="lam" id="lam"></div>
-    <svg id="chart" width="550" height="196" viewBox="0 0 460 196" style="display:block;max-width:100%">
-      <defs><clipPath id="cc2"><rect x="46" y="10" width="328" height="152"/></clipPath></defs>
+    <svg id="chart" viewBox="0 0 460 196">
+      <defs><clipPath id="cc2"><rect id="cc2r" x="46" y="10" width="328" height="152"/></clipPath></defs>
       <g id="cgr"></g>
       <g id="cax"></g>
       <g id="ccv" clip-path="url(#cc2)"></g>
@@ -205,9 +234,12 @@ function drawPond(al){
       'dominant-baseline':'central',fill:'#fff','font-size':11,'font-weight':600,
       'font-family':'system-ui,sans-serif'});
     lbl.textContent=i+1; gr.appendChild(lbl);
+    // The white halo (stroke painted under the fill) keeps the count legible where it
+    // sits over the pond rather than the card.
     var cnt=sa(mk('text'),{x:p1(fp.fx),y:p1(fp.fy-fr-7),'text-anchor':'middle',
-      'dominant-baseline':'central',fill:on?f.col:'#9A9890','font-size':11,'font-weight':600,
-      'font-family':'system-ui,sans-serif'});
+      'dominant-baseline':'central',fill:on?f.col:'#5f5e5a','font-size':11,'font-weight':600,
+      'font-family':'system-ui,sans-serif',stroke:'#fff','stroke-width':3,
+      'stroke-linejoin':'round','paint-order':'stroke'});
     cnt.textContent=on?('\xd7'+al[i]):'off'; gr.appendChild(cnt);
     fEl.appendChild(gr);
   });
@@ -218,6 +250,20 @@ var CW=460,CH=196,xMx=15,yMx=6;
 var iW=CW-PAD.l-PAD.r, iH=CH-PAD.t-PAD.b;
 function tX(x){return PAD.l+x/xMx*iW;}
 function tY(y){return CH-PAD.b-y/yMx*iH;}
+
+// Wider than CW, the chart scales up from its viewBox; narrower, it would scale its
+// labels down past legibility, so the viewBox narrows to the rendered width instead.
+// Beside the pond (the wide layout), it is drawn taller to match the pond's column.
+var WIDE=window.matchMedia('(min-width:1000px)');
+function fitChart(){
+  var w=gel('chart').getBoundingClientRect().width;
+  var cw=Math.round(Math.max(300,Math.min(460,w))), ch=WIDE.matches?270:196;
+  if(cw===CW&&ch===CH)return false;
+  CW=cw; CH=ch; iW=CW-PAD.l-PAD.r; iH=CH-PAD.t-PAD.b;
+  gel('chart').setAttribute('viewBox','0 0 '+CW+' '+CH);
+  sa(gel('cc2r'),{width:iW,height:iH+6});
+  return true;
+}
 
 var CGRID='rgba(0,0,0,0.10)', CAXIS='rgba(0,0,0,0.30)', CTXT2='#5f5e5a', CTXT3='#9a9890', CBGP='#ffffff';
 
@@ -335,13 +381,12 @@ function makeBtn(f,i){
 }
 
 function buildButtons(){
-  var fl=gel('fleft'),fr=gel('fright');
-  while(fl.firstChild)fl.removeChild(fl.firstChild);
-  while(fr.firstChild)fr.removeChild(fr.firstChild);
-  fl.appendChild(makeBtn(FD[0],0));
-  fl.appendChild(makeBtn(FD[2],2));
-  fr.appendChild(makeBtn(FD[1],1));
-  fr.appendChild(makeBtn(FD[3],3));
+  var row=gel('top-row'),pc=gel('pond-card');
+  FD.forEach(function(f,i){var old=gel('fb'+i);if(old)row.removeChild(old);});
+  row.insertBefore(makeBtn(FD[0],0),pc);
+  row.insertBefore(makeBtn(FD[1],1),pc);
+  row.appendChild(makeBtn(FD[2],2));
+  row.appendChild(makeBtn(FD[3],3));
 }
 
 function updateButtons(al){
@@ -379,10 +424,11 @@ function update(){
 }
 
 gel('nsl').addEventListener('input',function(){N=+this.value;update();});
-buildButtons(); update();
+window.addEventListener('resize',function(){if(fitChart())update();});
+buildButtons(); fitChart(); update();
 </script>
 <footer id="course-nav-footer" style="margin-top:0;font-size:0.8rem;color:#78786A;">
-  <div style="max-width:574px;margin:0 auto;padding:0.75rem 0 0 1rem;">
+  <div style="max-width:var(--wrap-max);margin:0 auto;padding:0.75rem 0 0 1rem;">
     <a href="../" style="color:inherit;text-decoration:underline;"><span style="font-family:sans-serif">&larr;</span> All course visualizations</a>
   </div>
 </footer>
